@@ -1,0 +1,9 @@
+﻿code;label_pt;counts_as_settled
+A_PAGAR;a pagar;false
+PAGO;pago;true
+A_RECEBER;a receber;false
+RECEBIDO;recebido;true
+ISENTO;Isento;true
+AQUISICAO;aquisição;true
+ATUALIZACAO;atualização;true
+ESTIMATIVA;estimativa;false

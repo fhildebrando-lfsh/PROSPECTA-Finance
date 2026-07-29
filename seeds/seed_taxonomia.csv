@@ -1,0 +1,381 @@
+nature,category,subcategory,category_sort_order,category_slug,subcategory_slug
+RECEITA,13º Salário,,1,13o_salario,
+RECEITA,14º Salário,,2,14o_salario,
+RECEITA,Aluguel,,3,aluguel,
+RECEITA,Ajuste,,4,ajuste,
+RECEITA,Bico,,5,bico,
+RECEITA,Bônus,,6,bonus,
+RECEITA,Cashback,,7,cashback,
+RECEITA,Crédito,,8,credito,
+RECEITA,Crédito (outros),,9,credito_outros,
+RECEITA,Desconto,,10,desconto,
+RECEITA,Empréstimos,,11,emprestimos,
+RECEITA,Estorno,,12,estorno,
+RECEITA,Férias,,13,ferias,
+RECEITA,Hora Extra,,14,hora_extra,
+RECEITA,Investimentos,,15,investimentos,
+RECEITA,Outras (receitas),,16,outras_receitas,
+RECEITA,Participação nos Lucros,,17,participacao_nos_lucros,
+RECEITA,Pensão,,18,pensao,
+RECEITA,Pró-labore,,19,pro_labore,
+RECEITA,Reembolso,,20,reembolso,
+RECEITA,Recebimentos,,21,recebimentos,
+RECEITA,Recebimentos de Terceiros,,22,recebimentos_de_terceiros,
+RECEITA,Renda,,23,renda,
+RECEITA,Renda Extra,,24,renda_extra,
+RECEITA,Restituição de IR,,25,restituicao_de_ir,
+RECEITA,Salário (líquido),,26,salario_liquido,
+RECEITA,Salário + Férias (líquido),,27,salario_ferias_liquido,
+RECEITA,Salário + 13º (líquido),,28,salario_13o_liquido,
+RECEITA,Venda (outros),,29,venda_outros,
+RECEITA,Voucher,,30,voucher,
+DESPESA,1.Alimentação,Açougue,1,1_alimentacao,acougue
+DESPESA,1.Alimentação,Barzinho,1,1_alimentacao,barzinho
+DESPESA,1.Alimentação,Bebidas,1,1_alimentacao,bebidas
+DESPESA,1.Alimentação,Bebidas (alcoólica),1,1_alimentacao,bebidas_alcoolica
+DESPESA,1.Alimentação,Bebidas (outros),1,1_alimentacao,bebidas_outros
+DESPESA,1.Alimentação,Bolo,1,1_alimentacao,bolo
+DESPESA,1.Alimentação,Carne,1,1_alimentacao,carne
+DESPESA,1.Alimentação,Café/Lanche,1,1_alimentacao,cafe_lanche
+DESPESA,1.Alimentação,Cafeteria,1,1_alimentacao,cafeteria
+DESPESA,1.Alimentação,Cerveja,1,1_alimentacao,cerveja
+DESPESA,1.Alimentação,Chá,1,1_alimentacao,cha
+DESPESA,1.Alimentação,Churrasco,1,1_alimentacao,churrasco
+DESPESA,1.Alimentação,Comida Japonesa,1,1_alimentacao,comida_japonesa
+DESPESA,1.Alimentação,Delivery,1,1_alimentacao,delivery
+DESPESA,1.Alimentação,Doce,1,1_alimentacao,doce
+DESPESA,1.Alimentação,Empório (diversos),1,1_alimentacao,emporio_diversos
+DESPESA,1.Alimentação,Espetinho,1,1_alimentacao,espetinho
+DESPESA,1.Alimentação,Frango Assado,1,1_alimentacao,frango_assado
+DESPESA,1.Alimentação,Feira,1,1_alimentacao,feira
+DESPESA,1.Alimentação,Lanche/Lanchonete,1,1_alimentacao,lanche_lanchonete
+DESPESA,1.Alimentação,Marmita,1,1_alimentacao,marmita
+DESPESA,1.Alimentação,Massas,1,1_alimentacao,massas
+DESPESA,1.Alimentação,Oleaginosas,1,1_alimentacao,oleaginosas
+DESPESA,1.Alimentação,Outros (alimentos),1,1_alimentacao,outros_alimentos
+DESPESA,1.Alimentação,Outros (atualização),1,1_alimentacao,outros_atualizacao
+DESPESA,1.Alimentação,Padaria,1,1_alimentacao,padaria
+DESPESA,1.Alimentação,Pizza/Pizzaria,1,1_alimentacao,pizza_pizzaria
+DESPESA,1.Alimentação,Refeição (almoço/janta),1,1_alimentacao,refeicao_almoco_janta
+DESPESA,1.Alimentação,Restaurante,1,1_alimentacao,restaurante
+DESPESA,1.Alimentação,Sorveteria,1,1_alimentacao,sorveteria
+DESPESA,1.Alimentação,Supermercado,1,1_alimentacao,supermercado
+DESPESA,1.Alimentação,Suplemento,1,1_alimentacao,suplemento
+DESPESA,1.Alimentação,Varejão,1,1_alimentacao,varejao
+DESPESA,1.Alimentação,Vinho,1,1_alimentacao,vinho
+DESPESA,1.Alimentação,Ajuste,1,1_alimentacao,ajuste
+DESPESA,2.Habitação,Água,2,2_habitacao,agua
+DESPESA,2.Habitação,Aluguel,2,2_habitacao,aluguel
+DESPESA,2.Habitação,Artigos de Limpeza,2,2_habitacao,artigos_de_limpeza
+DESPESA,2.Habitação,Condomínio,2,2_habitacao,condominio
+DESPESA,2.Habitação,Empregada/Diarista,2,2_habitacao,empregada_diarista
+DESPESA,2.Habitação,Energia Elétrica,2,2_habitacao,energia_eletrica
+DESPESA,2.Habitação,Financiamento,2,2_habitacao,financiamento
+DESPESA,2.Habitação,Gás,2,2_habitacao,gas
+DESPESA,2.Habitação,IPTU,2,2_habitacao,iptu
+DESPESA,2.Habitação,Jardinagem,2,2_habitacao,jardinagem
+DESPESA,2.Habitação,Manutenção/Reparo,2,2_habitacao,manutencao_reparo
+DESPESA,2.Habitação,Mudança,2,2_habitacao,mudanca
+DESPESA,2.Habitação,Outros (habitação),2,2_habitacao,outros_habitacao
+DESPESA,2.Habitação,Reforma,2,2_habitacao,reforma
+DESPESA,2.Habitação,Serviços de Limpeza,2,2_habitacao,servicos_de_limpeza
+DESPESA,2.Habitação,Taxa de Água e Esgoto,2,2_habitacao,taxa_de_agua_e_esgoto
+DESPESA,2.Habitação,Taxa de Energia Elétrica,2,2_habitacao,taxa_de_energia_eletrica
+DESPESA,3.Art.Residência,Ap. Eletroeletrônicos,3,3_art_residencia,ap_eletroeletronicos
+DESPESA,3.Art.Residência,Ar-condicionado,3,3_art_residencia,ar_condicionado
+DESPESA,3.Art.Residência,Artigos de iluminação,3,3_art_residencia,artigos_de_iluminacao
+DESPESA,3.Art.Residência,Artigos casa inteligênte,3,3_art_residencia,artigos_casa_inteligente
+DESPESA,3.Art.Residência,"Cama, mesa e banho",3,3_art_residencia,cama_mesa_e_banho
+DESPESA,3.Art.Residência,Chaveiro,3,3_art_residencia,chaveiro
+DESPESA,3.Art.Residência,Chuveiro elétrico,3,3_art_residencia,chuveiro_eletrico
+DESPESA,3.Art.Residência,Cofre,3,3_art_residencia,cofre
+DESPESA,3.Art.Residência,Computador/notebook,3,3_art_residencia,computador_notebook
+DESPESA,3.Art.Residência,Conserto de ap.celular,3,3_art_residencia,conserto_de_ap_celular
+DESPESA,3.Art.Residência,Conserto de bicicleta,3,3_art_residencia,conserto_de_bicicleta
+DESPESA,3.Art.Residência,Conserto Diversos,3,3_art_residencia,conserto_diversos
+DESPESA,3.Art.Residência,Conserto de eletrônicos,3,3_art_residencia,conserto_de_eletronicos
+DESPESA,3.Art.Residência,Cortina,3,3_art_residencia,cortina
+DESPESA,3.Art.Residência,Elétrica/Hidráulica,3,3_art_residencia,eletrica_hidraulica
+DESPESA,3.Art.Residência,Eletrodoméstico,3,3_art_residencia,eletrodomestico
+DESPESA,3.Art.Residência,Ferramentas,3,3_art_residencia,ferramentas
+DESPESA,3.Art.Residência,Flores artificiais,3,3_art_residencia,flores_artificiais
+DESPESA,3.Art.Residência,Flores naturais,3,3_art_residencia,flores_naturais
+DESPESA,3.Art.Residência,Fogão,3,3_art_residencia,fogao
+DESPESA,3.Art.Residência,Fornecedor,3,3_art_residencia,fornecedor
+DESPESA,3.Art.Residência,Fornecedor de metal,3,3_art_residencia,fornecedor_de_metal
+DESPESA,3.Art.Residência,Informática,3,3_art_residencia,informatica
+DESPESA,3.Art.Residência,Jardinagem,3,3_art_residencia,jardinagem
+DESPESA,3.Art.Residência,Manutenção,3,3_art_residencia,manutencao
+DESPESA,3.Art.Residência,Manutenção eletrônicos,3,3_art_residencia,manutencao_eletronicos
+DESPESA,3.Art.Residência,Máquina de lavar roupa,3,3_art_residencia,maquina_de_lavar_roupa
+DESPESA,3.Art.Residência,Materiais de construção,3,3_art_residencia,materiais_de_construcao
+DESPESA,3.Art.Residência,Móvel,3,3_art_residencia,movel
+DESPESA,3.Art.Residência,Outros,3,3_art_residencia,outros
+DESPESA,3.Art.Residência,Pintura,3,3_art_residencia,pintura
+DESPESA,3.Art.Residência,Reforma,3,3_art_residencia,reforma
+DESPESA,3.Art.Residência,Reforma de estofado,3,3_art_residencia,reforma_de_estofado
+DESPESA,3.Art.Residência,Reforma da residência,3,3_art_residencia,reforma_da_residencia
+DESPESA,3.Art.Residência,Refrigerador,3,3_art_residencia,refrigerador
+DESPESA,3.Art.Residência,Serralheria,3,3_art_residencia,serralheria
+DESPESA,3.Art.Residência,Tapete,3,3_art_residencia,tapete
+DESPESA,3.Art.Residência,Utensílios e enfeites,3,3_art_residencia,utensilios_e_enfeites
+DESPESA,3.Art.Residência,Ventilador,3,3_art_residencia,ventilador
+DESPESA,4.Vestuário,Acessórios,4,4_vestuario,acessorios
+DESPESA,4.Vestuário,Artigos de Armarinho,4,4_vestuario,artigos_de_armarinho
+DESPESA,4.Vestuário,Blusa,4,4_vestuario,blusa
+DESPESA,4.Vestuário,Blusinha,4,4_vestuario,blusinha
+DESPESA,4.Vestuário,Bolsa,4,4_vestuario,bolsa
+DESPESA,4.Vestuário,Calça,4,4_vestuario,calca
+DESPESA,4.Vestuário,Calçado,4,4_vestuario,calcado
+DESPESA,4.Vestuário,Camiseta,4,4_vestuario,camiseta
+DESPESA,4.Vestuário,Chinelo,4,4_vestuario,chinelo
+DESPESA,4.Vestuário,Conserto em Sapataria,4,4_vestuario,conserto_em_sapataria
+DESPESA,4.Vestuário,Cueca,4,4_vestuario,cueca
+DESPESA,4.Vestuário,Joias/Bijuterias,4,4_vestuario,joias_bijuterias
+DESPESA,4.Vestuário,Lingerie,4,4_vestuario,lingerie
+DESPESA,4.Vestuário,Mochila,4,4_vestuario,mochila
+DESPESA,4.Vestuário,Óculos,4,4_vestuario,oculos
+DESPESA,4.Vestuário,Óculos de grau,4,4_vestuario,oculos_de_grau
+DESPESA,4.Vestuário,Óculos de sol,4,4_vestuario,oculos_de_sol
+DESPESA,4.Vestuário,Outros (vestuário),4,4_vestuario,outros_vestuario
+DESPESA,4.Vestuário,Relógio de pulso,4,4_vestuario,relogio_de_pulso
+DESPESA,4.Vestuário,Roupa Feminina,4,4_vestuario,roupa_feminina
+DESPESA,4.Vestuário,Roupa Infantil,4,4_vestuario,roupa_infantil
+DESPESA,4.Vestuário,Roupa Masculina,4,4_vestuario,roupa_masculina
+DESPESA,4.Vestuário,Roupa (Diversos),4,4_vestuario,roupa_diversos
+DESPESA,4.Vestuário,Sandália,4,4_vestuario,sandalia
+DESPESA,4.Vestuário,Sapato,4,4_vestuario,sapato
+DESPESA,4.Vestuário,Tecido,4,4_vestuario,tecido
+DESPESA,4.Vestuário,Tênis,4,4_vestuario,tenis
+DESPESA,4.Vestuário,Uniforme (outros),4,4_vestuario,uniforme_outros
+DESPESA,4.Vestuário,Uniforme de Trabalho,4,4_vestuario,uniforme_de_trabalho
+DESPESA,4.Vestuário,Uniforme Escolar,4,4_vestuario,uniforme_escolar
+DESPESA,5.Transporte,Abastecimento,5,5_transporte,abastecimento
+DESPESA,5.Transporte,Acessórios e peças,5,5_transporte,acessorios_e_pecas
+DESPESA,5.Transporte,Aluguél de veículo,5,5_transporte,aluguel_de_veiculo
+DESPESA,5.Transporte,Automóvel novo,5,5_transporte,automovel_novo
+DESPESA,5.Transporte,Combustível,5,5_transporte,combustivel
+DESPESA,5.Transporte,Conserto,5,5_transporte,conserto
+DESPESA,5.Transporte,Documento veículo,5,5_transporte,documento_veiculo
+DESPESA,5.Transporte,Emplacamento,5,5_transporte,emplacamento
+DESPESA,5.Transporte,Estacionamento,5,5_transporte,estacionamento
+DESPESA,5.Transporte,Estética Automotiva,5,5_transporte,estetica_automotiva
+DESPESA,5.Transporte,Financiamento (veículo),5,5_transporte,financiamento_veiculo
+DESPESA,5.Transporte,Ipva,5,5_transporte,ipva
+DESPESA,5.Transporte,Lavagem,5,5_transporte,lavagem
+DESPESA,5.Transporte,Licenciamento,5,5_transporte,licenciamento
+DESPESA,5.Transporte,Manutenção,5,5_transporte,manutencao
+DESPESA,5.Transporte,Metrô/trem,5,5_transporte,metro_trem
+DESPESA,5.Transporte,Motocicleta,5,5_transporte,motocicleta
+DESPESA,5.Transporte,Multa,5,5_transporte,multa
+DESPESA,5.Transporte,Óleo lubrificante,5,5_transporte,oleo_lubrificante
+DESPESA,5.Transporte,Outros(transporte),5,5_transporte,outros_transporte
+DESPESA,5.Transporte,Passagem aérea,5,5_transporte,passagem_aerea
+DESPESA,5.Transporte,Passagem de Ônibus,5,5_transporte,passagem_de_onibus
+DESPESA,5.Transporte,Passagem (Diversas),5,5_transporte,passagem_diversas
+DESPESA,5.Transporte,Pedágios,5,5_transporte,pedagios
+DESPESA,5.Transporte,Pintura de veículo,5,5_transporte,pintura_de_veiculo
+DESPESA,5.Transporte,Pneu,5,5_transporte,pneu
+DESPESA,5.Transporte,Rastreador,5,5_transporte,rastreador
+DESPESA,5.Transporte,Reparo,5,5_transporte,reparo
+DESPESA,5.Transporte,Revisão,5,5_transporte,revisao
+DESPESA,5.Transporte,Seguro (proteção),5,5_transporte,seguro_protecao
+DESPESA,5.Transporte,Seguro obrigatório,5,5_transporte,seguro_obrigatorio
+DESPESA,5.Transporte,Serviço tag app,5,5_transporte,servico_tag_app
+DESPESA,5.Transporte,Taxa transferência,5,5_transporte,taxa_transferencia
+DESPESA,5.Transporte,Transporte escolar,5,5_transporte,transporte_escolar
+DESPESA,5.Transporte,Transporte p/ aplicativo,5,5_transporte,transporte_p_aplicativo
+DESPESA,5.Transporte,Transporte público,5,5_transporte,transporte_publico
+DESPESA,5.Transporte,Veículo próprio,5,5_transporte,veiculo_proprio
+DESPESA,5.Transporte,Vistoria veicular,5,5_transporte,vistoria_veicular
+DESPESA,6.Saúde,Cirurgia,6,6_saude,cirurgia
+DESPESA,6.Saúde,Cuidados pessoais,6,6_saude,cuidados_pessoais
+DESPESA,6.Saúde,Dermatológico,6,6_saude,dermatologico
+DESPESA,6.Saúde,Dentista,6,6_saude,dentista
+DESPESA,6.Saúde,Exame,6,6_saude,exame
+DESPESA,6.Saúde,Exame de imagem,6,6_saude,exame_de_imagem
+DESPESA,6.Saúde,Fisioterapeuta,6,6_saude,fisioterapeuta
+DESPESA,6.Saúde,Higiene pessoal,6,6_saude,higiene_pessoal
+DESPESA,6.Saúde,Hormonal,6,6_saude,hormonal
+DESPESA,6.Saúde,Médico,6,6_saude,medico
+DESPESA,6.Saúde,Óculos,6,6_saude,oculos
+DESPESA,6.Saúde,Óculos de grau,6,6_saude,oculos_de_grau
+DESPESA,6.Saúde,Outro (saúde),6,6_saude,outro_saude
+DESPESA,6.Saúde,Plano odontológico,6,6_saude,plano_odontologico
+DESPESA,6.Saúde,Plano de saúde,6,6_saude,plano_de_saude
+DESPESA,6.Saúde,Produtos farmacêuticos,6,6_saude,produtos_farmaceuticos
+DESPESA,6.Saúde,Produtos óticos,6,6_saude,produtos_oticos
+DESPESA,6.Saúde,Psicólogo,6,6_saude,psicologo
+DESPESA,6.Saúde,Remédio,6,6_saude,remedio
+DESPESA,6.Saúde,Seguro de vida,6,6_saude,seguro_de_vida
+DESPESA,6.Saúde,Serviço de saúde,6,6_saude,servico_de_saude
+DESPESA,6.Saúde,Serviços hospitalares,6,6_saude,servicos_hospitalares
+DESPESA,6.Saúde,Serviços laboratoriais,6,6_saude,servicos_laboratoriais
+DESPESA,6.Saúde,Vitaminas e fortificantes,6,6_saude,vitaminas_e_fortificantes
+DESPESA,7.Des.Pessoais,Academia,7,7_des_pessoais,academia
+DESPESA,7.Des.Pessoais,Acessórios,7,7_des_pessoais,acessorios
+DESPESA,7.Des.Pessoais,Acessórios p/ celulares,7,7_des_pessoais,acessorios_p_celulares
+DESPESA,7.Des.Pessoais,Artigos Esportivos,7,7_des_pessoais,artigos_esportivos
+DESPESA,7.Des.Pessoais,Atividade física (diversos),7,7_des_pessoais,atividade_fisica_diversos
+DESPESA,7.Des.Pessoais,Barbearia,7,7_des_pessoais,barbearia
+DESPESA,7.Des.Pessoais,Bicicleta,7,7_des_pessoais,bicicleta
+DESPESA,7.Des.Pessoais,Brinquedo,7,7_des_pessoais,brinquedo
+DESPESA,7.Des.Pessoais,Cabeleireiro,7,7_des_pessoais,cabeleireiro
+DESPESA,7.Des.Pessoais,Cartório,7,7_des_pessoais,cartorio
+DESPESA,7.Des.Pessoais,Casa noturna,7,7_des_pessoais,casa_noturna
+DESPESA,7.Des.Pessoais,Cigarro/fumo,7,7_des_pessoais,cigarro_fumo
+DESPESA,7.Des.Pessoais,Cinema/teatro/cons.,7,7_des_pessoais,cinema_teatro_cons
+DESPESA,7.Des.Pessoais,Celular,7,7_des_pessoais,celular
+DESPESA,7.Des.Pessoais,Clube,7,7_des_pessoais,clube
+DESPESA,7.Des.Pessoais,Clube de pontos,7,7_des_pessoais,clube_de_pontos
+DESPESA,7.Des.Pessoais,Conselho de classe,7,7_des_pessoais,conselho_de_classe
+DESPESA,7.Des.Pessoais,Corrida,7,7_des_pessoais,corrida
+DESPESA,7.Des.Pessoais,Cosméticos,7,7_des_pessoais,cosmeticos
+DESPESA,7.Des.Pessoais,Costureira,7,7_des_pessoais,costureira
+DESPESA,7.Des.Pessoais,Depilação,7,7_des_pessoais,depilacao
+DESPESA,7.Des.Pessoais,Despachante,7,7_des_pessoais,despachante
+DESPESA,7.Des.Pessoais,Doação/dízimo,7,7_des_pessoais,doacao_dizimo
+DESPESA,7.Des.Pessoais,Ferramenta/utensílio,7,7_des_pessoais,ferramenta_utensilio
+DESPESA,7.Des.Pessoais,Festa,7,7_des_pessoais,festa
+DESPESA,7.Des.Pessoais,Hospedagem,7,7_des_pessoais,hospedagem
+DESPESA,7.Des.Pessoais,Instrumento musical,7,7_des_pessoais,instrumento_musical
+DESPESA,7.Des.Pessoais,Jogo (game),7,7_des_pessoais,jogo_game
+DESPESA,7.Des.Pessoais,Jogo de azar,7,7_des_pessoais,jogo_de_azar
+DESPESA,7.Des.Pessoais,Lazer,7,7_des_pessoais,lazer
+DESPESA,7.Des.Pessoais,Manicure,7,7_des_pessoais,manicure
+DESPESA,7.Des.Pessoais,Material caça e pesca,7,7_des_pessoais,material_caca_e_pesca
+DESPESA,7.Des.Pessoais,Marketplace,7,7_des_pessoais,marketplace
+DESPESA,7.Des.Pessoais,Outros (pessoal),7,7_des_pessoais,outros_pessoal
+DESPESA,7.Des.Pessoais,Outros (vestuário),7,7_des_pessoais,outros_vestuario
+DESPESA,7.Des.Pessoais,Pacote turístico,7,7_des_pessoais,pacote_turistico
+DESPESA,7.Des.Pessoais,Perfumaria,7,7_des_pessoais,perfumaria
+DESPESA,7.Des.Pessoais,Pet (geral),7,7_des_pessoais,pet_geral
+DESPESA,7.Des.Pessoais,Pilha,7,7_des_pessoais,pilha
+DESPESA,7.Des.Pessoais,Presente,7,7_des_pessoais,presente
+DESPESA,7.Des.Pessoais,Presente a parente,7,7_des_pessoais,presente_a_parente
+DESPESA,7.Des.Pessoais,Presente a terceiro,7,7_des_pessoais,presente_a_terceiro
+DESPESA,7.Des.Pessoais,Presente próprio,7,7_des_pessoais,presente_proprio
+DESPESA,7.Des.Pessoais,Rateio,7,7_des_pessoais,rateio
+DESPESA,7.Des.Pessoais,Recreação,7,7_des_pessoais,recreacao
+DESPESA,7.Des.Pessoais,Relógio,7,7_des_pessoais,relogio
+DESPESA,7.Des.Pessoais,Rifa,7,7_des_pessoais,rifa
+DESPESA,7.Des.Pessoais,Salão/depilação,7,7_des_pessoais,salao_depilacao
+DESPESA,7.Des.Pessoais,Serviço bancário,7,7_des_pessoais,servico_bancario
+DESPESA,7.Des.Pessoais,Shopping (outros),7,7_des_pessoais,shopping_outros
+DESPESA,7.Des.Pessoais,Sobrancelha,7,7_des_pessoais,sobrancelha
+DESPESA,7.Des.Pessoais,Viagem (outros),7,7_des_pessoais,viagem_outros
+DESPESA,8.Educação,Agenda,8,8_educacao,agenda
+DESPESA,8.Educação,Artigos de papelaria,8,8_educacao,artigos_de_papelaria
+DESPESA,8.Educação,Atividade física,8,8_educacao,atividade_fisica
+DESPESA,8.Educação,Autoescola,8,8_educacao,autoescola
+DESPESA,8.Educação,Creche,8,8_educacao,creche
+DESPESA,8.Educação,Curso,8,8_educacao,curso
+DESPESA,8.Educação,Curso de idioma,8,8_educacao,curso_de_idioma
+DESPESA,8.Educação,Curso preparatório,8,8_educacao,curso_preparatorio
+DESPESA,8.Educação,Curso técnico,8,8_educacao,curso_tecnico
+DESPESA,8.Educação,Doutorado,8,8_educacao,doutorado
+DESPESA,8.Educação,Ensino fundamental,8,8_educacao,ensino_fundamental
+DESPESA,8.Educação,Ensino médio,8,8_educacao,ensino_medio
+DESPESA,8.Educação,Ensino superior,8,8_educacao,ensino_superior
+DESPESA,8.Educação,Escola,8,8_educacao,escola
+DESPESA,8.Educação,Idioma,8,8_educacao,idioma
+DESPESA,8.Educação,Leitura,8,8_educacao,leitura
+DESPESA,8.Educação,Livro,8,8_educacao,livro
+DESPESA,8.Educação,Material/acessórios,8,8_educacao,material_acessorios
+DESPESA,8.Educação,Mestrado,8,8_educacao,mestrado
+DESPESA,8.Educação,Outros(educação),8,8_educacao,outros_educacao
+DESPESA,8.Educação,Papelaria,8,8_educacao,papelaria
+DESPESA,8.Educação,Plataforma de Questões,8,8_educacao,plataforma_de_questoes
+DESPESA,8.Educação,Pós-graduação,8,8_educacao,pos_graduacao
+DESPESA,8.Educação,Pré-escola,8,8_educacao,pre_escola
+DESPESA,8.Educação,Video aula,8,8_educacao,video_aula
+DESPESA,9.Comunicação,Acesso à Internet,9,9_comunicacao,acesso_a_internet
+DESPESA,9.Comunicação,Aparelho Telefônico,9,9_comunicacao,aparelho_telefonico
+DESPESA,9.Comunicação,App de Celular,9,9_comunicacao,app_de_celular
+DESPESA,9.Comunicação,Assinatura Benefícios,9,9_comunicacao,assinatura_beneficios
+DESPESA,9.Comunicação,Assinatura Marketing,9,9_comunicacao,assinatura_marketing
+DESPESA,9.Comunicação,Assinatura TV/Tel/Int,9,9_comunicacao,assinatura_tv_tel_int
+DESPESA,9.Comunicação,Chip,9,9_comunicacao,chip
+DESPESA,9.Comunicação,Correios,9,9_comunicacao,correios
+DESPESA,9.Comunicação,Diverso,9,9_comunicacao,diverso
+DESPESA,9.Comunicação,IA - Inteligência Artificial,9,9_comunicacao,ia_inteligencia_artificial
+DESPESA,9.Comunicação,Plano de Tel. Fixa,9,9_comunicacao,plano_de_tel_fixa
+DESPESA,9.Comunicação,Plano de Tel. Móvel,9,9_comunicacao,plano_de_tel_movel
+DESPESA,9.Comunicação,Serviços de Streaming,9,9_comunicacao,servicos_de_streaming
+DESPESA,9.Comunicação,Tecnologia,9,9_comunicacao,tecnologia
+DESPESA,Outras Desp.,Compra internacional,10,outras_desp,compra_internacional
+DESPESA,Outras Desp.,Despesas c/ Juros,10,outras_desp,despesas_c_juros
+DESPESA,Outras Desp.,Despesas c/ Juros (bancário),10,outras_desp,despesas_c_juros_bancario
+DESPESA,Outras Desp.,Empréstimo Consignado,10,outras_desp,emprestimo_consignado
+DESPESA,Outras Desp.,Empréstimo Pessoal,10,outras_desp,emprestimo_pessoal
+DESPESA,Outras Desp.,Outras (despesas),10,outras_desp,outras_despesas
+DESPESA,Outras Desp.,Tarifas bancárias,10,outras_desp,tarifas_bancarias
+DESPESA,Outras Desp.,Tributo,10,outras_desp,tributo
+DESPESA,Outras Desp.,Taxa Banco (outros),10,outras_desp,taxa_banco_outros
+DESPESA,Outras Desp.,Taxa de cartão (anualidade),10,outras_desp,taxa_de_cartao_anualidade
+DESPESA,Outras Desp.,Taxa de serviços (bancário),10,outras_desp,taxa_de_servicos_bancario
+INVESTIMENTO,Aportes,,1,aportes,
+INVESTIMENTO,Câmbio,,2,cambio,
+INVESTIMENTO,Dividendos,,3,dividendos,
+INVESTIMENTO,Fundo Ativo,,4,fundo_ativo,
+INVESTIMENTO,Fundo Passivo,,5,fundo_passivo,
+INVESTIMENTO,Ganho de Capital,,6,ganho_de_capital,
+INVESTIMENTO,Impostos,,7,impostos,
+INVESTIMENTO,Investimentos (empresa),,8,investimentos_empresa,
+INVESTIMENTO,Investimentos (outros),,9,investimentos_outros,
+INVESTIMENTO,Perdas,,10,perdas,
+INVESTIMENTO,Renda Fixa,,11,renda_fixa,
+INVESTIMENTO,Renda Variável,,12,renda_variavel,
+INVESTIMENTO,Retiradas,,13,retiradas,
+OUTRO,Bens Numerários,dinheiro em caixa,1,bens_numerarios,dinheiro_em_caixa
+OUTRO,Bens Numerários,dinheiro em banco,1,bens_numerarios,dinheiro_em_banco
+OUTRO,Bens Numerários,valorização,1,bens_numerarios,valorizacao
+OUTRO,Bens Numerários,desvalorização,1,bens_numerarios,desvalorizacao
+OUTRO,Bens de Renda,valorização,2,bens_de_renda,valorizacao
+OUTRO,Bens de Renda,desvalorização,2,bens_de_renda,desvalorizacao
+OUTRO,Bens de Uso - Tangível,veículos,3,bens_de_uso_tangivel,veiculos
+OUTRO,Bens de Uso - Tangível,imóveis,3,bens_de_uso_tangivel,imoveis
+OUTRO,Bens de Uso - Tangível,outros,3,bens_de_uso_tangivel,outros
+OUTRO,Bens de Uso - Tangível,valorização,3,bens_de_uso_tangivel,valorizacao
+OUTRO,Bens de Uso - Tangível,desvalorização,3,bens_de_uso_tangivel,desvalorizacao
+OUTRO,Bens de Uso - Intangível,marca/patente,4,bens_de_uso_intangivel,marca_patente
+OUTRO,Bens de Uso - Intangível,outros,4,bens_de_uso_intangivel,outros
+OUTRO,Bens de Uso - Intangível,valorização,4,bens_de_uso_intangivel,valorizacao
+OUTRO,Bens de Uso - Intangível,desvalorização,4,bens_de_uso_intangivel,desvalorizacao
+OUTRO,Bens de Venda,vendas de aquisições,5,bens_de_venda,vendas_de_aquisicoes
+OUTRO,Bens de Venda,outros,5,bens_de_venda,outros
+OUTRO,Bens de Venda,valorização,5,bens_de_venda,valorizacao
+OUTRO,Bens de Venda,desvalorização,5,bens_de_venda,desvalorizacao
+OUTRO,Bens,,6,bens,
+OUTRO,Câmbio,Compra,7,cambio,compra
+OUTRO,Câmbio,vendas,7,cambio,vendas
+OUTRO,Câmbio,Compra e Venda,7,cambio,compra_e_venda
+OUTRO,Câmbio,Outros,7,cambio,outros
+OUTRO,Despesas_Terceiros,Outros,8,despesas_terceiros,outros
+OUTRO,Dívidas,Empréstimo (outros),9,dividas,emprestimo_outros
+OUTRO,Dívidas,Empréstimo Consignado,9,dividas,emprestimo_consignado
+OUTRO,Dívidas,Empréstimo Pessoal CDC,9,dividas,emprestimo_pessoal_cdc
+OUTRO,Dívidas,Financiamento,9,dividas,financiamento
+OUTRO,Dívidas,Outras,9,dividas,outras
+OUTRO,Movimentações,Incluso na folha de Pg,10,movimentacoes,incluso_na_folha_de_pg
+OUTRO,Movimentações,Atualização de conta,10,movimentacoes,atualizacao_de_conta
+OUTRO,Movimentações,Dinheiro de terceiros,10,movimentacoes,dinheiro_de_terceiros
+OUTRO,Movimentações,Outros,10,movimentacoes,outros
+OUTRO,Sonhos_Metas,Viagem,11,sonhos_metas,viagem
+OUTRO,Sonhos_Metas,Viagem dos sonhos,11,sonhos_metas,viagem_dos_sonhos
+OUTRO,Sonhos_Metas,Viagem para o exterior,11,sonhos_metas,viagem_para_o_exterior
+OUTRO,Sonhos_Metas,Faculdade,11,sonhos_metas,faculdade
+OUTRO,Sonhos_Metas,Casa dos sonhos,11,sonhos_metas,casa_dos_sonhos
+OUTRO,Sonhos_Metas,Casa,11,sonhos_metas,casa
+OUTRO,Sonhos_Metas,Carro,11,sonhos_metas,carro
+OUTRO,Sonhos_Metas,Carro dos sonhos,11,sonhos_metas,carro_dos_sonhos
+OUTRO,Sonhos_Metas,Outros,11,sonhos_metas,outros
+OUTRO,Transferências,Saques,12,transferencias,saques
+OUTRO,Transferências,Depósitos,12,transferencias,depositos
+OUTRO,Transferências,Saques e Depósitos,12,transferencias,saques_e_depositos
+OUTRO,Transferências,Entre Contas,12,transferencias,entre_contas
+OUTRO,Transferências,Outras movimentações,12,transferencias,outras_movimentacoes
+OUTRO,Transferências,Dividendos,12,transferencias,dividendos
+OUTRO,Outros,Serviços de Streaming de terceiros,13,outros,servicos_de_streaming_de_terceiros
+OUTRO,Outros,Compra internacional,13,outros,compra_internacional
+OUTRO,Outros,Outro,13,outros,outro

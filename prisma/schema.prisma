@@ -1,0 +1,203 @@
+// Fase 0 — Fundação (ESPECIFICACAO-SISTEMA-FINANCEIRO.md §22)
+// Modela apenas o necessário para o critério de aceite da Fase 0:
+// login, papéis, RLS por workspace, e taxonomia completa carregada por seed.
+// entry/entry_group/goal/asset/debt/budget entram nas Conversas 2 e 3.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Identidade e acesso (§19)
+// ---------------------------------------------------------------------------
+
+/// Espelha auth.users (Supabase Auth). A linha nasce por trigger no signup
+/// (ver prisma/sql/001_auth_and_rls.sql) — o FK para auth.users é criado ali,
+/// não aqui, porque auth.users não é uma tabela gerenciada pelo Prisma.
+model Profile {
+  id              String   @id @db.Uuid
+  fullName        String?  @map("full_name")
+  /// Papel global (§19.1) — não é papel de workspace. Dá acesso a todos os workspaces.
+  isPlatformAdmin Boolean  @default(false) @map("is_platform_admin")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  memberships Membership[]
+
+  @@map("profiles")
+}
+
+model Workspace {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  memberships   Membership[]
+  people        Person[]
+  wallets       Wallet[]
+  subcategories Subcategory[]
+
+  @@map("workspaces")
+}
+
+enum MembershipRole {
+  TITULAR
+  MEMBRO
+  LEITURA
+}
+
+model Membership {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String         @map("workspace_id") @db.Uuid
+  profileId   String         @map("profile_id") @db.Uuid
+  role        MembershipRole
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, profileId])
+  @@map("memberships")
+}
+
+// ---------------------------------------------------------------------------
+// Taxonomia (§7) — global, editada só por administrador (§20).
+// ---------------------------------------------------------------------------
+
+enum EntryNature {
+  RECEITA
+  DESPESA
+  INVESTIMENTO
+  OUTRO
+}
+
+model Category {
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nature    EntryNature
+  name      String
+  slug      String
+  sortOrder Int         @map("sort_order")
+  /// true para as categorias do seed; formulário de categoria só existe para admin (§20)
+  isSystem  Boolean     @default(true) @map("is_system")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  subcategories Subcategory[]
+
+  @@unique([nature, slug])
+  @@map("categories")
+}
+
+model Subcategory {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId  String   @map("category_id") @db.Uuid
+  /// null = subcategoria do sistema (seed, visível a todos os workspaces)
+  /// preenchido = criada por um titular/membro, visível só no seu workspace (§20)
+  workspaceId String?  @map("workspace_id") @db.Uuid
+  name        String
+  slug        String
+  isSystem    Boolean  @default(true) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  category  Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, workspaceId, slug])
+  @@map("subcategories")
+}
+
+// ---------------------------------------------------------------------------
+// Carteiras (§9) — wallet_kind é referência extensível, nunca enum (§6.2).
+// ---------------------------------------------------------------------------
+
+model WalletKind {
+  code            String  @id
+  labelPt         String  @map("label_pt")
+  affectsNetWorth Boolean @map("affects_net_worth")
+  isLiability     Boolean @map("is_liability")
+
+  wallets Wallet[]
+
+  @@map("wallet_kinds")
+}
+
+/// Sem seed próprio — carregada a partir dos nomes distintos em seed_carteiras.csv (§25).
+model Institution {
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String @unique
+  slug String @unique
+
+  wallets Wallet[]
+
+  @@map("institutions")
+}
+
+model Wallet {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  name           String
+  kindCode       String   @map("kind_code")
+  institutionId  String?  @map("institution_id") @db.Uuid
+  /// true só para "Patrimônio" — pseudo-conta que deve virar `asset` (§9, Fase 1+)
+  isPseudoWallet Boolean  @default(false) @map("is_pseudo_wallet")
+  legacyName     String?  @map("legacy_name")
+  slug           String
+  linkedWalletId String?  @map("linked_wallet_id") @db.Uuid
+  goalPurpose    String?  @map("goal_purpose")
+  isActive       Boolean  @default(true) @map("is_active")
+  creditLimit    Decimal? @map("credit_limit") @db.Decimal(14, 2)
+  closingDay     Int?     @map("closing_day")
+  dueDay         Int?     @map("due_day")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  kind         WalletKind   @relation(fields: [kindCode], references: [code])
+  institution  Institution? @relation(fields: [institutionId], references: [id])
+  linkedWallet Wallet?      @relation("WalletLink", fields: [linkedWalletId], references: [id])
+  linkedFrom   Wallet[]     @relation("WalletLink")
+
+  @@unique([workspaceId, slug])
+  @@map("wallets")
+}
+
+// ---------------------------------------------------------------------------
+// Responsáveis (§2, §9) — por workspace.
+// ---------------------------------------------------------------------------
+
+model Person {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  name        String
+  slug        String
+  isShared    Boolean  @default(false) @map("is_shared")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, slug])
+  @@map("people")
+}
+
+// ---------------------------------------------------------------------------
+// Referências de lançamento (§6.3, §8.5) — global, usadas a partir da
+// Fase 1 quando `entry` existir, mas carregadas por seed já na Fase 0.
+// ---------------------------------------------------------------------------
+
+model Status {
+  code            String  @id
+  labelPt         String  @map("label_pt")
+  countsAsSettled Boolean @map("counts_as_settled")
+
+  @@map("statuses")
+}
+
+model RecurrenceKind {
+  code           String  @id
+  legacyLabel    String? @map("legacy_label")
+  intervalMonths Int     @map("interval_months")
+
+  @@map("recurrence_kinds")
+}

@@ -1,0 +1,14 @@
+code,legacy_label,interval_months
+UNICA,,0
+VARIAVEL,Variável,0
+MENSAL,Mensal,1
+BIMESTRAL,Bimestral,2
+TRIMESTRAL,Trimestral,3
+QUADRIMESTRAL,Quadrimestral,4
+SEMESTRAL,Semestral,6
+ANUAL,Anual,12
+BIENIO,Biênio,24
+TRIENIO,Triênio,36
+QUINQUENIO,Quinquênio,60
+DECENIO,Decênio,120
+VICENIO,Vicênio,240

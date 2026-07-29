@@ -1,0 +1,48 @@
+name,kind,institution,is_pseudo_wallet,legacy_name,slug,linked_wallet,goal_purpose
+99 Pay,CONTA_PAGAMENTO,99 Pay,false,,99_pay,,
+Banco do Brasil,CONTA_BANCARIA,Banco do Brasil,false,,banco_do_brasil,,
+Banco Inter,CONTA_BANCARIA,Banco Inter,false,,banco_inter,,
+Bradesco,CONTA_BANCARIA,Bradesco,false,,bradesco,,
+BTG Pactual,CONTA_INVESTIMENTO,BTG Pactual,false,,btg_pactual,,
+C6 Bank,CONTA_BANCARIA,C6 Bank,false,,c6_bank,,
+Caixa Econômica,CONTA_BANCARIA,Caixa Econômica Federal,false,,caixa_economica,,
+Cartão Casas Bahia,CARTAO_CREDITO,Casas Bahia,false,,cartao_casas_bahia,,
+Cartão Bradesco (Gold),CARTAO_CREDITO,Bradesco,false,,cartao_bradesco_gold,,
+Cartão CEF (ELO),CARTAO_CREDITO,Caixa Econômica Federal,false,,cartao_cef_elo,,
+Cartão Inter (Black),CARTAO_CREDITO,Banco Inter,false,,cartao_inter_black,,
+Cartão Itaú (PDA Black),CARTAO_CREDITO,Itaú,false,,cartao_itau_pda_black,,
+Cartão Itaú (PDA Platinum),CARTAO_CREDITO,Itaú,false,,cartao_itau_pda_platinum,,
+Cartão Itaú (Signature),CARTAO_CREDITO,Itaú,false,,cartao_itau_signature,,
+Cartão ITAÚ Uniclass,CARTAO_CREDITO,Itaú,false,,cartao_itau_uniclass,,
+Cartão Nubank (Platinum),CARTAO_CREDITO,Nubank,false,,cartao_nubank_platinum,,
+Clear,CONTA_INVESTIMENTO,Clear,false,,clear,,
+Conta de terceiros,CONTA_BANCARIA,,false,,conta_de_terceiros,,
+Dinheiro,CARTEIRA_FISICA,,false,,dinheiro,,
+Itaú,CONTA_BANCARIA,Itaú,false,,itau,,
+ModalMais,CONTA_INVESTIMENTO,ModalMais,false,,modalmais,,
+NU (Cx Cartão à prazo),CONTA_CAIXA,Nubank,false,,nu_cx_cartao_a_prazo,,Provisão da fatura do cartão (compras parceladas)
+NU (Cx Cartão à vista),CONTA_CAIXA,Nubank,false,,nu_cx_cartao_a_vista,,Provisão da fatura do cartão (compras à vista)
+NU (Cx Casa),CONTA_CAIXA,Nubank,false,,nu_cx_casa,,Casa
+NU (Cx Estudo),CONTA_CAIXA,Nubank,false,,nu_cx_estudo,,Estudo
+NU (Cx Outros),CONTA_CAIXA,Nubank,false,,nu_cx_outros,,
+NU (Cx Reforma),CONTA_CAIXA,Nubank,false,,nu_cx_reforma,,Reforma
+NU (Cx Res. de Emerg),CONTA_CAIXA,Nubank,false,,nu_cx_res_de_emerg,,Reserva de emergência
+NU (Cx Res. de Oport),CONTA_CAIXA,Nubank,false,,nu_cx_res_de_oport,,Reserva de oportunidade
+NU (Cx Seg. Carro),CONTA_CAIXA,Nubank,false,,nu_cx_seg_carro,,Seguro do carro
+NU (Cx Seg. Moto),CONTA_CAIXA,Nubank,false,,nu_cx_seg_moto,,Seguro da moto
+NU (Cx Sonhos),CONTA_CAIXA,Nubank,false,,nu_cx_sonhos,,Sonhos
+NU (Cx Veículo),CONTA_CAIXA,Nubank,false,,nu_cx_veiculo,,Veículo
+NU (Cx Viagem),CONTA_CAIXA,Nubank,false,,nu_cx_viagem,,Viagem
+NU Conta,CONTA_BANCARIA,Nubank,false,,nu_conta,,
+NUInvest,CONTA_INVESTIMENTO,Nubank,false,,nuinvest,,
+Outras (contas),CONTA_BANCARIA,,false,,outras_contas,,
+Patrimônio,CONTA_ATIVO,,true,,patrimonio,,
+Safra,CONTA_BANCARIA,Safra,false,,safra,,
+Santander,CONTA_BANCARIA,Santander,false,,santander,,
+Sicoob,CONTA_BANCARIA,Sicoob,false,,sicoob,,
+Pluxee Aliment Pass,VOUCHER,Pluxee,false,,pluxee_aliment_pass,,
+Sodexo Aliment Pass,VOUCHER,Sodexo,false,,sodexo_aliment_pass,,
+Empréstimos a Terceiros,CONTA_RECEBIVEL,,false,Dívidas c/ Terceiros,emprestimos_a_terceiros,,
+Ticket Alimentação,VOUCHER,Ticket,false,,ticket_alimentacao,,
+Ticket Restaurante,VOUCHER,Ticket,false,,ticket_restaurante,,
+XP Investimento,CONTA_INVESTIMENTO,XP,false,,xp_investimento,,

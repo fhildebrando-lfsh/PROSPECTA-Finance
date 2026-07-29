@@ -1,0 +1,11 @@
+code,label_pt,affects_net_worth,is_liability
+CARTAO_CREDITO,Cartão de Crédito,true,true
+CARTAO_DEBITO,Cartão de Débito,true,false
+CARTEIRA_FISICA,Carteira (física),true,false
+CONTA_ATIVO,Conta Ativo,true,false
+CONTA_BANCARIA,Conta Bancária,true,false
+CONTA_CAIXA,Conta Caixa (caixinha),true,false
+CONTA_INVESTIMENTO,Conta Investimento,true,false
+VOUCHER,Voucher,true,false
+CONTA_PAGAMENTO,Conta de Pagamento,true,false
+CONTA_RECEBIVEL,Empréstimos a Terceiros,true,false
