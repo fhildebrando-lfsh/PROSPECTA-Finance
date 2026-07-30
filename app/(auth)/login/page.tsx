@@ -1,12 +1,22 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { login, signup, type AuthActionState } from "./actions";
 
 const initialState: AuthActionState = { error: null, info: null };
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+/** Só existe pra isolar `useSearchParams()` — precisa de um Suspense boundary
+ * pra não desabilitar a geração estática desta página (§ build Vercel). */
+function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? "";
   const [mode, setMode] = useState<"login" | "signup">("login");
