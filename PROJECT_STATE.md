@@ -6,10 +6,13 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização:** 2026-07-30, após concluir as 5 pontas soltas da Fase 1
-> (Conversa 6, ainda sem nome oficial no guia): Compromissos, reverter importação,
-> transferência entre carteiras, convidar membro, edição in-line/ações em lote. Ver seção
-> "Estado do Git" — trabalho ainda **não commitado** nesta atualização.
+> **Última atualização:** 2026-07-30. Além das 5 pontas soltas da Fase 1 (Compromissos,
+> reverter importação, transferência entre carteiras, convidar membro, edição in-line/ações
+> em lote), o projeto agora está **implantado em produção na Vercel**
+> (`https://prospecta-finance.vercel.app`, repo `github.com/fhildebrando-lfsh/PROSPECTA-Finance`)
+> e o convite de membro ganhou um botão de compartilhar por WhatsApp (link `wa.me`, sem API
+> paga). Ver seção "Estado do Git" — HEAD `92d8035`, working tree limpo (exceto um arquivo
+> de códigos de recuperação 2FA que **nunca deve ser commitado**, ver seção 22).
 
 ---
 
@@ -46,7 +49,7 @@ cliente).
 Browser (PWA instalável)
    │
    ▼
-Next.js App Router (Vercel-ready, ainda não deployado)
+Next.js App Router (em produção na Vercel: prospecta-finance.vercel.app)
    ├─ Server Components (a maioria das páginas — leem direto do Prisma)
    ├─ Server Actions ("use server", formulários de Cadastros e lançamento rápido)
    ├─ Route Handlers (/app/api/** — importação, exportação, CRUD de entries)
@@ -91,7 +94,7 @@ PostgreSQL (Supabase, sa-east-1) — RLS habilitada em toda tabela multi-tenant
 | PWA | Serwist (`@serwist/next`, `@serwist/window`, `serwist`) | ^9.5 |
 | Testes | Vitest | ^4.1 |
 | Runtime scripts | `tsx` | ^4.23 |
-| Deploy alvo | Vercel (ainda não configurado) | — |
+| Deploy | Vercel, produção ativa | `prospecta-finance.vercel.app` |
 
 Stack segue exatamente o recomendado em `ESPECIFICACAO-SISTEMA-FINANCEIRO.md` §15, com uma
 diferença: Next.js 16 em vez de 15 (a versão "latest" no momento da Fase 0; a intenção do
@@ -224,8 +227,9 @@ C:\Sistema Financeiro\
 - `revert.ts` — `revertImportBatch()`: reverte um lote (bloqueado se algum lançamento foi editado depois). Usado por `/api/import/:batchId/revert` **e** pela tela de Importar.
 
 ### `lib/workspace/invite.ts`
-- `createInvite()` — cria um `WorkspaceInvite` (e-mail + papel + token opaco). Só TITULAR/admin (checado na action, não na função).
+- `createInvite()` — cria um `WorkspaceInvite` (e-mail + papel + token opaco + telefone opcional, normalizado via `lib/format.ts::toWhatsAppDigits()`). Só TITULAR/admin (checado na action, não na função).
 - `acceptInvite()` — valida token não aceito e **e-mail do perfil logado bate com o e-mail convidado** (senão `ApiError(403)`), cria a `Membership` (ou reaproveita se já existir) numa `$transaction` junto com marcar `acceptedAt`.
+- **Envio continua 100% manual:** o sistema nunca manda e-mail nem WhatsApp sozinho — só gera o link e, se houver telefone, um link `https://wa.me/<telefone>?text=<mensagem>` que abre o WhatsApp com a mensagem pronta pro usuário clicar em enviar. Decisão explícita: uma API paga do WhatsApp Business exigiria conta comercial verificada e aprovação de template pela Meta, fora do escopo (ver seção 21).
 
 ### `lib/auth/session.ts`
 - `getCurrentProfile()` — perfil + memberships, com `cache()` do React (dedup por request).
@@ -237,7 +241,7 @@ C:\Sistema Financeiro\
 
 ### Outros
 - `lib/db/prisma.ts` — singleton do Prisma Client com `PrismaPg` adapter; carrega `.env.local` explicitamente (necessário pros scripts standalone via `tsx`, que não passam pelo carregamento automático do Next).
-- `lib/format.ts` — `formatCurrencyBRL`, `formatDateBR` (Intl pt-BR).
+- `lib/format.ts` — `formatCurrencyBRL`, `formatDateBR` (Intl pt-BR), `toWhatsAppDigits` (normaliza telefone pro link `wa.me`, assume DDI 55 se vierem 10-11 dígitos).
 - `lib/slug.ts` — `slugify()`, implementa o algoritmo exato do §18.3.
 - `lib/api/errors.ts` / `prisma-errors.ts` — `ApiError`, `apiErrorResponse()`, `rethrowFriendly()` (converte violação de unique constraint em mensagem legível).
 - `lib/validation/entry.ts` — schemas Zod `createEntrySchema`/`updateEntrySchema`, `parseIsoDate`.
@@ -329,7 +333,8 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
 - `Profile` (espelha `auth.users`, `is_platform_admin` global)
 - `Workspace`, `Membership` (`role`: TITULAR/MEMBRO/LEITURA)
 - `WorkspaceInvite` (convite pra um workspace existente: `email`, `role`, `token` único,
-  `acceptedAt` nullable — ver `lib/workspace/invite.ts`)
+  `phone` nullable (só dígitos com DDI, pro botão "Enviar por WhatsApp"), `acceptedAt`
+  nullable — ver `lib/workspace/invite.ts`)
 
 **Taxonomia (global, não por workspace)**
 - `EntryNature` (enum fixo no código: RECEITA/DESPESA/INVESTIMENTO/OUTRO — nunca tabela)
@@ -366,6 +371,7 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
 3. `20260730131325_nature_labels` — `NatureLabel`.
 4. `20260730160517_subcategory_archive_export_log` — `Subcategory.isActive`, `ExportLog`.
 5. `20260730172238_workspace_invites` — `WorkspaceInvite`.
+6. `20260730194550_workspace_invite_phone` — `WorkspaceInvite.phone`.
 
 **SQL manual (não gerenciado pelo Prisma, aplicado via `prisma db execute --file`):**
 - `001_auth_and_rls.sql` — FK profiles→auth.users, trigger de signup, RLS Fase 0.
@@ -411,7 +417,7 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
 | §13 | Tela Compromissos: vencidos/hoje/próximos 7/próximos 30 dias, marcar pago/recebido em 1 clique | `app/(app)/compromissos/*`, `lib/entries/settle.ts` |
 | §13 | Lançamentos: seleção múltipla (excluir em lote, marcar pago/recebido em lote) e edição in-line (descrição, categoria, subcategoria, responsável, situação, vencimento, valor) — **só no desktop** (≥768px); mobile continua somente leitura, decisão de escopo desta rodada | `app/(app)/lancamentos/EntriesTable.tsx` |
 | §18.1 | Reverter importação: botão por lote na tela de Importar | `app/(app)/lancamentos/importar/*`, `lib/import/revert.ts` |
-| §19.1 | Convidar membro pra workspace existente: TITULAR/admin gera link de convite com token; quem aceita precisa estar logado com o e-mail exato do convite | `app/(app)/cadastros/membros/*`, `app/(app)/convite/[token]/*`, `lib/workspace/invite.ts` |
+| §19.1 | Convidar membro pra workspace existente: TITULAR/admin gera link de convite com token (+ botão opcional "Enviar por WhatsApp" via `wa.me` se o telefone for informado); quem aceita precisa estar logado com o e-mail exato do convite | `app/(app)/cadastros/membros/*`, `app/(app)/convite/[token]/*`, `lib/workspace/invite.ts` |
 
 ---
 
@@ -535,6 +541,15 @@ Todas em `.env.local` (gitignored, nunca commitado, nunca colado em chat):
 
 Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
 
+**Deploy em produção:** Vercel, projeto `prospecta-finance`, branch `master` do repositório
+`github.com/fhildebrando-lfsh/PROSPECTA-Finance` (push nessa branch redeploya
+automaticamente). URL: `https://prospecta-finance.vercel.app`. As 4 variáveis acima estão
+configuradas em Project Settings → Environment Variables na Vercel (mesmos valores do
+`.env.local`, apontando pro **mesmo banco Supabase** usado em desenvolvimento local — não há
+banco de produção separado ainda). No Supabase, Authentication → URL Configuration tem
+`Site URL` e `Redirect URLs` apontando pra essa mesma URL da Vercel (necessário pro link de
+confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localhost`).
+
 ---
 
 ## 20. Convenções de código adotadas
@@ -589,6 +604,8 @@ Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
 | Edição in-line e ações em lote só existem na tabela desktop (`EntriesTable`); os cards mobile continuam somente leitura | Escopo desta rodada: seleção múltipla e forms de edição densos não cabem bem no layout de card; a tela de Compromissos já cobre a ação mobile mais comum (marcar pago/recebido). Reavaliar se o uso real (30 dias) mostrar necessidade. |
 | `redirectTo` via query string, validado no server (`login()` só aceita caminho relativo começando com `/` e não `//`) | Permite abrir um link de convite sem estar logado e continuar direto pra ele após o login, sem introduzir open redirect (destino arbitrário controlado por quem gera a URL). |
 | Origin do link de convite resolvido no Server Component via headers `x-forwarded-proto`/`host`, não `window.location` no client | Evita mismatch de hidratação (SSR não tem acesso a `window`) — o padrão de projeto até agora era client component só cuidar de interatividade, nunca de dado que o server já tem como calcular. |
+| Botão "Enviar por WhatsApp" usa link `wa.me` (usuário clica em enviar dentro do próprio WhatsApp) em vez de envio automático via API do WhatsApp Business | Pedido do usuário após relatar que o e-mail do convite "não chegou" (na real, o sistema nunca mandou e-mail — mal-entendido esclarecido). Envio automático de verdade exigiria conta comercial verificada + aprovação de template pela Meta + custo por mensagem — infraestrutura que não existe e está fora do escopo pedido; o link `wa.me` entrega o essencial (mensagem e link prontos) sem nenhuma dependência nova. |
+| `next build --webpack` (produção) roda separado do `next dev` (Turbopack) — bug do `useSearchParams()` sem `Suspense` na página de login só aparece no build de produção, nunca em dev | Descoberto ao rodar `npm run build` localmente antes do primeiro deploy na Vercel — se não fosse pego antes, o build teria falhado direto na Vercel. Lição: sempre rodar `npm run build` local antes de um deploy novo, não confiar só em `next dev` funcionando. |
 
 ---
 
@@ -625,7 +642,19 @@ Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
    chave composta (`nature_slug`, `workspaceId_profileId`) e a forma dos dados, mas **um
    teste manual logado como Felipe é recomendado antes de considerar esta rodada
    totalmente confiável**, em especial o fluxo de convite (item 2) e a edição in-line de
-   valor com inversão de sinal (seção 21).
+   valor com inversão de sinal (seção 21). **Atualização:** o convite de membro já foi
+   testado manualmente por Felipe em produção (gerou um convite de verdade, viu aparecer
+   em "Convites pendentes") — falta só alguém aceitar de fato pra fechar o ciclo completo.
+7. **Desenvolvimento e produção usam o mesmo banco Supabase** (não há banco separado pra
+   produção ainda) — rodar `npm run dev` local e testar coisas continua escrevendo nos
+   mesmos dados que o site em produção usa. Tomar cuidado extra com testes/seeds locais
+   depois que uso real começar; considerar um projeto Supabase separado pra produção se
+   isso virar um problema.
+8. **Um arquivo `recovery-codes.txt` apareceu na raiz do projeto em 2026-07-30** (parecem
+   códigos de recuperação 2FA de GitHub/Vercel) — **nunca foi commitado** (excluído
+   manualmente do `git add` de propósito) e o usuário foi avisado pra mover pra um lugar
+   seguro fora do repositório. Se esse arquivo ainda existir numa sessão futura, não
+   commitar em hipótese nenhuma e lembrar o usuário de novo.
 
 ---
 
@@ -666,17 +695,25 @@ Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
   workspace existente, edição in-line + ações em lote em Lançamentos (desktop). Ver
   seção 11 e "Problemas conhecidos" #6 (verificado só por tipos/lint/testes, não por
   navegação logada real).
+- ✅ **Deploy em produção na Vercel** (`prospecta-finance.vercel.app`) — primeiro deploy
+  real do projeto. Corrigido um bug de build (Suspense boundary faltando em
+  `useSearchParams()` na página de login) que só aparecia em `next build`, não em `next dev`.
+- ✅ **Convite por WhatsApp:** campo telefone opcional no convite de membro + botão "Enviar
+  por WhatsApp" (link `wa.me` com mensagem pronta, sem API paga).
 
 ## 25. Funcionalidades em andamento
 
-Nenhuma no momento. A rodada da seção 24 (Conversa 6) foi concluída, verificada
-(typecheck, lint, 113 testes) e commitada (ver seção 26). Não há trabalho pendente no
-working tree.
+Nenhuma no momento. Tudo da seção 24 foi verificado (typecheck, lint, 113 testes, build de
+produção local) e commitado/pushado (ver seção 26). Não há trabalho pendente no working tree
+(exceto o `recovery-codes.txt` — ver "Problemas conhecidos" #8 — que nunca deve ser
+commitado).
 
 ## 26. Estado do Git
 
 ```
-310023b Fase 1: fecha pontas soltas (Compromissos, reverter importacao, transferencia, convite de membro, edicao in-line)   <- HEAD
+92d8035 Adiciona envio de convite por WhatsApp (link wa.me com mensagem pronta)   <- HEAD / origin/master
+5db6f57 Corrige prontidao pro deploy: Suspense boundary no login, config de preview de producao, lint ignora sw.js gerado
+a389222 Fase 1: fecha pontas soltas (Compromissos, reverter importacao, transferencia, convite de membro, edicao in-line)
 640d4f6 Fase 1 / Conversa 5: permissoes, exportacao e responsividade/PWA
 175677b Fase 1 / Conversa 4: lancamento rapido e painel
 72756da Fase 1 / Conversa 3: lancamentos, importador de CSV e Cadastros
@@ -684,32 +721,39 @@ working tree.
 5189b78 Fase 0 (Fundacao): Next.js + Prisma + Supabase Auth/RLS + seed da taxonomia
 ```
 
-Working tree limpo no momento desta atualização (nada pendente de commit) — a migration
-`20260730172238_workspace_invites` e o SQL `006_workspace_invites_rls.sql` já estão
-aplicados no banco Supabase de desenvolvimento e commitados junto com o código. Ainda
-assim, numa nova sessão, rode `git status` primeiro pra confirmar — se houver algo
-modificado, é trabalho que talvez tenha ficado pela metade, investigue antes de assumir que
-é seguro descartar. **Nunca commitar sem o usuário pedir explicitamente**, mesmo que seja
-seguro sugerir ao final de cada rodada (ele tem pedido isso todas as vezes até agora).
+**Remote configurado:** `origin` → `https://github.com/fhildebrando-lfsh/PROSPECTA-Finance.git`,
+branch `master` — este é o repositório real conectado à Vercel (push em `master` redeploya
+automaticamente). Working tree limpo no momento desta atualização (nada pendente de commit,
+exceto o `recovery-codes.txt` intencionalmente nunca adicionado). As migrations
+`20260730172238_workspace_invites` e `20260730194550_workspace_invite_phone`, e os SQLs
+`006_workspace_invites_rls.sql`, já estão aplicados no banco Supabase (o mesmo usado em dev
+e produção — ver "Problemas conhecidos" #7) e commitados junto com o código. Numa nova
+sessão, rode `git status` e `git log --oneline -5` primeiro pra confirmar o estado real —
+nunca confiar cegamente num hash hardcoded aqui. **Nunca commitar ou dar push sem o usuário
+pedir explicitamente**, mesmo que pareça óbvio (ele tem pedido isso todas as vezes até
+agora, inclusive o push real pro GitHub).
 
 ## 27. Próximos passos recomendados
 
-As 5 pontas soltas da Fase 1 que o usuário escolheu fechar antes de seguir pra Fase 2 (ver
-seção 24) estão concluídas e commitadas (`310023b`). Seguindo `GUIA-DE-INICIO.md`, o guia
-recomenda **30 dias de uso real antes de qualquer funcionalidade nova de Fase 2**:
+As 5 pontas soltas da Fase 1 (seção 24) e o primeiro deploy em produção estão concluídos.
+Seguindo `GUIA-DE-INICIO.md`, o guia recomenda **30 dias de uso real antes de qualquer
+funcionalidade nova de Fase 2**:
 
-1. Deploy na Vercel (nunca feito) — precisa de conta GitHub + Vercel conectadas, e
-   variáveis de ambiente configuradas lá (mesmas de `.env.local`).
-2. Uso real por Felipe e a esposa — agora com o fluxo de convite pronto, mas **não testado
-   ponta-a-ponta** (ver "Problemas conhecidos" #2 e #6). Recomenda-se um teste manual
-   logado antes de depender disso pra convidar alguém de verdade.
-3. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
+1. Configurar Supabase Authentication → URL Configuration com a URL da Vercel (Site
+   URL + Redirect URLs) — **já feito** pelo usuário em 2026-07-30.
+2. Uso real por Felipe e a esposa — o fluxo de convite já foi gerado uma vez em produção
+   (apareceu em "Convites pendentes"), mas **ninguém aceitou um convite ainda** (ver
+   "Problemas conhecidos" #6). Recomenda-se fechar esse ciclo completo antes de confiar
+   nele.
+3. Mover `recovery-codes.txt` pra um lugar seguro fora da pasta do projeto (ver
+   "Problemas conhecidos" #8).
+4. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
 
 Se o usuário pedir pra continuar com funcionalidades novas antes disso, não há mais
 candidatos óbvios de "backend pronto, só falta UI" — o próximo passo de código seria
 Fase 2 (analítico mensal, parceladas, balanço anual, orçamento, fluxo projetado, OFX) ou
 endereçar os itens da seção 12/22 (mapeamento de importação salvável, .xlsx no import,
-seletor de workspace, arquivar `Person`).
+seletor de workspace, arquivar `Person`, banco de produção separado).
 
 ## 28. Checklist atualizado do projeto
 
@@ -724,10 +768,16 @@ seletor de workspace, arquivar `Person`).
 - [x] Edição in-line / ações em lote em Lançamentos (desktop)
 - [x] UI de transferência entre carteiras
 - [x] Convidar membro pra workspace existente (não testado ponta-a-ponta, ver seção 22)
-- [x] Commit do trabalho da Conversa 6 (`310023b`)
-- [ ] Deploy em produção (Vercel)
-- [ ] Teste manual logado da rodada da Conversa 6 (login exige senha, fora do alcance do assistente)
+- [x] Commit do trabalho da Conversa 6 (`a389222`)
+- [x] Deploy em produção (Vercel) — `prospecta-finance.vercel.app`, repo
+      `github.com/fhildebrando-lfsh/PROSPECTA-Finance`
+- [x] Convite por WhatsApp (link `wa.me`) — commit `92d8035`
+- [x] Configurar Supabase Auth URL Configuration com a URL da Vercel
+- [ ] Mover `recovery-codes.txt` pra fora da pasta do projeto
+- [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
+      in-line com inversão de sinal) — login exige senha, fora do alcance do assistente
 - [ ] 30 dias de uso real
+- [ ] Banco Supabase separado pra produção (hoje dev e prod compartilham o mesmo)
 - [ ] Fase 2 (relatórios: analítico, parceladas, balanço anual, orçamento, fluxo projetado, OFX)
 - [ ] Fase 3 (patrimônio, dívidas, metas, Open Finance)
 - [ ] Fase 4 (consultoria multi-workspace)
