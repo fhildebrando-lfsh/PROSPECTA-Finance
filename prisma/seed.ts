@@ -187,12 +187,32 @@ async function seedInstitutions() {
   console.log(`institutions: ${names.length}`);
 }
 
+async function seedNatureLabels() {
+  const defaults: Record<string, string> = {
+    RECEITA: "Receita",
+    DESPESA: "Despesa",
+    INVESTIMENTO: "Investimento",
+    OUTRO: "Outro",
+  };
+
+  for (const [rawCode, labelPt] of Object.entries(defaults)) {
+    const code = parseNature(rawCode);
+    await prisma.natureLabel.upsert({
+      where: { code },
+      create: { code, labelPt },
+      update: {}, // não sobrescreve se o admin já renomeou
+    });
+  }
+  console.log(`nature_labels: ${Object.keys(defaults).length}`);
+}
+
 async function main() {
   await seedWalletKinds();
   await seedStatuses();
   await seedRecurrenceKinds();
   await seedTaxonomia();
   await seedInstitutions();
+  await seedNatureLabels();
 }
 
 main()

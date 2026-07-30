@@ -23,3 +23,15 @@ export function derivedStatus(
   if (entry.status === "A_RECEBER") return `a receber em ${days} dias`;
   return `a pagar em ${days} dias`;
 }
+
+export type EntryUrgency = "settled" | "upcoming" | "overdue";
+
+/**
+ * Classificação grosseira do mesmo cálculo de `derivedStatus`, pensada
+ * pra UI decidir cor de linha em vez de mostrar texto: liquidado fica
+ * discreto, a vencer é neutro, atrasado precisa chamar atenção de verdade.
+ */
+export function entryUrgency(entry: { status: EntryStatus; dueDate: Date }, today: Date = new Date()): EntryUrgency {
+  if (OK_STATUSES.has(entry.status)) return "settled";
+  return daysBetween(today, entry.dueDate) < 0 ? "overdue" : "upcoming";
+}

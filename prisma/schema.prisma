@@ -40,6 +40,9 @@ model Workspace {
   people        Person[]
   wallets       Wallet[]
   subcategories Subcategory[]
+  entryGroups   EntryGroup[]
+  entries       Entry[]
+  importBatches ImportBatch[]
 
   @@map("workspaces")
 }
@@ -68,11 +71,23 @@ model Membership {
 // Taxonomia (§7) — global, editada só por administrador (§20).
 // ---------------------------------------------------------------------------
 
+/// As 4 naturezas continuam fixas no código — todo cálculo de /lib/finance
+/// assume exatamente estas 4 (§20: "todo cálculo depende delas, fixas no
+/// código"). Só o RÓTULO exibido é editável pelo admin, via NatureLabel.
 enum EntryNature {
   RECEITA
   DESPESA
   INVESTIMENTO
   OUTRO
+}
+
+/// Rótulo de exibição de cada natureza — a única parte de "Tipo" que o
+/// admin pode editar. A natureza em si (as 4 chaves) não muda.
+model NatureLabel {
+  code    EntryNature @id
+  labelPt String      @map("label_pt")
+
+  @@map("nature_labels")
 }
 
 model Category {
@@ -86,11 +101,17 @@ model Category {
   createdAt DateTime    @default(now()) @map("created_at")
 
   subcategories Subcategory[]
+  entries       Entry[]
 
   @@unique([nature, slug])
   @@map("categories")
 }
 
+/// [ATUALIZADO A PEDIDO DO USUÁRIO] Subcategoria virou admin-only, igual
+/// Categoria — a versão original do §20 previa edição pelo cliente, mas
+/// isso mudou. workspaceId continua existindo no schema (nunca é mais
+/// preenchido por um titular/membro agora, só por admin se quiser algo
+/// específico de um workspace) para não travar essa opção no futuro.
 model Subcategory {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   categoryId  String   @map("category_id") @db.Uuid
@@ -104,6 +125,7 @@ model Subcategory {
 
   category  Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries   Entry[]
 
   @@unique([categoryId, workspaceId, slug])
   @@map("subcategories")
@@ -158,6 +180,7 @@ model Wallet {
   institution  Institution? @relation(fields: [institutionId], references: [id])
   linkedWallet Wallet?      @relation("WalletLink", fields: [linkedWalletId], references: [id])
   linkedFrom   Wallet[]     @relation("WalletLink")
+  entries      Entry[]
 
   @@unique([workspaceId, slug])
   @@map("wallets")
@@ -176,6 +199,7 @@ model Person {
   createdAt   DateTime @default(now()) @map("created_at")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries   Entry[]
 
   @@unique([workspaceId, slug])
   @@map("people")
@@ -191,6 +215,8 @@ model Status {
   labelPt         String  @map("label_pt")
   countsAsSettled Boolean @map("counts_as_settled")
 
+  entries Entry[]
+
   @@map("statuses")
 }
 
@@ -199,5 +225,115 @@ model RecurrenceKind {
   legacyLabel    String? @map("legacy_label")
   intervalMonths Int     @map("interval_months")
 
+  entries Entry[]
+
   @@map("recurrence_kinds")
+}
+
+// ---------------------------------------------------------------------------
+// Lançamentos (§8) — Conversa 3.
+// ---------------------------------------------------------------------------
+
+/// §8.4 — um compromisso financeiro que atravessa meses (parcelas de um
+/// financiamento, ocorrências de uma assinatura). group_id é atribuído
+/// automaticamente na criação, nunca digitado.
+model EntryGroup {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries   Entry[]
+
+  @@map("entry_groups")
+}
+
+/// §8.1 — a entidade central do sistema.
+model Entry {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Preservado para uma eventual migração histórica futura — o importador
+  /// atual (§18) não popula este campo, pois não há migração do legado (§18).
+  legacyId    Int?    @map("legacy_id")
+  workspaceId String  @map("workspace_id") @db.Uuid
+  groupId     String? @map("group_id") @db.Uuid
+
+  /// Compra — fato gerador.
+  transactionDate DateTime  @map("transaction_date") @db.Date
+  /// Vence — liquidação.
+  dueDate         DateTime  @map("due_date") @db.Date
+  /// [MELHORIA] data efetiva da liquidação.
+  settledAt       DateTime? @map("settled_at") @db.Date
+
+  walletId      String      @map("wallet_id") @db.Uuid
+  nature        EntryNature
+  categoryId    String      @map("category_id") @db.Uuid
+  subcategoryId String?     @map("subcategory_id") @db.Uuid
+  description   String
+  responsibleId String      @map("responsible_id") @db.Uuid
+  /// Com sinal — despesa negativa, receita positiva (§8.3).
+  amount        Decimal     @db.Decimal(14, 2)
+
+  recurrenceCode        String  @map("recurrence_code")
+  installmentNumber     Int?    @map("installment_number")
+  installmentTotal      Int?    @map("installment_total")
+  /// §6.4 — substituem os marcadores Patrimônio/Previsão da recorrência da planilha.
+  isPatrimonio          Boolean @default(false) @map("is_patrimonio")
+  isProjecao            Boolean @default(false) @map("is_projecao")
+  /// §6.4 — preserva o rótulo original da planilha para rastreabilidade.
+  legacyRecurrenceLabel String? @map("legacy_recurrence_label")
+
+  statusCode String @map("status_code")
+
+  note String?  @map("note")
+  /// Substitui a coluna "Organização" da planilha — array de tags livres (§8.1).
+  tags String[] @default([])
+
+  /// Quando preenchido, manda sobre a regra automática fixa×variável (§11.7).
+  isFixedOverride Boolean? @map("is_fixed_override")
+
+  /// Liga as duas linhas de uma transferência (§10 R5). Nulo para lançamentos normais.
+  transferId String? @map("transfer_id") @db.Uuid
+
+  /// Preenchido só quando o lançamento nasceu de uma importação de CSV (§18.1).
+  importBatchId String? @map("import_batch_id") @db.Uuid
+
+  createdBy String   @map("created_by") @db.Uuid
+  updatedBy String   @map("updated_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  group       EntryGroup?    @relation(fields: [groupId], references: [id])
+  wallet      Wallet         @relation(fields: [walletId], references: [id])
+  category    Category       @relation(fields: [categoryId], references: [id])
+  subcategory Subcategory?   @relation(fields: [subcategoryId], references: [id])
+  responsible Person         @relation(fields: [responsibleId], references: [id])
+  recurrence  RecurrenceKind @relation(fields: [recurrenceCode], references: [code])
+  status      Status         @relation(fields: [statusCode], references: [code])
+  importBatch ImportBatch?   @relation(fields: [importBatchId], references: [id])
+
+  @@index([workspaceId, dueDate])
+  @@index([workspaceId, walletId])
+  @@index([groupId])
+  @@index([transferId])
+  @@map("entries")
+}
+
+/// §18.1 — um lote importado. Revertível com 1 clique enquanto nenhum dos
+/// lançamentos do lote tiver sido editado depois (checado em código:
+/// updated_at ainda igual a created_at).
+model ImportBatch {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId      String    @map("workspace_id") @db.Uuid
+  originalFilename String    @map("original_filename")
+  importedCount    Int       @map("imported_count")
+  errorCount       Int       @map("error_count")
+  createdBy        String    @map("created_by") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at")
+  revertedAt       DateTime? @map("reverted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries   Entry[]
+
+  @@map("import_batches")
 }

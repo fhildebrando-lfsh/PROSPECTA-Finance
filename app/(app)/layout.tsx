@@ -1,5 +1,12 @@
+import Link from "next/link";
 import { requireProfile } from "@/lib/auth/session";
 import { logout } from "./actions";
+
+const NAV_ITEMS = [
+  { href: "/painel", label: "Painel" },
+  { href: "/lancamentos", label: "Lançamentos" },
+  { href: "/cadastros", label: "Cadastros" },
+];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
@@ -8,15 +15,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
-        <div>
-          <p className="text-sm font-medium text-zinc-100">
-            {primaryMembership?.workspace.name ?? "Sem workspace"}
-          </p>
-          <p className="text-xs text-zinc-500">
-            {profile.email}
-            {primaryMembership ? ` · ${primaryMembership.role}` : ""}
-            {profile.isPlatformAdmin ? " · admin" : ""}
-          </p>
+        <div className="flex items-center gap-6">
+          <div>
+            <p className="text-sm font-medium text-zinc-100">
+              {primaryMembership?.workspace.name ?? "Sem workspace"}
+            </p>
+            <p className="text-xs text-zinc-500">
+              {profile.email}
+              {primaryMembership ? ` · ${primaryMembership.role}` : ""}
+              {profile.isPlatformAdmin ? " · admin" : ""}
+            </p>
+          </div>
+          <nav className="flex gap-4">
+            {NAV_ITEMS.map((item) => (
+              <Link key={item.href} href={item.href} className="text-sm text-zinc-400 hover:text-zinc-100">
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         </div>
         <form action={logout}>
           <button type="submit" className="text-sm text-zinc-400 hover:text-zinc-200">

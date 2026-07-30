@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { derivedStatus } from "@/lib/finance/derived";
+import { derivedStatus, entryUrgency } from "@/lib/finance/derived";
 
 const today = new Date(Date.UTC(2026, 5, 15)); // 15/jun/2026
 
@@ -33,5 +33,23 @@ describe("derivedStatus (§10 R3)", () => {
 
   it("due_date igual a hoje não é vencido -> a pagar em 0 dias", () => {
     expect(derivedStatus({ status: "A_PAGAR", dueDate: today }, today)).toBe("a pagar em 0 dias");
+  });
+});
+
+describe("entryUrgency (classificação pra cor de linha na UI)", () => {
+  it("liquidado -> settled", () => {
+    expect(entryUrgency({ status: "PAGO", dueDate: new Date(Date.UTC(2020, 0, 1)) }, today)).toBe("settled");
+  });
+
+  it("a vencer no futuro -> upcoming", () => {
+    expect(entryUrgency({ status: "A_PAGAR", dueDate: new Date(Date.UTC(2026, 5, 20)) }, today)).toBe("upcoming");
+  });
+
+  it("vencido -> overdue", () => {
+    expect(entryUrgency({ status: "A_PAGAR", dueDate: new Date(Date.UTC(2026, 5, 10)) }, today)).toBe("overdue");
+  });
+
+  it("hoje ainda não é overdue", () => {
+    expect(entryUrgency({ status: "A_PAGAR", dueDate: today }, today)).toBe("upcoming");
   });
 });

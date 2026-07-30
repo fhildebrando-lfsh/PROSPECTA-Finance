@@ -2,6 +2,8 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
+import { ApiError } from "@/lib/api/errors";
+import type { MembershipRole } from "@/app/generated/prisma/enums";
 
 /**
  * Perfil + memberships do usuário logado, derivados sempre da sessão do
@@ -39,4 +41,49 @@ export async function requireWorkspaceId() {
     );
   }
   return membership.workspaceId;
+}
+
+/**
+ * Variante para API Route Handlers: `redirect()` do next/navigation não
+ * funciona ali (não faz parte da árvore de render), então erros viram
+ * ApiError e a rota decide o status HTTP.
+ */
+export async function requireApiWorkspaceMembership(): Promise<{
+  profileId: string;
+  isPlatformAdmin: boolean;
+  workspaceId: string;
+  role: MembershipRole;
+}> {
+  const profile = await getCurrentProfile();
+  if (!profile) throw new ApiError(401, "Não autenticado.");
+
+  const membership = profile.memberships[0];
+  if (!membership) throw new ApiError(403, "Usuário sem workspace.");
+
+  return {
+    profileId: profile.id,
+    isPlatformAdmin: profile.isPlatformAdmin,
+    workspaceId: membership.workspaceId,
+    role: membership.role,
+  };
+}
+
+/** §20 — LEITURA só consulta; TITULAR/MEMBRO e admin podem escrever. */
+export function assertCanWrite(role: MembershipRole, isPlatformAdmin: boolean) {
+  if (isPlatformAdmin) return;
+  if (role === "LEITURA") {
+    throw new ApiError(403, "Seu papel é somente leitura.");
+  }
+}
+
+/** §20 — Categoria e Subcategoria são admin-only. Para usar em server actions. */
+export function assertIsAdmin(isPlatformAdmin: boolean) {
+  if (!isPlatformAdmin) throw new ApiError(403, "Só o administrador pode editar isso.");
+}
+
+/** Variante para Server Components (páginas admin-only inteiras). */
+export async function requireAdminProfile() {
+  const profile = await requireProfile();
+  if (!profile.isPlatformAdmin) redirect("/painel");
+  return profile;
 }
