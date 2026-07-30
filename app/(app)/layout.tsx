@@ -5,6 +5,7 @@ import { logout } from "./actions";
 const NAV_ITEMS = [
   { href: "/painel", label: "Painel" },
   { href: "/lancamentos", label: "Lançamentos" },
+  { href: "/compromissos", label: "Compromissos" },
   { href: "/cadastros", label: "Cadastros" },
 ];
 

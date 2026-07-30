@@ -7,6 +7,7 @@ const TABS = [
   { href: "/cadastros/categorias", label: "Categorias" },
   { href: "/cadastros/subcategorias", label: "Subcategorias" },
   { href: "/cadastros/tipos", label: "Tipos" },
+  { href: "/cadastros/membros", label: "Membros" },
 ];
 
 export default async function CadastrosLayout({ children }: { children: React.ReactNode }) {

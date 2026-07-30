@@ -6,6 +6,7 @@ import { entryUrgency } from "@/lib/finance/derived";
 import type { EntryStatus } from "@/lib/finance/types";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { recurrenceLabel } from "@/lib/entries/recurrence-label";
+import { EntriesTable, type EntryRow } from "./EntriesTable";
 
 interface SearchParams {
   from?: string;
@@ -59,7 +60,7 @@ export default async function LancamentosPage({
   if (params.nature) where.nature = params.nature as Prisma.EnumEntryNatureFilter["equals"];
   if (params.q) where.description = { contains: params.q, mode: "insensitive" };
 
-  const [entries, wallets, natureLabels] = await Promise.all([
+  const [entries, wallets, natureLabels, categories, subcategories, people, statuses] = await Promise.all([
     prisma.entry.findMany({
       where,
       include: {
@@ -75,11 +76,44 @@ export default async function LancamentosPage({
     }),
     prisma.wallet.findMany({ where: { workspaceId }, orderBy: { name: "asc" } }),
     prisma.natureLabel.findMany(),
+    prisma.category.findMany({ orderBy: [{ nature: "asc" }, { sortOrder: "asc" }] }),
+    prisma.subcategory.findMany({ where: { workspaceId: null }, orderBy: { name: "asc" } }),
+    prisma.person.findMany({ where: { workspaceId }, orderBy: { name: "asc" } }),
+    prisma.status.findMany(),
   ]);
 
   const natureLabelByCode = new Map(natureLabels.map((n) => [n.code, n.labelPt]));
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  const rows: EntryRow[] = entries.map((entry) => {
+    const urgency = entryUrgency({ status: entry.statusCode as EntryStatus, dueDate: entry.dueDate }, today);
+    return {
+      id: entry.id,
+      transactionDateFormatted: formatDateBR(entry.transactionDate),
+      dueDateIso: entry.dueDate.toISOString().slice(0, 10),
+      dueDateFormatted: formatDateBR(entry.dueDate),
+      walletName: entry.wallet.name,
+      nature: entry.nature,
+      natureLabel: natureLabelByCode.get(entry.nature) ?? entry.nature,
+      categoryId: entry.categoryId,
+      categoryName: entry.category.name,
+      subcategoryId: entry.subcategoryId ?? "",
+      subcategoryName: entry.subcategory?.name ?? "",
+      description: entry.description,
+      responsibleId: entry.responsibleId,
+      responsibleName: entry.responsible.name,
+      amountAbs: entry.amount.abs().toFixed(2),
+      isNegative: entry.amount.isNegative(),
+      amountFormatted: formatCurrencyBRL(entry.amount),
+      amountClass: AMOUNT_CLASS(entry.amount),
+      recurrenceLabel: recurrenceLabel(entry),
+      statusCode: entry.statusCode,
+      situacaoLabel: situacaoLabel(urgency, entry.status.labelPt),
+      situacaoClass: SITUACAO_CLASS[urgency],
+      rowClass: URGENCY_ROW_CLASS[urgency],
+    };
+  });
 
   const exportQuery = (format: "csv" | "xlsx") => {
     const qs = new URLSearchParams({ format });
@@ -111,6 +145,12 @@ export default async function LancamentosPage({
           >
             Exportar XLSX
           </a>
+          <Link
+            href="/lancamentos/transferir"
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+          >
+            Transferir
+          </Link>
           <Link
             href="/lancamentos/importar"
             className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-amber-400"
@@ -181,56 +221,14 @@ export default async function LancamentosPage({
         </span>
       </div>
 
-      {/* §21 — abaixo de 768px a tabela densa vira cards; acima, tabela normal. */}
-      <div className="hidden overflow-x-auto rounded-xl border border-zinc-300 bg-zinc-50 md:block">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-100 text-left text-zinc-600">
-            <tr>
-              <th className="px-3 py-2 font-medium">Compra</th>
-              <th className="px-3 py-2 font-medium">Vence</th>
-              <th className="px-3 py-2 font-medium">Carteira</th>
-              <th className="px-3 py-2 font-medium">Tipo</th>
-              <th className="px-3 py-2 font-medium">Categoria</th>
-              <th className="px-3 py-2 font-medium">Subcategoria</th>
-              <th className="px-3 py-2 font-medium">Descrição</th>
-              <th className="px-3 py-2 font-medium">Responsável</th>
-              <th className="px-3 py-2 text-right font-medium">Valor</th>
-              <th className="px-3 py-2 font-medium">Recorrência</th>
-              <th className="px-3 py-2 font-medium">Situação</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry) => {
-              const urgency = entryUrgency(
-                { status: entry.statusCode as EntryStatus, dueDate: entry.dueDate },
-                today,
-              );
-              return (
-                <tr key={entry.id} className={`border-t border-zinc-200 ${URGENCY_ROW_CLASS[urgency]}`}>
-                  <td className="whitespace-nowrap px-3 py-2 font-mono tabular-nums">
-                    {formatDateBR(entry.transactionDate)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 font-mono tabular-nums">{formatDateBR(entry.dueDate)}</td>
-                  <td className="px-3 py-2">{entry.wallet.name}</td>
-                  <td className="px-3 py-2">{natureLabelByCode.get(entry.nature) ?? entry.nature}</td>
-                  <td className="px-3 py-2">{entry.category.name}</td>
-                  <td className="px-3 py-2">{entry.subcategory?.name ?? "—"}</td>
-                  <td className="px-3 py-2">{entry.description}</td>
-                  <td className="px-3 py-2">{entry.responsible.name}</td>
-                  <td className={`whitespace-nowrap px-3 py-2 text-right font-mono tabular-nums ${AMOUNT_CLASS(entry.amount)}`}>
-                    {formatCurrencyBRL(entry.amount)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">{recurrenceLabel(entry)}</td>
-                  <td className={`whitespace-nowrap px-3 py-2 ${SITUACAO_CLASS[urgency]}`}>
-                    {situacaoLabel(urgency, entry.status.labelPt)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {entries.length === 0 && <p className="p-4 text-sm text-zinc-500">Nenhum lançamento encontrado.</p>}
-      </div>
+      {/* §21 — abaixo de 768px a tabela densa vira cards; acima, tabela normal (edição em linha + ações em lote só no desktop). */}
+      <EntriesTable
+        entries={rows}
+        categories={categories.map((c) => ({ id: c.id, nature: c.nature, name: c.name }))}
+        subcategories={subcategories.map((s) => ({ id: s.id, categoryId: s.categoryId, name: s.name }))}
+        people={people.map((p) => ({ id: p.id, name: p.name }))}
+        statuses={statuses.map((s) => ({ code: s.code, label: s.labelPt }))}
+      />
 
       <div className="flex flex-col gap-2 md:hidden">
         {entries.map((entry) => {

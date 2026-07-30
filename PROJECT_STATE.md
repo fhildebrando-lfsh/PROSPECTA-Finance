@@ -6,8 +6,10 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização:** 2026-07-30, logo após o commit da Conversa 5 (permissões,
-> exportação, responsividade). Working tree limpo — ver seção "Estado do Git".
+> **Última atualização:** 2026-07-30, após concluir as 5 pontas soltas da Fase 1
+> (Conversa 6, ainda sem nome oficial no guia): Compromissos, reverter importação,
+> transferência entre carteiras, convidar membro, edição in-line/ações em lote. Ver seção
+> "Estado do Git" — trabalho ainda **não commitado** nesta atualização.
 
 ---
 
@@ -118,7 +120,8 @@ C:\Sistema Financeiro\
 │   │   ├── 002_drop_cross_schema_fk.sql  # correção de incidente, ver seção 19
 │   │   ├── 003_entries_rls.sql           # RLS de entries/entry_groups/import_batches
 │   │   ├── 004_permission_updates.sql    # subcategoria virou admin-only
-│   │   └── 005_export_logs_rls.sql       # RLS de export_logs
+│   │   ├── 005_export_logs_rls.sql       # RLS de export_logs
+│   │   └── 006_workspace_invites_rls.sql # RLS de workspace_invites (convite de membro)
 │   ├── seed.ts                           # seed global (taxonomia, tipos, etc.)
 │   └── seed-workspace.ts                 # seed por workspace (carteiras/responsáveis)
 ├── app/
@@ -133,18 +136,23 @@ C:\Sistema Financeiro\
 │   │   ├── layout.tsx                    # header + nav mobile inferior + botão flutuante +
 │   │   ├── actions.ts                    # logout
 │   │   ├── painel/page.tsx               # dashboard (§11)
+│   │   ├── compromissos/page.tsx         # vencidos/hoje/próximos 7-30 dias, marcar pago (§13)
+│   │   ├── convite/[token]/page.tsx      # aceitar convite pra um workspace existente
 │   │   ├── lancamentos/
-│   │   │   ├── page.tsx                  # tabela/cards de lançamentos + exportar
+│   │   │   ├── page.tsx                  # tabela (edição in-line + seleção em lote) / cards + exportar
+│   │   │   ├── EntriesTable.tsx          # client component: seleção, ações em lote, edição in-line
 │   │   │   ├── novo/                     # lançamento rápido (§12)
-│   │   │   └── importar/page.tsx         # wizard de importação de CSV (§18.1)
-│   │   └── cadastros/                    # carteiras, responsáveis, categorias, subcategorias, tipos
+│   │   │   ├── transferir/               # transferência entre carteiras (§10 R5)
+│   │   │   └── importar/                 # wizard de importação de CSV (§18.1) + reverter lote
+│   │   └── cadastros/                    # carteiras, responsáveis, categorias, subcategorias, tipos, membros
 │   └── api/
 │       ├── entries/                      # CRUD, settle, export, suggest-category
 │       └── import/                       # preview, commit, revert
 ├── lib/
 │   ├── finance/                          # regras puras testadas (Conversa 2), ver seção 12
-│   ├── entries/                          # criação/exportação de lançamentos (server-side)
-│   ├── import/                           # parsing/validação/resolução do importador de CSV
+│   ├── entries/                          # criação/edição/exportação de lançamentos (server-side)
+│   ├── import/                           # parsing/validação/resolução/reversão do importador de CSV
+│   ├── workspace/invite.ts               # criar/aceitar convite pra workspace existente
 │   ├── auth/session.ts                   # toda derivação de sessão/permissão
 │   ├── supabase/                         # clients Supabase (browser/server/middleware)
 │   ├── db/prisma.ts                      # singleton do Prisma Client
@@ -172,6 +180,7 @@ C:\Sistema Financeiro\
 | `lib/entries/` | Ponte entre `lib/finance` (puro) e o banco: cria séries de lançamentos (parcelado/recorrente), monta linhas de exportação. |
 | `lib/import/` | Todo o pipeline do importador de CSV: detecção de cabeçalho, parsing BR, resolução de referências, deduplicação. |
 | `lib/auth/session.ts` | **Único lugar** que deriva workspace/papel/admin da sessão. Toda página e action passa por aqui. |
+| `lib/workspace/invite.ts` | Cria e aceita convite pra um workspace existente (token opaco, sem envio de e-mail próprio). |
 | `lib/supabase/` | Clients Supabase Auth para os três contextos do Next.js (browser, server component, middleware). |
 | `prisma/sql/` | Tudo que o Prisma não consegue expressar em `schema.prisma`: RLS, triggers em `auth.users`. Aplicado manualmente via `prisma db execute --file`. |
 | `seeds/` | Dados de referência extraídos da planilha original — taxonomia, carteiras, responsáveis, tipos, situações, recorrências. Carregados por `prisma/seed.ts` e `prisma/seed-workspace.ts`. |
@@ -197,6 +206,8 @@ C:\Sistema Financeiro\
 
 ### `lib/entries/`
 - `create.ts` — `createEntryOrSeries()`: cria lançamento único, parcelado ou recorrente materializado. Usado por `/api/entries` (POST) **e** pelo lançamento rápido — não duplicar essa lógica.
+- `settle.ts` — `settleEntry()`: A_PAGAR→PAGO / A_RECEBER→RECEBIDO. Usado por `/api/entries/:id/settle` **e** pela tela de Compromissos.
+- `transfer.ts` — `createTransfer()`: resolve a categoria fixa "Transferências" (`nature=OUTRO`, `slug=transferencias`) e cria as duas linhas via `lib/finance/transfer.ts::createTransferPair()` numa `$transaction`. Usado pela tela `/lancamentos/transferir`.
 - `recurrence-label.ts` — reconstrói o texto de Recorrência pra exibição/exportação.
 - `export-row.ts` — mapeia uma `Entry` do Prisma pra uma linha exportável (mesmos headers do importador).
 - `build-csv.ts` / `build-xlsx.ts` — geram os arquivos de exportação (§18.2).
@@ -210,6 +221,11 @@ C:\Sistema Financeiro\
 - `parse-row.ts` — valida uma linha (o que dá pra checar sem banco).
 - `resolve.ts` — resolve carteira/categoria/subcategoria/responsável contra o banco (com suporte a `legacy_name` de carteira) e detecta duplicata.
 - `duplicate-key.ts` — chave de deduplicação (`due_date + amount + description + wallet`).
+- `revert.ts` — `revertImportBatch()`: reverte um lote (bloqueado se algum lançamento foi editado depois). Usado por `/api/import/:batchId/revert` **e** pela tela de Importar.
+
+### `lib/workspace/invite.ts`
+- `createInvite()` — cria um `WorkspaceInvite` (e-mail + papel + token opaco). Só TITULAR/admin (checado na action, não na função).
+- `acceptInvite()` — valida token não aceito e **e-mail do perfil logado bate com o e-mail convidado** (senão `ApiError(403)`), cria a `Membership` (ou reaproveita se já existir) numa `$transaction` junto com marcar `acceptedAt`.
 
 ### `lib/auth/session.ts`
 - `getCurrentProfile()` — perfil + memberships, com `cache()` do React (dedup por request).
@@ -252,9 +268,18 @@ C:\Sistema Financeiro\
 3. E-mail de confirmação enviado pelo Supabase (template **padrão**, não customizado — ver
    seção 19). Ao clicar, a sessão é estabelecida automaticamente via `@supabase/ssr` no
    client (cookies).
-4. **Login:** `login()` → `supabase.auth.signInWithPassword()` → redirect `/painel`.
+4. **Login:** `login()` → `supabase.auth.signInWithPassword()` → redirect pro `redirectTo`
+   recebido via campo hidden do form (fallback `/painel`).
 5. **Sessão:** cookies HTTP-only gerenciados pelo `@supabase/ssr`; renovados a cada request
    pelo middleware (`lib/supabase/middleware.ts`).
+5b. **Deep link pós-login (`redirectTo`):** quando o middleware redireciona um usuário não
+   autenticado pra `/login`, ele preserva o caminho original em `?redirectTo=`. A página de
+   login repassa isso num campo hidden do form; a action `login()` só aceita caminhos que
+   começam com `/` e não `//` (evita open redirect) antes de usar como destino do
+   `redirect()`. Existe principalmente pra permitir abrir um link de convite
+   (`/convite/:token`) sem estar logado e continuar direto pra ele após entrar — mas serve
+   pra qualquer link direto. `signup()` não usa isso (Supabase exige confirmação de e-mail
+   antes de logar; a pessoa reabre o link original depois de confirmar).
 6. **Logout:** `app/(app)/actions.ts` → `supabase.auth.signOut()` → redirect `/login`.
 7. **Admin da plataforma:** `Profile.isPlatformAdmin` — hoje só é `true` pra
    `fhildebrando@gmail.com`, setado manualmente via SQL direto (não existe UI para
@@ -287,10 +312,12 @@ C:\Sistema Financeiro\
 `toFinanceEntry()` → passar pras funções puras de `lib/finance`. Nenhum cálculo financeiro
 vive dentro de componente React (regra não-negociável do §15).
 
-**Transferência (§10 R5):** ainda **não tem CRUD/UI própria** — `lib/finance/transfer.ts`
-existe e é testado (monta o par de linhas, garante soma zero), mas nenhuma tela chama isso
-ainda. Hoje só é possível criar uma transferência manualmente lançando duas entradas
-`nature = OUTRO` com o mesmo `transferId` via API direta. **Pendência real.**
+**Transferência (§10 R5):** tela própria em `/lancamentos/transferir` (origem, destino,
+valor, data, responsável, subcategoria opcional). `lib/entries/transfer.ts::createTransfer()`
+resolve a categoria fixa "Transferências" (`nature=OUTRO`, seed já trazia essa categoria e
+suas 6 subcategorias) e usa `lib/finance/transfer.ts::createTransferPair()` pra montar o par
+saída/entrada, gravado numa `$transaction`. Situação sempre `PAGO` (não há noção de
+"transferência a pagar" no domínio); recorrência sempre `UNICA`.
 
 ---
 
@@ -301,6 +328,8 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
 **Identidade/acesso**
 - `Profile` (espelha `auth.users`, `is_platform_admin` global)
 - `Workspace`, `Membership` (`role`: TITULAR/MEMBRO/LEITURA)
+- `WorkspaceInvite` (convite pra um workspace existente: `email`, `role`, `token` único,
+  `acceptedAt` nullable — ver `lib/workspace/invite.ts`)
 
 **Taxonomia (global, não por workspace)**
 - `EntryNature` (enum fixo no código: RECEITA/DESPESA/INVESTIMENTO/OUTRO — nunca tabela)
@@ -336,6 +365,7 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
 2. `20260729234528_entries` — `EntryGroup`, `Entry`, `ImportBatch`.
 3. `20260730131325_nature_labels` — `NatureLabel`.
 4. `20260730160517_subcategory_archive_export_log` — `Subcategory.isActive`, `ExportLog`.
+5. `20260730172238_workspace_invites` — `WorkspaceInvite`.
 
 **SQL manual (não gerenciado pelo Prisma, aplicado via `prisma db execute --file`):**
 - `001_auth_and_rls.sql` — FK profiles→auth.users, trigger de signup, RLS Fase 0.
@@ -344,6 +374,9 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
 - `003_entries_rls.sql` — RLS de entry_groups/entries/import_batches.
 - `004_permission_updates.sql` — RLS de nature_labels; subcategoria vira admin-only.
 - `005_export_logs_rls.sql` — RLS de export_logs.
+- `006_workspace_invites_rls.sql` — RLS de workspace_invites (select/insert/delete só
+  TITULAR do workspace ou admin; a aceitação em si roda via Prisma, que contorna RLS —
+  quem aceita ainda não é membro do workspace de destino).
 
 **Convenção:** toda tabela usa `snake_case` no banco (`@map`), `camelCase` no Prisma/TS.
 IDs são UUID (`gen_random_uuid()`), exceto tabelas de referência cuja PK é o próprio
@@ -362,7 +395,7 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
 | §8.5 | Recorrência sem fim materializa 24 meses à frente | `lib/finance/installments.ts::generateRecurrenceOccurrences` |
 | §10 R2 | Regime Caixa (Vence, default) × Competência (Compra) | `lib/finance/period.ts` |
 | §10 R3 | Resultado derivado (Ok/vencido/a pagar/a receber), nunca digitado | `lib/finance/derived.ts` |
-| §10 R5 | Transferência: par de linhas, soma zero (função pura pronta; **sem UI/CRUD ainda**) | `lib/finance/transfer.ts` |
+| §10 R5 | Transferência: par de linhas, soma zero, tela própria (origem/destino/valor/data) | `lib/finance/transfer.ts`, `lib/entries/transfer.ts`, `app/(app)/lancamentos/transferir/*` |
 | §11.1/11.2 | Saldo de carteira, blocos do dashboard | `lib/finance/balance.ts` |
 | §11.3 | Receita/Despesa/Investimento/Balanço do período (fiel à fórmula — **não filtra por situação**, inclui A_PAGAR/A_RECEBER/ESTIMATIVA) | `lib/finance/period.ts` |
 | §11.4/11.5 | Janela de fatura, fatura vigente, cobertura | `lib/finance/card.ts` |
@@ -375,25 +408,27 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
 | §18.3 | Slug (acentos/maiúsculas), CSV com BOM+`;` pro Excel, detecção automática de separador no import | `lib/slug.ts`, `lib/import/parse-csv.ts` |
 | §20 | Carteira/Responsável: qualquer membro edita. Categoria/Subcategoria/Tipo (rótulo): só admin, visível-porém-desabilitado pra quem não é admin. Nome duplicado vira erro legível. Arquivar em vez de excluir (Wallet e Subcategory). | `app/(app)/cadastros/**`, `lib/auth/session.ts`, `lib/api/prisma-errors.ts` |
 | §21 | Nav inferior + cards no mobile, PWA instalável (manifest/ícone/service worker) | `app/(app)/layout.tsx`, `app/(app)/lancamentos/page.tsx`, `app/manifest.ts`, `app/sw.ts` |
+| §13 | Tela Compromissos: vencidos/hoje/próximos 7/próximos 30 dias, marcar pago/recebido em 1 clique | `app/(app)/compromissos/*`, `lib/entries/settle.ts` |
+| §13 | Lançamentos: seleção múltipla (excluir em lote, marcar pago/recebido em lote) e edição in-line (descrição, categoria, subcategoria, responsável, situação, vencimento, valor) — **só no desktop** (≥768px); mobile continua somente leitura, decisão de escopo desta rodada | `app/(app)/lancamentos/EntriesTable.tsx` |
+| §18.1 | Reverter importação: botão por lote na tela de Importar | `app/(app)/lancamentos/importar/*`, `lib/import/revert.ts` |
+| §19.1 | Convidar membro pra workspace existente: TITULAR/admin gera link de convite com token; quem aceita precisa estar logado com o e-mail exato do convite | `app/(app)/cadastros/membros/*`, `app/(app)/convite/[token]/*`, `lib/workspace/invite.ts` |
 
 ---
 
 ## 12. Regras de negócio ainda pendentes
 
-- **§10 R5 — Transferência:** função pura pronta e testada, **sem tela nem endpoint
-  dedicado**. Hoje seria preciso criar as duas linhas manualmente.
 - **§11.3 `[DECIDIR]`:** distinção entre `BALANÇO` e `SALDO` na aba BALANCO da planilha
   original — não bloqueia nada hoje, só afeta um relatório de Fase 2 ainda não construído.
-- **§13 — Tela "Compromissos"** (vencidos/hoje/próximos 7-30 dias, marcar pago em 1 toque):
-  **não existe.** O endpoint `PATCH /api/entries/:id/settle` já faz a parte de backend.
-- **§13 — Lançamentos "editável in-line" e "ações em lote"** (marcar pago, mudar categoria,
-  excluir em massa): a tabela/cards atuais são **somente leitura** — não há edição nem
-  seleção múltipla na tela ainda, embora `PATCH/DELETE /api/entries/:id` já existam.
-- **§18.1 — Reverter importação:** endpoint `POST /api/import/:batchId/revert` pronto e
-  testado na lógica, **mas sem botão nenhuma tela chama**.
+- **§13 — Edição in-line/ações em lote no mobile:** ficaram restritas ao desktop nesta
+  rodada (ver seção 11) — no celular a tela de Lançamentos continua só leitura.
 - **§18.1 — Perfil de mapeamento salvável:** mapeamento é feito na hora a cada importação,
   não é lembrado.
 - **§18.1 — Importação de .xlsx:** só CSV é aceito.
+- **§19.1 — Seletor de workspace:** não existe. Quem aceita um convite mas já tinha conta
+  (e portanto já tem workspace próprio, criado automaticamente no signup) passa a ter duas
+  memberships, mas o app sempre mostra `memberships[0]` — não necessariamente a nova. Só
+  funciona sem ambiguidade pra quem aceita o convite **antes** de ter criado conta própria.
+  Ver seção 22 (Problemas conhecidos).
 - **§20 — "Criar item" durante importação:** quando carteira/categoria não existe, a linha
   vira erro; não há atalho pra criar o item na hora, como a especificação sugere.
 - **§21 — Lançar offline:** **explicitamente adiado** (fila de sincronização é projeto à
@@ -423,8 +458,16 @@ Todas exigem sessão Supabase válida (via `requireApiWorkspaceMembership`); esc
 | `/api/entries/export` | GET | Exporta CSV ou XLSX (`?format=csv\|xlsx`) respeitando filtros; loga em `ExportLog` |
 | `/api/import/preview` | POST | Passo 2/3 do importador: mapeamento + validação, sem gravar |
 | `/api/import/commit` | POST | Passo 4: grava em lote atômico, cria `ImportBatch` |
-| `/api/import/:batchId/revert` | POST | Reverte lote (bloqueado se algo foi editado depois) — **sem UI** |
+| `/api/import/:batchId/revert` | POST | Reverte lote (bloqueado se algo foi editado depois); botão na tela de Importar |
 | `/auth/confirm` | GET | Callback de confirmação de e-mail (token_hash) — **não usado na prática hoje** |
+
+Compromissos, transferência e convite de membro **não** passam por `app/api/**` — são
+Server Actions (`app/(app)/compromissos/actions.ts`, `.../lancamentos/transferir/actions.ts`,
+`.../cadastros/membros/actions.ts`, `.../convite/[token]/actions.ts`), seguindo o mesmo
+critério já documentado: Route Handler só quando um client component precisa de `fetch` com
+resposta JSON (import wizard, sugestão de categoria) ou o `EntriesTable` client component
+(edição in-line e ações em lote usam `fetch` direto contra `/api/entries/:id` e
+`/api/entries/:id/settle` já existentes, sem endpoint novo).
 
 ---
 
@@ -442,9 +485,12 @@ pagamento, e-mail transacional, Open Finance ou push ainda (todas são Fase 2+).
 | Componente | Tipo | Onde |
 |---|---|---|
 | `QuickEntryForm` | Client | `app/(app)/lancamentos/novo/QuickEntryForm.tsx` — form completo do lançamento rápido, com sugestão de categoria, defaults reativos por carteira |
+| `EntriesTable` | Client | `app/(app)/lancamentos/EntriesTable.tsx` — tabela desktop de Lançamentos: checkbox de seleção, barra de ações em lote (excluir / marcar pago-recebido), edição in-line por linha (`EditRow`, componente interno) via `fetch` PATCH em `/api/entries/:id` |
+| `TransferForm` | Client | `app/(app)/lancamentos/transferir/TransferForm.tsx` — origem/destino (com exclusão mútua), valor, data, responsável |
+| `InviteLink` | Client | `app/(app)/cadastros/membros/InviteLink.tsx` — botão "copiar" do link de convite; recebe a URL já montada (origin resolvido no server via `headers()`, não `window.location`, pra evitar mismatch de hidratação) |
 | `MonthlyChart` | Client | `components/charts/MonthlyChart.tsx` — gráfico Recharts (Receita/Despesa/Saldo, 6 meses) |
 | `RegisterServiceWorker` | Client | `components/RegisterServiceWorker.tsx` — registra o SW, só em produção |
-| Páginas de Cadastros | Server | `app/(app)/cadastros/{carteiras,responsaveis,categorias,subcategorias,tipos}/page.tsx` — todas seguem o mesmo padrão: tabela + form inline de criação, campos `disabled` com nota quando o usuário não tem permissão |
+| Páginas de Cadastros | Server | `app/(app)/cadastros/{carteiras,responsaveis,categorias,subcategorias,tipos,membros}/page.tsx` — todas seguem o mesmo padrão: tabela + form inline de criação, campos `disabled` com nota quando o usuário não tem permissão (Membros usa TITULAR/admin como critério de permissão, não `assertCanWrite`) |
 | `StatCard` | Server (local) | Definido dentro de `painel/page.tsx`, não extraído |
 
 Não há biblioteca de componentes (shadcn/ui) instalada apesar de recomendada no §15 — os
@@ -538,6 +584,11 @@ Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
 | Tabela de Lançamentos usa fundo **claro** (não escuro como o resto do app) | Pedido explícito do usuário, inspirado numa referência visual (sistema "Meu Vista") — texto preto normal só funciona em fundo claro. É uma ilha clara dentro de um app majoritariamente escuro, decisão consciente registrada na conversa. |
 | Sugestão de categoria no lançamento rápido usa repetição **exata** de texto, não fuzzy matching | Implementação literal do exemplo do §12 ("digitou Padaria 40 vezes") — mais simples e previsível que um matching aproximado. |
 | `ExportLog` é uma tabela enxuta só pra exportação, não um sistema de auditoria genérico | Escopo: a especificação só exige rastrear exportação especificamente ("principal via de vazamento de dados"), não todo evento do sistema. |
+| Convite de workspace exige que o e-mail da conta logada bata exatamente com o e-mail convidado | Sem isso, qualquer pessoa com o link (que é só um UUID, não protegido por senha) poderia entrar no workspace de outra pessoa. `Profile` não guarda e-mail (vive em `auth.users`, schema que o Prisma deliberadamente não enxerga — ver decisão da FK cross-schema); a checagem usa o `email` já resolvido em `lib/auth/session.ts::getCurrentProfile()`. |
+| Edição in-line de valor infere o sinal pela natureza (Despesa/Receita) igual ao lançamento rápido; Investimento/Transferência usam um botão de inverter sinal em vez de digitar `-` | Mantém o princípio do §8.3 ("usuário nunca digita o sinal") pro caso comum; Investimento/Transferência não têm uma dicotomia natural tipo Despesa/Receita, então não dá pra inferir automaticamente — o toggle é a exceção mínima necessária, não digitação livre do sinal. |
+| Edição in-line e ações em lote só existem na tabela desktop (`EntriesTable`); os cards mobile continuam somente leitura | Escopo desta rodada: seleção múltipla e forms de edição densos não cabem bem no layout de card; a tela de Compromissos já cobre a ação mobile mais comum (marcar pago/recebido). Reavaliar se o uso real (30 dias) mostrar necessidade. |
+| `redirectTo` via query string, validado no server (`login()` só aceita caminho relativo começando com `/` e não `//`) | Permite abrir um link de convite sem estar logado e continuar direto pra ele após o login, sem introduzir open redirect (destino arbitrário controlado por quem gera a URL). |
+| Origin do link de convite resolvido no Server Component via headers `x-forwarded-proto`/`host`, não `window.location` no client | Evita mismatch de hidratação (SSR não tem acesso a `window`) — o padrão de projeto até agora era client component só cuidar de interatividade, nunca de dado que o server já tem como calcular. |
 
 ---
 
@@ -547,10 +598,13 @@ Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
    que contorna RLS por ser owner das tabelas. A isolação real hoje depende 100% da
    aplicação sempre filtrar por `workspace_id` da sessão (o que ela faz, mas é uma
    camada só, não duas como o design pretendia).
-2. **Nenhum outro usuário testado ainda** além de Felipe (admin). O fluxo de convidar
-   membro (cônjuge) pra um workspace existente não tem UI — hoje só existe via o
-   trigger de signup automático (que cria um workspace *novo* pra cada conta, não junta
-   num existente).
+2. **Nenhum outro usuário testado ainda** além de Felipe (admin). O convite de membro
+   (seção 11, §19.1) agora tem UI e lógica completas, mas **nunca foi testado
+   ponta-a-ponta com uma segunda conta real** — só verificado via `tsc`/lint/testes
+   automatizados e revisão de código; não foi possível testar no browser porque isso
+   exigiria digitar a senha de login, ação que o assistente não pode realizar. Testar com
+   a esposa antes de confiar no fluxo em uso real. Além disso, **não existe seletor de
+   workspace** — ver limitação detalhada na seção 12.
 3. **Servidor de dev do Next precisa de restart completo** (não só Fast Refresh) toda vez
    que o schema do Prisma muda — o singleton do Prisma Client fica em cache no
    `globalThis` entre reloads e não pega o client regenerado. Aconteceu repetidas vezes
@@ -563,6 +617,15 @@ Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
 5. **`requireAdminProfile()`** em `lib/auth/session.ts` está sem uso desde a mudança pra
    "visível-porém-desabilitado" — mantido por ser útil pra uma futura tela 100%
    admin-only (ex.: painel de consultoria), mas hoje é código não referenciado.
+6. **Toda a rodada de Compromissos/reverter importação/transferência/convite/edição
+   in-line (seção 11) foi verificada só por `tsc --noEmit`, `eslint` e os 113 testes
+   automatizados**, não por navegação real logada — o login exige senha, que o assistente
+   não tem permissão de digitar. As rotas protegidas foram confirmadas via middleware
+   (redirecionam corretamente, sem erro 500) e os tipos do Prisma validam os nomes de
+   chave composta (`nature_slug`, `workspaceId_profileId`) e a forma dos dados, mas **um
+   teste manual logado como Felipe é recomendado antes de considerar esta rodada
+   totalmente confiável**, em especial o fluxo de convite (item 2) e a edição in-line de
+   valor com inversão de sinal (seção 21).
 
 ---
 
@@ -597,51 +660,56 @@ Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
 - ✅ **Conversa 5:** permissões refinadas (§20), exportação CSV/XLSX com auditoria (§18.2,
   round-trip validado), responsividade mobile + PWA instalável (§21).
 - ✅ Cadastros: Carteiras, Responsáveis (qualquer membro), Categorias, Subcategorias, Tipos
-  (admin-only, visível-porém-desabilitado pra outros).
+  (admin-only, visível-porém-desabilitado pra outros), Membros (convite).
+- ✅ **Conversa 6 (pontas soltas da Fase 1, sem número oficial no guia):** Compromissos,
+  reverter importação (UI), transferência entre carteiras (UI), convidar membro pra
+  workspace existente, edição in-line + ações em lote em Lançamentos (desktop). Ver
+  seção 11 e "Problemas conhecidos" #6 (verificado só por tipos/lint/testes, não por
+  navegação logada real).
 
 ## 25. Funcionalidades em andamento
 
-Nenhuma no momento. A Conversa 5 foi concluída, verificada (typecheck, lint, 113 testes,
-smoke test de round-trip com dados reais) e commitada (ver seção 26). Não há trabalho
-pendente no working tree.
+Nenhuma no momento. A rodada da seção 24 (Conversa 6) foi concluída, verificada
+(typecheck, lint, 113 testes) e commitada (ver seção 26). Não há trabalho pendente no
+working tree.
 
 ## 26. Estado do Git
 
 ```
-a56cb96 Fase 1 / Conversa 5: permissoes, exportacao e responsividade/PWA   <- HEAD
+310023b Fase 1: fecha pontas soltas (Compromissos, reverter importacao, transferencia, convite de membro, edicao in-line)   <- HEAD
+640d4f6 Fase 1 / Conversa 5: permissoes, exportacao e responsividade/PWA
 175677b Fase 1 / Conversa 4: lancamento rapido e painel
 72756da Fase 1 / Conversa 3: lancamentos, importador de CSV e Cadastros
 96ad5e3 Fase 1 / Conversa 2: regras financeiras puras em lib/finance, com testes
 5189b78 Fase 0 (Fundacao): Next.js + Prisma + Supabase Auth/RLS + seed da taxonomia
 ```
 
-Working tree limpo no momento desta atualização (nada pendente de commit). Ainda assim,
-numa nova sessão, rode `git status` primeiro pra confirmar — se houver algo modificado,
-é trabalho que talvez tenha ficado pela metade, investigue antes de assumir que é seguro
-descartar. **Nunca commitar sem o usuário pedir explicitamente**, mesmo que seja seguro
-sugerir ao final de cada Conversa (ele tem pedido isso todas as vezes até agora).
+Working tree limpo no momento desta atualização (nada pendente de commit) — a migration
+`20260730172238_workspace_invites` e o SQL `006_workspace_invites_rls.sql` já estão
+aplicados no banco Supabase de desenvolvimento e commitados junto com o código. Ainda
+assim, numa nova sessão, rode `git status` primeiro pra confirmar — se houver algo
+modificado, é trabalho que talvez tenha ficado pela metade, investigue antes de assumir que
+é seguro descartar. **Nunca commitar sem o usuário pedir explicitamente**, mesmo que seja
+seguro sugerir ao final de cada rodada (ele tem pedido isso todas as vezes até agora).
 
 ## 27. Próximos passos recomendados
 
-Seguindo o roteiro de `GUIA-DE-INICIO.md`, a Conversa 5 (§20, §18.2, §21) foi a última
-planejada explicitamente. Depois dela, o guia recomenda **30 dias de uso real antes de
-qualquer funcionalidade nova**. Ou seja, o próximo passo recomendado não é código — é:
+As 5 pontas soltas da Fase 1 que o usuário escolheu fechar antes de seguir pra Fase 2 (ver
+seção 24) estão concluídas e commitadas (`310023b`). Seguindo `GUIA-DE-INICIO.md`, o guia
+recomenda **30 dias de uso real antes de qualquer funcionalidade nova de Fase 2**:
 
-1. Commitar o estado atual (perguntar ao usuário).
-2. Deploy na Vercel (nunca feito) — precisa de conta GitHub + Vercel conectadas, e
+1. Deploy na Vercel (nunca feito) — precisa de conta GitHub + Vercel conectadas, e
    variáveis de ambiente configuradas lá (mesmas de `.env.local`).
-3. Uso real por Felipe (e possivelmente a esposa, mas falta o fluxo de convidar membro
-   pra um workspace existente — hoje ela criaria um workspace *dela*, separado).
-4. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
+2. Uso real por Felipe e a esposa — agora com o fluxo de convite pronto, mas **não testado
+   ponta-a-ponta** (ver "Problemas conhecidos" #2 e #6). Recomenda-se um teste manual
+   logado antes de depender disso pra convidar alguém de verdade.
+3. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
 
-Se o usuário pedir pra continuar com funcionalidades novas antes disso, os candidatos
-mais claros, em ordem de "backend já pronto, só falta UI":
-- Tela de Compromissos (settle endpoint já existe).
-- Botão de reverter importação (endpoint já existe).
-- Edição in-line + ações em lote na tela de Lançamentos (PATCH/DELETE já existem).
-- UI de transferência entre carteiras (`lib/finance/transfer.ts` já pronto e testado).
-- Convidar membro pra workspace existente (RLS de `memberships` já permite TITULAR
-  inserir; falta só a tela).
+Se o usuário pedir pra continuar com funcionalidades novas antes disso, não há mais
+candidatos óbvios de "backend pronto, só falta UI" — o próximo passo de código seria
+Fase 2 (analítico mensal, parceladas, balanço anual, orçamento, fluxo projetado, OFX) ou
+endereçar os itens da seção 12/22 (mapeamento de importação salvável, .xlsx no import,
+seletor de workspace, arquivar `Person`).
 
 ## 28. Checklist atualizado do projeto
 
@@ -650,13 +718,15 @@ mais claros, em ordem de "backend já pronto, só falta UI":
 - [x] Conversa 3 — Lançamentos, parcelamento/recorrência, importador de CSV
 - [x] Conversa 4 — Painel completo, lançamento rápido
 - [x] Conversa 5 — Permissões, exportação, responsividade/PWA
-- [x] Commit do trabalho da Conversa 5 (`a56cb96`)
+- [x] Commit do trabalho da Conversa 5 (`640d4f6`)
+- [x] Tela de Compromissos
+- [x] Reverter importação (UI)
+- [x] Edição in-line / ações em lote em Lançamentos (desktop)
+- [x] UI de transferência entre carteiras
+- [x] Convidar membro pra workspace existente (não testado ponta-a-ponta, ver seção 22)
+- [x] Commit do trabalho da Conversa 6 (`310023b`)
 - [ ] Deploy em produção (Vercel)
-- [ ] Tela de Compromissos
-- [ ] Reverter importação (UI)
-- [ ] Edição in-line / ações em lote em Lançamentos
-- [ ] UI de transferência entre carteiras
-- [ ] Convidar membro pra workspace existente
+- [ ] Teste manual logado da rodada da Conversa 6 (login exige senha, fora do alcance do assistente)
 - [ ] 30 dias de uso real
 - [ ] Fase 2 (relatórios: analítico, parceladas, balanço anual, orçamento, fluxo projetado, OFX)
 - [ ] Fase 3 (patrimônio, dívidas, metas, Open Finance)

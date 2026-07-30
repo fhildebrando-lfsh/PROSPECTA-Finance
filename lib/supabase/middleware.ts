@@ -35,13 +35,19 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
+    const returnPath = url.pathname + url.search;
     url.pathname = "/login";
+    url.search = "";
+    // §19.1 — convite: volta pra cá depois do login (ex.: /convite/:token).
+    url.searchParams.set("redirectTo", returnPath);
     return NextResponse.redirect(url);
   }
 
   if (user && request.nextUrl.pathname === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/painel";
+    const redirectTo = url.searchParams.get("redirectTo");
+    url.pathname = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/painel";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 

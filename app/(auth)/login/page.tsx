@@ -1,11 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { login, signup, type AuthActionState } from "./actions";
 
 const initialState: AuthActionState = { error: null, info: null };
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") ?? "";
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loginState, loginAction, loginPending] = useActionState(login, initialState);
   const [signupState, signupAction, signupPending] = useActionState(signup, initialState);
@@ -23,6 +26,7 @@ export default function LoginPage() {
         </p>
 
         <form action={action} className="flex flex-col gap-4">
+          {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
           <label className="flex flex-col gap-1 text-sm text-zinc-300">
             E-mail
             <input

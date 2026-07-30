@@ -36,14 +36,15 @@ model Workspace {
   name      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  memberships   Membership[]
-  people        Person[]
-  wallets       Wallet[]
-  subcategories Subcategory[]
-  entryGroups   EntryGroup[]
-  entries       Entry[]
-  importBatches ImportBatch[]
-  exportLogs    ExportLog[]
+  memberships      Membership[]
+  people           Person[]
+  wallets          Wallet[]
+  subcategories    Subcategory[]
+  entryGroups      EntryGroup[]
+  entries          Entry[]
+  importBatches    ImportBatch[]
+  exportLogs       ExportLog[]
+  workspaceInvites WorkspaceInvite[]
 
   @@map("workspaces")
 }
@@ -66,6 +67,26 @@ model Membership {
 
   @@unique([workspaceId, profileId])
   @@map("memberships")
+}
+
+/// Convite pra um workspace existente (item pendente do §19.1). Sem envio de
+/// e-mail próprio: gera um link com token que o TITULAR/admin compartilha
+/// manualmente. [LIMITAÇÃO CONHECIDA] não existe seletor de workspace ainda
+/// (§19.1 pendente) — se quem aceita já tem workspace próprio, o app continua
+/// mostrando o primeiro (`memberships[0]`), não necessariamente este.
+model WorkspaceInvite {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String         @map("workspace_id") @db.Uuid
+  email       String
+  role        MembershipRole @default(MEMBRO)
+  token       String         @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdBy   String         @map("created_by") @db.Uuid
+  createdAt   DateTime       @default(now()) @map("created_at")
+  acceptedAt  DateTime?      @map("accepted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_invites")
 }
 
 // ---------------------------------------------------------------------------

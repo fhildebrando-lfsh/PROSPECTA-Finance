@@ -11,6 +11,12 @@ function credentialsFrom(formData: FormData) {
   return { email, password };
 }
 
+/** Só aceita caminhos relativos internos — evita open redirect via query string. */
+function safeRedirectTo(formData: FormData) {
+  const raw = String(formData.get("redirectTo") ?? "");
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/painel";
+}
+
 export async function login(
   _prevState: AuthActionState,
   formData: FormData,
@@ -22,7 +28,7 @@ export async function login(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: error.message, info: null };
 
-  redirect("/painel");
+  redirect(safeRedirectTo(formData));
 }
 
 export async function signup(
