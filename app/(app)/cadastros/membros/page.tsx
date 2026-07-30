@@ -66,17 +66,33 @@ export default async function MembrosPage() {
             <div>
               <h2 className="mb-2 text-sm font-medium text-zinc-300">Convites pendentes</h2>
               <div className="flex flex-col gap-2">
-                {invites.map((inv) => (
-                  <div
-                    key={inv.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3"
-                  >
-                    <div className="text-sm text-zinc-200">
-                      {inv.email} <span className="text-xs text-zinc-500">· {ROLE_LABELS[inv.role] ?? inv.role}</span>
+                {invites.map((inv) => {
+                  const inviteUrl = `${origin}/convite/${inv.token}`;
+                  const whatsappText = `Você foi convidado(a) para o Sistema Financeiro! Acesse o link pra criar sua conta: ${inviteUrl}`;
+                  return (
+                    <div
+                      key={inv.id}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3"
+                    >
+                      <div className="text-sm text-zinc-200">
+                        {inv.email} <span className="text-xs text-zinc-500">· {ROLE_LABELS[inv.role] ?? inv.role}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {inv.phone && (
+                          <a
+                            href={`https://wa.me/${inv.phone}?text=${encodeURIComponent(whatsappText)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg border border-emerald-800 px-2 py-1 text-xs text-emerald-300 hover:bg-emerald-950"
+                          >
+                            Enviar por WhatsApp
+                          </a>
+                        )}
+                        <InviteLink url={inviteUrl} />
+                      </div>
                     </div>
-                    <InviteLink url={`${origin}/convite/${inv.token}`} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -84,9 +100,11 @@ export default async function MembrosPage() {
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
             <h2 className="mb-1 text-sm font-medium text-zinc-300">Convidar membro</h2>
             <p className="mb-3 text-xs text-zinc-500">
-              Gera um link — envie manualmente (WhatsApp, e-mail). Só funciona bem pra quem ainda não criou conta;
-              se a pessoa já tem workspace próprio, ela continua vendo o dela por padrão (ainda não existe seletor
-              de workspace).
+              O sistema <strong>não manda e-mail nem WhatsApp sozinho</strong> — gera um link (botão &ldquo;Copiar&rdquo;
+              abaixo) e, se você informar o telefone, também um botão &ldquo;Enviar por WhatsApp&rdquo; que já abre a
+              conversa com a mensagem pronta; o envio final é sempre um clique seu. Só funciona bem pra quem ainda
+              não criou conta; se a pessoa já tem workspace próprio, ela continua vendo o dela por padrão (ainda não
+              existe seletor de workspace).
             </p>
             <form action={inviteMember} className="flex flex-wrap items-end gap-3">
               <label className="flex flex-col gap-1 text-xs text-zinc-400">
@@ -96,6 +114,15 @@ export default async function MembrosPage() {
                   name="email"
                   required
                   className="w-64 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                Telefone (WhatsApp, opcional)
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="(11) 91234-5678"
+                  className="w-44 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs text-zinc-400">

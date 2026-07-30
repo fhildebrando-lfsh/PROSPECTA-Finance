@@ -18,3 +18,15 @@ export function formatDateBR(date: Date): string {
   const year = date.getUTCFullYear();
   return `${day}/${month}/${year}`;
 }
+
+/**
+ * Normaliza telefone pro formato que o link `wa.me` exige: só dígitos, com
+ * DDI. Usuário digita no formato brasileiro comum (com DDD, sem DDI) — se o
+ * número tiver 10 ou 11 dígitos (DDD + fixo/celular), assume Brasil e
+ * prefixa "55". Números mais longos já são tratados como tendo DDI.
+ */
+export function toWhatsAppDigits(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.length <= 11 ? `55${digits}` : digits;
+}

@@ -78,6 +78,9 @@ model WorkspaceInvite {
   id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   workspaceId String         @map("workspace_id") @db.Uuid
   email       String
+  /// Só dígitos (com DDI). Opcional — usado só pra montar o link wa.me de
+  /// compartilhamento, nunca envia nada sozinho (sem API do WhatsApp Business).
+  phone       String?
   role        MembershipRole @default(MEMBRO)
   token       String         @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdBy   String         @map("created_by") @db.Uuid

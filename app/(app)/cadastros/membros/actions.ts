@@ -24,7 +24,8 @@ export async function inviteMember(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const roleRaw = String(formData.get("role") ?? "MEMBRO");
   const role = ROLES.includes(roleRaw as MembershipRole) ? (roleRaw as MembershipRole) : "MEMBRO";
+  const phone = String(formData.get("phone") ?? "").trim() || undefined;
 
-  await createInvite(workspaceId, profile.id, email, role);
+  await createInvite(workspaceId, profile.id, email, role, phone);
   revalidatePath("/cadastros/membros");
 }

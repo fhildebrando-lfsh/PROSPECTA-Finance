@@ -1,18 +1,28 @@
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
+import { toWhatsAppDigits } from "@/lib/format";
 import type { MembershipRole } from "@/app/generated/prisma/enums";
 
 /**
- * §19.1 — convite pra um workspace existente. Sem envio de e-mail próprio:
- * gera um registro com token que o TITULAR/admin compartilha manualmente
- * (link `/convite/:token`).
+ * §19.1 — convite pra um workspace existente. Sem envio de e-mail ou
+ * WhatsApp próprio: gera um registro com token que o TITULAR/admin
+ * compartilha manualmente (link `/convite/:token`, com atalho pra abrir o
+ * WhatsApp já com a mensagem pronta quando `phone` é informado).
  */
-export async function createInvite(workspaceId: string, createdBy: string, email: string, role: MembershipRole) {
+export async function createInvite(
+  workspaceId: string,
+  createdBy: string,
+  email: string,
+  role: MembershipRole,
+  phone?: string,
+) {
   const trimmed = email.trim().toLowerCase();
   if (!trimmed) throw new ApiError(400, "Informe um e-mail.");
 
+  const phoneDigits = phone ? toWhatsAppDigits(phone) : "";
+
   return prisma.workspaceInvite.create({
-    data: { workspaceId, email: trimmed, role, createdBy },
+    data: { workspaceId, email: trimmed, role, createdBy, phone: phoneDigits || null },
   });
 }
 
