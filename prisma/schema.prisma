@@ -43,6 +43,7 @@ model Workspace {
   entryGroups   EntryGroup[]
   entries       Entry[]
   importBatches ImportBatch[]
+  exportLogs    ExportLog[]
 
   @@map("workspaces")
 }
@@ -121,6 +122,8 @@ model Subcategory {
   name        String
   slug        String
   isSystem    Boolean  @default(true) @map("is_system")
+  /// §20 — excluir em uso é bloqueado; a ação é arquivar (some dos formulários, mantém histórico).
+  isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
 
   category  Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -336,4 +339,21 @@ model ImportBatch {
   entries   Entry[]
 
   @@map("import_batches")
+}
+
+/// §18.2 — "exportação é a principal via de vazamento de dados financeiros":
+/// registro enxuto de quem exportou o quê, não um sistema de auditoria genérico.
+model ExportLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  profileId   String   @map("profile_id") @db.Uuid
+  format      String
+  /// resumo legível dos filtros ativos no momento da exportação (período, carteira, etc.)
+  filters     String?
+  rowCount    Int      @map("row_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("export_logs")
 }

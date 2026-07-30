@@ -42,4 +42,11 @@ describe("parseCsvWithHeaderDetection (§18.1 passo 1/2)", () => {
     expect(records).toHaveLength(2);
     expect(records[1]["Valor"]).toBe("");
   });
+
+  it("detecta separador ; automaticamente — o formato que o próprio sistema exporta (§18.3)", () => {
+    const csv = "Compra;Vence;Valor\n01/01/2026;01/01/2026;R$ 1.234,56";
+    const { headers, records } = parseCsvWithHeaderDetection(csv);
+    expect(headers).toEqual(["Compra", "Vence", "Valor"]);
+    expect(records[0]["Valor"]).toBe("R$ 1.234,56");
+  });
 });

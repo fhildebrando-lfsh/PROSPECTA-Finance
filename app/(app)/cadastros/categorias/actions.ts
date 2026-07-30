@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireProfile, assertIsAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { slugify } from "@/lib/slug";
+import { rethrowFriendly } from "@/lib/api/prisma-errors";
 import type { EntryNature } from "@/app/generated/prisma/enums";
 
 export async function createCategory(formData: FormData) {
@@ -15,9 +16,13 @@ export async function createCategory(formData: FormData) {
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
   if (!nature || !name) throw new Error("Natureza e nome são obrigatórios.");
 
-  await prisma.category.create({
-    data: { nature, name, slug: slugify(name), sortOrder, isSystem: false },
-  });
+  try {
+    await prisma.category.create({
+      data: { nature, name, slug: slugify(name), sortOrder, isSystem: false },
+    });
+  } catch (err) {
+    rethrowFriendly(err, `Já existe uma categoria chamada "${name}" nesse tipo.`);
+  }
   revalidatePath("/cadastros/categorias");
 }
 

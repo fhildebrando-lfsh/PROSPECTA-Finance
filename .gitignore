@@ -44,3 +44,7 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# serwist — service worker gerado no build
+public/sw*
+public/swe-worker*

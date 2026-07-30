@@ -1,0 +1,663 @@
+# PROJECT_STATE.md — Memória Permanente do Projeto
+
+> **Como usar este documento:** é o ponto de entrada para retomar o trabalho em uma nova
+> conversa sem perder contexto. Leia isto primeiro, depois `ESPECIFICACAO-SISTEMA-FINANCEIRO.md`
+> (a fonte de verdade do domínio/regras) e `GUIA-DE-INICIO.md` (o roteiro de conversas).
+> Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
+> decisão arquitetural relevante for tomada — é assim que ele continua confiável.
+>
+> **Última atualização:** 2026-07-30, logo após o commit da Conversa 5 (permissões,
+> exportação, responsividade). Working tree limpo — ver seção "Estado do Git".
+
+---
+
+## 1. Objetivo do projeto
+
+Sistema web de gestão financeira pessoal e familiar para substituir uma planilha Google
+Sheets em uso contínuo desde 2016 (~5.900 lançamentos). O modelo de dados foi extraído por
+engenharia reversa dessa planilha — as regras documentadas em
+`ESPECIFICACAO-SISTEMA-FINANCEIRO.md` são comportamento validado na prática, não hipótese.
+
+Dono do produto / usuário principal: **Felipe Hildebrando** (fhildebrando@gmail.com),
+administrador da plataforma. Pensa em oferecer o sistema no futuro também como ferramenta
+de consultoria financeira para terceiros (Fase 4 — ainda não iniciada).
+
+Princípios centrais (não negociáveis, ver §4 da especificação):
+- O modelo de dados é sagrado; a interface é descartável.
+- Nenhuma perda histórica.
+- Multi-tenant desde o primeiro dia (`workspace_id` em toda tabela de dados).
+- Auditabilidade (quem criou/alterou, quando).
+- Entrega incremental e usável — cada fase termina em uso real.
+
+---
+
+## 2. Arquitetura geral
+
+Aplicação **Next.js 16 (App Router) full-stack**, um único deploy (frontend + backend +
+rotas de API no mesmo projeto). Banco **PostgreSQL gerenciado pelo Supabase**, com
+**Supabase Auth** para autenticação e **Row Level Security (RLS)** nativa do Postgres como
+segunda camada de isolamento multi-tenant (a primeira é sempre filtrar por `workspace_id`
+derivado da sessão no código da aplicação — nunca confiar em `workspace_id` vindo do
+cliente).
+
+```
+Browser (PWA instalável)
+   │
+   ▼
+Next.js App Router (Vercel-ready, ainda não deployado)
+   ├─ Server Components (a maioria das páginas — leem direto do Prisma)
+   ├─ Server Actions ("use server", formulários de Cadastros e lançamento rápido)
+   ├─ Route Handlers (/app/api/** — importação, exportação, CRUD de entries)
+   └─ Middleware (proxy.ts — sessão Supabase, redireciona não-autenticado)
+   │
+   ▼
+Prisma Client (driver adapter @prisma/adapter-pg, Prisma 7)
+   │
+   ▼
+PostgreSQL (Supabase, sa-east-1) — RLS habilitada em toda tabela multi-tenant
+   └─ auth.users (Supabase Auth) — trigger cria Profile + Workspace + Membership no signup
+```
+
+**Regra de autorização em duas camadas:**
+1. **Camada de aplicação** (a que realmente importa hoje): toda query Prisma nas páginas/
+   actions/rotas deriva `workspace_id` da sessão via `lib/auth/session.ts`, nunca do
+   payload do cliente.
+2. **RLS no Postgres** (defesa em profundidade): políticas em `prisma/sql/*.sql`. **Atenção:**
+   a conexão do Prisma usa a connection string do Postgres (via pooler do Supabase), que
+   por padrão é o *owner* das tabelas — **owners contornam RLS**. Ou seja, hoje a RLS
+   protege acesso via PostgREST/Supabase client direto (se algum dia for usado
+   client-side), mas **não** está sendo tecnicamente exercida pelas queries do Prisma.
+   A camada 1 é a que efetivamente isola os dados agora. Ver "Débitos técnicos" (#20).
+
+---
+
+## 3. Tecnologias utilizadas
+
+| Categoria | Escolha | Versão (aprox.) |
+|---|---|---|
+| Framework | Next.js (App Router) | 16.2.12 |
+| Linguagem | TypeScript | ^5 |
+| UI | React + Tailwind CSS v4 | 19.2.4 / ^4 |
+| Gráficos | Recharts | ^3.10 |
+| Banco | PostgreSQL (Supabase, sa-east-1) | — |
+| ORM | Prisma (novo generator `prisma-client`, driver adapters) | ^7.9.1 |
+| Driver adapter | `@prisma/adapter-pg` + `pg` | — |
+| Auth | Supabase Auth (`@supabase/ssr`, `@supabase/supabase-js`) | — |
+| Validação | Zod | ^4.4 |
+| CSV | `csv-parse` (import), builder manual (export) | ^7 |
+| XLSX | `exceljs` | ^4.4 |
+| PWA | Serwist (`@serwist/next`, `@serwist/window`, `serwist`) | ^9.5 |
+| Testes | Vitest | ^4.1 |
+| Runtime scripts | `tsx` | ^4.23 |
+| Deploy alvo | Vercel (ainda não configurado) | — |
+
+Stack segue exatamente o recomendado em `ESPECIFICACAO-SISTEMA-FINANCEIRO.md` §15, com uma
+diferença: Next.js 16 em vez de 15 (a versão "latest" no momento da Fase 0; a intenção do
+documento — framework mainstream com App Router — foi preservada).
+
+---
+
+## 4. Estrutura completa de diretórios
+
+```
+C:\Sistema Financeiro\
+├── ESPECIFICACAO-SISTEMA-FINANCEIRO.md   # fonte de verdade do domínio (1198 linhas)
+├── GUIA-DE-INICIO.md                     # roteiro das "Conversas" (Fase 0 a 5)
+├── PROJECT_STATE.md                      # este arquivo
+├── CLAUDE.md / AGENTS.md                 # instruções pro Claude Code
+├── .env.local                            # segredos (gitignored)
+├── seeds/                                # CSVs de referência (taxonomia, carteiras...)
+│   ├── seed_*.csv                        # UTF-8 sem BOM, separador , (o código lê)
+│   └── excel-br/seed_*.csv               # UTF-8 com BOM, separador ; (conferir no Excel)
+├── prisma/
+│   ├── schema.prisma                     # schema completo, ver seção 10
+│   ├── prisma.config.ts (raiz do projeto, não dentro de prisma/) 
+│   ├── migrations/                       # 4 migrations aplicadas, ver seção 10
+│   ├── sql/                              # RLS e triggers não gerenciados pelo Prisma
+│   │   ├── 001_auth_and_rls.sql          # trigger signup, RLS Fase 0
+│   │   ├── 002_drop_cross_schema_fk.sql  # correção de incidente, ver seção 19
+│   │   ├── 003_entries_rls.sql           # RLS de entries/entry_groups/import_batches
+│   │   ├── 004_permission_updates.sql    # subcategoria virou admin-only
+│   │   └── 005_export_logs_rls.sql       # RLS de export_logs
+│   ├── seed.ts                           # seed global (taxonomia, tipos, etc.)
+│   └── seed-workspace.ts                 # seed por workspace (carteiras/responsáveis)
+├── app/
+│   ├── layout.tsx                        # root layout, tema escuro fixo, PWA metadata
+│   ├── page.tsx                          # redirect pra /painel
+│   ├── manifest.ts                       # manifest PWA dinâmico
+│   ├── sw.ts                             # service worker (Serwist)
+│   ├── icon-192/route.tsx, icon-512/route.tsx  # ícones PWA gerados via ImageResponse
+│   ├── (auth)/login/                     # login + cadastro (Supabase Auth)
+│   ├── auth/confirm/route.ts             # callback de confirmação de e-mail (token_hash)
+│   ├── (app)/                            # tudo atrás de autenticação
+│   │   ├── layout.tsx                    # header + nav mobile inferior + botão flutuante +
+│   │   ├── actions.ts                    # logout
+│   │   ├── painel/page.tsx               # dashboard (§11)
+│   │   ├── lancamentos/
+│   │   │   ├── page.tsx                  # tabela/cards de lançamentos + exportar
+│   │   │   ├── novo/                     # lançamento rápido (§12)
+│   │   │   └── importar/page.tsx         # wizard de importação de CSV (§18.1)
+│   │   └── cadastros/                    # carteiras, responsáveis, categorias, subcategorias, tipos
+│   └── api/
+│       ├── entries/                      # CRUD, settle, export, suggest-category
+│       └── import/                       # preview, commit, revert
+├── lib/
+│   ├── finance/                          # regras puras testadas (Conversa 2), ver seção 12
+│   ├── entries/                          # criação/exportação de lançamentos (server-side)
+│   ├── import/                           # parsing/validação/resolução do importador de CSV
+│   ├── auth/session.ts                   # toda derivação de sessão/permissão
+│   ├── supabase/                         # clients Supabase (browser/server/middleware)
+│   ├── db/prisma.ts                      # singleton do Prisma Client
+│   ├── api/                              # erros de API padronizados
+│   ├── validation/entry.ts               # schemas Zod de Entry
+│   ├── format.ts                         # formatação pt-BR (moeda, data)
+│   └── slug.ts                           # geração de slug (§18.3)
+├── components/
+│   ├── charts/MonthlyChart.tsx           # gráfico Recharts (client component)
+│   └── RegisterServiceWorker.tsx         # registra o SW no browser
+├── tests/                                # espelha lib/finance e lib/import, Vitest
+└── public/                               # assets estáticos padrão do Next (não customizado)
+```
+
+---
+
+## 5. Responsabilidade de cada pasta
+
+| Pasta | Responsabilidade |
+|---|---|
+| `app/(auth)/` | Telas públicas de autenticação (login/cadastro). Fora do middleware de sessão obrigatória. |
+| `app/(app)/` | Todo o produto autenticado. Layout comum com nav e botão de lançamento rápido. |
+| `app/api/` | Route Handlers — usados por formulários/JS client-side que precisam de resposta JSON/arquivo (export, import wizard, suggest-category). CRUD que só roda em Server Component/Server Action **não** passa por aqui (ver `lib/entries/create.ts`). |
+| `lib/finance/` | **Núcleo do domínio.** Funções puras, sem I/O, todas testadas. Implementam literalmente as fórmulas de `ESPECIFICACAO-SISTEMA-FINANCEIRO.md` §8, §10, §11. Nunca importam Prisma. |
+| `lib/entries/` | Ponte entre `lib/finance` (puro) e o banco: cria séries de lançamentos (parcelado/recorrente), monta linhas de exportação. |
+| `lib/import/` | Todo o pipeline do importador de CSV: detecção de cabeçalho, parsing BR, resolução de referências, deduplicação. |
+| `lib/auth/session.ts` | **Único lugar** que deriva workspace/papel/admin da sessão. Toda página e action passa por aqui. |
+| `lib/supabase/` | Clients Supabase Auth para os três contextos do Next.js (browser, server component, middleware). |
+| `prisma/sql/` | Tudo que o Prisma não consegue expressar em `schema.prisma`: RLS, triggers em `auth.users`. Aplicado manualmente via `prisma db execute --file`. |
+| `seeds/` | Dados de referência extraídos da planilha original — taxonomia, carteiras, responsáveis, tipos, situações, recorrências. Carregados por `prisma/seed.ts` e `prisma/seed-workspace.ts`. |
+| `tests/` | Espelha a estrutura de `lib/`. 113 testes, todos unitários (nenhum teste de integração/e2e ainda). |
+
+---
+
+## 6. Responsabilidade de cada módulo (arquivos-chave)
+
+### `lib/finance/` (puro, sem Prisma — ver seção 12 para a lista completa de regras)
+- `types.ts` — tipos compartilhados (`FinanceEntry`, `FinanceWallet`, `Period`, `Regime`, re-exporta `Decimal` do runtime do Prisma).
+- `dates.ts` — utilitários de data "pura" (sem fuso), `addMonths` com clamp de fim de mês.
+- `derived.ts` — Resultado derivado (§10 R3) e classificação de urgência pra UI.
+- `balance.ts` — saldo de carteira e blocos do dashboard (§11.1, §11.2).
+- `period.ts` — totais Receita/Despesa/Investimento/Balanço com regime Caixa×Competência (§11.3, §10 R2).
+- `card.ts` — janela de fatura, fatura vigente (usado no lançamento rápido), cobertura (§11.4, §11.5, §12).
+- `installments.ts` — geração de parcelas e de recorrências materializadas 24 meses (§8.5).
+- `transfer.ts` — monta o par de linhas de uma transferência (§10 R5).
+- `fixed.ts` — despesa fixa × variável (§11.7).
+- `reserve.ts` — média de despesa, meta e gauge de reserva de emergência (§11.6).
+- `rankings.ts` — top 5 e distribuição por categoria (§11.8).
+- `from-db.ts` — **o único lugar que traduz uma linha do Prisma pro tipo `FinanceEntry`**. Qualquer tela nova que precise calcular algo deve passar por aqui.
+
+### `lib/entries/`
+- `create.ts` — `createEntryOrSeries()`: cria lançamento único, parcelado ou recorrente materializado. Usado por `/api/entries` (POST) **e** pelo lançamento rápido — não duplicar essa lógica.
+- `recurrence-label.ts` — reconstrói o texto de Recorrência pra exibição/exportação.
+- `export-row.ts` — mapeia uma `Entry` do Prisma pra uma linha exportável (mesmos headers do importador).
+- `build-csv.ts` / `build-xlsx.ts` — geram os arquivos de exportação (§18.2).
+
+### `lib/import/`
+- `parse-csv.ts` — `parseCsvWithHeaderDetection()`: acha a linha de cabeçalho real (tolera lixo antes, como exports do Google Sheets) e detecta separador `,` ou `;`.
+- `column-mapping.ts` — mapeamento cabeçalho→campo, auto-detecção.
+- `parse-brl.ts` — datas `dd/mm/aaaa` e valores `R$ 1.234,56` / negativo / parênteses.
+- `parse-recorrencia.ts` — desmembra a coluna Recorrência, incluindo os formatos reais `"N de M"` e `"N/M"` (não documentados na especificação original).
+- `parse-status.ts` — Situação → código.
+- `parse-row.ts` — valida uma linha (o que dá pra checar sem banco).
+- `resolve.ts` — resolve carteira/categoria/subcategoria/responsável contra o banco (com suporte a `legacy_name` de carteira) e detecta duplicata.
+- `duplicate-key.ts` — chave de deduplicação (`due_date + amount + description + wallet`).
+
+### `lib/auth/session.ts`
+- `getCurrentProfile()` — perfil + memberships, com `cache()` do React (dedup por request).
+- `requireProfile()` / `requireWorkspaceId()` — pra Server Components (redirecionam se não autenticado).
+- `requireApiWorkspaceMembership()` — pra Route Handlers (lança `ApiError`, não redireciona).
+- `requireAdminProfile()` — existe mas **não está mais em uso** desde que as telas de Cadastros passaram a ser visíveis-porém-desabilitadas em vez de bloqueadas (ver seção 20).
+- `assertCanWrite()` — LEITURA não escreve.
+- `assertIsAdmin()` — só admin (Categoria/Subcategoria/Tipo).
+
+### Outros
+- `lib/db/prisma.ts` — singleton do Prisma Client com `PrismaPg` adapter; carrega `.env.local` explicitamente (necessário pros scripts standalone via `tsx`, que não passam pelo carregamento automático do Next).
+- `lib/format.ts` — `formatCurrencyBRL`, `formatDateBR` (Intl pt-BR).
+- `lib/slug.ts` — `slugify()`, implementa o algoritmo exato do §18.3.
+- `lib/api/errors.ts` / `prisma-errors.ts` — `ApiError`, `apiErrorResponse()`, `rethrowFriendly()` (converte violação de unique constraint em mensagem legível).
+- `lib/validation/entry.ts` — schemas Zod `createEntrySchema`/`updateEntrySchema`, `parseIsoDate`.
+
+---
+
+## 7. Fluxo completo da aplicação
+
+1. Usuário acessa qualquer rota → `proxy.ts` (middleware) intercepta, renova sessão Supabase, redireciona pra `/login` se não autenticado (exceto `/login`, `/auth/*`, manifest/ícones/service worker).
+2. `/` redireciona pra `/painel`.
+3. `(app)/layout.tsx` carrega perfil + membership (via `requireProfile`), monta header/nav.
+4. Navegação principal: **Painel** (dashboard) · **Lançamentos** (listar/filtrar/importar/exportar) · **Cadastros** (carteiras, responsáveis, categorias, subcategorias, tipos) · botão flutuante **+** (lançamento rápido) · nav inferior no mobile.
+5. Toda leitura de dados financeiros passa por: página busca `workspaceId` da sessão → query Prisma filtrada → (quando envolve cálculo) mapeia pra `FinanceEntry` via `lib/finance/from-db.ts` → chama função pura de `lib/finance/*`.
+6. Toda escrita (criar/editar lançamento, cadastro) passa por Server Action ou Route Handler → deriva `workspaceId`/papel da sessão → valida (Zod nas rotas de API; validação manual nas actions) → Prisma.
+
+---
+
+## 8. Fluxo de autenticação
+
+1. **Cadastro:** `app/(auth)/login/actions.ts` → `signup()` → `supabase.auth.signUp()`.
+2. Supabase cria a linha em `auth.users` → **trigger** `on_auth_user_created`
+   (`prisma/sql/001_auth_and_rls.sql`) roda automaticamente e, na mesma transação:
+   - cria `public.profiles` (id = auth.users.id);
+   - cria um `Workspace` pessoal ("Nome (pessoal)");
+   - cria a `Membership` com papel `TITULAR`.
+   - **Efeito prático:** todo signup já nasce com workspace próprio — não há hoje um fluxo
+     de "administrador cria workspace de cliente" (isso é Fase 4/consultoria, não construído).
+3. E-mail de confirmação enviado pelo Supabase (template **padrão**, não customizado — ver
+   seção 19). Ao clicar, a sessão é estabelecida automaticamente via `@supabase/ssr` no
+   client (cookies).
+4. **Login:** `login()` → `supabase.auth.signInWithPassword()` → redirect `/painel`.
+5. **Sessão:** cookies HTTP-only gerenciados pelo `@supabase/ssr`; renovados a cada request
+   pelo middleware (`lib/supabase/middleware.ts`).
+6. **Logout:** `app/(app)/actions.ts` → `supabase.auth.signOut()` → redirect `/login`.
+7. **Admin da plataforma:** `Profile.isPlatformAdmin` — hoje só é `true` pra
+   `fhildebrando@gmail.com`, setado manualmente via SQL direto (não existe UI para
+   promover outro usuário a admin). Ver "Débitos técnicos".
+8. **`/auth/confirm/route.ts`** existe (verifica `token_hash` + `type` via `verifyOtp`) mas
+   **não está sendo usado na prática** — o fluxo real funciona via o link padrão do
+   Supabase + detecção automática de sessão no client. Ficou como código morto/preparado
+   pra quando o template de e-mail for customizado (precisa de SMTP próprio, não configurado).
+
+---
+
+## 9. Fluxo financeiro (como um lançamento nasce e é calculado)
+
+**Criação (duas origens):**
+- **Lançamento rápido** (`/lancamentos/novo`): form client-side com defaults automáticos
+  (carteira/responsável = último usado em 24h; Vence/Situação calculados a partir do tipo
+  de carteira) → `createQuickEntry()` (action) → `createEntryOrSeries()`.
+- **Importação de CSV** (`/lancamentos/importar`): upload → preview (mapeamento +
+  validação, `/api/import/preview`) → confirmação (`/api/import/commit`) → grava em lote
+  atômico, cria `ImportBatch`.
+
+**`createEntryOrSeries()` (`lib/entries/create.ts`) decide:**
+- `installmentsTotal >= 2` → `generateInstallments()` (parcelamento numerado, mesmo
+  `group_id`, `due_date` avançando mês a mês a partir do dia original).
+- `recurrenceCode` fora de `{UNICA, VARIAVEL}` → `generateRecurrenceOccurrences()`
+  (materializa 24 meses à frente, mesmo `group_id`).
+- Senão → lançamento único.
+
+**Cálculo (Painel):** toda a leitura para exibição é: buscar `Entry[]` do workspace →
+`toFinanceEntry()` → passar pras funções puras de `lib/finance`. Nenhum cálculo financeiro
+vive dentro de componente React (regra não-negociável do §15).
+
+**Transferência (§10 R5):** ainda **não tem CRUD/UI própria** — `lib/finance/transfer.ts`
+existe e é testado (monta o par de linhas, garante soma zero), mas nenhuma tela chama isso
+ainda. Hoje só é possível criar uma transferência manualmente lançando duas entradas
+`nature = OUTRO` com o mesmo `transferId` via API direta. **Pendência real.**
+
+---
+
+## 10. Modelagem do banco de dados
+
+Schema completo em `prisma/schema.prisma`. Resumo por grupo:
+
+**Identidade/acesso**
+- `Profile` (espelha `auth.users`, `is_platform_admin` global)
+- `Workspace`, `Membership` (`role`: TITULAR/MEMBRO/LEITURA)
+
+**Taxonomia (global, não por workspace)**
+- `EntryNature` (enum fixo no código: RECEITA/DESPESA/INVESTIMENTO/OUTRO — nunca tabela)
+- `NatureLabel` (rótulo de exibição editável pelo admin; a chave em si não muda)
+- `Category` (`nature`, admin-only)
+- `Subcategory` (`categoryId`, `workspaceId` nullable — hoje sempre `null`/global desde que
+  virou admin-only; `isActive` pra arquivar)
+
+**Carteiras**
+- `WalletKind` (tabela de referência extensível, nunca enum — §6.2)
+- `Institution` (sem seed próprio; populada a partir dos nomes distintos em
+  `seed_carteiras.csv`)
+- `Wallet` (`workspaceId`, `kindCode`, `institutionId?`, `linkedWalletId?` self-relation
+  pra caixinha↔cartão, `closingDay`/`dueDay`/`creditLimit` pra cartão, `isActive` pra
+  arquivar)
+
+**Responsáveis**
+- `Person` (`workspaceId`, `isShared`)
+
+**Referências de lançamento (global)**
+- `Status` (8 valores, `countsAsSettled`)
+- `RecurrenceKind` (13 valores, `intervalMonths`)
+
+**Lançamentos**
+- `EntryGroup` (agrupa parcelas/recorrências)
+- `Entry` (a entidade central — ver §8.1 da especificação pra semântica completa de cada
+  campo; `amount` é `Decimal(14,2)` com sinal, nunca float)
+- `ImportBatch` (lote de importação, revertível)
+- `ExportLog` (auditoria leve de exportação)
+
+**Migrations aplicadas (em ordem):**
+1. `20260729220239_init` — Fase 0 completa (identidade, taxonomia, carteiras, responsáveis, referências).
+2. `20260729234528_entries` — `EntryGroup`, `Entry`, `ImportBatch`.
+3. `20260730131325_nature_labels` — `NatureLabel`.
+4. `20260730160517_subcategory_archive_export_log` — `Subcategory.isActive`, `ExportLog`.
+
+**SQL manual (não gerenciado pelo Prisma, aplicado via `prisma db execute --file`):**
+- `001_auth_and_rls.sql` — FK profiles→auth.users, trigger de signup, RLS Fase 0.
+- `002_drop_cross_schema_fk.sql` — remove a FK cross-schema, substitui por trigger de
+  delete (ver seção 19, incidente evitado).
+- `003_entries_rls.sql` — RLS de entry_groups/entries/import_batches.
+- `004_permission_updates.sql` — RLS de nature_labels; subcategoria vira admin-only.
+- `005_export_logs_rls.sql` — RLS de export_logs.
+
+**Convenção:** toda tabela usa `snake_case` no banco (`@map`), `camelCase` no Prisma/TS.
+IDs são UUID (`gen_random_uuid()`), exceto tabelas de referência cuja PK é o próprio
+`code` (string).
+
+---
+
+## 11. Regras de negócio implementadas
+
+Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`).
+
+| # | Regra | Onde |
+|---|---|---|
+| §8.3 | Valor com sinal (despesa negativa, receita positiva); usuário nunca digita o sinal | `lib/entries/create.ts` (quick entry), `lib/import/parse-brl.ts` |
+| §8.5 | Parcelamento numerado, `group_id` automático, due_date avança a partir do dia original (não em cadeia) | `lib/finance/installments.ts` |
+| §8.5 | Recorrência sem fim materializa 24 meses à frente | `lib/finance/installments.ts::generateRecurrenceOccurrences` |
+| §10 R2 | Regime Caixa (Vence, default) × Competência (Compra) | `lib/finance/period.ts` |
+| §10 R3 | Resultado derivado (Ok/vencido/a pagar/a receber), nunca digitado | `lib/finance/derived.ts` |
+| §10 R5 | Transferência: par de linhas, soma zero (função pura pronta; **sem UI/CRUD ainda**) | `lib/finance/transfer.ts` |
+| §11.1/11.2 | Saldo de carteira, blocos do dashboard | `lib/finance/balance.ts` |
+| §11.3 | Receita/Despesa/Investimento/Balanço do período (fiel à fórmula — **não filtra por situação**, inclui A_PAGAR/A_RECEBER/ESTIMATIVA) | `lib/finance/period.ts` |
+| §11.4/11.5 | Janela de fatura, fatura vigente, cobertura | `lib/finance/card.ts` |
+| §11.6 | Reserva de emergência (média 6 meses fechados, meta, gauge) | `lib/finance/reserve.ts` |
+| §11.7 | Fixa × variável (regra automática + override manual) | `lib/finance/fixed.ts` |
+| §11.8 | Top 5 e distribuição por categoria | `lib/finance/rankings.ts` |
+| §12 | Lançamento rápido: defaults automáticos de carteira/responsável (24h), Vence/Situação por tipo de carteira, sugestão de categoria por texto repetido | `app/(app)/lancamentos/novo/*`, `/api/entries/suggest-category` |
+| §18.1 | Importação: detecção de cabeçalho, formatos BR, duplicata, revert de lote | `lib/import/*`, `/api/import/*` |
+| §18.2 | Exportação CSV/XLSX respeitando filtros, round-trip sem perda (testado com 1085 lançamentos reais), log de auditoria | `lib/entries/build-*.ts`, `/api/entries/export` |
+| §18.3 | Slug (acentos/maiúsculas), CSV com BOM+`;` pro Excel, detecção automática de separador no import | `lib/slug.ts`, `lib/import/parse-csv.ts` |
+| §20 | Carteira/Responsável: qualquer membro edita. Categoria/Subcategoria/Tipo (rótulo): só admin, visível-porém-desabilitado pra quem não é admin. Nome duplicado vira erro legível. Arquivar em vez de excluir (Wallet e Subcategory). | `app/(app)/cadastros/**`, `lib/auth/session.ts`, `lib/api/prisma-errors.ts` |
+| §21 | Nav inferior + cards no mobile, PWA instalável (manifest/ícone/service worker) | `app/(app)/layout.tsx`, `app/(app)/lancamentos/page.tsx`, `app/manifest.ts`, `app/sw.ts` |
+
+---
+
+## 12. Regras de negócio ainda pendentes
+
+- **§10 R5 — Transferência:** função pura pronta e testada, **sem tela nem endpoint
+  dedicado**. Hoje seria preciso criar as duas linhas manualmente.
+- **§11.3 `[DECIDIR]`:** distinção entre `BALANÇO` e `SALDO` na aba BALANCO da planilha
+  original — não bloqueia nada hoje, só afeta um relatório de Fase 2 ainda não construído.
+- **§13 — Tela "Compromissos"** (vencidos/hoje/próximos 7-30 dias, marcar pago em 1 toque):
+  **não existe.** O endpoint `PATCH /api/entries/:id/settle` já faz a parte de backend.
+- **§13 — Lançamentos "editável in-line" e "ações em lote"** (marcar pago, mudar categoria,
+  excluir em massa): a tabela/cards atuais são **somente leitura** — não há edição nem
+  seleção múltipla na tela ainda, embora `PATCH/DELETE /api/entries/:id` já existam.
+- **§18.1 — Reverter importação:** endpoint `POST /api/import/:batchId/revert` pronto e
+  testado na lógica, **mas sem botão nenhuma tela chama**.
+- **§18.1 — Perfil de mapeamento salvável:** mapeamento é feito na hora a cada importação,
+  não é lembrado.
+- **§18.1 — Importação de .xlsx:** só CSV é aceito.
+- **§20 — "Criar item" durante importação:** quando carteira/categoria não existe, a linha
+  vira erro; não há atalho pra criar o item na hora, como a especificação sugere.
+- **§21 — Lançar offline:** **explicitamente adiado** (fila de sincronização é projeto à
+  parte). O service worker cacheia o app shell mas não enfileira gravações sem rede.
+- **Fase 2 completa:** analítico mês a mês, despesas parceladas, balanço anual, orçamento,
+  fluxo projetado, importação de OFX — nada disso foi iniciado.
+- **Fase 3/4:** patrimônio (`asset`), dívidas (`debt`), metas (`goal`), Open Finance,
+  multi-workspace de consultoria — nada disso foi modelado ainda (§7.4 "OUTRO" continua
+  como natureza única, sem as entidades dedicadas que a especificação recomenda como
+  melhoria).
+
+---
+
+## 13. APIs existentes
+
+Todas exigem sessão Supabase válida (via `requireApiWorkspaceMembership`); escrita exige
+`assertCanWrite` (LEITURA bloqueado). `workspace_id` sempre derivado da sessão.
+
+| Rota | Método | Descrição |
+|---|---|---|
+| `/api/entries` | GET | Lista paginada com filtros (período, carteira, natureza, texto) |
+| `/api/entries` | POST | Cria lançamento único, parcelado ou recorrente materializado |
+| `/api/entries/:id` | PATCH | Edita campos parciais |
+| `/api/entries/:id` | DELETE | Exclui; se for transferência, exclui as duas linhas |
+| `/api/entries/:id/settle` | PATCH | Marca A_PAGAR→PAGO ou A_RECEBER→RECEBIDO |
+| `/api/entries/suggest-category` | GET | Sugestão de categoria por repetição exata de descrição |
+| `/api/entries/export` | GET | Exporta CSV ou XLSX (`?format=csv\|xlsx`) respeitando filtros; loga em `ExportLog` |
+| `/api/import/preview` | POST | Passo 2/3 do importador: mapeamento + validação, sem gravar |
+| `/api/import/commit` | POST | Passo 4: grava em lote atômico, cria `ImportBatch` |
+| `/api/import/:batchId/revert` | POST | Reverte lote (bloqueado se algo foi editado depois) — **sem UI** |
+| `/auth/confirm` | GET | Callback de confirmação de e-mail (token_hash) — **não usado na prática hoje** |
+
+---
+
+## 14. Serviços
+
+Não há serviços externos além do **Supabase** (Postgres + Auth). Nenhuma integração de
+pagamento, e-mail transacional, Open Finance ou push ainda (todas são Fase 2+).
+`SUPABASE_SERVICE_ROLE_KEY` está configurada mas **não é usada em nenhum código hoje**
+(reservada pra quando precisar de operações admin via Supabase, ex.: listar usuários).
+
+---
+
+## 15. Componentes principais
+
+| Componente | Tipo | Onde |
+|---|---|---|
+| `QuickEntryForm` | Client | `app/(app)/lancamentos/novo/QuickEntryForm.tsx` — form completo do lançamento rápido, com sugestão de categoria, defaults reativos por carteira |
+| `MonthlyChart` | Client | `components/charts/MonthlyChart.tsx` — gráfico Recharts (Receita/Despesa/Saldo, 6 meses) |
+| `RegisterServiceWorker` | Client | `components/RegisterServiceWorker.tsx` — registra o SW, só em produção |
+| Páginas de Cadastros | Server | `app/(app)/cadastros/{carteiras,responsaveis,categorias,subcategorias,tipos}/page.tsx` — todas seguem o mesmo padrão: tabela + form inline de criação, campos `disabled` com nota quando o usuário não tem permissão |
+| `StatCard` | Server (local) | Definido dentro de `painel/page.tsx`, não extraído |
+
+Não há biblioteca de componentes (shadcn/ui) instalada apesar de recomendada no §15 — os
+componentes são HTML+Tailwind direto, estilo consistente mas escrito à mão em cada tela.
+
+---
+
+## 16. Hooks
+
+Nenhum hook customizado (`useX`) foi criado. O único estado client-side relevante vive
+dentro de `QuickEntryForm.tsx` via `useState` (nature, wallet, categoria, subcategoria,
+responsável, situação, "mais opções") — não foi extraído pra hooks reutilizáveis porque só
+há um consumidor até agora.
+
+---
+
+## 17. Context Providers
+
+Nenhum React Context foi criado. Estado de sessão/tema/etc. não usa Context — cada Server
+Component busca o que precisa direto via `lib/auth/session.ts` (com `cache()` do React pra
+deduplicar entre layout e página na mesma request).
+
+---
+
+## 18. Utilitários e bibliotecas (resumo)
+
+Ver seção 3 (tecnologias) pra bibliotecas de terceiros. Utilitários próprios:
+`lib/format.ts`, `lib/slug.ts`, `lib/finance/dates.ts`, `lib/api/prisma-errors.ts`.
+
+---
+
+## 19. Variáveis de ambiente necessárias
+
+Todas em `.env.local` (gitignored, nunca commitado, nunca colado em chat):
+
+| Variável | Uso |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase (público) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anônima do Supabase (público) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço (privada) — **não usada em código ainda** |
+| `DATABASE_URL` | Connection string do Postgres — **usa o "Session pooler" do Supabase** (porta 5432, `aws-0-sa-east-1.pooler.supabase.com`), não a conexão direta (a rede residencial do usuário não tem IPv6, que a conexão direta exige) |
+
+Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
+
+---
+
+## 20. Convenções de código adotadas
+
+- **`camelCase` no TS, `snake_case` no banco** via `@map`/`@@map` do Prisma.
+- **Dinheiro sempre `Decimal`** (do runtime do Prisma, `@prisma/client/runtime/client`),
+  nunca `number`/float. Import: `import { Decimal } from "@/lib/finance/types"`.
+- **Datas "puras"**: sempre `Date.UTC(...)`, nunca depender do fuso local. `lib/finance/dates.ts`
+  centraliza qualquer aritmética de data.
+- **Regras financeiras são sempre funções puras em `lib/finance/`**, sem import de Prisma,
+  sempre com teste. A ponte com o banco é explícita via `lib/finance/from-db.ts`.
+- **Server Actions em `actions.ts`** ao lado da página que as usa (`"use server"` no topo
+  do arquivo, não inline).
+- **Slugs via `lib/slug.ts::slugify()`** — nunca inventar outra normalização.
+- **Erros de escrita**: Server Actions lançam `Error` com mensagem legível (aparece no
+  overlay do Next em dev); Route Handlers usam `ApiError` + `apiErrorResponse()`.
+  `rethrowFriendly()` converte violação de unique constraint (P2002) em mensagem amigável.
+- **Comentários no código**: só quando explicam o "porquê" não-óbvio (uma decisão, uma
+  seção da especificação, um bug real evitado) — nunca "o quê" (nomes já dizem isso).
+  Muitos comentários referenciam `§N` da especificação de propósito, pra rastreabilidade.
+- **Sem gerenciador de estado global** (Redux/Zustand/Context) — o padrão é Server
+  Component busca dado + Server Action grava, sem cache client-side dedicado ainda
+  (TanStack Query estava no stack recomendado mas não foi instalado; não há necessidade
+  percebida até agora, já que quase tudo é Server Component).
+- **Testes:** Vitest, um arquivo de teste por módulo em `lib/finance`/`lib/import`,
+  nomeados igual ao módulo. Fixtures em `tests/finance/helpers.ts`.
+
+---
+
+## 21. Decisões arquiteturais tomadas e o motivo de cada uma
+
+| Decisão | Motivo |
+|---|---|
+| Next.js 16 em vez de 15 | Era a versão "latest" disponível ao iniciar o projeto; a especificação pede "framework mainstream com App Router", não uma versão específica. |
+| Prisma 7 com driver adapter (`@prisma/adapter-pg`) em vez do engine Rust clássico | Exigência do próprio Prisma 7 (removeu `url`/`directUrl` do schema; motor "no Rust engine" é o caminho atual). |
+| `DATABASE_URL` = Session Pooler, não conexão direta | A rede do usuário não tem IPv6 (que a conexão direta do Supabase exige por padrão). |
+| FK `profiles → auth.users` removida, substituída por trigger | **Incidente evitado:** declarar o schema `auth` em `datasource.schemas` pro Prisma enxergar essa FK fazia `prisma migrate dev` tratar TODO o schema `auth` (usuários, sessões, tokens do Supabase) como drift e sugerir um **reset que apagaria a autenticação inteira**. A correção foi nunca deixar o Prisma precisar saber que `auth.users` existe. Ver `prisma/sql/002_drop_cross_schema_fk.sql`. |
+| Workspace criado automaticamente no signup (trigger) | Uso é pessoal/familiar hoje — não há fluxo de "admin cria workspace de cliente" ainda (isso é Fase 4). |
+| `Subcategory` virou admin-only (diferente do §20 original, que previa edição pelo cliente) | **Decisão explícita do usuário** durante a Conversa 3/5, sobrepondo a especificação original. `Category` continuou admin-only como já estava. |
+| `Tipo` (natureza) continua 100% fixo no código; só o rótulo de exibição é editável (`NatureLabel`) | Todo `lib/finance` assume exatamente essas 4 naturezas nas fórmulas (soma Receita+Despesa+Investimento=Balanço). Tornar dinâmico exigiria redesenhar todas as fórmulas — escopo recusado explicitamente pelo usuário quando perguntado. |
+| Categorias/Subcategorias/Tipos **visíveis mas desabilitadas** pra quem não é admin, em vez de escondidas | Pedido explícito da especificação (§20: "campo travado aparece visível e desabilitado, nunca escondido") — a primeira implementação escondia as abas, foi corrigido. |
+| Cadastros de Categoria/Subcategoria/Tipo usam páginas separadas com forms simples (sem biblioteca de tabela) | Consistência com o resto do app (sem shadcn/ui instalado) e escopo — TanStack Table do stack recomendado não foi necessário até agora. |
+| CSV de exportação usa `;` + BOM (não `,` sem BOM) como padrão | Por causa do uso real em Excel em português (§18.3) — o importador foi atualizado pra detectar automaticamente `,` ou `;`, então não há perda de compatibilidade. |
+| `lib/entries/create.ts` centraliza criação de lançamento | Evita duplicar a lógica de parcelamento/recorrência entre `/api/entries` (POST) e o lançamento rápido — um bug corrigido em um lugar corrige os dois fluxos. |
+| Serwist com `disable` em dev + `turbopack: {}` + `next build --webpack` | Serwist ainda não suporta Turbopack (default do Next 16) nativamente. Dev usa Turbopack normal (SW desligado, sem necessidade real em dev); produção força webpack só pro build gerar o service worker. Sem isso, `next dev` crashava (**bug real encontrado e corrigido**). |
+| Middleware (`proxy.ts`) exclui `manifest.webmanifest`, `sw.js`, `icon-192`, `icon-512` do matcher | Sem isso, o próprio navegador (buscando esses arquivos sem sessão) era redirecionado pra tela de login — **bug real que quebrava a instalação como PWA**, encontrado e corrigido. |
+| Tabela de Lançamentos usa fundo **claro** (não escuro como o resto do app) | Pedido explícito do usuário, inspirado numa referência visual (sistema "Meu Vista") — texto preto normal só funciona em fundo claro. É uma ilha clara dentro de um app majoritariamente escuro, decisão consciente registrada na conversa. |
+| Sugestão de categoria no lançamento rápido usa repetição **exata** de texto, não fuzzy matching | Implementação literal do exemplo do §12 ("digitou Padaria 40 vezes") — mais simples e previsível que um matching aproximado. |
+| `ExportLog` é uma tabela enxuta só pra exportação, não um sistema de auditoria genérico | Escopo: a especificação só exige rastrear exportação especificamente ("principal via de vazamento de dados"), não todo evento do sistema. |
+
+---
+
+## 22. Problemas conhecidos
+
+1. **RLS não é efetivamente exercida pelo Prisma** (ver seção 2) — a conexão usa uma role
+   que contorna RLS por ser owner das tabelas. A isolação real hoje depende 100% da
+   aplicação sempre filtrar por `workspace_id` da sessão (o que ela faz, mas é uma
+   camada só, não duas como o design pretendia).
+2. **Nenhum outro usuário testado ainda** além de Felipe (admin). O fluxo de convidar
+   membro (cônjuge) pra um workspace existente não tem UI — hoje só existe via o
+   trigger de signup automático (que cria um workspace *novo* pra cada conta, não junta
+   num existente).
+3. **Servidor de dev do Next precisa de restart completo** (não só Fast Refresh) toda vez
+   que o schema do Prisma muda — o singleton do Prisma Client fica em cache no
+   `globalThis` entre reloads e não pega o client regenerado. Aconteceu repetidas vezes
+   durante o desenvolvimento; sempre resolver com `preview_stop` + `preview_start` (ou
+   matar e subir `npm run dev` de novo), nunca só recarregar a página.
+4. **`app/auth/confirm/route.ts`** existe mas não está no caminho real usado hoje (ver
+   seção 8) — o e-mail de confirmação usa o link padrão do Supabase, não o formato
+   `token_hash`. Não é bug ativo, mas é código morto até o template de e-mail ser
+   customizado (precisa de SMTP próprio configurado no Supabase).
+5. **`requireAdminProfile()`** em `lib/auth/session.ts` está sem uso desde a mudança pra
+   "visível-porém-desabilitado" — mantido por ser útil pra uma futura tela 100%
+   admin-only (ex.: painel de consultoria), mas hoje é código não referenciado.
+
+---
+
+## 23. Débitos técnicos
+
+- Sem testes de integração/e2e (só unitários em `lib/`). Nenhuma página/Server Action/rota
+  de API tem cobertura de teste automatizado.
+- Sem CI configurado (GitHub Actions, etc.) — testes rodam só manualmente.
+- Sem deploy feito ainda — Vercel mencionado no stack mas projeto nunca foi publicado.
+- `npm audit` reporta ~20 vulnerabilidades, quase todas em dependências de build/dev
+  (eslint/postcss/minimatch transitivos via `exceljs`→`archiver`) — não são superfície de
+  ataque em runtime, mas nunca foram formalmente triadas/aceitas por escrito.
+- Sem rate limiting em nenhuma rota de API.
+- Sem paginação real na tela de Lançamentos (limita a 200 registros mais recentes; a API
+  `/api/entries` GET tem paginação, mas a página não usa).
+- `Person` (responsável) não tem campo `isActive`/arquivamento — só `delete`, que falha se
+  houver lançamentos vinculados (mensagem amigável já existe, mas não há alternativa de
+  arquivar como Wallet/Subcategory têm).
+- Ícones do PWA são gerados dinamicamente com texto "R$" (não é uma identidade visual de
+  verdade) — placeholder até existir uma marca definida.
+
+---
+
+## 24. Funcionalidades concluídas
+
+- ✅ **Fase 0 (Fundação):** login, cadastro, RLS, papéis, taxonomia completa via seed.
+- ✅ **Conversa 2:** todas as regras de `lib/finance` (§8, §10, §11), 59 testes iniciais.
+- ✅ **Conversa 3:** modelo `Entry`, CRUD via API, importador de CSV completo (validado
+  com os ~1100 lançamentos reais do usuário), tela de Lançamentos.
+- ✅ **Conversa 4:** Painel completo (§11) com gráfico, lançamento rápido (§12) com
+  defaults automáticos e sugestão de categoria.
+- ✅ **Conversa 5:** permissões refinadas (§20), exportação CSV/XLSX com auditoria (§18.2,
+  round-trip validado), responsividade mobile + PWA instalável (§21).
+- ✅ Cadastros: Carteiras, Responsáveis (qualquer membro), Categorias, Subcategorias, Tipos
+  (admin-only, visível-porém-desabilitado pra outros).
+
+## 25. Funcionalidades em andamento
+
+Nenhuma no momento. A Conversa 5 foi concluída, verificada (typecheck, lint, 113 testes,
+smoke test de round-trip com dados reais) e commitada (ver seção 26). Não há trabalho
+pendente no working tree.
+
+## 26. Estado do Git
+
+```
+a56cb96 Fase 1 / Conversa 5: permissoes, exportacao e responsividade/PWA   <- HEAD
+175677b Fase 1 / Conversa 4: lancamento rapido e painel
+72756da Fase 1 / Conversa 3: lancamentos, importador de CSV e Cadastros
+96ad5e3 Fase 1 / Conversa 2: regras financeiras puras em lib/finance, com testes
+5189b78 Fase 0 (Fundacao): Next.js + Prisma + Supabase Auth/RLS + seed da taxonomia
+```
+
+Working tree limpo no momento desta atualização (nada pendente de commit). Ainda assim,
+numa nova sessão, rode `git status` primeiro pra confirmar — se houver algo modificado,
+é trabalho que talvez tenha ficado pela metade, investigue antes de assumir que é seguro
+descartar. **Nunca commitar sem o usuário pedir explicitamente**, mesmo que seja seguro
+sugerir ao final de cada Conversa (ele tem pedido isso todas as vezes até agora).
+
+## 27. Próximos passos recomendados
+
+Seguindo o roteiro de `GUIA-DE-INICIO.md`, a Conversa 5 (§20, §18.2, §21) foi a última
+planejada explicitamente. Depois dela, o guia recomenda **30 dias de uso real antes de
+qualquer funcionalidade nova**. Ou seja, o próximo passo recomendado não é código — é:
+
+1. Commitar o estado atual (perguntar ao usuário).
+2. Deploy na Vercel (nunca feito) — precisa de conta GitHub + Vercel conectadas, e
+   variáveis de ambiente configuradas lá (mesmas de `.env.local`).
+3. Uso real por Felipe (e possivelmente a esposa, mas falta o fluxo de convidar membro
+   pra um workspace existente — hoje ela criaria um workspace *dela*, separado).
+4. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
+
+Se o usuário pedir pra continuar com funcionalidades novas antes disso, os candidatos
+mais claros, em ordem de "backend já pronto, só falta UI":
+- Tela de Compromissos (settle endpoint já existe).
+- Botão de reverter importação (endpoint já existe).
+- Edição in-line + ações em lote na tela de Lançamentos (PATCH/DELETE já existem).
+- UI de transferência entre carteiras (`lib/finance/transfer.ts` já pronto e testado).
+- Convidar membro pra workspace existente (RLS de `memberships` já permite TITULAR
+  inserir; falta só a tela).
+
+## 28. Checklist atualizado do projeto
+
+- [x] Fase 0 — Fundação (login, RLS, papéis, taxonomia)
+- [x] Conversa 2 — Regras financeiras (`lib/finance`, testadas)
+- [x] Conversa 3 — Lançamentos, parcelamento/recorrência, importador de CSV
+- [x] Conversa 4 — Painel completo, lançamento rápido
+- [x] Conversa 5 — Permissões, exportação, responsividade/PWA
+- [x] Commit do trabalho da Conversa 5 (`a56cb96`)
+- [ ] Deploy em produção (Vercel)
+- [ ] Tela de Compromissos
+- [ ] Reverter importação (UI)
+- [ ] Edição in-line / ações em lote em Lançamentos
+- [ ] UI de transferência entre carteiras
+- [ ] Convidar membro pra workspace existente
+- [ ] 30 dias de uso real
+- [ ] Fase 2 (relatórios: analítico, parceladas, balanço anual, orçamento, fluxo projetado, OFX)
+- [ ] Fase 3 (patrimônio, dívidas, metas, Open Finance)
+- [ ] Fase 4 (consultoria multi-workspace)

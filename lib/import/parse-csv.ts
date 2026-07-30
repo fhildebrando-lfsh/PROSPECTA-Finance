@@ -13,6 +13,18 @@ export interface ParsedCsv {
 }
 
 /**
+ * §18.3 — o sistema exporta CSV com `;` (para abrir bem no Excel em
+ * português) e também aceita `,` (RFC 4180, o formato "de programa").
+ * Detecta pela primeira linha não vazia qual separador tem mais ocorrências.
+ */
+function detectDelimiter(csvText: string): "," | ";" {
+  const firstLine = csvText.replace(/^﻿/, "").split(/\r?\n/).find((line) => line.trim() !== "") ?? "";
+  const semicolons = (firstLine.match(/;/g) ?? []).length;
+  const commas = (firstLine.match(/,/g) ?? []).length;
+  return semicolons > commas ? ";" : ",";
+}
+
+/**
  * §18.1 — alguns exports (o do Google Sheets, no caso real que motivou isto)
  * trazem uma linha de resumo/lixo antes da linha de cabeçalho de verdade.
  * Em vez de assumir sempre que a linha 1 é o cabeçalho, procura nas
@@ -24,6 +36,7 @@ export function parseCsvWithHeaderDetection(csvText: string): ParsedCsv {
     bom: true,
     skip_empty_lines: true,
     relax_column_count: true,
+    delimiter: detectDelimiter(csvText),
   });
 
   if (rawRows.length === 0) {

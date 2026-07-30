@@ -5,6 +5,7 @@ import type { Prisma } from "@/app/generated/prisma/client";
 import { entryUrgency } from "@/lib/finance/derived";
 import type { EntryStatus } from "@/lib/finance/types";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
+import { recurrenceLabel } from "@/lib/entries/recurrence-label";
 
 interface SearchParams {
   from?: string;
@@ -12,20 +13,6 @@ interface SearchParams {
   walletId?: string;
   nature?: string;
   q?: string;
-}
-
-function recurrenceLabel(entry: {
-  legacyRecurrenceLabel: string | null;
-  installmentNumber: number | null;
-  installmentTotal: number | null;
-  recurrence: { legacyLabel: string | null; code: string };
-}): string {
-  if (entry.legacyRecurrenceLabel) return entry.legacyRecurrenceLabel;
-  if (entry.installmentNumber && entry.installmentTotal) {
-    return `${entry.installmentNumber} de ${entry.installmentTotal}`;
-  }
-  if (entry.installmentNumber) return String(entry.installmentNumber);
-  return entry.recurrence.legacyLabel ?? entry.recurrence.code;
 }
 
 // liquidado/isento = problema resolvido, fica discreto; a vencer = tem uma
@@ -94,6 +81,16 @@ export default async function LancamentosPage({
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
+  const exportQuery = (format: "csv" | "xlsx") => {
+    const qs = new URLSearchParams({ format });
+    if (params.from) qs.set("from", params.from);
+    if (params.to) qs.set("to", params.to);
+    if (params.walletId) qs.set("walletId", params.walletId);
+    if (params.nature) qs.set("nature", params.nature);
+    if (params.q) qs.set("q", params.q);
+    return `/api/entries/export?${qs.toString()}`;
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -101,12 +98,26 @@ export default async function LancamentosPage({
           <h1 className="text-lg font-semibold text-zinc-100">Lançamentos</h1>
           <p className="text-sm text-zinc-500">Mostrando até 200 lançamentos mais recentes por vencimento.</p>
         </div>
-        <Link
-          href="/lancamentos/importar"
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-amber-400"
-        >
-          Importar planilha
-        </Link>
+        <div className="flex items-center gap-2">
+          <a
+            href={exportQuery("csv")}
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+          >
+            Exportar CSV
+          </a>
+          <a
+            href={exportQuery("xlsx")}
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+          >
+            Exportar XLSX
+          </a>
+          <Link
+            href="/lancamentos/importar"
+            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-amber-400"
+          >
+            Importar planilha
+          </Link>
+        </div>
       </div>
 
       <form className="flex flex-wrap gap-3 text-sm">
@@ -170,7 +181,8 @@ export default async function LancamentosPage({
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-300 bg-zinc-50">
+      {/* §21 — abaixo de 768px a tabela densa vira cards; acima, tabela normal. */}
+      <div className="hidden overflow-x-auto rounded-xl border border-zinc-300 bg-zinc-50 md:block">
         <table className="w-full text-sm">
           <thead className="bg-zinc-100 text-left text-zinc-600">
             <tr>
@@ -218,6 +230,33 @@ export default async function LancamentosPage({
           </tbody>
         </table>
         {entries.length === 0 && <p className="p-4 text-sm text-zinc-500">Nenhum lançamento encontrado.</p>}
+      </div>
+
+      <div className="flex flex-col gap-2 md:hidden">
+        {entries.map((entry) => {
+          const urgency = entryUrgency({ status: entry.statusCode as EntryStatus, dueDate: entry.dueDate }, today);
+          return (
+            <div key={entry.id} className={`rounded-xl border border-zinc-300 p-3 ${URGENCY_ROW_CLASS[urgency]}`}>
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-medium">{entry.description}</span>
+                <span className={`shrink-0 font-mono tabular-nums ${AMOUNT_CLASS(entry.amount)}`}>
+                  {formatCurrencyBRL(entry.amount)}
+                </span>
+              </div>
+              <p className="mt-1 text-xs opacity-80">
+                {entry.wallet.name} · {entry.category.name}
+                {entry.subcategory ? ` / ${entry.subcategory.name}` : ""}
+              </p>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="font-mono tabular-nums opacity-80">Vence {formatDateBR(entry.dueDate)}</span>
+                <span className={SITUACAO_CLASS[urgency]}>{situacaoLabel(urgency, entry.status.labelPt)}</span>
+              </div>
+            </div>
+          );
+        })}
+        {entries.length === 0 && (
+          <p className="rounded-xl border border-zinc-800 p-4 text-sm text-zinc-500">Nenhum lançamento encontrado.</p>
+        )}
       </div>
     </div>
   );

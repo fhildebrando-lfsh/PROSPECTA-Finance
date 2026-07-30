@@ -6,5 +6,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // §21 — manifest/ícones/service worker precisam ser acessíveis sem
+  // sessão (o navegador os busca antes/fora do fluxo de login).
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|icon-192|icon-512|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

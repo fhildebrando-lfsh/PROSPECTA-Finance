@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireWorkspaceId, requireProfile, assertCanWrite } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { slugify } from "@/lib/slug";
+import { rethrowFriendly } from "@/lib/api/prisma-errors";
 
 async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
@@ -21,7 +22,11 @@ export async function createPerson(formData: FormData) {
   const isShared = formData.get("isShared") === "on";
   if (!name) throw new Error("Nome é obrigatório.");
 
-  await prisma.person.create({ data: { workspaceId, name, isShared, slug: slugify(name) } });
+  try {
+    await prisma.person.create({ data: { workspaceId, name, isShared, slug: slugify(name) } });
+  } catch (err) {
+    rethrowFriendly(err, `Já existe um responsável chamado "${name}".`);
+  }
   revalidatePath("/cadastros/responsaveis");
 }
 

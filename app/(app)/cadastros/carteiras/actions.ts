@@ -5,6 +5,7 @@ import { requireWorkspaceId, requireProfile } from "@/lib/auth/session";
 import { assertCanWrite } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { slugify } from "@/lib/slug";
+import { rethrowFriendly } from "@/lib/api/prisma-errors";
 
 async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
@@ -27,18 +28,22 @@ export async function createWallet(formData: FormData) {
 
   if (!name || !kindCode) throw new Error("Nome e tipo de carteira são obrigatórios.");
 
-  await prisma.wallet.create({
-    data: {
-      workspaceId,
-      name,
-      kindCode,
-      institutionId,
-      closingDay,
-      dueDay,
-      creditLimit: creditLimit ? creditLimit : undefined,
-      slug: slugify(name),
-    },
-  });
+  try {
+    await prisma.wallet.create({
+      data: {
+        workspaceId,
+        name,
+        kindCode,
+        institutionId,
+        closingDay,
+        dueDay,
+        creditLimit: creditLimit ? creditLimit : undefined,
+        slug: slugify(name),
+      },
+    });
+  } catch (err) {
+    rethrowFriendly(err, `Já existe uma carteira chamada "${name}".`);
+  }
 
   revalidatePath("/cadastros/carteiras");
 }
