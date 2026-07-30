@@ -45,3 +45,44 @@ export function generateInstallments(plan: InstallmentPlan): GeneratedInstallmen
     amount: plan.amount,
   }));
 }
+
+export interface RecurrencePlan {
+  firstDueDate: Date;
+  transactionDate: Date;
+  amount: Decimal;
+  groupId: string;
+  /** de RecurrenceKind.intervalMonths — 1 para Mensal, 2 para Bimestral, etc. */
+  intervalMonths: number;
+  /** §8.5 — decisão do produto: materializar 24 meses à frente. */
+  monthsAhead?: number;
+}
+
+export interface GeneratedRecurrence {
+  groupId: string;
+  transactionDate: Date;
+  dueDate: Date;
+  amount: Decimal;
+}
+
+/**
+ * §8.5 — para recorrências sem fim (Mensal, Bimestral...), a decisão foi
+ * materializar 24 meses à frente em vez de gerar ocorrências virtuais na
+ * leitura. Esta função gera essas ocorrências; o job mensal que estende a
+ * janela (chamando de novo a partir da última ocorrência existente) é
+ * responsabilidade de quem chama, não desta função pura.
+ */
+export function generateRecurrenceOccurrences(plan: RecurrencePlan): GeneratedRecurrence[] {
+  if (plan.intervalMonths < 1) {
+    throw new Error("intervalMonths precisa ser >= 1");
+  }
+
+  const monthsAhead = plan.monthsAhead ?? 24;
+  const count = Math.floor(monthsAhead / plan.intervalMonths) + 1;
+
+  return Array.from({ length: count }, (_, i) => ({
+    groupId: plan.groupId,
+    transactionDate: plan.transactionDate,
+    dueDate: addMonths(plan.firstDueDate, i * plan.intervalMonths),
+    amount: plan.amount,
+  }));
+}

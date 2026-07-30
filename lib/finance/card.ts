@@ -30,6 +30,16 @@ export function cardStatementWindow(
   return { windowStart, windowEnd, dueDate };
 }
 
+/**
+ * §12 — "Vence = vencimento da fatura vigente se cartão de crédito", usado
+ * pelo lançamento rápido. Se hoje ainda não passou do fechamento deste mês,
+ * a fatura vigente é a que fecha este mês; senão, a do mês seguinte.
+ */
+export function currentStatementWindow(config: CardConfig, today: Date): StatementWindow {
+  const closingMonthIndex0 = today.getUTCDate() <= config.closingDay ? today.getUTCMonth() : today.getUTCMonth() + 1;
+  return cardStatementWindow(config, today.getUTCFullYear(), closingMonthIndex0);
+}
+
 /** §11.4 — soma por `transaction_date` (Compra), não por Vence. */
 export function cardStatementTotal(entries: FinanceEntry[], walletId: string, window: StatementWindow): Decimal {
   return entries

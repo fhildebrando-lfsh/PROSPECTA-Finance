@@ -4,8 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 import { assertCanWrite, requireApiWorkspaceMembership } from "@/lib/auth/session";
 import { apiErrorResponse } from "@/lib/api/errors";
 import { createEntrySchema, parseIsoDate } from "@/lib/validation/entry";
-import { generateInstallments } from "@/lib/finance/installments";
-import { Decimal } from "@/lib/finance/types";
+import { createEntryOrSeries } from "@/lib/entries/create";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 /** GET /api/entries — lista filtrada por período/carteira/natureza/texto (§17). */
@@ -54,7 +53,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** POST /api/entries — cria um lançamento único ou, com installmentsTotal, um parcelamento (§8.5). */
+/**
+ * POST /api/entries — cria um lançamento único, um parcelamento
+ * (`installmentsTotal`, §8.5) ou, quando `recurrenceCode` é uma recorrência
+ * sem fim (Mensal, Bimestral...), materializa 24 meses à frente (§8.5).
+ */
 export async function POST(request: NextRequest) {
   try {
     const { workspaceId, role, isPlatformAdmin, profileId } = await requireApiWorkspaceMembership();
@@ -63,61 +66,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const input = createEntrySchema.parse(body);
 
-    const amount = new Decimal(input.amount);
-    const transactionDate = parseIsoDate(input.transactionDate);
-    const dueDate = parseIsoDate(input.dueDate);
+    const entries = await createEntryOrSeries(workspaceId, profileId, input);
 
-    const baseData = {
-      workspaceId,
-      walletId: input.walletId,
-      categoryId: input.categoryId,
-      subcategoryId: input.subcategoryId ?? null,
-      responsibleId: input.responsibleId,
-      nature: input.nature,
-      description: input.description,
-      statusCode: input.statusCode,
-      recurrenceCode: input.recurrenceCode,
-      note: input.note ?? null,
-      tags: input.tags ?? [],
-      isFixedOverride: input.isFixedOverride ?? null,
-      createdBy: profileId,
-      updatedBy: profileId,
-    };
-
-    if (input.installmentsTotal) {
-      const group = await prisma.entryGroup.create({ data: { workspaceId } });
-      const installments = generateInstallments({
-        totalInstallments: input.installmentsTotal,
-        firstDueDate: dueDate,
-        transactionDate,
-        amount,
-        groupId: group.id,
-      });
-
-      const created = await prisma.$transaction(
-        installments.map((inst) =>
-          prisma.entry.create({
-            data: {
-              ...baseData,
-              groupId: inst.groupId,
-              transactionDate: inst.transactionDate,
-              dueDate: inst.dueDate,
-              amount: inst.amount,
-              installmentNumber: inst.installmentNumber,
-              installmentTotal: inst.installmentTotal,
-            },
-          }),
-        ),
-      );
-
-      return NextResponse.json({ entries: created }, { status: 201 });
-    }
-
-    const entry = await prisma.entry.create({
-      data: { ...baseData, transactionDate, dueDate, amount },
-    });
-
-    return NextResponse.json({ entry }, { status: 201 });
+    return NextResponse.json(entries.length === 1 ? { entry: entries[0] } : { entries }, { status: 201 });
   } catch (err) {
     if (err instanceof ZodError) {
       return NextResponse.json({ error: "Dados inválidos.", details: err.issues }, { status: 400 });

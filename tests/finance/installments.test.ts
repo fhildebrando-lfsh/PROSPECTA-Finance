@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateInstallments } from "@/lib/finance/installments";
+import { generateInstallments, generateRecurrenceOccurrences } from "@/lib/finance/installments";
 import { d } from "./helpers";
 
 describe("generateInstallments (§8.5)", () => {
@@ -53,6 +53,53 @@ describe("generateInstallments (§8.5)", () => {
         transactionDate: new Date(),
         amount: d(-100),
         groupId: "group-3",
+      }),
+    ).toThrow();
+  });
+});
+
+describe("generateRecurrenceOccurrences (§8.5 — materializa 24 meses à frente)", () => {
+  it("Mensal (intervalMonths=1) gera 25 ocorrências cobrindo 24 meses", () => {
+    const result = generateRecurrenceOccurrences({
+      firstDueDate: new Date(Date.UTC(2026, 0, 10)),
+      transactionDate: new Date(Date.UTC(2026, 0, 10)),
+      amount: d(-34.9),
+      groupId: "group-mensal",
+      intervalMonths: 1,
+    });
+
+    expect(result).toHaveLength(25); // mês 0 até mês 24, inclusive
+    expect(result[0].dueDate.toISOString().slice(0, 10)).toBe("2026-01-10");
+    expect(result[24].dueDate.toISOString().slice(0, 10)).toBe("2028-01-10");
+    expect(result.every((r) => r.groupId === "group-mensal")).toBe(true);
+  });
+
+  it("Bimestral (intervalMonths=2) espaça as ocorrências de 2 em 2 meses", () => {
+    const result = generateRecurrenceOccurrences({
+      firstDueDate: new Date(Date.UTC(2026, 0, 15)),
+      transactionDate: new Date(Date.UTC(2026, 0, 15)),
+      amount: d(-100),
+      groupId: "group-bimestral",
+      intervalMonths: 2,
+      monthsAhead: 6,
+    });
+
+    expect(result.map((r) => r.dueDate.toISOString().slice(0, 10))).toEqual([
+      "2026-01-15",
+      "2026-03-15",
+      "2026-05-15",
+      "2026-07-15",
+    ]);
+  });
+
+  it("rejeita intervalMonths menor que 1", () => {
+    expect(() =>
+      generateRecurrenceOccurrences({
+        firstDueDate: new Date(),
+        transactionDate: new Date(),
+        amount: d(-1),
+        groupId: "group-x",
+        intervalMonths: 0,
       }),
     ).toThrow();
   });

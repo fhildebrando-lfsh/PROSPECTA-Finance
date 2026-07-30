@@ -41,6 +41,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </form>
       </header>
       <main className="flex-1 px-6 py-8">{children}</main>
+
+      {/* §12 — botão flutuante "+", acesso de 1 toque ao lançamento rápido em qualquer tela. */}
+      <Link
+        href="/lancamentos/novo"
+        aria-label="Novo lançamento"
+        className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-3xl font-light text-zinc-950 shadow-lg shadow-black/40 hover:bg-amber-400"
+      >
+        +
+      </Link>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardCoverage, cardStatementTotal, cardStatementWindow } from "@/lib/finance/card";
+import { cardCoverage, cardStatementTotal, cardStatementWindow, currentStatementWindow } from "@/lib/finance/card";
 import { d, makeEntry } from "./helpers";
 
 describe("cardStatementWindow (§11.4)", () => {
@@ -18,6 +18,34 @@ describe("cardStatementWindow (§11.4)", () => {
     const window = cardStatementWindow({ closingDay: 10, dueDay: 5 }, 2026, 0); // fecha 10/jan/2026
     expect(window.windowStart.toISOString().slice(0, 10)).toBe("2025-12-11");
     expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-02-05");
+  });
+});
+
+describe("currentStatementWindow (§12 — Vence default de lançamento em cartão)", () => {
+  it("antes do fechamento -> fatura vigente fecha este mês", () => {
+    const today = new Date(Date.UTC(2026, 5, 5)); // 5/jun, fecha dia 10
+    const window = currentStatementWindow({ closingDay: 10, dueDay: 5 }, today);
+    expect(window.windowEnd.toISOString().slice(0, 10)).toBe("2026-06-10");
+    expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-07-05");
+  });
+
+  it("depois do fechamento -> fatura vigente é a do mês seguinte", () => {
+    const today = new Date(Date.UTC(2026, 5, 15)); // 15/jun, já passou do fechamento (dia 10)
+    const window = currentStatementWindow({ closingDay: 10, dueDay: 5 }, today);
+    expect(window.windowEnd.toISOString().slice(0, 10)).toBe("2026-07-10");
+    expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-08-05");
+  });
+
+  it("no dia exato do fechamento, a fatura que fecha hoje ainda é a vigente", () => {
+    const today = new Date(Date.UTC(2026, 5, 10));
+    const window = currentStatementWindow({ closingDay: 10, dueDay: 5 }, today);
+    expect(window.windowEnd.toISOString().slice(0, 10)).toBe("2026-06-10");
+  });
+
+  it("funciona na virada de ano", () => {
+    const today = new Date(Date.UTC(2026, 11, 15)); // 15/dez, fecha dia 10 -> vigente fecha em jan/2027
+    const window = currentStatementWindow({ closingDay: 10, dueDay: 5 }, today);
+    expect(window.windowEnd.toISOString().slice(0, 10)).toBe("2027-01-10");
   });
 });
 
