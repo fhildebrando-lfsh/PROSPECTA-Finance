@@ -6,20 +6,22 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização:** 2026-07-30. Além das 5 pontas soltas da Fase 1 (Compromissos,
+> **Última atualização:** 2026-07-31. Além das 5 pontas soltas da Fase 1 (Compromissos,
 > reverter importação, transferência entre carteiras, convidar membro, edição in-line/ações
 > em lote), o projeto agora está **implantado em produção na Vercel**
 > (`https://prospecta-finance.vercel.app`, repo `github.com/fhildebrando-lfsh/PROSPECTA-Finance`)
 > e ganhou, a partir de feedback de uso real: convite por WhatsApp (link `wa.me`), excluir
-> convite pendente, "Esqueci minha senha", nome no cadastro, e um painel `/admin/usuarios`
-> (visão de plataforma pra `isPlatformAdmin`). **E-mail de confirmação do Supabase não
-> funciona** — causa raiz diagnosticada (remetente `@gmail.com` não passa DKIM/DMARC em
-> nenhum provedor terceiro, nem Gmail SMTP nem Brevo), correção real exige domínio próprio,
-> **adiada de propósito pelo usuário** (não é um bug esquecido) — ver "Problemas
-> conhecidos" #9. `recovery-codes.txt` já foi removido da pasta pelo usuário; ainda falta
-> confirmar se a chave SMTP do Brevo exposta no chat foi revogada. Ver seção "Estado do
-> Git" — nenhum código mudou nesta rodada (só investigação/config fora do repo), HEAD
-> continua `1a61db6`.
+> convite pendente, "Esqueci minha senha", nome no cadastro, um painel `/admin/usuarios`
+> (visão de plataforma pra `isPlatformAdmin`), e um **menu lateral novo** (`components/Sidebar.tsx`,
+> só desktop/tablet) inspirado visualmente no sistema "Meu Vista", com `lucide-react` pros
+> ícones. **E-mail de confirmação do Supabase não funciona** — causa raiz diagnosticada
+> (remetente `@gmail.com` não passa DKIM/DMARC em nenhum provedor terceiro, nem Gmail SMTP
+> nem Brevo), correção real exige domínio próprio, **adiada de propósito pelo usuário** (não
+> é um bug esquecido) — ver "Problemas conhecidos" #9. `recovery-codes.txt` já foi removido
+> da pasta pelo usuário; ainda falta confirmar se a chave SMTP do Brevo exposta no chat foi
+> revogada. **Fase 2 pausada a pedido do usuário** — ele vai reportar bugs pontuais de uso
+> real primeiro, avança pra Fase 2 só depois de satisfeito com o estado atual (ver seção 27).
+> Ver seção "Estado do Git" — HEAD `56fbf3b`.
 
 ---
 
@@ -91,6 +93,7 @@ PostgreSQL (Supabase, sa-east-1) — RLS habilitada em toda tabela multi-tenant
 | Linguagem | TypeScript | ^5 |
 | UI | React + Tailwind CSS v4 | 19.2.4 / ^4 |
 | Gráficos | Recharts | ^3.10 |
+| Ícones | `lucide-react` | ^1.28 (instalado 2026-07-31 pro `Sidebar`) |
 | Banco | PostgreSQL (Supabase, sa-east-1) | — |
 | ORM | Prisma (novo generator `prisma-client`, driver adapters) | ^7.9.1 |
 | Driver adapter | `@prisma/adapter-pg` + `pg` | — |
@@ -531,11 +534,14 @@ confirmar o e-mail do usuário direto no painel do Supabase (Authentication → 
 | `InviteLink` | Client | `app/(app)/cadastros/membros/InviteLink.tsx` — botão "copiar" do link de convite; recebe a URL já montada (origin resolvido no server via `headers()`, não `window.location`, pra evitar mismatch de hidratação) |
 | `MonthlyChart` | Client | `components/charts/MonthlyChart.tsx` — gráfico Recharts (Receita/Despesa/Saldo, 6 meses) |
 | `RegisterServiceWorker` | Client | `components/RegisterServiceWorker.tsx` — registra o SW, só em produção |
+| `Sidebar` | Client | `components/Sidebar.tsx` — menu lateral de navegação (desktop/tablet, `md+`), fundo índigo escuro, item ativo em âmbar, grupos expansíveis "Lançamentos" e "Cadastros" com sub-páginas, ícones via `lucide-react`. Estilo pedido pelo usuário inspirado no sistema "Meu Vista" (mesma referência já usada pro fundo claro da tabela de Lançamentos, ver seção 21). No mobile (`<md`) o app continua com a barra inferior de sempre — o Sidebar não aparece lá. |
 | Páginas de Cadastros | Server | `app/(app)/cadastros/{carteiras,responsaveis,categorias,subcategorias,tipos,membros}/page.tsx` — todas seguem o mesmo padrão: tabela + form inline de criação, campos `disabled` com nota quando o usuário não tem permissão (Membros usa TITULAR/admin como critério de permissão, não `assertCanWrite`) |
 | `StatCard` | Server (local) | Definido dentro de `painel/page.tsx`, não extraído |
 
 Não há biblioteca de componentes (shadcn/ui) instalada apesar de recomendada no §15 — os
 componentes são HTML+Tailwind direto, estilo consistente mas escrito à mão em cada tela.
+`lucide-react` foi instalado (só ícones, não é uma lib de componentes) especificamente pro
+`Sidebar`.
 
 ---
 
@@ -644,6 +650,8 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 | `/admin/usuarios` usa a Admin API do Supabase (`auth.admin.listUsers()` via service role key) em vez de `$queryRaw` direto em `auth.users` | Mais robusto — a Admin API é uma interface pública estável do Supabase; consultar `auth.users` via SQL cru dependeria do schema interno deles, que pode mudar. Reaproveita `SUPABASE_SERVICE_ROLE_KEY`, que já existia na config exatamente pra esse caso de uso (documentado desde a Fase 0). |
 | Cadastro pede só "Nome completo" além de e-mail/senha, nada mais | Pedido explícito do usuário ("formulário com o mínimo de informação relevante") — resolve de quebra o bug de `Profile.fullName` sempre nascer nulo (aparecia como "(sem nome)" em Membros), sem inflar o formulário de cadastro. |
 | Painel de "todos os usuários" ficou restrito a `isPlatformAdmin` vendo todo mundo — não virou um sistema de categorias/papéis novo (Administrador/Planejador/Cliente) | O usuário cogitou papéis novos inspirados na Fase 4 (consultoria multi-workspace) mas, perguntado, confirmou que só queria a visão de plataforma pra ele mesmo — não pediu pra mudar o modelo de permissões atual (`MembershipRole` por workspace + `isPlatformAdmin` global). Redesenhar papéis fica pra quando a Fase 4 for de fato encomendada. |
+| Menu lateral (`Sidebar`) só em desktop/tablet (`md+`); mobile continua com a barra inferior existente, sem sidebar | Pedido explícito do usuário, com o sistema "Meu Vista" como referência visual (print anexado). Um menu lateral fixo não cabe bem numa tela de celular — a barra inferior já resolve isso e não foi tocada, evita retrabalho e regressão numa UX que já funcionava. |
+| `lucide-react` instalado em vez de desenhar ~15 ícones à mão em SVG | O projeto evita bibliotecas de componentes (shadcn/ui) por escopo, mas ícones são uma categoria à parte — bem mais barato que autoria manual de SVG pra essa quantidade, e é o par natural de Tailwind pra esse caso. |
 
 ---
 
@@ -771,6 +779,10 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 - ✅ **Excluir convite pendente**, **"Esqueci minha senha"** (fluxo completo com
   `/redefinir-senha`), **Nome completo no cadastro**, e **`/admin/usuarios`** (visão de
   plataforma pra `isPlatformAdmin`, todo usuário de todo workspace). Ver seção 11.
+- ✅ **Menu lateral (`Sidebar`)** — redesenho do layout desktop/tablet, inspirado
+  visualmente no sistema "Meu Vista" (print fornecido pelo usuário). Substitui a nav
+  horizontal do header por um menu fixo à esquerda, fundo índigo escuro, com grupos
+  expansíveis pra Lançamentos e Cadastros. Mobile não mudou (barra inferior de sempre).
 
 ## 25. Funcionalidades em andamento
 
@@ -782,7 +794,10 @@ commitado).
 ## 26. Estado do Git
 
 ```
-1a61db6 Adiciona nome no cadastro e painel admin de todos os usuarios   <- HEAD / origin/master
+56fbf3b Substitui nav horizontal por menu lateral (desktop), estilo inspirado no Meu Vista   <- HEAD / origin/master
+acc8802 Documenta investigacao do SMTP: causa raiz DKIM/DMARC, compra de dominio adiada
+917d42e Atualiza PROJECT_STATE.md: excluir convite, esqueci senha, nome no cadastro, admin/usuarios
+1a61db6 Adiciona nome no cadastro e painel admin de todos os usuarios
 96147ea Adiciona excluir convite pendente e fluxo de "esqueci minha senha"
 804bccb Atualiza PROJECT_STATE.md: deploy em producao, convite por WhatsApp, avisos de seguranca
 92d8035 Adiciona envio de convite por WhatsApp (link wa.me com mensagem pronta)
@@ -828,11 +843,14 @@ funcionalidade nova de Fase 2**:
    "Problemas conhecidos" #8).
 5. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
 
-Se o usuário pedir pra continuar com funcionalidades novas antes disso, não há mais
-candidatos óbvios de "backend pronto, só falta UI" — o próximo passo de código seria
-Fase 2 (analítico mensal, parceladas, balanço anual, orçamento, fluxo projetado, OFX) ou
-endereçar os itens da seção 12/22 (mapeamento de importação salvável, .xlsx no import,
-seletor de workspace, arquivar `Person`, banco de produção separado).
+**Estado da Fase 2:** o usuário perguntou sobre avançar pra Fase 2 (relatórios — analítico
+mensal, parceladas, balanço anual, orçamento, fatura de cartão, OFX) em 2026-07-31; foi
+avisado que a especificação recomenda 30 dias de uso real antes, e **decidiu pausar de
+propósito**: vai usar o sistema, reportar bugs pontuais conforme aparecerem (ex.: o menu
+lateral desta rodada nasceu de um desses pedidos), e só pedir pra avançar pra Fase 2 quando
+estiver satisfeito com o estado atual. **Não iniciar Fase 2 nem sugerir isso proativamente
+numa sessão futura** — esperar o usuário pedir explicitamente. Enquanto isso, tratar cada
+pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início de fase nova.
 
 ## 28. Checklist atualizado do projeto
 
@@ -860,10 +878,12 @@ seletor de workspace, arquivar `Person`, banco de produção separado).
       pelo usuário, não esquecido — contorno manual em uso enquanto isso.
 - [ ] Confirmar se a chave SMTP do Brevo exposta no chat (`xsmtpsib-...8Tafio`) foi
       revogada e substituída (ver "Problemas conhecidos" #9)
+- [x] Menu lateral (`Sidebar`) desktop/tablet, estilo Meu Vista — commit `56fbf3b`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
-      in-line com inversão de sinal, `/admin/usuarios`) — login exige senha, fora do
-      alcance do assistente
-- [ ] 30 dias de uso real
+      in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo) — login exige
+      senha, fora do alcance do assistente
+- [ ] 30 dias de uso real / correções pontuais reportadas pelo usuário (**Fase 2 pausada
+      de propósito** — ver seção 27, não iniciar sem pedido explícito)
 - [ ] Banco Supabase separado pra produção (hoje dev e prod compartilham o mesmo)
 - [ ] Fase 2 (relatórios: analítico, parceladas, balanço anual, orçamento, fluxo projetado, OFX)
 - [ ] Fase 3 (patrimônio, dívidas, metas, Open Finance)
