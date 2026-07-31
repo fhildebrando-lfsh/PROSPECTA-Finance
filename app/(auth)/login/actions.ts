@@ -37,11 +37,17 @@ export async function signup(
   formData: FormData,
 ): Promise<AuthActionState> {
   const { email, password } = credentialsFrom(formData);
+  const fullName = String(formData.get("fullName") ?? "").trim();
   if (!email || !password) return { error: "Preencha e-mail e senha.", info: null };
+  if (!fullName) return { error: "Informe seu nome.", info: null };
   if (password.length < 8) return { error: "A senha precisa de pelo menos 8 caracteres.", info: null };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: fullName } },
+  });
   if (error) return { error: error.message, info: null };
 
   return {

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth/session";
 import { logout } from "./actions";
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { href: "/painel", label: "Painel" },
   { href: "/lancamentos", label: "Lançamentos" },
   { href: "/compromissos", label: "Compromissos" },
@@ -12,6 +12,9 @@ const NAV_ITEMS = [
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
   const primaryMembership = profile.memberships[0];
+  const NAV_ITEMS = profile.isPlatformAdmin
+    ? [...BASE_NAV_ITEMS, { href: "/admin/usuarios", label: "Admin" }]
+    : BASE_NAV_ITEMS;
 
   return (
     <div className="flex min-h-screen flex-col">

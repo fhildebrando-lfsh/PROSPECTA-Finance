@@ -81,6 +81,18 @@ function LoginForm() {
 
         <form action={action} className="flex flex-col gap-4">
           {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
+          {mode === "signup" && (
+            <label className="flex flex-col gap-1 text-sm text-zinc-300">
+              Nome completo
+              <input
+                type="text"
+                name="fullName"
+                required
+                autoComplete="name"
+                className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-50 outline-none focus:border-amber-500"
+              />
+            </label>
+          )}
           <label className="flex flex-col gap-1 text-sm text-zinc-300">
             E-mail
             <input
