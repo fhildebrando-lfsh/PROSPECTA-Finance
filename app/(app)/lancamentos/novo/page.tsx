@@ -11,7 +11,7 @@ export default async function NovoLancamentoPage() {
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  const [wallets, categories, subcategories, people, recurrenceKinds, statuses, lastWalletEntry, lastResponsibleEntry] =
+  const [wallets, categories, subcategories, people, recurrenceKinds, statuses, natureLabels, lastWalletEntry, lastResponsibleEntry] =
     await Promise.all([
       prisma.wallet.findMany({ where: { workspaceId, isActive: true }, orderBy: { name: "asc" } }),
       prisma.category.findMany({ orderBy: [{ nature: "asc" }, { sortOrder: "asc" }] }),
@@ -19,6 +19,7 @@ export default async function NovoLancamentoPage() {
       prisma.person.findMany({ where: { workspaceId }, orderBy: { name: "asc" } }),
       prisma.recurrenceKind.findMany({ orderBy: { code: "asc" } }),
       prisma.status.findMany(),
+      prisma.natureLabel.findMany(),
       // §12 — "carteira: a última usada nas últimas 24h".
       prisma.entry.findFirst({
         where: { workspaceId, createdAt: { gte: since24h } },
@@ -50,6 +51,7 @@ export default async function NovoLancamentoPage() {
         people={people.map((p) => ({ id: p.id, name: p.name }))}
         recurrenceKinds={recurrenceKinds.map((r) => ({ code: r.code, label: r.legacyLabel ?? r.code }))}
         statuses={statuses.map((s) => ({ code: s.code, label: s.labelPt }))}
+        natureLabels={natureLabels.map((n) => ({ code: n.code, label: n.labelPt }))}
         defaultWalletId={lastWalletEntry?.walletId ?? wallets[0]?.id ?? ""}
         defaultResponsibleId={lastResponsibleEntry?.responsibleId ?? people[0]?.id ?? ""}
         cardDueDates={cardDueDates}

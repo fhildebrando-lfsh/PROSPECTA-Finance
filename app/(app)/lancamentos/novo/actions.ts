@@ -6,8 +6,12 @@ import { createEntryOrSeries } from "@/lib/entries/create";
 import { createEntrySchema } from "@/lib/validation/entry";
 
 /**
- * §12 — o usuário nunca digita o sinal (§8.3): escolhe Despesa/Receita e
- * digita o valor absoluto, o sistema aplica o sinal aqui.
+ * §12 — pra Despesa/Receita o usuário nunca digita o sinal (§8.3): escolhe o
+ * tipo e digita o valor absoluto, o sistema aplica o sinal aqui. Investimento
+ * e Outro não têm uma dicotomia natural igual Despesa/Receita (compra de
+ * investimento é negativa, resgate é positiva; transferência varia por
+ * direção) — pra esses dois, um botão de inverter sinal (`negative`) resolve
+ * sem exigir digitação livre do sinal.
  */
 export async function createQuickEntry(formData: FormData) {
   const profile = await requireProfile();
@@ -18,7 +22,9 @@ export async function createQuickEntry(formData: FormData) {
   const nature = String(formData.get("nature") ?? "DESPESA");
   const absAmount = Math.abs(Number(formData.get("amount") ?? "0"));
   if (!absAmount) throw new Error("Informe um valor.");
-  const signedAmount = nature === "DESPESA" ? -absAmount : absAmount;
+  const negative = formData.get("negative") === "true";
+  const signedAmount =
+    nature === "DESPESA" ? -absAmount : nature === "RECEITA" ? absAmount : negative ? -absAmount : absAmount;
 
   const installmentsRaw = Number(formData.get("installmentsTotal") ?? "1");
 
