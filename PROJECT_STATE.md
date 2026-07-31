@@ -39,7 +39,10 @@
 > viewport meta — bug real, não configuração do celular do usuário), e um **banner de
 > instalar o PWA** (`InstallPrompt`) na tela de login — a 1ª versão tinha cooldown de 14
 > dias após fechar, removido a pedido do usuário (sem persistência nenhuma: fechar só
-> esconde na visita atual). Ver seção "Estado do Git" — HEAD `b0b476d`.
+> esconde na visita atual). **Favicon errado corrigido:** um `app/favicon.ico` esquecido
+> do template padrão do Next (o triângulo da Vercel) desde a Fase 0 competia com
+> `app/icon.png` — removido, `/favicon.ico` agora 404 de propósito, só `icon.png` (a
+> logo real) é servido. Ver seção "Estado do Git" — HEAD `61d039c`.
 
 ---
 
@@ -160,7 +163,8 @@ C:\Sistema Financeiro\
 │   ├── page.tsx                          # redirect pra /painel
 │   ├── manifest.ts                       # manifest PWA dinâmico
 │   ├── sw.ts                             # service worker (Serwist)
-│   ├── icon.png                           # favicon (convenção do App Router)
+│   ├── icon.png                           # favicon (convenção do App Router; favicon.ico
+│   │                                          padrão do template foi removido, competia com este)
 │   ├── (auth)/login/                     # login + cadastro (Supabase Auth)
 │   ├── auth/confirm/route.ts             # callback de confirmação de e-mail (token_hash)
 │   ├── (app)/                            # tudo atrás de autenticação
@@ -847,7 +851,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-b0b476d Mostrar/ocultar senha, corrige zoom no mobile, banner de instalar o app   <- HEAD / origin/master
+61d039c Remove favicon.ico padrao do Next.js (era o triangulo da Vercel)   <- HEAD / origin/master
+95ee7ee Atualiza PROJECT_STATE.md: senha visivel, zoom mobile, banner de instalar sem cooldown
+b0b476d Mostrar/ocultar senha, corrige zoom no mobile, banner de instalar o app
 ef86a4b Atualiza PROJECT_STATE.md: bug do fundo branco corrigido, Painel redesenhado
 8da4ccd Redesenha Painel: cards #131A47, rosca de categorias, velocimetro de reserva
 f2341ac Atualiza PROJECT_STATE.md: cor do menu trocada de novo para #131A47
