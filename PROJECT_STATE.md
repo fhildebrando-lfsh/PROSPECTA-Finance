@@ -26,8 +26,10 @@
 > "R$". A 1ª versão da logo (fundo branco "consertado" via `sharp`) foi **rejeitada** pelo
 > usuário, que refez a arte com transparência real — versão final aplicada em tudo.
 > Navegação mobile (`components/MobileNav.tsx`) foi unificada visualmente com o `Sidebar`
-> desktop (mesmos ícones, mesmo destaque de página ativa), e a cor de ambos foi fixada em
-> `#090D24` a pedido do usuário. Ver seção "Estado do Git" — HEAD `01c7e2c`.
+> desktop (mesmos ícones, mesmo destaque de página ativa). A cor do menu (Sidebar +
+> MobileNav + header mobile) foi trocada duas vezes a pedido do usuário — `#090D24` e
+> depois `#131A47` (valor atual) — sempre via `bg-[#hex]` do Tailwind nos três lugares
+> juntos. Ver seção "Estado do Git" — HEAD `401a47a`.
 
 ---
 
@@ -542,8 +544,8 @@ confirmar o e-mail do usuário direto no painel do Supabase (Authentication → 
 | `InviteLink` | Client | `app/(app)/cadastros/membros/InviteLink.tsx` — botão "copiar" do link de convite; recebe a URL já montada (origin resolvido no server via `headers()`, não `window.location`, pra evitar mismatch de hidratação) |
 | `MonthlyChart` | Client | `components/charts/MonthlyChart.tsx` — gráfico Recharts (Receita/Despesa/Saldo, 6 meses) |
 | `RegisterServiceWorker` | Client | `components/RegisterServiceWorker.tsx` — registra o SW, só em produção |
-| `Sidebar` | Client | `components/Sidebar.tsx` — menu lateral de navegação (desktop/tablet, `md+`), fundo `#090D24` (cor exata pedida pelo usuário), item ativo em âmbar, grupos expansíveis "Lançamentos" e "Cadastros" com sub-páginas, ícones via `lucide-react`. Estilo pedido pelo usuário inspirado no sistema "Meu Vista" (mesma referência já usada pro fundo claro da tabela de Lançamentos, ver seção 21). |
-| `MobileNav` | Client | `components/MobileNav.tsx` — barra inferior do celular (`<md`), mesma cor `#090D24` e mesmos ícones do `Sidebar`, com destaque em âmbar da página atual (antes não existia esse destaque). Junto com o header mobile em `(app)/layout.tsx` (também `#090D24`), unifica a linguagem visual entre desktop e mobile — pedido explícito do usuário após o primeiro corte do Sidebar deixar os dois muito diferentes. |
+| `Sidebar` | Client | `components/Sidebar.tsx` — menu lateral de navegação (desktop/tablet, `md+`), fundo `#131A47` (cor exata pedida pelo usuário), item ativo em âmbar, grupos expansíveis "Lançamentos" e "Cadastros" com sub-páginas, ícones via `lucide-react`. Estilo pedido pelo usuário inspirado no sistema "Meu Vista" (mesma referência já usada pro fundo claro da tabela de Lançamentos, ver seção 21). |
+| `MobileNav` | Client | `components/MobileNav.tsx` — barra inferior do celular (`<md`), mesma cor `#131A47` e mesmos ícones do `Sidebar`, com destaque em âmbar da página atual (antes não existia esse destaque). Junto com o header mobile em `(app)/layout.tsx` (também `#131A47`), unifica a linguagem visual entre desktop e mobile — pedido explícito do usuário após o primeiro corte do Sidebar deixar os dois muito diferentes. |
 | Páginas de Cadastros | Server | `app/(app)/cadastros/{carteiras,responsaveis,categorias,subcategorias,tipos,membros}/page.tsx` — todas seguem o mesmo padrão: tabela + form inline de criação, campos `disabled` com nota quando o usuário não tem permissão (Membros usa TITULAR/admin como critério de permissão, não `assertCanWrite`) |
 | `StatCard` | Server (local) | Definido dentro de `painel/page.tsx`, não extraído |
 
@@ -661,7 +663,7 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 | Painel de "todos os usuários" ficou restrito a `isPlatformAdmin` vendo todo mundo — não virou um sistema de categorias/papéis novo (Administrador/Planejador/Cliente) | O usuário cogitou papéis novos inspirados na Fase 4 (consultoria multi-workspace) mas, perguntado, confirmou que só queria a visão de plataforma pra ele mesmo — não pediu pra mudar o modelo de permissões atual (`MembershipRole` por workspace + `isPlatformAdmin` global). Redesenhar papéis fica pra quando a Fase 4 for de fato encomendada. |
 | Menu lateral (`Sidebar`) só em desktop/tablet (`md+`); mobile mantém barra inferior, não vira sidebar | Pedido explícito do usuário, com o sistema "Meu Vista" como referência visual (print anexado). Um menu lateral fixo não cabe bem numa tela de celular — a barra inferior é o padrão certo pra esse tamanho de tela. **Atualização:** a estrutura (sidebar vs. barra) ficou diferente de propósito, mas a *cor* e os *ícones* precisaram ficar iguais — ver `MobileNav` — porque o usuário achou o visual mobile/desktop "diferente demais" no primeiro corte. |
 | Logo: 1ª tentativa (remover fundo branco + medalhão circular via `sharp`) foi rejeitada; versão final usa o arquivo que o próprio usuário refez com transparência real | O PNG original tinha canal alpha mas o branco ao redor do ícone era **opaco** (alpha 255), não transparente — dava efeito de "logo dentro de um quadrado branco" mesmo depois de redimensionada. Tentei consertar programaticamente (threshold de "brancura" + composição num círculo branco) e mandei preview antes de aplicar em tudo — o usuário rejeitou o resultado e preferiu refazer a arte ele mesmo. Lição: quando o problema é "a arte está errada", perguntar/mostrar preview antes de aplicar em todo canto vale mais do que tentar consertar via processamento automático — e valeu a pena ter perguntado antes de já ter commitado. |
-| Cor do menu fixada em `#090D24` (valor exato, não um token Tailwind como `indigo-950`) | Pedido explícito do usuário com o hex exato — usado via sintaxe arbitrária do Tailwind (`bg-[#090D24]`) nos três lugares que representam "o menu" (`Sidebar`, `MobileNav`, header mobile), não alterado em mais nada (bordas/textos indigo-200/300/900 mantidos, servem de contraste sobre o novo fundo). |
+| Cor do menu fixada em `#131A47` (valor exato, não um token Tailwind como `indigo-950`) | Pedido explícito do usuário com o hex exato — usado via sintaxe arbitrária do Tailwind (`bg-[#131A47]`) nos três lugares que representam "o menu" (`Sidebar`, `MobileNav`, header mobile), não alterado em mais nada (bordas/textos indigo-200/300/900 mantidos, servem de contraste sobre o novo fundo). |
 | `lucide-react` instalado em vez de desenhar ~15 ícones à mão em SVG | O projeto evita bibliotecas de componentes (shadcn/ui) por escopo, mas ícones são uma categoria à parte — bem mais barato que autoria manual de SVG pra essa quantidade, e é o par natural de Tailwind pra esse caso. |
 | App renomeado pra "PROSPECTA Finance"; logo do usuário redimensionada via `sharp` (já presente no `node_modules`) em vez de subir o PNG original de 2.5MB pro repo | Pedido explícito do usuário, com arquivo de logo anexado. 2.5MB carregado em toda página seria um problema real de performance — gerado `app/icon.png` (favicon, convenção do App Router), `public/icon-192.png`/`icon-512.png` (PWA) e `public/logo-sidebar.png` (menu lateral/login) via script Node descartável. Substituiu os ícones dinâmicos placeholder "R$" (`ImageResponse`), que foram removidos. |
 | `<Image priority>` nas 3 instâncias do logo (login, recuperar senha, sidebar) | Sem `priority`, o Next posterga o carregamento de imagens fora da viewport inicial (lazy loading padrão) — como essas três aparecem sempre acima da dobra, `priority` evita o atraso/flash perceptível. Descoberto testando no browser: sem isso, `naturalWidth` ficava `0` mesmo com a URL respondendo 200. |
@@ -800,10 +802,10 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   aba, login, sidebar, manifest do PWA), logo real do usuário substituindo os ícones
   placeholder "R$" (versão final com transparência real, depois de uma 1ª tentativa
   rejeitada — ver seção 21), débito técnico da seção 23 resolvido.
-- ✅ **`MobileNav` + cor `#090D24`** — navegação mobile redesenhada pra usar a mesma cor,
+- ✅ **`MobileNav` + cor `#131A47`** — navegação mobile redesenhada pra usar a mesma cor,
   ícones e destaque de página ativa do `Sidebar` desktop (pedido do usuário depois de achar
   os dois "diferentes demais" no primeiro corte). Cor do menu (desktop e mobile) fixada em
-  `#090D24` a pedido do usuário.
+  `#131A47` a pedido do usuário.
 
 ## 25. Funcionalidades em andamento
 
@@ -815,7 +817,8 @@ commitado).
 ## 26. Estado do Git
 
 ```
-01c7e2c Muda cor de fundo do menu (sidebar/mobile) para #090D24   <- HEAD / origin/master
+401a47a Muda cor de fundo do menu (sidebar/mobile) para #131A47   <- HEAD / origin/master
+01c7e2c Muda cor de fundo do menu (sidebar/mobile) para #090D24
 50c36e2 Corrige logo com transparencia real e unifica visual mobile/desktop
 4b71504 Documenta rebranding PROSPECTA Finance e remove referencia morta no proxy.ts
 1b3e8ae Renomeia app para PROSPECTA Finance e adiciona a logomarca real
@@ -907,7 +910,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Menu lateral (`Sidebar`) desktop/tablet, estilo Meu Vista — commit `56fbf3b`
 - [x] Rebranding "PROSPECTA Finance" + logo real (ícones PWA, favicon, sidebar, login) —
       commit `1b3e8ae`; logo corrigida (transparência real) + navegação mobile unificada
-      com o Sidebar (`MobileNav`) + cor `#090D24` — commits `50c36e2`/`01c7e2c`
+      com o Sidebar (`MobileNav`) + cor `#131A47` (após um ajuste intermediário em `#090D24`)
+      — commits `50c36e2`/`01c7e2c`/`401a47a`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo) — login exige
       senha, fora do alcance do assistente
