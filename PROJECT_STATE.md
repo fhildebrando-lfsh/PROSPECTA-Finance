@@ -42,7 +42,10 @@
 > esconde na visita atual). **Favicon errado corrigido:** um `app/favicon.ico` esquecido
 > do template padrão do Next (o triângulo da Vercel) desde a Fase 0 competia com
 > `app/icon.png` — removido, `/favicon.ico` agora 404 de propósito, só `icon.png` (a
-> logo real) é servido. Ver seção "Estado do Git" — HEAD `61d039c`.
+> logo real) é servido. **Painel ganhou visão Mensal/Anual/Geral** (`?view=`) além da
+> navegação por mês — afeta KPIs, Top 5 e distribuição por categoria; o gráfico "Últimos
+> 6 meses" continua fixo em 6 meses independente da view (é sobre tendência recente, não
+> o período selecionado). Ver seção "Estado do Git" — HEAD `2e9fa19`.
 
 ---
 
@@ -453,6 +456,7 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
 | §10 R5 | Transferência: par de linhas, soma zero, tela própria (origem/destino/valor/data) | `lib/finance/transfer.ts`, `lib/entries/transfer.ts`, `app/(app)/lancamentos/transferir/*` |
 | §11.1/11.2 | Saldo de carteira, blocos do dashboard | `lib/finance/balance.ts` |
 | §11.3 | Receita/Despesa/Investimento/Balanço do período (fiel à fórmula — **não filtra por situação**, inclui A_PAGAR/A_RECEBER/ESTIMATIVA) | `lib/finance/period.ts` |
+| — | Painel com 3 visões de período — Mensal (padrão), Anual (ano inteiro, nav ano anterior/seguinte), Geral (todo o histórico, sem nav) — via `?view=`. Afeta KPIs, Top 5, distribuição por categoria; o gráfico "Últimos 6 meses" não muda (sempre 6 meses fixos, é sobre tendência recente, não o período selecionado) | `app/(app)/painel/page.tsx` |
 | §11.4/11.5 | Janela de fatura, fatura vigente, cobertura | `lib/finance/card.ts` |
 | §11.6 | Reserva de emergência (média 6 meses fechados, meta, gauge) | `lib/finance/reserve.ts` |
 | §11.7 | Fixa × variável (regra automática + override manual) | `lib/finance/fixed.ts` |
@@ -840,6 +844,10 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 - ✅ **Login/PWA — 3 correções de uso real:** mostrar/ocultar senha (`PasswordInput`),
   zoom indevido no mobile corrigido (viewport meta faltando `width`/`initialScale`), e
   banner de instalar o app (`InstallPrompt`, sem cooldown persistido — ver seção 21).
+- ✅ **Favicon corrigido** — `app/favicon.ico` (o triângulo padrão do Next/Vercel, esquecido
+  desde a Fase 0) removido; só `app/icon.png` (a logo real) fica.
+- ✅ **Painel: visão Mensal/Anual/Geral** — botões de período além da navegação de mês,
+  afetando KPIs/Top 5/distribuição por categoria (ver seção 11).
 
 ## 25. Funcionalidades em andamento
 
@@ -851,7 +859,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-61d039c Remove favicon.ico padrao do Next.js (era o triangulo da Vercel)   <- HEAD / origin/master
+2e9fa19 Adiciona visao Mensal/Anual/Geral no Painel   <- HEAD / origin/master
+41acf58 Atualiza PROJECT_STATE.md: favicon.ico padrao removido
+61d039c Remove favicon.ico padrao do Next.js (era o triangulo da Vercel)
 95ee7ee Atualiza PROJECT_STATE.md: senha visivel, zoom mobile, banner de instalar sem cooldown
 b0b476d Mostrar/ocultar senha, corrige zoom no mobile, banner de instalar o app
 ef86a4b Atualiza PROJECT_STATE.md: bug do fundo branco corrigido, Painel redesenhado
@@ -956,6 +966,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       `#131A47`, `CategoryRings`, `ReserveGauge`) — commit `8da4ccd`
 - [x] Mostrar/ocultar senha, zoom mobile corrigido (viewport meta), banner de instalar
       o app sem cooldown — commit `b0b476d`
+- [x] Favicon.ico padrão do Next removido — commit `61d039c`
+- [x] Painel: visão Mensal/Anual/Geral — commit `2e9fa19`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
