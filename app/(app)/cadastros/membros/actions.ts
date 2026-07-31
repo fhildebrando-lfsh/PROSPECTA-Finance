@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireProfile, requireWorkspaceId } from "@/lib/auth/session";
 import { ApiError } from "@/lib/api/errors";
+import { prisma } from "@/lib/db/prisma";
 import { createInvite } from "@/lib/workspace/invite";
 import type { MembershipRole } from "@/app/generated/prisma/enums";
 
@@ -27,5 +28,14 @@ export async function inviteMember(formData: FormData) {
   const phone = String(formData.get("phone") ?? "").trim() || undefined;
 
   await createInvite(workspaceId, profile.id, email, role, phone);
+  revalidatePath("/cadastros/membros");
+}
+
+export async function deleteInvite(formData: FormData) {
+  const workspaceId = await requireWorkspaceId();
+  await requireTitularOrAdmin(workspaceId);
+
+  const id = String(formData.get("id") ?? "");
+  await prisma.workspaceInvite.deleteMany({ where: { id, workspaceId } });
   revalidatePath("/cadastros/membros");
 }

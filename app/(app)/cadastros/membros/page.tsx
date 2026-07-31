@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { requireProfile, requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { formatDateBR } from "@/lib/format";
-import { inviteMember } from "./actions";
+import { inviteMember, deleteInvite } from "./actions";
 import { InviteLink } from "./InviteLink";
 
 const ROLE_LABELS: Record<string, string> = { TITULAR: "Titular", MEMBRO: "Membro", LEITURA: "Leitura" };
@@ -89,6 +89,15 @@ export default async function MembrosPage() {
                           </a>
                         )}
                         <InviteLink url={inviteUrl} />
+                        <form action={deleteInvite}>
+                          <input type="hidden" name="id" value={inv.id} />
+                          <button
+                            type="submit"
+                            className="rounded-lg border border-red-900 px-2 py-1 text-xs text-red-400 hover:bg-red-950"
+                          >
+                            Excluir
+                          </button>
+                        </form>
                       </div>
                     </div>
                   );
