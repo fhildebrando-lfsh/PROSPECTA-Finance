@@ -4,6 +4,8 @@ import { Suspense, useActionState, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { login, signup, requestPasswordReset, type AuthActionState } from "./actions";
+import { PasswordInput } from "@/components/PasswordInput";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 const initialState: AuthActionState = { error: null, info: null };
 
@@ -74,7 +76,8 @@ function LoginForm() {
   const action = mode === "login" ? loginAction : signupAction;
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4">
+    <div className="flex flex-1 flex-col items-center justify-center px-4">
+      <InstallPrompt />
       <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
         <Image src="/logo-sidebar.png" alt="" width={48} height={48} className="mb-3" priority />
         <h1 className="mb-1 text-xl font-semibold text-zinc-50">PROSPECTA Finance</h1>
@@ -109,13 +112,7 @@ function LoginForm() {
 
           <label className="flex flex-col gap-1 text-sm text-zinc-300">
             Senha
-            <input
-              type="password"
-              name="password"
-              required
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-50 outline-none focus:border-amber-500"
-            />
+            <PasswordInput name="password" required autoComplete={mode === "login" ? "current-password" : "new-password"} />
           </label>
 
           {mode === "login" && (
