@@ -34,7 +34,12 @@
 > nessa mesma rodada, **corrigido um bug real**: o fundo da página renderizava branco em
 > vez de escuro por uma regra de CSS não-layered em `globals.css` vencendo as utilities do
 > Tailwind (cascade layers); a correção também destravou a fonte Geist, que nunca tinha
-> sido aplicada de verdade. Ver seção "Estado do Git" — HEAD `8da4ccd`.
+> sido aplicada de verdade. Mais 3 correções de uso real: **mostrar/ocultar senha**
+> (`PasswordInput`), **zoom indevido no mobile** (faltava `width`/`initialScale` na
+> viewport meta — bug real, não configuração do celular do usuário), e um **banner de
+> instalar o PWA** (`InstallPrompt`) na tela de login — a 1ª versão tinha cooldown de 14
+> dias após fechar, removido a pedido do usuário (sem persistência nenhuma: fechar só
+> esconde na visita atual). Ver seção "Estado do Git" — HEAD `b0b476d`.
 
 ---
 
@@ -550,6 +555,8 @@ confirmar o e-mail do usuário direto no painel do Supabase (Authentication → 
 | `MonthlyChart` | Client | `components/charts/MonthlyChart.tsx` — gráfico Recharts (Receita/Despesa/Saldo, 6 meses) |
 | `CategoryRings` | Server | `components/charts/CategoryRings.tsx` — "Distribuição por categoria" do Painel: grid de anéis de progresso SVG (não Recharts) com ícone `lucide-react` por categoria, escolhido por palavra-chave no nome (`iconForCategory`, sem lista fixa — a taxonomia é livre, §7). Puramente apresentacional, server-renderizável (sem `"use client"`). |
 | `ReserveGauge` | Server | `components/charts/ReserveGauge.tsx` — "Reserva de emergência" do Painel: velocímetro SVG (semicírculo, 3 zonas vermelho/âmbar/verde + ponteiro), mesmas faixas 0-33/33-66/66-100% de `lib/finance/reserve.ts::reserveGaugeBand`. Também server-renderizável. |
+| `PasswordInput` | Client | `components/PasswordInput.tsx` — campo de senha com toggle mostrar/ocultar (ícone de olho, `lucide-react`), usado no login/cadastro. Não-controlado (só `name`/`required`/`autoComplete`) — `redefinir-senha/page.tsx` tem o mesmo toggle implementado inline porque os campos lá são controlados (`value`/`onChange`), não reaproveita este componente. |
+| `InstallPrompt` | Client | `components/InstallPrompt.tsx` — banner de instalar o PWA na tela de login. Android/Chrome: escuta `beforeinstallprompt`, botão dispara `prompt()` nativo. iOS Safari (sem essa API): mostra instrução manual. Fechar (`X`) não persiste bloqueio nenhum — reaparece na próxima vez que `/login` for aberta, decisão explícita do usuário depois de uma primeira versão com cooldown de 14 dias (ver seção 21). |
 | `RegisterServiceWorker` | Client | `components/RegisterServiceWorker.tsx` — registra o SW, só em produção |
 | `Sidebar` | Client | `components/Sidebar.tsx` — menu lateral de navegação (desktop/tablet, `md+`), fundo `#131A47` (cor exata pedida pelo usuário), item ativo em âmbar, grupos expansíveis "Lançamentos" e "Cadastros" com sub-páginas, ícones via `lucide-react`. Estilo pedido pelo usuário inspirado no sistema "Meu Vista" (mesma referência já usada pro fundo claro da tabela de Lançamentos, ver seção 21). |
 | `MobileNav` | Client | `components/MobileNav.tsx` — barra inferior do celular (`<md`), mesma cor `#131A47` e mesmos ícones do `Sidebar`, com destaque em âmbar da página atual (antes não existia esse destaque). Junto com o header mobile em `(app)/layout.tsx` (também `#131A47`), unifica a linguagem visual entre desktop e mobile — pedido explícito do usuário após o primeiro corte do Sidebar deixar os dois muito diferentes. |
@@ -676,6 +683,8 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 | `lucide-react` instalado em vez de desenhar ~15 ícones à mão em SVG | O projeto evita bibliotecas de componentes (shadcn/ui) por escopo, mas ícones são uma categoria à parte — bem mais barato que autoria manual de SVG pra essa quantidade, e é o par natural de Tailwind pra esse caso. |
 | App renomeado pra "PROSPECTA Finance"; logo do usuário redimensionada via `sharp` (já presente no `node_modules`) em vez de subir o PNG original de 2.5MB pro repo | Pedido explícito do usuário, com arquivo de logo anexado. 2.5MB carregado em toda página seria um problema real de performance — gerado `app/icon.png` (favicon, convenção do App Router), `public/icon-192.png`/`icon-512.png` (PWA) e `public/logo-sidebar.png` (menu lateral/login) via script Node descartável. Substituiu os ícones dinâmicos placeholder "R$" (`ImageResponse`), que foram removidos. |
 | `<Image priority>` nas 3 instâncias do logo (login, recuperar senha, sidebar) | Sem `priority`, o Next posterga o carregamento de imagens fora da viewport inicial (lazy loading padrão) — como essas três aparecem sempre acima da dobra, `priority` evita o atraso/flash perceptível. Descoberto testando no browser: sem isso, `naturalWidth` ficava `0` mesmo com a URL respondendo 200. |
+| Bug real encontrado e corrigido: `export const viewport` em `app/layout.tsx` só setava `themeColor`, sem `width`/`initialScale` — o navegador mobile assumia uma viewport larga (~980px) e renderizava a página com zoom, exigindo ajuste manual do usuário (relatado como "abre com zoom leve, preciso reduzir na mão"). Corrigido adicionando `width: "device-width", initialScale: 1`. | Diagnóstico direto a partir do sintoma relatado — comportamento clássico de meta viewport ausente/incompleta em mobile. Confirmado depois via `document.querySelector('meta[name="viewport"]')` no preview. |
+| Banner de instalar o PWA (`InstallPrompt`) sem nenhum cooldown persistido após fechar | Primeira versão guardava 14 dias em `localStorage` antes de mostrar de novo. O usuário apontou o problema certo: se alguém fecha por engano (ou muda de ideia), ficaria bloqueado por duas semanas sem um caminho de volta. Trocado por comportamento simples: fechar só esconde na visita atual: reaparece normalmente na próxima vez que `/login` carregar (se `beforeinstallprompt` disparar de novo ou, no iOS, se ainda não estiver em modo standalone). |
 
 ---
 
@@ -824,6 +833,9 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   cobertura de fatura usam `#131A47`. "Distribuição por categoria" virou um grid de anéis
   de progresso com ícone (`CategoryRings`). "Reserva de emergência" virou um velocímetro
   SVG com as mesmas faixas vermelho/âmbar/verde de `lib/finance/reserve.ts` (`ReserveGauge`).
+- ✅ **Login/PWA — 3 correções de uso real:** mostrar/ocultar senha (`PasswordInput`),
+  zoom indevido no mobile corrigido (viewport meta faltando `width`/`initialScale`), e
+  banner de instalar o app (`InstallPrompt`, sem cooldown persistido — ver seção 21).
 
 ## 25. Funcionalidades em andamento
 
@@ -835,7 +847,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-8da4ccd Redesenha Painel: cards #131A47, rosca de categorias, velocimetro de reserva   <- HEAD / origin/master
+b0b476d Mostrar/ocultar senha, corrige zoom no mobile, banner de instalar o app   <- HEAD / origin/master
+ef86a4b Atualiza PROJECT_STATE.md: bug do fundo branco corrigido, Painel redesenhado
+8da4ccd Redesenha Painel: cards #131A47, rosca de categorias, velocimetro de reserva
 f2341ac Atualiza PROJECT_STATE.md: cor do menu trocada de novo para #131A47
 401a47a Muda cor de fundo do menu (sidebar/mobile) para #131A47
 01c7e2c Muda cor de fundo do menu (sidebar/mobile) para #090D24
@@ -934,6 +948,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       — commits `50c36e2`/`01c7e2c`/`401a47a`
 - [x] Bug do fundo branco corrigido (CSS cascade layers) + Painel redesenhado (cards
       `#131A47`, `CategoryRings`, `ReserveGauge`) — commit `8da4ccd`
+- [x] Mostrar/ocultar senha, zoom mobile corrigido (viewport meta), banner de instalar
+      o app sem cooldown — commit `b0b476d`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
