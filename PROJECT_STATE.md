@@ -21,7 +21,9 @@
 > da pasta pelo usuário; ainda falta confirmar se a chave SMTP do Brevo exposta no chat foi
 > revogada. **Fase 2 pausada a pedido do usuário** — ele vai reportar bugs pontuais de uso
 > real primeiro, avança pra Fase 2 só depois de satisfeito com o estado atual (ver seção 27).
-> Ver seção "Estado do Git" — HEAD `56fbf3b`.
+> **App renomeado pra "PROSPECTA Finance"** (nome visível em toda parte: aba, login,
+> sidebar, PWA) com logo própria enviada pelo usuário, substituindo os ícones placeholder
+> "R$". Ver seção "Estado do Git" — HEAD `1b3e8ae`.
 
 ---
 
@@ -142,7 +144,7 @@ C:\Sistema Financeiro\
 │   ├── page.tsx                          # redirect pra /painel
 │   ├── manifest.ts                       # manifest PWA dinâmico
 │   ├── sw.ts                             # service worker (Serwist)
-│   ├── icon-192/route.tsx, icon-512/route.tsx  # ícones PWA gerados via ImageResponse
+│   ├── icon.png                           # favicon (convenção do App Router)
 │   ├── (auth)/login/                     # login + cadastro (Supabase Auth)
 │   ├── auth/confirm/route.ts             # callback de confirmação de e-mail (token_hash)
 │   ├── (app)/                            # tudo atrás de autenticação
@@ -177,7 +179,10 @@ C:\Sistema Financeiro\
 │   ├── charts/MonthlyChart.tsx           # gráfico Recharts (client component)
 │   └── RegisterServiceWorker.tsx         # registra o SW no browser
 ├── tests/                                # espelha lib/finance e lib/import, Vitest
-└── public/                               # assets estáticos padrão do Next (não customizado)
+└── public/                               # logo-sidebar.png, icon-192.png, icon-512.png (marca
+    #                                        PROSPECTA Finance, gerados via sharp a partir do
+    #                                        logo.png original enviado pelo usuário — esse
+    #                                        original de 2.5MB fica só local, não é commitado)
 ```
 
 ---
@@ -652,6 +657,8 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 | Painel de "todos os usuários" ficou restrito a `isPlatformAdmin` vendo todo mundo — não virou um sistema de categorias/papéis novo (Administrador/Planejador/Cliente) | O usuário cogitou papéis novos inspirados na Fase 4 (consultoria multi-workspace) mas, perguntado, confirmou que só queria a visão de plataforma pra ele mesmo — não pediu pra mudar o modelo de permissões atual (`MembershipRole` por workspace + `isPlatformAdmin` global). Redesenhar papéis fica pra quando a Fase 4 for de fato encomendada. |
 | Menu lateral (`Sidebar`) só em desktop/tablet (`md+`); mobile continua com a barra inferior existente, sem sidebar | Pedido explícito do usuário, com o sistema "Meu Vista" como referência visual (print anexado). Um menu lateral fixo não cabe bem numa tela de celular — a barra inferior já resolve isso e não foi tocada, evita retrabalho e regressão numa UX que já funcionava. |
 | `lucide-react` instalado em vez de desenhar ~15 ícones à mão em SVG | O projeto evita bibliotecas de componentes (shadcn/ui) por escopo, mas ícones são uma categoria à parte — bem mais barato que autoria manual de SVG pra essa quantidade, e é o par natural de Tailwind pra esse caso. |
+| App renomeado pra "PROSPECTA Finance"; logo do usuário redimensionada via `sharp` (já presente no `node_modules`) em vez de subir o PNG original de 2.5MB pro repo | Pedido explícito do usuário, com arquivo de logo anexado. 2.5MB carregado em toda página seria um problema real de performance — gerado `app/icon.png` (favicon, convenção do App Router), `public/icon-192.png`/`icon-512.png` (PWA) e `public/logo-sidebar.png` (menu lateral/login) via script Node descartável. Substituiu os ícones dinâmicos placeholder "R$" (`ImageResponse`), que foram removidos. |
+| `<Image priority>` nas 3 instâncias do logo (login, recuperar senha, sidebar) | Sem `priority`, o Next posterga o carregamento de imagens fora da viewport inicial (lazy loading padrão) — como essas três aparecem sempre acima da dobra, `priority` evita o atraso/flash perceptível. Descoberto testando no browser: sem isso, `naturalWidth` ficava `0` mesmo com a URL respondendo 200. |
 
 ---
 
@@ -749,8 +756,8 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 - `Person` (responsável) não tem campo `isActive`/arquivamento — só `delete`, que falha se
   houver lançamentos vinculados (mensagem amigável já existe, mas não há alternativa de
   arquivar como Wallet/Subcategory têm).
-- Ícones do PWA são gerados dinamicamente com texto "R$" (não é uma identidade visual de
-  verdade) — placeholder até existir uma marca definida.
+- ~~Ícones do PWA gerados dinamicamente com texto "R$"~~ **Resolvido 2026-07-31** — o app
+  ganhou marca própria, "PROSPECTA Finance". Ver seção 21 (decisões) e 24 (concluídas).
 
 ---
 
@@ -783,6 +790,9 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   visualmente no sistema "Meu Vista" (print fornecido pelo usuário). Substitui a nav
   horizontal do header por um menu fixo à esquerda, fundo índigo escuro, com grupos
   expansíveis pra Lançamentos e Cadastros. Mobile não mudou (barra inferior de sempre).
+- ✅ **Rebranding pra "PROSPECTA Finance"** — nome trocado em toda parte visível (título da
+  aba, login, sidebar, manifest do PWA), logo real do usuário substituindo os ícones
+  placeholder "R$", débito técnico da seção 23 resolvido.
 
 ## 25. Funcionalidades em andamento
 
@@ -794,7 +804,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-56fbf3b Substitui nav horizontal por menu lateral (desktop), estilo inspirado no Meu Vista   <- HEAD / origin/master
+1b3e8ae Renomeia app para PROSPECTA Finance e adiciona a logomarca real   <- HEAD / origin/master
+089e466 Atualiza PROJECT_STATE.md: menu lateral, Fase 2 pausada a pedido do usuario
+56fbf3b Substitui nav horizontal por menu lateral (desktop), estilo inspirado no Meu Vista
 acc8802 Documenta investigacao do SMTP: causa raiz DKIM/DMARC, compra de dominio adiada
 917d42e Atualiza PROJECT_STATE.md: excluir convite, esqueci senha, nome no cadastro, admin/usuarios
 1a61db6 Adiciona nome no cadastro e painel admin de todos os usuarios
@@ -879,6 +891,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [ ] Confirmar se a chave SMTP do Brevo exposta no chat (`xsmtpsib-...8Tafio`) foi
       revogada e substituída (ver "Problemas conhecidos" #9)
 - [x] Menu lateral (`Sidebar`) desktop/tablet, estilo Meu Vista — commit `56fbf3b`
+- [x] Rebranding "PROSPECTA Finance" + logo real (ícones PWA, favicon, sidebar, login) —
+      commit `1b3e8ae`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo) — login exige
       senha, fora do alcance do assistente
