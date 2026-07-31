@@ -49,8 +49,15 @@
 > mas sempre ancorado em hoje e projetando 6 meses à frente — reaproveita os `entries` já
 > carregados (parcelas futuras, recorrências materializadas, compromissos agendados já
 > existem no banco), nenhuma lógica de projeção nova foi necessária. Nome corrigido de
-> "Provisão futura" pra só "Provisão" — pleonasmo apontado pelo usuário. Ver seção
-> "Estado do Git" — HEAD `07c4c18`.
+> "Provisão futura" pra só "Provisão" — pleonasmo apontado pelo usuário.
+> **Novo lançamento redesenhado**: form dentro de um card `#131A47`, com 4 botões de Tipo
+> (Despesa/Receita/Investimento/Outro, antes só 2) puxando os rótulos de `NatureLabel`;
+> Investimento/Outro ganharam um botão de inverter sinal por não terem uma dicotomia
+> natural tipo Despesa/Receita. **`app/error.tsx`/`global-error.tsx`** adicionados —
+> página de erro customizada que detecta `ChunkLoadError` (chunk JS antigo depois de um
+> deploy novo, aba ainda aberta na versão anterior — provável causa de um erro relatado
+> pelo usuário) e recarrega sozinha; não foi encontrado bug real no código da rota que
+> disparou o erro original. Ver seção "Estado do Git" — HEAD `de68d14`.
 
 ---
 
@@ -562,7 +569,7 @@ confirmar o e-mail do usuário direto no painel do Supabase (Authentication → 
 
 | Componente | Tipo | Onde |
 |---|---|---|
-| `QuickEntryForm` | Client | `app/(app)/lancamentos/novo/QuickEntryForm.tsx` — form completo do lançamento rápido, com sugestão de categoria, defaults reativos por carteira |
+| `QuickEntryForm` | Client | `app/(app)/lancamentos/novo/QuickEntryForm.tsx` — form completo do lançamento rápido, dentro de um card `#131A47`, com sugestão de categoria, defaults reativos por carteira. 4 botões de Tipo (Despesa/Receita/Investimento/Outro, rótulos de `NatureLabel`) — Investimento/Outro usam um botão de inverter sinal (mesmo padrão do `EditRow` em `EntriesTable`) por não terem dicotomia natural tipo Despesa/Receita |
 | `EntriesTable` | Client | `app/(app)/lancamentos/EntriesTable.tsx` — tabela desktop de Lançamentos: checkbox de seleção, barra de ações em lote (excluir / marcar pago-recebido), edição in-line por linha (`EditRow`, componente interno) via `fetch` PATCH em `/api/entries/:id` |
 | `TransferForm` | Client | `app/(app)/lancamentos/transferir/TransferForm.tsx` — origem/destino (com exclusão mútua), valor, data, responsável |
 | `InviteLink` | Client | `app/(app)/cadastros/membros/InviteLink.tsx` — botão "copiar" do link de convite; recebe a URL já montada (origin resolvido no server via `headers()`, não `window.location`, pra evitar mismatch de hidratação) |
@@ -699,6 +706,7 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 | `<Image priority>` nas 3 instâncias do logo (login, recuperar senha, sidebar) | Sem `priority`, o Next posterga o carregamento de imagens fora da viewport inicial (lazy loading padrão) — como essas três aparecem sempre acima da dobra, `priority` evita o atraso/flash perceptível. Descoberto testando no browser: sem isso, `naturalWidth` ficava `0` mesmo com a URL respondendo 200. |
 | Bug real encontrado e corrigido: `export const viewport` em `app/layout.tsx` só setava `themeColor`, sem `width`/`initialScale` — o navegador mobile assumia uma viewport larga (~980px) e renderizava a página com zoom, exigindo ajuste manual do usuário (relatado como "abre com zoom leve, preciso reduzir na mão"). Corrigido adicionando `width: "device-width", initialScale: 1`. | Diagnóstico direto a partir do sintoma relatado — comportamento clássico de meta viewport ausente/incompleta em mobile. Confirmado depois via `document.querySelector('meta[name="viewport"]')` no preview. |
 | Banner de instalar o PWA (`InstallPrompt`) sem nenhum cooldown persistido após fechar | Primeira versão guardava 14 dias em `localStorage` antes de mostrar de novo. O usuário apontou o problema certo: se alguém fecha por engano (ou muda de ideia), ficaria bloqueado por duas semanas sem um caminho de volta. Trocado por comportamento simples: fechar só esconde na visita atual: reaparece normalmente na próxima vez que `/login` carregar (se `beforeinstallprompt` disparar de novo ou, no iOS, se ainda não estiver em modo standalone). |
+| `app/error.tsx` + `app/global-error.tsx` — página de erro customizada em vez da tela genérica do Next; detecta padrão de `ChunkLoadError`/"Failed to fetch" e recarrega sozinho (uma vez, com cooldown de 10s via `sessionStorage` pra não entrar em loop) | Usuário relatou a tela padrão do Next ("This page couldn't load") depois de navegar pra fora e voltar em `/lancamentos/novo`. Não foi encontrado bug real no código da rota — o padrão bate com "chunk JS antigo depois de um novo deploy, aba ainda aberta na versão anterior", bem provável dado o volume de deploys consecutivos desta sessão enquanto o usuário testava cada mudança. Não dá pra eliminar esse tipo de erro por completo (é inerente a app cliente + deploys contínuos), mas dá pra torná-lo invisível na maioria dos casos com um reload automático. |
 
 ---
 
@@ -856,6 +864,11 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   afetando KPIs/Top 5/distribuição por categoria (ver seção 11).
 - ✅ **Painel: gráfico de Provisão** — mesmo estilo do "Últimos 6 meses", mas
   projetando os próximos 6 meses a partir de hoje (ver seção 11).
+- ✅ **Novo lançamento redesenhado** — form dentro de card `#131A47`, 4 botões de Tipo
+  (Despesa/Receita/Investimento/Outro) em vez de 2, com sinal invertível pra
+  Investimento/Outro (ver seção 6/15).
+- ✅ **`app/error.tsx`/`global-error.tsx`** — página de erro customizada com detecção e
+  reload automático de `ChunkLoadError` (ver seção 21).
 
 ## 25. Funcionalidades em andamento
 
@@ -867,7 +880,8 @@ commitado).
 ## 26. Estado do Git
 
 ```
-07c4c18 Renomeia "Provisao futura" para "Provisao" no Painel   <- HEAD / origin/master
+de68d14 Formulario de lancamento em KPI card com 4 tipos, e pagina de erro custom   <- HEAD / origin/master
+07c4c18 Renomeia "Provisao futura" para "Provisao" no Painel
 15b450b Atualiza PROJECT_STATE.md: grafico de provisao futura no Painel
 0dc2b0b Adiciona grafico de provisao futura (proximos 6 meses) no Painel
 24e3355 Atualiza PROJECT_STATE.md: visao Mensal/Anual/Geral no Painel
@@ -981,6 +995,7 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Favicon.ico padrão do Next removido — commit `61d039c`
 - [x] Painel: visão Mensal/Anual/Geral — commit `2e9fa19`
 - [x] Painel: gráfico de Provisão (próximos 6 meses) — commit `0dc2b0b`
+- [x] Novo lançamento em KPI card + 4 tipos, página de erro customizada — commit `de68d14`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
