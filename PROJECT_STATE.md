@@ -10,9 +10,12 @@
 > reverter importação, transferência entre carteiras, convidar membro, edição in-line/ações
 > em lote), o projeto agora está **implantado em produção na Vercel**
 > (`https://prospecta-finance.vercel.app`, repo `github.com/fhildebrando-lfsh/PROSPECTA-Finance`)
-> e o convite de membro ganhou um botão de compartilhar por WhatsApp (link `wa.me`, sem API
-> paga). Ver seção "Estado do Git" — HEAD `92d8035`, working tree limpo (exceto um arquivo
-> de códigos de recuperação 2FA que **nunca deve ser commitado**, ver seção 22).
+> e ganhou, a partir de feedback de uso real: convite por WhatsApp (link `wa.me`), excluir
+> convite pendente, "Esqueci minha senha", nome no cadastro, e um painel `/admin/usuarios`
+> (visão de plataforma pra `isPlatformAdmin`). **Bloqueador atual:** e-mail de confirmação
+> do Supabase não está chegando (plano gratuito) — ver "Problemas conhecidos" #9. Ver seção
+> "Estado do Git" — HEAD `1a61db6`, working tree limpo (exceto um arquivo de códigos de
+> recuperação 2FA que **nunca deve ser commitado**, ver seção 22 item 8).
 
 ---
 
@@ -240,6 +243,7 @@ C:\Sistema Financeiro\
 - `assertIsAdmin()` — só admin (Categoria/Subcategoria/Tipo).
 
 ### Outros
+- `lib/supabase/admin.ts` — `createAdminClient()`, client com a service role key (contorna RLS, enxerga `auth.users` inteiro via Admin API). **Só server-side** — nunca importar num Client Component. Único consumidor hoje: `/admin/usuarios`.
 - `lib/db/prisma.ts` — singleton do Prisma Client com `PrismaPg` adapter; carrega `.env.local` explicitamente (necessário pros scripts standalone via `tsx`, que não passam pelo carregamento automático do Next).
 - `lib/format.ts` — `formatCurrencyBRL`, `formatDateBR` (Intl pt-BR), `toWhatsAppDigits` (normaliza telefone pro link `wa.me`, assume DDI 55 se vierem 10-11 dígitos).
 - `lib/slug.ts` — `slugify()`, implementa o algoritmo exato do §18.3.
@@ -261,7 +265,10 @@ C:\Sistema Financeiro\
 
 ## 8. Fluxo de autenticação
 
-1. **Cadastro:** `app/(auth)/login/actions.ts` → `signup()` → `supabase.auth.signUp()`.
+1. **Cadastro:** `app/(auth)/login/actions.ts` → `signup()` → `supabase.auth.signUp({ email,
+   password, options: { data: { full_name } } })`. O form pede **Nome completo** (obrigatório,
+   único campo extra além de e-mail/senha — decisão explícita de manter o cadastro mínimo,
+   ver seção 21) e passa como `full_name` no metadata, que o trigger abaixo usa.
 2. Supabase cria a linha em `auth.users` → **trigger** `on_auth_user_created`
    (`prisma/sql/001_auth_and_rls.sql`) roda automaticamente e, na mesma transação:
    - cria `public.profiles` (id = auth.users.id);
@@ -292,6 +299,17 @@ C:\Sistema Financeiro\
    **não está sendo usado na prática** — o fluxo real funciona via o link padrão do
    Supabase + detecção automática de sessão no client. Ficou como código morto/preparado
    pra quando o template de e-mail for customizado (precisa de SMTP próprio, não configurado).
+9. **Esqueci minha senha:** link na tela de login → modo "recover" → `requestPasswordReset()`
+   chama `supabase.auth.resetPasswordForEmail(email, { redirectTo: origin + "/redefinir-senha" })`.
+   A mensagem de retorno é sempre genérica ("se esse e-mail existir…"), nunca confirma se o
+   e-mail está cadastrado (evita enumeração de contas). `/redefinir-senha`
+   (`app/(auth)/redefinir-senha/page.tsx`, client component) fica de fora do gate de sessão
+   do middleware (`PUBLIC_PATHS` em `lib/supabase/middleware.ts`) porque a sessão de
+   recuperação só é estabelecida depois que o browser processa a URL do link de e-mail
+   (evento `PASSWORD_RECOVERY` do `onAuthStateChange`, ou sessão já presente se o fluxo for
+   PKCE) — a página espera até 6s por isso antes de mostrar "link inválido ou expirado".
+   Depois de confirmada a sessão, `supabase.auth.updateUser({ password })` troca a senha e
+   redireciona pra `/painel`.
 
 ---
 
@@ -417,7 +435,9 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
 | §13 | Tela Compromissos: vencidos/hoje/próximos 7/próximos 30 dias, marcar pago/recebido em 1 clique | `app/(app)/compromissos/*`, `lib/entries/settle.ts` |
 | §13 | Lançamentos: seleção múltipla (excluir em lote, marcar pago/recebido em lote) e edição in-line (descrição, categoria, subcategoria, responsável, situação, vencimento, valor) — **só no desktop** (≥768px); mobile continua somente leitura, decisão de escopo desta rodada | `app/(app)/lancamentos/EntriesTable.tsx` |
 | §18.1 | Reverter importação: botão por lote na tela de Importar | `app/(app)/lancamentos/importar/*`, `lib/import/revert.ts` |
-| §19.1 | Convidar membro pra workspace existente: TITULAR/admin gera link de convite com token (+ botão opcional "Enviar por WhatsApp" via `wa.me` se o telefone for informado); quem aceita precisa estar logado com o e-mail exato do convite | `app/(app)/cadastros/membros/*`, `app/(app)/convite/[token]/*`, `lib/workspace/invite.ts` |
+| §19.1 | Convidar membro pra workspace existente: TITULAR/admin gera link de convite com token (+ botão opcional "Enviar por WhatsApp" via `wa.me` se o telefone for informado), pode excluir um convite pendente; quem aceita precisa estar logado com o e-mail exato do convite | `app/(app)/cadastros/membros/*`, `app/(app)/convite/[token]/*`, `lib/workspace/invite.ts` |
+| §19.1 | Painel `/admin/usuarios` (só `isPlatformAdmin`): todo usuário cadastrado no sistema — nome, e-mail, se é admin, workspaces + papel em cada um, e-mail confirmado, cadastro, último login | `app/(app)/admin/usuarios/page.tsx`, `lib/supabase/admin.ts` |
+| — | Esqueci minha senha (login → e-mail → link → nova senha) | `app/(auth)/login/*`, `app/(auth)/redefinir-senha/page.tsx` |
 
 ---
 
@@ -480,9 +500,18 @@ resposta JSON (import wizard, sugestão de categoria) ou o `EntriesTable` client
 ## 14. Serviços
 
 Não há serviços externos além do **Supabase** (Postgres + Auth). Nenhuma integração de
-pagamento, e-mail transacional, Open Finance ou push ainda (todas são Fase 2+).
-`SUPABASE_SERVICE_ROLE_KEY` está configurada mas **não é usada em nenhum código hoje**
-(reservada pra quando precisar de operações admin via Supabase, ex.: listar usuários).
+pagamento, Open Finance ou push ainda (todas são Fase 2+). `SUPABASE_SERVICE_ROLE_KEY` agora
+**é usada** em `lib/supabase/admin.ts` (Admin API do Supabase, só server-side) — a página
+`/admin/usuarios` lista todo usuário cadastrado no sistema (ver seção 11).
+
+**E-mail transacional (confirmação de cadastro, redefinição de senha):** usa o serviço de
+e-mail padrão do Supabase (sem SMTP próprio configurado). No plano gratuito isso é
+**pouco confiável** — limite baixo de envios/hora, cai em spam com frequência, às vezes não
+chega. Confirmado na prática em 2026-07-30 (convite de teste pra `prospectafinancas@gmail.com`
+não recebeu o e-mail de confirmação). Correção recomendada, ainda não feita: configurar SMTP
+próprio no Supabase (Authentication → Emails → SMTP Settings) com um provedor tipo Resend.
+Contorno manual enquanto isso: confirmar o e-mail do usuário direto no painel do Supabase
+(Authentication → Users → usuário → confirmar e-mail).
 
 ---
 
@@ -536,7 +565,7 @@ Todas em `.env.local` (gitignored, nunca commitado, nunca colado em chat):
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase (público) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anônima do Supabase (público) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço (privada) — **não usada em código ainda** |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço (privada) — usada em `lib/supabase/admin.ts` (Admin API, página `/admin/usuarios`) |
 | `DATABASE_URL` | Connection string do Postgres — **usa o "Session pooler" do Supabase** (porta 5432, `aws-0-sa-east-1.pooler.supabase.com`), não a conexão direta (a rede residencial do usuário não tem IPv6, que a conexão direta exige) |
 
 Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
@@ -606,6 +635,9 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 | Origin do link de convite resolvido no Server Component via headers `x-forwarded-proto`/`host`, não `window.location` no client | Evita mismatch de hidratação (SSR não tem acesso a `window`) — o padrão de projeto até agora era client component só cuidar de interatividade, nunca de dado que o server já tem como calcular. |
 | Botão "Enviar por WhatsApp" usa link `wa.me` (usuário clica em enviar dentro do próprio WhatsApp) em vez de envio automático via API do WhatsApp Business | Pedido do usuário após relatar que o e-mail do convite "não chegou" (na real, o sistema nunca mandou e-mail — mal-entendido esclarecido). Envio automático de verdade exigiria conta comercial verificada + aprovação de template pela Meta + custo por mensagem — infraestrutura que não existe e está fora do escopo pedido; o link `wa.me` entrega o essencial (mensagem e link prontos) sem nenhuma dependência nova. |
 | `next build --webpack` (produção) roda separado do `next dev` (Turbopack) — bug do `useSearchParams()` sem `Suspense` na página de login só aparece no build de produção, nunca em dev | Descoberto ao rodar `npm run build` localmente antes do primeiro deploy na Vercel — se não fosse pego antes, o build teria falhado direto na Vercel. Lição: sempre rodar `npm run build` local antes de um deploy novo, não confiar só em `next dev` funcionando. |
+| `/admin/usuarios` usa a Admin API do Supabase (`auth.admin.listUsers()` via service role key) em vez de `$queryRaw` direto em `auth.users` | Mais robusto — a Admin API é uma interface pública estável do Supabase; consultar `auth.users` via SQL cru dependeria do schema interno deles, que pode mudar. Reaproveita `SUPABASE_SERVICE_ROLE_KEY`, que já existia na config exatamente pra esse caso de uso (documentado desde a Fase 0). |
+| Cadastro pede só "Nome completo" além de e-mail/senha, nada mais | Pedido explícito do usuário ("formulário com o mínimo de informação relevante") — resolve de quebra o bug de `Profile.fullName` sempre nascer nulo (aparecia como "(sem nome)" em Membros), sem inflar o formulário de cadastro. |
+| Painel de "todos os usuários" ficou restrito a `isPlatformAdmin` vendo todo mundo — não virou um sistema de categorias/papéis novo (Administrador/Planejador/Cliente) | O usuário cogitou papéis novos inspirados na Fase 4 (consultoria multi-workspace) mas, perguntado, confirmou que só queria a visão de plataforma pra ele mesmo — não pediu pra mudar o modelo de permissões atual (`MembershipRole` por workspace + `isPlatformAdmin` global). Redesenhar papéis fica pra quando a Fase 4 for de fato encomendada. |
 
 ---
 
@@ -631,9 +663,8 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
    seção 8) — o e-mail de confirmação usa o link padrão do Supabase, não o formato
    `token_hash`. Não é bug ativo, mas é código morto até o template de e-mail ser
    customizado (precisa de SMTP próprio configurado no Supabase).
-5. **`requireAdminProfile()`** em `lib/auth/session.ts` está sem uso desde a mudança pra
-   "visível-porém-desabilitado" — mantido por ser útil pra uma futura tela 100%
-   admin-only (ex.: painel de consultoria), mas hoje é código não referenciado.
+5. **`requireAdminProfile()`** em `lib/auth/session.ts` — **agora tem uso**: gate de
+   `/admin/usuarios` (seção 11, §19.1).
 6. **Toda a rodada de Compromissos/reverter importação/transferência/convite/edição
    in-line (seção 11) foi verificada só por `tsc --noEmit`, `eslint` e os 113 testes
    automatizados**, não por navegação real logada — o login exige senha, que o assistente
@@ -641,10 +672,12 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
    (redirecionam corretamente, sem erro 500) e os tipos do Prisma validam os nomes de
    chave composta (`nature_slug`, `workspaceId_profileId`) e a forma dos dados, mas **um
    teste manual logado como Felipe é recomendado antes de considerar esta rodada
-   totalmente confiável**, em especial o fluxo de convite (item 2) e a edição in-line de
-   valor com inversão de sinal (seção 21). **Atualização:** o convite de membro já foi
-   testado manualmente por Felipe em produção (gerou um convite de verdade, viu aparecer
-   em "Convites pendentes") — falta só alguém aceitar de fato pra fechar o ciclo completo.
+   totalmente confiável**, em especial a edição in-line de valor com inversão de sinal
+   (seção 21) e o painel `/admin/usuarios` (só verificado por build + tipos, nunca
+   navegado). **Atualização:** o convite de membro (link + WhatsApp) já foi testado
+   manualmente por Felipe em produção com sucesso; falta só alguém aceitar um convite de
+   fato pra fechar o ciclo completo (bloqueado agora pelo problema #9, e-mail de
+   confirmação do Supabase não chegando pro convidado).
 7. **Desenvolvimento e produção usam o mesmo banco Supabase** (não há banco separado pra
    produção ainda) — rodar `npm run dev` local e testar coisas continua escrevendo nos
    mesmos dados que o site em produção usa. Tomar cuidado extra com testes/seeds locais
@@ -655,6 +688,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
    manualmente do `git add` de propósito) e o usuário foi avisado pra mover pra um lugar
    seguro fora do repositório. Se esse arquivo ainda existir numa sessão futura, não
    commitar em hipótese nenhuma e lembrar o usuário de novo.
+9. **E-mail de confirmação de cadastro do Supabase não está chegando** — confirmado na
+   prática em 2026-07-30 (convite de teste pra `prospectafinancas@gmail.com`, a pessoa
+   nunca recebeu o e-mail). Ver seção 14 pra causa provável (limite do plano gratuito do
+   Supabase) e correção recomendada (SMTP próprio via Resend ou similar — ainda não
+   configurado, é uma ação fora do código que só o usuário pode fazer). Isso bloqueia
+   testar o fluxo de convite ponta-a-ponta (item 6) e o cadastro de novos usuários em
+   geral até ser resolvido ou contornado manualmente (confirmar e-mail direto no painel
+   do Supabase).
 
 ---
 
@@ -700,6 +741,9 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   `useSearchParams()` na página de login) que só aparecia em `next build`, não em `next dev`.
 - ✅ **Convite por WhatsApp:** campo telefone opcional no convite de membro + botão "Enviar
   por WhatsApp" (link `wa.me` com mensagem pronta, sem API paga).
+- ✅ **Excluir convite pendente**, **"Esqueci minha senha"** (fluxo completo com
+  `/redefinir-senha`), **Nome completo no cadastro**, e **`/admin/usuarios`** (visão de
+  plataforma pra `isPlatformAdmin`, todo usuário de todo workspace). Ver seção 11.
 
 ## 25. Funcionalidades em andamento
 
@@ -711,7 +755,10 @@ commitado).
 ## 26. Estado do Git
 
 ```
-92d8035 Adiciona envio de convite por WhatsApp (link wa.me com mensagem pronta)   <- HEAD / origin/master
+1a61db6 Adiciona nome no cadastro e painel admin de todos os usuarios   <- HEAD / origin/master
+96147ea Adiciona excluir convite pendente e fluxo de "esqueci minha senha"
+804bccb Atualiza PROJECT_STATE.md: deploy em producao, convite por WhatsApp, avisos de seguranca
+92d8035 Adiciona envio de convite por WhatsApp (link wa.me com mensagem pronta)
 5db6f57 Corrige prontidao pro deploy: Suspense boundary no login, config de preview de producao, lint ignora sw.js gerado
 a389222 Fase 1: fecha pontas soltas (Compromissos, reverter importacao, transferencia, convite de membro, edicao in-line)
 640d4f6 Fase 1 / Conversa 5: permissoes, exportacao e responsividade/PWA
@@ -741,13 +788,17 @@ funcionalidade nova de Fase 2**:
 
 1. Configurar Supabase Authentication → URL Configuration com a URL da Vercel (Site
    URL + Redirect URLs) — **já feito** pelo usuário em 2026-07-30.
-2. Uso real por Felipe e a esposa — o fluxo de convite já foi gerado uma vez em produção
-   (apareceu em "Convites pendentes"), mas **ninguém aceitou um convite ainda** (ver
-   "Problemas conhecidos" #6). Recomenda-se fechar esse ciclo completo antes de confiar
-   nele.
-3. Mover `recovery-codes.txt` pra um lugar seguro fora da pasta do projeto (ver
+2. **Configurar SMTP próprio no Supabase** (Authentication → Emails → SMTP Settings, ex.:
+   Resend) — bloqueador atual pra testar cadastro/convite ponta-a-ponta (ver "Problemas
+   conhecidos" #9). Sem isso, contornar confirmando e-mail manualmente no painel do
+   Supabase quando precisar.
+3. Uso real por Felipe e a esposa — o fluxo de convite (link + WhatsApp) já foi testado
+   manualmente com sucesso, mas **ninguém aceitou um convite de fato ainda** porque o
+   e-mail de confirmação do Supabase não chegou (item 2 acima). Fechar esse ciclo antes de
+   confiar nele.
+4. Mover `recovery-codes.txt` pra um lugar seguro fora da pasta do projeto (ver
    "Problemas conhecidos" #8).
-4. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
+5. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
 
 Se o usuário pedir pra continuar com funcionalidades novas antes disso, não há mais
 candidatos óbvios de "backend pronto, só falta UI" — o próximo passo de código seria
@@ -773,9 +824,14 @@ seletor de workspace, arquivar `Person`, banco de produção separado).
       `github.com/fhildebrando-lfsh/PROSPECTA-Finance`
 - [x] Convite por WhatsApp (link `wa.me`) — commit `92d8035`
 - [x] Configurar Supabase Auth URL Configuration com a URL da Vercel
+- [x] Excluir convite pendente, "Esqueci minha senha", Nome no cadastro, `/admin/usuarios`
+      — commits `96147ea` e `1a61db6`
+- [ ] Configurar SMTP próprio no Supabase (Resend ou similar) — e-mail de confirmação não
+      está chegando no plano gratuito (ver "Problemas conhecidos" #9)
 - [ ] Mover `recovery-codes.txt` pra fora da pasta do projeto
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
-      in-line com inversão de sinal) — login exige senha, fora do alcance do assistente
+      in-line com inversão de sinal, `/admin/usuarios`) — login exige senha, fora do
+      alcance do assistente
 - [ ] 30 dias de uso real
 - [ ] Banco Supabase separado pra produção (hoje dev e prod compartilham o mesmo)
 - [ ] Fase 2 (relatórios: analítico, parceladas, balanço anual, orçamento, fluxo projetado, OFX)
