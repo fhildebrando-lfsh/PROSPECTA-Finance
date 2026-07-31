@@ -210,7 +210,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-medium text-zinc-300">Provisão futura (próximos 6 meses)</h2>
+        <h2 className="mb-2 text-sm font-medium text-zinc-300">Provisão (próximos 6 meses)</h2>
         <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
           <MonthlyChart data={forecastChartData} />
         </div>
