@@ -12,10 +12,14 @@
 > (`https://prospecta-finance.vercel.app`, repo `github.com/fhildebrando-lfsh/PROSPECTA-Finance`)
 > e ganhou, a partir de feedback de uso real: convite por WhatsApp (link `wa.me`), excluir
 > convite pendente, "Esqueci minha senha", nome no cadastro, e um painel `/admin/usuarios`
-> (visão de plataforma pra `isPlatformAdmin`). **Bloqueador atual:** e-mail de confirmação
-> do Supabase não está chegando (plano gratuito) — ver "Problemas conhecidos" #9. Ver seção
-> "Estado do Git" — HEAD `1a61db6`, working tree limpo (exceto um arquivo de códigos de
-> recuperação 2FA que **nunca deve ser commitado**, ver seção 22 item 8).
+> (visão de plataforma pra `isPlatformAdmin`). **E-mail de confirmação do Supabase não
+> funciona** — causa raiz diagnosticada (remetente `@gmail.com` não passa DKIM/DMARC em
+> nenhum provedor terceiro, nem Gmail SMTP nem Brevo), correção real exige domínio próprio,
+> **adiada de propósito pelo usuário** (não é um bug esquecido) — ver "Problemas
+> conhecidos" #9. `recovery-codes.txt` já foi removido da pasta pelo usuário; ainda falta
+> confirmar se a chave SMTP do Brevo exposta no chat foi revogada. Ver seção "Estado do
+> Git" — nenhum código mudou nesta rodada (só investigação/config fora do repo), HEAD
+> continua `1a61db6`.
 
 ---
 
@@ -504,14 +508,16 @@ pagamento, Open Finance ou push ainda (todas são Fase 2+). `SUPABASE_SERVICE_RO
 **é usada** em `lib/supabase/admin.ts` (Admin API do Supabase, só server-side) — a página
 `/admin/usuarios` lista todo usuário cadastrado no sistema (ver seção 11).
 
-**E-mail transacional (confirmação de cadastro, redefinição de senha):** usa o serviço de
-e-mail padrão do Supabase (sem SMTP próprio configurado). No plano gratuito isso é
-**pouco confiável** — limite baixo de envios/hora, cai em spam com frequência, às vezes não
-chega. Confirmado na prática em 2026-07-30 (convite de teste pra `prospectafinancas@gmail.com`
-não recebeu o e-mail de confirmação). Correção recomendada, ainda não feita: configurar SMTP
-próprio no Supabase (Authentication → Emails → SMTP Settings) com um provedor tipo Resend.
-Contorno manual enquanto isso: confirmar o e-mail do usuário direto no painel do Supabase
-(Authentication → Users → usuário → confirmar e-mail).
+**E-mail transacional (confirmação de cadastro, redefinição de senha): não funciona hoje,
+causa raiz identificada, correção adiada de propósito.** Ver "Problemas conhecidos" #9 pro
+diagnóstico completo — resumo: nem o e-mail padrão do Supabase, nem SMTP via Gmail, nem SMTP
+via Brevo (com o remetente `prospectafinancas@gmail.com`) conseguiram entregar. A causa raiz
+real é que o remetente é um endereço `@gmail.com` — nenhum provedor terceiro consegue
+autenticar DKIM/DMARC pra um domínio que não controla, e Google/Yahoo/Microsoft bloqueiam ou
+jogam pra spam e-mails "em nome de" um freemail relayado por terceiro. A correção exige um
+domínio próprio (usuário decidiu comprar depois, não agora). Contorno manual enquanto isso:
+confirmar o e-mail do usuário direto no painel do Supabase (Authentication → Users → usuário
+→ confirmar e-mail).
 
 ---
 
@@ -688,14 +694,35 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
    manualmente do `git add` de propósito) e o usuário foi avisado pra mover pra um lugar
    seguro fora do repositório. Se esse arquivo ainda existir numa sessão futura, não
    commitar em hipótese nenhuma e lembrar o usuário de novo.
-9. **E-mail de confirmação de cadastro do Supabase não está chegando** — confirmado na
-   prática em 2026-07-30 (convite de teste pra `prospectafinancas@gmail.com`, a pessoa
-   nunca recebeu o e-mail). Ver seção 14 pra causa provável (limite do plano gratuito do
-   Supabase) e correção recomendada (SMTP próprio via Resend ou similar — ainda não
-   configurado, é uma ação fora do código que só o usuário pode fazer). Isso bloqueia
-   testar o fluxo de convite ponta-a-ponta (item 6) e o cadastro de novos usuários em
-   geral até ser resolvido ou contornado manualmente (confirmar e-mail direto no painel
-   do Supabase).
+9. **E-mail de confirmação de cadastro do Supabase não está chegando — causa raiz
+   diagnosticada, correção adiada de propósito pelo usuário.** Confirmado na prática em
+   2026-07-30 com dois provedores diferentes:
+   - E-mail padrão do Supabase (sem SMTP custom): não chegou (limite do plano gratuito).
+   - SMTP Gmail (`smtp.gmail.com`, senha de app de 16 caracteres, configurado
+     corretamente): não chegou. O próprio Supabase mostra um aviso na tela de SMTP
+     Settings dizendo que esse provedor "é feito pra envio pessoal, não transacional".
+   - SMTP Brevo (`smtp-relay.brevo.com`, remetente `prospectafinancas@gmail.com`
+     verificado no Brevo): **também não chegou**. Causa raiz real, visível no painel do
+     Brevo (Remetentes → aviso de conformidade): o remetente é um endereço `@gmail.com`,
+     e **nenhum provedor terceiro consegue autenticar DKIM/DMARC pra um domínio que não
+     controla** (só o Google controla o DNS de `gmail.com`). Desde 2024, Google/Yahoo/
+     Microsoft bloqueiam ou jogam pra spam e-mails "em nome de" um endereço @gmail.com
+     enviados via relay terceiro (proteção anti-spoofing). **O problema nunca foi o
+     provedor SMTP — é o remetente ser um endereço de freemail, não um domínio próprio.**
+   - **Correção real:** comprar um domínio próprio (~R$40-60/ano) e configurar DKIM/SPF/
+     DMARC nele via Brevo (guia completo já dado ao usuário nesta conversa). **O usuário
+     decidiu adiar essa compra de propósito** ("deixe esse passo para depois... posterior
+     tratamos esse problema") — não é uma tarefa esquecida, é uma decisão explícita.
+   - **Contorno enquanto isso:** confirmar e-mail manualmente no painel do Supabase
+     (Authentication → Users → usuário → confirmar e-mail) toda vez que alguém se
+     cadastrar. Funciona bem pra uso familiar/baixo volume, não escala.
+   - Isso bloqueia testar o fluxo de convite ponta-a-ponta (item 6) até ser contornado
+     manualmente ou até o domínio ser comprado.
+   - **⚠️ Nota de segurança:** durante essa investigação, uma chave SMTP do Brevo
+     (`xsmtpsib-...8Tafio`) foi colada em texto puro no chat pelo usuário — foi orientado a
+     revogá-la e gerar uma nova no painel do Brevo (Settings → SMTP & API). Confirmar numa
+     sessão futura se isso foi feito; se a chave antiga ainda aparecer ativa lá, lembrar o
+     usuário de novo.
 
 ---
 
@@ -788,14 +815,15 @@ funcionalidade nova de Fase 2**:
 
 1. Configurar Supabase Authentication → URL Configuration com a URL da Vercel (Site
    URL + Redirect URLs) — **já feito** pelo usuário em 2026-07-30.
-2. **Configurar SMTP próprio no Supabase** (Authentication → Emails → SMTP Settings, ex.:
-   Resend) — bloqueador atual pra testar cadastro/convite ponta-a-ponta (ver "Problemas
-   conhecidos" #9). Sem isso, contornar confirmando e-mail manualmente no painel do
-   Supabase quando precisar.
+2. **E-mail de confirmação continua quebrado, correção adiada de propósito pelo usuário**
+   (ver "Problemas conhecidos" #9) — a causa raiz exige domínio próprio (DKIM/DMARC não dá
+   pra autenticar num endereço @gmail.com), e o usuário decidiu comprar o domínio depois,
+   não agora. Contorno enquanto isso: confirmar e-mail manualmente no painel do Supabase
+   (Authentication → Users) quando alguém se cadastrar.
 3. Uso real por Felipe e a esposa — o fluxo de convite (link + WhatsApp) já foi testado
    manualmente com sucesso, mas **ninguém aceitou um convite de fato ainda** porque o
-   e-mail de confirmação do Supabase não chegou (item 2 acima). Fechar esse ciclo antes de
-   confiar nele.
+   e-mail de confirmação do Supabase não chega (item 2 acima) — usar o contorno manual pra
+   destravar isso quando quiser fechar o ciclo.
 4. Mover `recovery-codes.txt` pra um lugar seguro fora da pasta do projeto (ver
    "Problemas conhecidos" #8).
 5. Backup mensal em CSV guardado fora do sistema (prática recomendada no guia).
@@ -826,9 +854,12 @@ seletor de workspace, arquivar `Person`, banco de produção separado).
 - [x] Configurar Supabase Auth URL Configuration com a URL da Vercel
 - [x] Excluir convite pendente, "Esqueci minha senha", Nome no cadastro, `/admin/usuarios`
       — commits `96147ea` e `1a61db6`
-- [ ] Configurar SMTP próprio no Supabase (Resend ou similar) — e-mail de confirmação não
-      está chegando no plano gratuito (ver "Problemas conhecidos" #9)
-- [ ] Mover `recovery-codes.txt` pra fora da pasta do projeto
+- [x] `recovery-codes.txt` movido pra fora da pasta do projeto (confirmado pelo usuário)
+- [ ] Comprar domínio próprio + configurar DKIM/SPF/DMARC no Brevo — única correção real
+      pro e-mail de confirmação (ver "Problemas conhecidos" #9). **Adiado de propósito**
+      pelo usuário, não esquecido — contorno manual em uso enquanto isso.
+- [ ] Confirmar se a chave SMTP do Brevo exposta no chat (`xsmtpsib-...8Tafio`) foi
+      revogada e substituída (ver "Problemas conhecidos" #9)
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`) — login exige senha, fora do
       alcance do assistente
