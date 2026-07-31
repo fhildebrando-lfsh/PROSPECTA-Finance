@@ -73,6 +73,20 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
     };
   });
 
+  // Provisão futura — sempre a partir de hoje (não do mês/view selecionado no filtro),
+  // pega o que já está lançado com data futura (parcelas, recorrências materializadas,
+  // compromissos A_PAGAR/A_RECEBER agendados).
+  const forecastChartData: MonthlyChartPoint[] = Array.from({ length: 6 }, (_, i) => {
+    const targetPeriod = monthRange(today.getUTCFullYear(), today.getUTCMonth() + i);
+    const t = periodTotals(entries, targetPeriod, regime);
+    return {
+      label: `${MONTH_LABELS[targetPeriod.start.getUTCMonth()]}/${String(targetPeriod.start.getUTCFullYear()).slice(2)}`,
+      receita: t.receita.toNumber(),
+      despesa: t.despesa.toNumber(),
+      saldo: t.balanco.toNumber(),
+    };
+  });
+
   const topReceitas = topEntries(entries, "RECEITA", period, regime, 5);
   const topDespesas = topEntries(entries, "DESPESA", period, regime, 5);
   const categoryNameById = new Map(dbEntries.map((e) => [e.categoryId, e.category.name]));
@@ -192,6 +206,13 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         <h2 className="mb-2 text-sm font-medium text-zinc-300">Últimos 6 meses</h2>
         <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
           <MonthlyChart data={monthlyChartData} />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="mb-2 text-sm font-medium text-zinc-300">Provisão futura (próximos 6 meses)</h2>
+        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+          <MonthlyChart data={forecastChartData} />
         </div>
       </div>
 
