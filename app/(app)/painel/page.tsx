@@ -7,10 +7,12 @@ import { monthRange } from "@/lib/finance/dates";
 import { toFinanceEntry, toFinanceWallet } from "@/lib/finance/from-db";
 import { periodTotals } from "@/lib/finance/period";
 import { categoryDistribution, topEntries } from "@/lib/finance/rankings";
-import { averageMonthlyExpense, emergencyReserveCoverage, reserveGaugeBand } from "@/lib/finance/reserve";
+import { averageMonthlyExpense, emergencyReserveCoverage } from "@/lib/finance/reserve";
 import { Decimal, type Regime } from "@/lib/finance/types";
 import { formatCurrencyBRL } from "@/lib/format";
 import { MonthlyChart, type MonthlyChartPoint } from "@/components/charts/MonthlyChart";
+import { CategoryRings } from "@/components/charts/CategoryRings";
+import { ReserveGauge } from "@/components/charts/ReserveGauge";
 
 interface SearchParams {
   year?: string;
@@ -69,6 +71,12 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   const distribution = categoryDistribution(entries, period, regime)
     .sort((a, b) => b.total.comparedTo(a.total))
     .slice(0, 8);
+  const categoryRingItems = distribution.map((row) => ({
+    categoryId: row.categoryId,
+    name: categoryNameById.get(row.categoryId) ?? "—",
+    percentage: row.percentage.toNumber(),
+    totalFormatted: formatCurrencyBRL(row.total),
+  }));
 
   const entryDisplay = new Map(dbEntries.map((e) => [e.id, { description: e.description, walletName: e.wallet.name }]));
 
@@ -86,7 +94,6 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   const reserveCoverage = reserveWallet
     ? emergencyReserveCoverage(walletBalance(entries, reserveWallet.id, today), avgExpense, 6)
     : null;
-  const reserveBand = reserveCoverage ? reserveGaugeBand(reserveCoverage.percentage) : null;
 
   const prevMonth = monthQuery(monthIndex0 === 0 ? year - 1 : year, monthIndex0 === 0 ? 11 : monthIndex0 - 1, regime);
   const nextMonth = monthQuery(monthIndex0 === 11 ? year + 1 : year, monthIndex0 === 11 ? 0 : monthIndex0 + 1, regime);
@@ -136,41 +143,25 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
 
       <div>
         <h2 className="mb-2 text-sm font-medium text-zinc-300">Últimos 6 meses</h2>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
           <MonthlyChart data={monthlyChartData} />
         </div>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <div>
-          <h2 className="mb-2 text-sm font-medium text-zinc-300">Top 5 receitas</h2>
+        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+          <h2 className="mb-3 text-sm font-medium text-indigo-300">Top 5 receitas</h2>
           <RankingList entries={topReceitas} entryDisplay={entryDisplay} tone="emerald" />
         </div>
-        <div>
-          <h2 className="mb-2 text-sm font-medium text-zinc-300">Top 5 despesas</h2>
+        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+          <h2 className="mb-3 text-sm font-medium text-indigo-300">Top 5 despesas</h2>
           <RankingList entries={topDespesas} entryDisplay={entryDisplay} tone="red" />
         </div>
       </div>
 
       <div>
         <h2 className="mb-2 text-sm font-medium text-zinc-300">Distribuição por categoria</h2>
-        <div className="flex flex-col gap-2">
-          {distribution.map((row) => (
-            <div key={row.categoryId} className="flex items-center gap-3 text-sm">
-              <span className="w-40 shrink-0 truncate text-zinc-300">{categoryNameById.get(row.categoryId) ?? "—"}</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-800">
-                <div className="h-full rounded-full bg-red-500" style={{ width: `${Math.min(row.percentage.toNumber(), 100)}%` }} />
-              </div>
-              <span className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-zinc-500">
-                {row.percentage.toFixed(0)}%
-              </span>
-              <span className="w-28 shrink-0 text-right font-mono text-xs tabular-nums text-zinc-400">
-                {formatCurrencyBRL(row.total)}
-              </span>
-            </div>
-          ))}
-          {distribution.length === 0 && <p className="text-sm text-zinc-500">Sem despesas no período.</p>}
-        </div>
+        <CategoryRings items={categoryRingItems} />
       </div>
 
       {coverages.length > 0 && (
@@ -178,12 +169,12 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
           <h2 className="mb-2 text-sm font-medium text-zinc-300">Cobertura de fatura</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {coverages.map(({ card, coverage }) => (
-              <div key={card.id} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-                <p className="text-sm text-zinc-300">{card.name}</p>
+              <div key={card.id} className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+                <p className="text-sm text-indigo-300">{card.name}</p>
                 <p className={`font-mono text-xl tabular-nums ${coverage.saldo.isNegative() ? "text-red-400" : "text-emerald-400"}`}>
                   {formatCurrencyBRL(coverage.saldo)}
                 </p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-indigo-300">
                   caixinha {formatCurrencyBRL(coverage.caixinhaBalance)} − dívida {formatCurrencyBRL(coverage.divida)}
                 </p>
               </div>
@@ -192,20 +183,13 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         </div>
       )}
 
-      {reserveCoverage && reserveBand && (
+      {reserveCoverage && (
         <div>
           <h2 className="mb-2 text-sm font-medium text-zinc-300">Reserva de emergência</h2>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-            <div className="h-3 w-full overflow-hidden rounded-full bg-zinc-800">
-              <div
-                className={`h-full rounded-full ${
-                  reserveBand === "verde" ? "bg-emerald-500" : reserveBand === "ambar" ? "bg-amber-500" : "bg-red-500"
-                }`}
-                style={{ width: `${Math.min(reserveCoverage.percentage.toNumber(), 100)}%` }}
-              />
-            </div>
-            <p className="mt-2 font-mono text-lg tabular-nums text-zinc-100">
-              {reserveCoverage.percentage.toFixed(0)}% da meta ({formatCurrencyBRL(reserveCoverage.target)})
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+            <ReserveGauge percentage={reserveCoverage.percentage.toNumber()} />
+            <p className="font-mono text-sm tabular-nums text-indigo-300">
+              meta: {formatCurrencyBRL(reserveCoverage.target)}
             </p>
           </div>
         </div>
@@ -217,8 +201,8 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
 function StatCard({ label, value, tone }: { label: string; value: string; tone: "emerald" | "red" | "amber" | "zinc" }) {
   const color = { emerald: "text-emerald-400", red: "text-red-400", amber: "text-amber-400", zinc: "text-zinc-50" }[tone];
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-      <p className="text-xs text-zinc-500">{label}</p>
+    <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+      <p className="text-xs text-indigo-300">{label}</p>
       <p className={`font-mono text-xl tabular-nums ${color}`}>{value}</p>
     </div>
   );
@@ -234,19 +218,19 @@ function RankingList({
   tone: "emerald" | "red";
 }) {
   return (
-    <ul className="flex flex-col gap-1">
+    <ul className="flex flex-col divide-y divide-indigo-900/50">
       {entries.map((e) => {
         const display = entryDisplay.get(e.id);
         return (
-          <li key={e.id} className="flex items-center justify-between rounded-lg border border-zinc-800 px-3 py-2 text-sm">
-            <span className="truncate text-zinc-300">{display?.description ?? "—"}</span>
+          <li key={e.id} className="flex items-center justify-between py-2 text-sm first:pt-0 last:pb-0">
+            <span className="truncate text-indigo-100">{display?.description ?? "—"}</span>
             <span className={`font-mono tabular-nums ${tone === "emerald" ? "text-emerald-400" : "text-red-400"}`}>
               {formatCurrencyBRL(e.amount)}
             </span>
           </li>
         );
       })}
-      {entries.length === 0 && <p className="text-sm text-zinc-500">Nenhum lançamento no período.</p>}
+      {entries.length === 0 && <p className="text-sm text-indigo-300">Nenhum lançamento no período.</p>}
     </ul>
   );
 }
