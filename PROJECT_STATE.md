@@ -29,7 +29,12 @@
 > desktop (mesmos ícones, mesmo destaque de página ativa). A cor do menu (Sidebar +
 > MobileNav + header mobile) foi trocada duas vezes a pedido do usuário — `#090D24` e
 > depois `#131A47` (valor atual) — sempre via `bg-[#hex]` do Tailwind nos três lugares
-> juntos. Ver seção "Estado do Git" — HEAD `401a47a`.
+> juntos. **Painel redesenhado** (cards no mesmo `#131A47`, "Distribuição por categoria"
+> virou anéis de progresso com ícone, "Reserva de emergência" virou velocímetro SVG) — e,
+> nessa mesma rodada, **corrigido um bug real**: o fundo da página renderizava branco em
+> vez de escuro por uma regra de CSS não-layered em `globals.css` vencendo as utilities do
+> Tailwind (cascade layers); a correção também destravou a fonte Geist, que nunca tinha
+> sido aplicada de verdade. Ver seção "Estado do Git" — HEAD `8da4ccd`.
 
 ---
 
@@ -543,6 +548,8 @@ confirmar o e-mail do usuário direto no painel do Supabase (Authentication → 
 | `TransferForm` | Client | `app/(app)/lancamentos/transferir/TransferForm.tsx` — origem/destino (com exclusão mútua), valor, data, responsável |
 | `InviteLink` | Client | `app/(app)/cadastros/membros/InviteLink.tsx` — botão "copiar" do link de convite; recebe a URL já montada (origin resolvido no server via `headers()`, não `window.location`, pra evitar mismatch de hidratação) |
 | `MonthlyChart` | Client | `components/charts/MonthlyChart.tsx` — gráfico Recharts (Receita/Despesa/Saldo, 6 meses) |
+| `CategoryRings` | Server | `components/charts/CategoryRings.tsx` — "Distribuição por categoria" do Painel: grid de anéis de progresso SVG (não Recharts) com ícone `lucide-react` por categoria, escolhido por palavra-chave no nome (`iconForCategory`, sem lista fixa — a taxonomia é livre, §7). Puramente apresentacional, server-renderizável (sem `"use client"`). |
+| `ReserveGauge` | Server | `components/charts/ReserveGauge.tsx` — "Reserva de emergência" do Painel: velocímetro SVG (semicírculo, 3 zonas vermelho/âmbar/verde + ponteiro), mesmas faixas 0-33/33-66/66-100% de `lib/finance/reserve.ts::reserveGaugeBand`. Também server-renderizável. |
 | `RegisterServiceWorker` | Client | `components/RegisterServiceWorker.tsx` — registra o SW, só em produção |
 | `Sidebar` | Client | `components/Sidebar.tsx` — menu lateral de navegação (desktop/tablet, `md+`), fundo `#131A47` (cor exata pedida pelo usuário), item ativo em âmbar, grupos expansíveis "Lançamentos" e "Cadastros" com sub-páginas, ícones via `lucide-react`. Estilo pedido pelo usuário inspirado no sistema "Meu Vista" (mesma referência já usada pro fundo claro da tabela de Lançamentos, ver seção 21). |
 | `MobileNav` | Client | `components/MobileNav.tsx` — barra inferior do celular (`<md`), mesma cor `#131A47` e mesmos ícones do `Sidebar`, com destaque em âmbar da página atual (antes não existia esse destaque). Junto com o header mobile em `(app)/layout.tsx` (também `#131A47`), unifica a linguagem visual entre desktop e mobile — pedido explícito do usuário após o primeiro corte do Sidebar deixar os dois muito diferentes. |
@@ -664,6 +671,8 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 | Menu lateral (`Sidebar`) só em desktop/tablet (`md+`); mobile mantém barra inferior, não vira sidebar | Pedido explícito do usuário, com o sistema "Meu Vista" como referência visual (print anexado). Um menu lateral fixo não cabe bem numa tela de celular — a barra inferior é o padrão certo pra esse tamanho de tela. **Atualização:** a estrutura (sidebar vs. barra) ficou diferente de propósito, mas a *cor* e os *ícones* precisaram ficar iguais — ver `MobileNav` — porque o usuário achou o visual mobile/desktop "diferente demais" no primeiro corte. |
 | Logo: 1ª tentativa (remover fundo branco + medalhão circular via `sharp`) foi rejeitada; versão final usa o arquivo que o próprio usuário refez com transparência real | O PNG original tinha canal alpha mas o branco ao redor do ícone era **opaco** (alpha 255), não transparente — dava efeito de "logo dentro de um quadrado branco" mesmo depois de redimensionada. Tentei consertar programaticamente (threshold de "brancura" + composição num círculo branco) e mandei preview antes de aplicar em tudo — o usuário rejeitou o resultado e preferiu refazer a arte ele mesmo. Lição: quando o problema é "a arte está errada", perguntar/mostrar preview antes de aplicar em todo canto vale mais do que tentar consertar via processamento automático — e valeu a pena ter perguntado antes de já ter commitado. |
 | Cor do menu fixada em `#131A47` (valor exato, não um token Tailwind como `indigo-950`) | Pedido explícito do usuário com o hex exato — usado via sintaxe arbitrária do Tailwind (`bg-[#131A47]`) nos três lugares que representam "o menu" (`Sidebar`, `MobileNav`, header mobile), não alterado em mais nada (bordas/textos indigo-200/300/900 mantidos, servem de contraste sobre o novo fundo). |
+| `#131A47` também virou a cor de fundo de **todos os cards do Painel** (StatCard, Top 5, gráfico mensal, cobertura de fatura, anéis de categoria, gauge de reserva) — não só do menu | O usuário só pediu explicitamente pros KPI cards, mas deixar alguns cards em `#131A47` e outros no antigo `bg-zinc-900` ficaria inconsistente/remendado num pedido que era sobre "visual moderno". Extensão de escopo pequena e óbvia, não uma decisão arriscada. |
+| Bug real encontrado e corrigido: `app/globals.css` tinha uma regra `body { background: var(--background); ... }` **fora de qualquer `@layer`**, sobrescrevendo `bg-zinc-950`/`text-zinc-50` do `<body>` (que são utilities do Tailwind, geradas dentro de `@layer utilities`) — em CSS Cascade Layers, **qualquer regra não-layered vence qualquer regra layered**, independente de especificidade. O fundo real da página renderizava branco (`--background: #ffffff` do template padrão do Next), só os elementos com `bg-*` explícito (os cards) ficavam escuros. Foi assim que o usuário viu texto "sumindo" — não era cor de texto errada, era o fundo errado. | O usuário pediu pra pintar os textos de preto como solução — isso teria funcionado só até o fundo branco "de verdade" ser corrigido, e depois os deixaria invisíveis de novo (preto sobre zinc-950 quase preto). Corrigi a causa raiz (removi a regra `body {...}` e as variáveis `--background`/`--foreground` do template padrão, nunca usadas de propósito) em vez de aplicar o band-aid pedido — efeito colateral bom: o `font-family: Arial` que a mesma regra impunha também sumiu, e a fonte Geist (configurada desde a Fase 0 mas nunca efetivamente aplicada) passou a funcionar. |
 | `lucide-react` instalado em vez de desenhar ~15 ícones à mão em SVG | O projeto evita bibliotecas de componentes (shadcn/ui) por escopo, mas ícones são uma categoria à parte — bem mais barato que autoria manual de SVG pra essa quantidade, e é o par natural de Tailwind pra esse caso. |
 | App renomeado pra "PROSPECTA Finance"; logo do usuário redimensionada via `sharp` (já presente no `node_modules`) em vez de subir o PNG original de 2.5MB pro repo | Pedido explícito do usuário, com arquivo de logo anexado. 2.5MB carregado em toda página seria um problema real de performance — gerado `app/icon.png` (favicon, convenção do App Router), `public/icon-192.png`/`icon-512.png` (PWA) e `public/logo-sidebar.png` (menu lateral/login) via script Node descartável. Substituiu os ícones dinâmicos placeholder "R$" (`ImageResponse`), que foram removidos. |
 | `<Image priority>` nas 3 instâncias do logo (login, recuperar senha, sidebar) | Sem `priority`, o Next posterga o carregamento de imagens fora da viewport inicial (lazy loading padrão) — como essas três aparecem sempre acima da dobra, `priority` evita o atraso/flash perceptível. Descoberto testando no browser: sem isso, `naturalWidth` ficava `0` mesmo com a URL respondendo 200. |
@@ -806,6 +815,15 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   ícones e destaque de página ativa do `Sidebar` desktop (pedido do usuário depois de achar
   os dois "diferentes demais" no primeiro corte). Cor do menu (desktop e mobile) fixada em
   `#131A47` a pedido do usuário.
+- ✅ **Bug real corrigido: fundo da página renderizava branco em vez de escuro** —
+  `app/globals.css` tinha uma regra `body {...}` fora de `@layer`, que em CSS Cascade
+  Layers vence qualquer utility do Tailwind independente de especificidade. Removida;
+  efeito colateral bom: a fonte Geist (configurada desde a Fase 0, nunca efetivamente
+  aplicada) passou a funcionar. Ver seção 21.
+- ✅ **Painel redesenhado** — KPI cards, Top 5 receitas/despesas, gráfico mensal e
+  cobertura de fatura usam `#131A47`. "Distribuição por categoria" virou um grid de anéis
+  de progresso com ícone (`CategoryRings`). "Reserva de emergência" virou um velocímetro
+  SVG com as mesmas faixas vermelho/âmbar/verde de `lib/finance/reserve.ts` (`ReserveGauge`).
 
 ## 25. Funcionalidades em andamento
 
@@ -817,7 +835,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-401a47a Muda cor de fundo do menu (sidebar/mobile) para #131A47   <- HEAD / origin/master
+8da4ccd Redesenha Painel: cards #131A47, rosca de categorias, velocimetro de reserva   <- HEAD / origin/master
+f2341ac Atualiza PROJECT_STATE.md: cor do menu trocada de novo para #131A47
+401a47a Muda cor de fundo do menu (sidebar/mobile) para #131A47
 01c7e2c Muda cor de fundo do menu (sidebar/mobile) para #090D24
 50c36e2 Corrige logo com transparencia real e unifica visual mobile/desktop
 4b71504 Documenta rebranding PROSPECTA Finance e remove referencia morta no proxy.ts
@@ -912,9 +932,11 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       commit `1b3e8ae`; logo corrigida (transparência real) + navegação mobile unificada
       com o Sidebar (`MobileNav`) + cor `#131A47` (após um ajuste intermediário em `#090D24`)
       — commits `50c36e2`/`01c7e2c`/`401a47a`
+- [x] Bug do fundo branco corrigido (CSS cascade layers) + Painel redesenhado (cards
+      `#131A47`, `CategoryRings`, `ReserveGauge`) — commit `8da4ccd`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
-      in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo) — login exige
-      senha, fora do alcance do assistente
+      in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
+      redesenhado) — login exige senha, fora do alcance do assistente
 - [ ] 30 dias de uso real / correções pontuais reportadas pelo usuário (**Fase 2 pausada
       de propósito** — ver seção 27, não iniciar sem pedido explícito)
 - [ ] Banco Supabase separado pra produção (hoje dev e prod compartilham o mesmo)
