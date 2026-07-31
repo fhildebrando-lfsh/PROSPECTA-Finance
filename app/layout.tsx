@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sistema Financeiro",
+  title: "PROSPECTA Finance",
   description: "Gestão financeira pessoal e familiar",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Sistema Financeiro",
+    title: "PROSPECTA Finance",
   },
 };
 

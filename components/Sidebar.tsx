@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, type ComponentType } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Landmark,
   LayoutDashboard,
   Receipt,
   List,
@@ -84,8 +84,8 @@ export function Sidebar({ workspaceName, email, role, isPlatformAdmin }: Sidebar
   return (
     <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-20 md:flex md:w-64 md:flex-col md:border-r md:border-indigo-900/50 md:bg-indigo-950">
       <div className="flex items-center gap-2 px-5 py-5">
-        <Landmark className="h-6 w-6 shrink-0 text-amber-400" />
-        <span className="text-sm font-semibold tracking-wide text-white">SISTEMA FINANCEIRO</span>
+        <Image src="/logo-sidebar.png" alt="" width={28} height={28} className="shrink-0" priority />
+        <span className="text-sm font-semibold tracking-wide text-white">PROSPECTA FINANCE</span>
       </div>
 
       <div className="mx-4 mb-4 rounded-lg bg-indigo-900/40 px-3 py-2">

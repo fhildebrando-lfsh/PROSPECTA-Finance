@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useActionState, useState } from "react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { login, signup, requestPasswordReset, type AuthActionState } from "./actions";
 
@@ -28,6 +29,7 @@ function LoginForm() {
     return (
       <div className="flex flex-1 items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+          <Image src="/logo-sidebar.png" alt="" width={48} height={48} className="mb-3" priority />
           <h1 className="mb-1 text-xl font-semibold text-zinc-50">Redefinir senha</h1>
           <p className="mb-6 text-sm text-zinc-400">Informe seu e-mail pra receber o link de redefinição.</p>
 
@@ -74,7 +76,8 @@ function LoginForm() {
   return (
     <div className="flex flex-1 items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-        <h1 className="mb-1 text-xl font-semibold text-zinc-50">Sistema Financeiro</h1>
+        <Image src="/logo-sidebar.png" alt="" width={48} height={48} className="mb-3" priority />
+        <h1 className="mb-1 text-xl font-semibold text-zinc-50">PROSPECTA Finance</h1>
         <p className="mb-6 text-sm text-zinc-400">
           {mode === "login" ? "Entre com sua conta." : "Crie sua conta."}
         </p>

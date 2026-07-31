@@ -68,7 +68,7 @@ export default async function MembrosPage() {
               <div className="flex flex-col gap-2">
                 {invites.map((inv) => {
                   const inviteUrl = `${origin}/convite/${inv.token}`;
-                  const whatsappText = `Você foi convidado(a) para o Sistema Financeiro! Acesse o link pra criar sua conta: ${inviteUrl}`;
+                  const whatsappText = `Você foi convidado(a) para o PROSPECTA Finance! Acesse o link pra criar sua conta: ${inviteUrl}`;
                   return (
                     <div
                       key={inv.id}
