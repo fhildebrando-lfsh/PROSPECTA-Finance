@@ -1,6 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth/session";
 import { Sidebar } from "@/components/Sidebar";
+import { MobileNav } from "@/components/MobileNav";
 import { logout } from "./actions";
 
 const NAV_ITEMS = [
@@ -28,19 +30,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       />
 
       <div className="flex min-h-screen flex-1 flex-col md:pl-64">
-        <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-4 sm:px-6 md:hidden">
-          <div>
-            <p className="text-sm font-medium text-zinc-100">
-              {primaryMembership?.workspace.name ?? "Sem workspace"}
-            </p>
-            <p className="text-xs text-zinc-500">
-              {profile.email}
-              {primaryMembership ? ` · ${primaryMembership.role}` : ""}
-              {profile.isPlatformAdmin ? " · admin" : ""}
-            </p>
+        <header className="flex items-center justify-between border-b border-indigo-900/50 bg-indigo-950 px-4 py-4 sm:px-6 md:hidden">
+          <div className="flex items-center gap-2">
+            <Image src="/logo-sidebar.png" alt="" width={28} height={28} className="shrink-0" priority />
+            <div>
+              <p className="text-sm font-medium text-white">
+                {primaryMembership?.workspace.name ?? "Sem workspace"}
+              </p>
+              <p className="text-xs text-indigo-300">
+                {profile.email}
+                {primaryMembership ? ` · ${primaryMembership.role}` : ""}
+                {profile.isPlatformAdmin ? " · admin" : ""}
+              </p>
+            </div>
           </div>
           <form action={logout}>
-            <button type="submit" className="text-sm text-zinc-400 hover:text-zinc-200">
+            <button type="submit" className="text-sm text-indigo-200 hover:text-white">
               Sair
             </button>
           </form>
@@ -57,18 +62,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           +
         </Link>
 
-        {/* §21 — navegação inferior, só no celular (<768px). */}
-        <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-zinc-800 bg-zinc-950/95 backdrop-blur md:hidden">
-          {mobileNavItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-xs text-zinc-400 hover:text-zinc-100"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        {/* §21 — navegação inferior, só no celular (<768px), mesma linguagem visual do Sidebar. */}
+        <MobileNav items={mobileNavItems} />
       </div>
     </div>
   );
