@@ -45,11 +45,12 @@
 > logo real) é servido. **Painel ganhou visão Mensal/Anual/Geral** (`?view=`) além da
 > navegação por mês — afeta KPIs, Top 5 e distribuição por categoria; o gráfico "Últimos
 > 6 meses" continua fixo em 6 meses independente da view (é sobre tendência recente, não
-> o período selecionado). **Novo gráfico "Provisão futura"** logo abaixo, mesmo estilo,
+> o período selecionado). **Novo gráfico "Provisão"** logo abaixo, mesmo estilo,
 > mas sempre ancorado em hoje e projetando 6 meses à frente — reaproveita os `entries` já
 > carregados (parcelas futuras, recorrências materializadas, compromissos agendados já
-> existem no banco), nenhuma lógica de projeção nova foi necessária. Ver seção "Estado do
-> Git" — HEAD `0dc2b0b`.
+> existem no banco), nenhuma lógica de projeção nova foi necessária. Nome corrigido de
+> "Provisão futura" pra só "Provisão" — pleonasmo apontado pelo usuário. Ver seção
+> "Estado do Git" — HEAD `07c4c18`.
 
 ---
 
@@ -461,7 +462,7 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
 | §11.1/11.2 | Saldo de carteira, blocos do dashboard | `lib/finance/balance.ts` |
 | §11.3 | Receita/Despesa/Investimento/Balanço do período (fiel à fórmula — **não filtra por situação**, inclui A_PAGAR/A_RECEBER/ESTIMATIVA) | `lib/finance/period.ts` |
 | — | Painel com 3 visões de período — Mensal (padrão), Anual (ano inteiro, nav ano anterior/seguinte), Geral (todo o histórico, sem nav) — via `?view=`. Afeta KPIs, Top 5, distribuição por categoria; o gráfico "Últimos 6 meses" não muda (sempre 6 meses fixos, é sobre tendência recente, não o período selecionado) | `app/(app)/painel/page.tsx` |
-| — | Gráfico "Provisão futura (próximos 6 meses)" no Painel, abaixo de "Últimos 6 meses" — mesmo estilo/componente (`MonthlyChart`), mas sempre ancorado em hoje (não no mês/view do filtro) e projetando 6 meses à frente. Usa os mesmos `entries` já carregados (sem query nova) — parcelas futuras, ocorrências de recorrência já materializadas (§8.5, 24 meses à frente) e compromissos A_PAGAR/A_RECEBER agendados já aparecem porque `periodTotals` não filtra por data passada/futura, só pelo período pedido | `app/(app)/painel/page.tsx` |
+| — | Gráfico "Provisão (próximos 6 meses)" no Painel, abaixo de "Últimos 6 meses" — mesmo estilo/componente (`MonthlyChart`), mas sempre ancorado em hoje (não no mês/view do filtro) e projetando 6 meses à frente. Usa os mesmos `entries` já carregados (sem query nova) — parcelas futuras, ocorrências de recorrência já materializadas (§8.5, 24 meses à frente) e compromissos A_PAGAR/A_RECEBER agendados já aparecem porque `periodTotals` não filtra por data passada/futura, só pelo período pedido | `app/(app)/painel/page.tsx` |
 | §11.4/11.5 | Janela de fatura, fatura vigente, cobertura | `lib/finance/card.ts` |
 | §11.6 | Reserva de emergência (média 6 meses fechados, meta, gauge) | `lib/finance/reserve.ts` |
 | §11.7 | Fixa × variável (regra automática + override manual) | `lib/finance/fixed.ts` |
@@ -853,7 +854,7 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   desde a Fase 0) removido; só `app/icon.png` (a logo real) fica.
 - ✅ **Painel: visão Mensal/Anual/Geral** — botões de período além da navegação de mês,
   afetando KPIs/Top 5/distribuição por categoria (ver seção 11).
-- ✅ **Painel: gráfico de Provisão futura** — mesmo estilo do "Últimos 6 meses", mas
+- ✅ **Painel: gráfico de Provisão** — mesmo estilo do "Últimos 6 meses", mas
   projetando os próximos 6 meses a partir de hoje (ver seção 11).
 
 ## 25. Funcionalidades em andamento
@@ -866,7 +867,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-0dc2b0b Adiciona grafico de provisao futura (proximos 6 meses) no Painel   <- HEAD / origin/master
+07c4c18 Renomeia "Provisao futura" para "Provisao" no Painel   <- HEAD / origin/master
+15b450b Atualiza PROJECT_STATE.md: grafico de provisao futura no Painel
+0dc2b0b Adiciona grafico de provisao futura (proximos 6 meses) no Painel
 24e3355 Atualiza PROJECT_STATE.md: visao Mensal/Anual/Geral no Painel
 2e9fa19 Adiciona visao Mensal/Anual/Geral no Painel
 41acf58 Atualiza PROJECT_STATE.md: favicon.ico padrao removido
@@ -977,7 +980,7 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       o app sem cooldown — commit `b0b476d`
 - [x] Favicon.ico padrão do Next removido — commit `61d039c`
 - [x] Painel: visão Mensal/Anual/Geral — commit `2e9fa19`
-- [x] Painel: gráfico de Provisão futura (próximos 6 meses) — commit `0dc2b0b`
+- [x] Painel: gráfico de Provisão (próximos 6 meses) — commit `0dc2b0b`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
