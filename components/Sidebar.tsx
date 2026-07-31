@@ -82,7 +82,7 @@ export function Sidebar({ workspaceName, email, role, isPlatformAdmin }: Sidebar
   }
 
   return (
-    <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-20 md:flex md:w-64 md:flex-col md:border-r md:border-indigo-900/50 md:bg-[#090D24]">
+    <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-20 md:flex md:w-64 md:flex-col md:border-r md:border-indigo-900/50 md:bg-[#131A47]">
       <div className="flex items-center gap-2 px-5 py-5">
         <Image src="/logo-sidebar.png" alt="" width={28} height={28} className="shrink-0" priority />
         <span className="text-sm font-semibold tracking-wide text-white">PROSPECTA FINANCE</span>

@@ -21,7 +21,7 @@ export function MobileNav({ items }: { items: MobileNavItem[] }) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-indigo-900/50 bg-[#090D24]/95 backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-indigo-900/50 bg-[#131A47]/95 backdrop-blur md:hidden">
       {items.map((item) => {
         const Icon = ICONS[item.href] ?? LayoutDashboard;
         const active = pathname === item.href || (item.href !== "/painel" && pathname.startsWith(`${item.href}/`));

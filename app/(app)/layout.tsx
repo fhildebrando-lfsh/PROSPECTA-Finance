@@ -30,7 +30,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       />
 
       <div className="flex min-h-screen flex-1 flex-col md:pl-64">
-        <header className="flex items-center justify-between border-b border-indigo-900/50 bg-[#090D24] px-4 py-4 sm:px-6 md:hidden">
+        <header className="flex items-center justify-between border-b border-indigo-900/50 bg-[#131A47] px-4 py-4 sm:px-6 md:hidden">
           <div className="flex items-center gap-2">
             <Image src="/logo-sidebar.png" alt="" width={28} height={28} className="shrink-0" priority />
             <div>
