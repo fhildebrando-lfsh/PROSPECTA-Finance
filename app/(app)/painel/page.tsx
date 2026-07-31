@@ -14,19 +14,25 @@ import { MonthlyChart, type MonthlyChartPoint } from "@/components/charts/Monthl
 import { CategoryRings } from "@/components/charts/CategoryRings";
 import { ReserveGauge } from "@/components/charts/ReserveGauge";
 
+type View = "mensal" | "anual" | "geral";
+
 interface SearchParams {
   year?: string;
   month?: string; // 1-12
   regime?: Regime;
+  view?: View;
 }
 
 const MONTH_LABELS = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
 ];
 
-function monthQuery(year: number, monthIndex0: number, regime: Regime) {
-  return `?year=${year}&month=${monthIndex0 + 1}&regime=${regime}`;
+function painelQuery(view: View, year: number, monthIndex0: number, regime: Regime) {
+  return `?view=${view}&year=${year}&month=${monthIndex0 + 1}&regime=${regime}`;
 }
+
+/** Intervalo "geral" — cobre qualquer data real de lançamento sem precisar de query extra. */
+const ALL_TIME_PERIOD = { start: new Date(Date.UTC(1970, 0, 1)), end: new Date(Date.UTC(2100, 11, 31)) };
 
 export default async function PainelPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const workspaceId = await requireWorkspaceId();
@@ -37,6 +43,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   const year = params.year ? Number(params.year) : today.getUTCFullYear();
   const monthIndex0 = params.month ? Number(params.month) - 1 : today.getUTCMonth();
   const regime: Regime = params.regime === "competencia" ? "competencia" : "caixa";
+  const view: View = params.view === "anual" || params.view === "geral" ? params.view : "mensal";
 
   const [wallets, dbEntries] = await Promise.all([
     prisma.wallet.findMany({ where: { workspaceId }, include: { kind: true } }),
@@ -49,7 +56,8 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   const entries = dbEntries.map(toFinanceEntry);
   const financeWallets = wallets.map(toFinanceWallet);
 
-  const period = monthRange(year, monthIndex0);
+  const yearPeriod = { start: new Date(Date.UTC(year, 0, 1)), end: new Date(Date.UTC(year, 11, 31)) };
+  const period = view === "anual" ? yearPeriod : view === "geral" ? ALL_TIME_PERIOD : monthRange(year, monthIndex0);
   const totals = periodTotals(entries, period, regime);
   const balanceBlocks = dashboardBalanceBlocks(entries, financeWallets, today);
 
@@ -95,9 +103,18 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
     ? emergencyReserveCoverage(walletBalance(entries, reserveWallet.id, today), avgExpense, 6)
     : null;
 
-  const prevMonth = monthQuery(monthIndex0 === 0 ? year - 1 : year, monthIndex0 === 0 ? 11 : monthIndex0 - 1, regime);
-  const nextMonth = monthQuery(monthIndex0 === 11 ? year + 1 : year, monthIndex0 === 11 ? 0 : monthIndex0 + 1, regime);
+  const prevMonth = painelQuery("mensal", monthIndex0 === 0 ? year - 1 : year, monthIndex0 === 0 ? 11 : monthIndex0 - 1, regime);
+  const nextMonth = painelQuery("mensal", monthIndex0 === 11 ? year + 1 : year, monthIndex0 === 11 ? 0 : monthIndex0 + 1, regime);
+  const prevYear = painelQuery("anual", year - 1, monthIndex0, regime);
+  const nextYear = painelQuery("anual", year + 1, monthIndex0, regime);
   const otherRegime: Regime = regime === "caixa" ? "competencia" : "caixa";
+
+  const periodLabel =
+    view === "anual"
+      ? `Ano ${year}`
+      : view === "geral"
+        ? "Todo o período"
+        : `${MONTH_LABELS[monthIndex0]}/${year}`;
 
   return (
     <div className="flex flex-col gap-8">
@@ -105,18 +122,48 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         <div>
           <h1 className="text-lg font-semibold text-zinc-100">Painel</h1>
           <p className="text-sm text-zinc-500">
-            {MONTH_LABELS[monthIndex0]}/{year} · regime {regime === "caixa" ? "caixa (Vence)" : "competência (Compra)"}
+            {periodLabel} · regime {regime === "caixa" ? "caixa (Vence)" : "competência (Compra)"}
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm">
-          <Link href={prevMonth} className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800">
-            ← mês anterior
-          </Link>
-          <Link href={nextMonth} className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800">
-            mês seguinte →
-          </Link>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <div className="flex overflow-hidden rounded-lg border border-zinc-700">
+            {(["mensal", "anual", "geral"] as const).map((v) => (
+              <Link
+                key={v}
+                href={painelQuery(v, year, monthIndex0, regime)}
+                className={`px-3 py-1 capitalize ${
+                  view === v ? "bg-amber-500 text-zinc-950" : "bg-transparent text-zinc-300 hover:bg-zinc-800"
+                }`}
+              >
+                {v}
+              </Link>
+            ))}
+          </div>
+
+          {view === "mensal" && (
+            <>
+              <Link href={prevMonth} className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800">
+                ← mês anterior
+              </Link>
+              <Link href={nextMonth} className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800">
+                mês seguinte →
+              </Link>
+            </>
+          )}
+
+          {view === "anual" && (
+            <>
+              <Link href={prevYear} className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800">
+                ← ano anterior
+              </Link>
+              <Link href={nextYear} className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800">
+                ano seguinte →
+              </Link>
+            </>
+          )}
+
           <Link
-            href={monthQuery(year, monthIndex0, otherRegime)}
+            href={painelQuery(view, year, monthIndex0, otherRegime)}
             className="rounded-lg border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800"
           >
             trocar p/ {otherRegime === "caixa" ? "caixa" : "competência"}
