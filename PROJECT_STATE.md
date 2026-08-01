@@ -902,6 +902,12 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   Investimento/Outro (ver seção 6/15).
 - ✅ **`app/error.tsx`/`global-error.tsx`** — página de erro customizada com detecção e
   reload automático de `ChunkLoadError` (ver seção 21).
+- ✅ **Asterisco vermelho nos campos obrigatórios de Lançamento** — pedido do usuário após
+  uso real ("Em campos obrigatório de Lançamento, coloque o `*` na cor vermelha"). Aplicado
+  em todo campo com atributo HTML `required`: `QuickEntryForm.tsx` (Valor, Carteira,
+  Categoria) e `TransferForm.tsx` (Origem, Destino, Valor, Data, Responsável).
+  `EntriesTable.tsx` (edição in-line) não tem nenhum campo `required`, então não recebeu o
+  asterisco — commit `5ea147b`.
 
 ## 25. Funcionalidades em andamento
 
@@ -913,7 +919,10 @@ commitado).
 ## 26. Estado do Git
 
 ```
-de68d14 Formulario de lancamento em KPI card com 4 tipos, e pagina de erro custom   <- HEAD / origin/master
+5ea147b Adiciona asterisco vermelho nos campos obrigatorios de Lancamento e Transferencia   <- HEAD / origin/master
+a0a3064 Documenta investigacao do erro em /painel e tecnica de teste autenticado
+4cb1f6a Atualiza PROJECT_STATE.md: form de lancamento redesenhado, pagina de erro custom
+de68d14 Formulario de lancamento em KPI card com 4 tipos, e pagina de erro custom
 07c4c18 Renomeia "Provisao futura" para "Provisao" no Painel
 15b450b Atualiza PROJECT_STATE.md: grafico de provisao futura no Painel
 0dc2b0b Adiciona grafico de provisao futura (proximos 6 meses) no Painel
@@ -1029,6 +1038,7 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Painel: visão Mensal/Anual/Geral — commit `2e9fa19`
 - [x] Painel: gráfico de Provisão (próximos 6 meses) — commit `0dc2b0b`
 - [x] Novo lançamento em KPI card + 4 tipos, página de erro customizada — commit `de68d14`
+- [x] Asterisco vermelho nos campos obrigatórios de Lançamento/Transferência — commit `5ea147b`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
