@@ -6,7 +6,23 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização:** 2026-07-31. Além das 5 pontas soltas da Fase 1 (Compromissos,
+> **Última atualização real: 2026-08-01.** Iniciado o maior redesenho arquitetural do
+> projeto até agora — **Arquitetura de Identidade, Permissões e Planos**, pedido do
+> usuário pra preparar o sistema pra virar plataforma de consultoria financeira (Fase 4
+> da especificação). Documento completo de projeto em `ARQUITETURA-IDENTIDADE-PLANOS.md`
+> (Fase 1, **aprovada pelo usuário**) — recomendação central: "Consultor"/"Cliente" não
+> são tipos de pessoa, são o papel `ADVISOR` de uma `Membership` específica; plano é
+> `Subscription` (comercial) + `Entitlement`/`hasFeature()` (o que libera), nunca papel de
+> autorização. **Fase 2 Etapa 1 (só banco de dados) concluída e aplicada em produção**:
+> `Profile.platformRole`, `MembershipRole.ADVISOR`, `Membership.status`, tabelas
+> `Plan`/`Feature`/`PlanFeature`/`Subscription`/`Entitlement`/`AccessLog`/`Notification`,
+> trigger de signup agora checa convite pendente antes de criar workspace automático.
+> Zero mudança em frontend/backend/Server Actions nesta etapa (instrução explícita do
+> usuário) — dado real (1085 entries, 47 wallets) confirmado intacto depois de aplicar.
+> **Aguardando aprovação do usuário pra Etapa 2 (backend, `lib/auth/session.ts`)** antes
+> de continuar. Ver seção 24 pro detalhe completo.
+>
+> **Última atualização anterior:** 2026-07-31. Além das 5 pontas soltas da Fase 1 (Compromissos,
 > reverter importação, transferência entre carteiras, convidar membro, edição in-line/ações
 > em lote), o projeto agora está **implantado em produção na Vercel**
 > (`https://prospecta-finance.vercel.app`, repo `github.com/fhildebrando-lfsh/PROSPECTA-Finance`)
@@ -445,6 +461,21 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
 4. `20260730160517_subcategory_archive_export_log` — `Subcategory.isActive`, `ExportLog`.
 5. `20260730172238_workspace_invites` — `WorkspaceInvite`.
 6. `20260730194550_workspace_invite_phone` — `WorkspaceInvite.phone`.
+7. `20260801205757_identity_plans_schema` — **Arquitetura de Identidade/Planos** (ver
+   `ARQUITETURA-IDENTIDADE-PLANOS.md`), Fase 2 Etapa 1: `Profile.platformRole` (enum,
+   ao lado de `isPlatformAdmin` mantido como legado), `MembershipRole.ADVISOR`,
+   `Membership.status`/`revokedAt`, `WorkspaceInvite.expiresAt`, e as tabelas novas
+   `Plan`/`Feature`/`PlanFeature`/`Subscription`/`Entitlement`/`AccessLog`/`Notification`.
+   Só DDL aditivo — gerada via `prisma migrate diff` (não escrita à mão), nenhuma coluna/
+   tabela existente alterada ou removida.
+8. `20260801205917_identity_plans_backfill` — dados: catálogo de 11 `Feature` (código do
+   roadmap comercial: núcleo financeiro, relatórios avançados, planejamento financeiro,
+   consultoria recorrente, módulo MEI, organização tributária, preparação IRPF,
+   planejamento sucessório, IA, Open Finance, app mobile), plano `LEGACY_INTERNAL` (todas
+   as features liberadas, sem cobrança), uma `Subscription` nesse plano pra todo workspace
+   que ainda não tinha nenhuma (cobriu os 2 workspaces reais existentes), e sincronização
+   de `platformRole` a partir de `isPlatformAdmin`. Idempotente (`ON CONFLICT DO NOTHING`/
+   `WHERE NOT EXISTS`).
 
 **SQL manual (não gerenciado pelo Prisma, aplicado via `prisma db execute --file`):**
 - `001_auth_and_rls.sql` — FK profiles→auth.users, trigger de signup, RLS Fase 0.
@@ -456,6 +487,13 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
 - `006_workspace_invites_rls.sql` — RLS de workspace_invites (select/insert/delete só
   TITULAR do workspace ou admin; a aceitação em si roda via Prisma, que contorna RLS —
   quem aceita ainda não é membro do workspace de destino).
+- `007_signup_invite_aware.sql` — reescreve `handle_new_auth_user()`: antes de criar
+  workspace automático, checa se existe `WorkspaceInvite` pendente pro e-mail do novo
+  usuário; se existir, aceita o convite (Membership no workspace já existente, papel do
+  convite) em vez de criar workspace novo. Sem convite pendente, comportamento idêntico
+  ao de sempre. Aplicado e conferido lendo a definição de volta do banco
+  (`pg_get_functiondef`) — não testado com signup real de propósito (criaria usuário real
+  em `auth.users`, irreversível).
 
 **Convenção:** toda tabela usa `snake_case` no banco (`@map`), `camelCase` no Prisma/TS.
 IDs são UUID (`gen_random_uuid()`), exceto tabelas de referência cuja PK é o próprio
@@ -1054,18 +1092,39 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   migration, não só assumido). `deleteSubcategory` (admin-only, mesmo padrão de
   `updateSubcategory`/`toggleSubcategoryActive`) + botão na `SubcategoriesTable` com
   `confirm()` explicando esse comportamento antes de excluir. Commit `2b7e769`.
+- ✅ **Arquitetura de Identidade/Planos — Fase 1 (documento) aprovada + Fase 2 Etapa 1
+  (banco de dados) concluída.** Pedido do usuário: redesenhar toda a arquitetura de
+  identidade/autenticação/autorização/planos comerciais/relação consultor×cliente,
+  pensando nos próximos anos, com o assistente atuando como Software Architect Sênior
+  (questionar premissas, não só implementar). Documento completo em
+  `ARQUITETURA-IDENTIDADE-PLANOS.md` (resumo do sistema pra contexto externo em
+  `RESUMO-PARA-CHATGPT.md`). **Recomendação central, aprovada:** "Consultor" e "Cliente"
+  não são tipos de pessoa — são o papel de uma `Membership` específica (`role=ADVISOR`
+  novo), a mesma pessoa podendo ser `TITULAR` do workspace próprio e `ADVISOR` em N
+  workspaces de clientes. Plano é comercial (`Subscription`), nunca papel — o que uma
+  `Subscription` libera é resolvido via `Entitlement`/`hasFeature()`, não checado por
+  nome de plano no código. Etapa 1 (só banco, sem tocar frontend/backend/Server Actions,
+  por instrução explícita) entregue e aplicada — ver seção 10 (migrations 7 e 8, SQL 007).
+  Aguardando aprovação do usuário pra Etapa 2 (backend — `lib/auth/session.ts`).
 
 ## 25. Funcionalidades em andamento
 
-Nenhuma no momento. Tudo da seção 24 foi verificado (typecheck, lint, 113 testes, build de
-produção local) e commitado/pushado (ver seção 26). Não há trabalho pendente no working tree
+**Aguardando aprovação do usuário pra prosseguir com a Etapa 2 (backend/`lib/auth/
+session.ts`) da Arquitetura de Identidade/Planos** — ver seção 24. A Etapa 1 (banco de
+dados) está concluída, aplicada em produção e verificada; nenhuma tela/Server Action/rota
+foi tocada ainda, por instrução explícita do usuário ("nesta Etapa 1... você NÃO deve
+tocar no frontend, nas rotas protegidas ou nas Server Actions existentes"). Fora isso,
+nada mais em andamento — tudo verificado (typecheck, lint, 113 testes, build de produção
+local) e commitado/pushado (ver seção 26). Não há trabalho pendente no working tree
 (exceto o `recovery-codes.txt` — ver "Problemas conhecidos" #8 — que nunca deve ser
 commitado).
 
 ## 26. Estado do Git
 
 ```
-2b7e769 Adiciona botao Excluir em Subcategoria (admin), so remove a subcategoria   <- HEAD / origin/master
+185e4f0 Arquitetura de Identidade/Planos, Fase 2 Etapa 1: schema, migrations, trigger   <- HEAD / origin/master
+6da50d2 Atualiza PROJECT_STATE.md: botao Excluir em Subcategoria
+2b7e769 Adiciona botao Excluir em Subcategoria (admin), so remove a subcategoria
 9952eef Atualiza PROJECT_STATE.md: opcao "-" no seletor Ver de Subcategorias
 b4b13cd Adiciona opcao "-" no seletor principal de Subcategorias (nao ver nada)
 dde22f2 Atualiza PROJECT_STATE.md: correcao do fluxo de Nova subcategoria
@@ -1237,6 +1296,13 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Seletor "Ver" ganhou opção "—" pra ver a lista vazia de propósito — commit `b4b13cd`
 - [x] Botão Excluir em Subcategoria (admin) — FK `SET NULL`, nunca apaga lançamento —
       commit `2b7e769`
+- [x] Arquitetura de Identidade/Planos: Fase 1 (documento) aprovada — commit `185e4f0`
+- [x] Arquitetura de Identidade/Planos: Fase 2 Etapa 1 (banco de dados — schema,
+      migrations 7/8, trigger de signup invite-aware) — commit `185e4f0`
+- [ ] Arquitetura de Identidade/Planos: Fase 2 Etapa 2 (backend — `lib/auth/session.ts`,
+      `can()`/`hasFeature()`) — aguardando aprovação do usuário
+- [ ] Arquitetura de Identidade/Planos: Fase 2 Etapas 3+ (frontend, RLS, testes,
+      documentação da refatoração) — não iniciadas
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
