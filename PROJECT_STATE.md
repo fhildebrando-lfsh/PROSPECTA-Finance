@@ -927,6 +927,29 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   (porta 6543) — recomendação oficial do Supabase pra serverless, sem o teto de 15 conexões.
   O `max: 3` já deve prevenir o crash, mas a troca de modo remove o problema de vez; requer
   editar a env var no painel da Vercel (fora do alcance do assistente) e redeploy.
+- ✅ **Novo lançamento: todos os campos obrigatórios visíveis, sem seção escondida** —
+  pedido do usuário após uso real. `QuickEntryForm.tsx` mudou em duas rodadas:
+  1. Data de compra e Data de vencimento (`transactionDate`/`dueDate`) viraram campos
+     visíveis, editáveis e obrigatórios — antes eram sempre a data de hoje, ocultos em
+     `<input type="hidden">`. Continuam com um default de conveniência (hoje; ou a fatura
+     vigente do cartão, se a carteira for `CARTAO_CREDITO`), mas o formulário é atemporal —
+     o usuário pode lançar retroativo.
+  2. Responsável e Situação saíram de dentro do "+ mais opções" e ficam sempre visíveis,
+     começando na opção `disabled` "—" (nunca pré-preenchidos com o último usado) — como são
+     `<select required>` com a única opção inicial `disabled`, o navegador bloqueia o envio
+     até o usuário escolher um valor de verdade. **Decisão importante:** a primeira tentativa
+     tornou `responsibleId`/`statusCode` NULLABLE no banco (migration + destaque roxo nas
+     linhas incompletas em `/lancamentos`), pra permitir salvar incompleto e sinalizar
+     revisão depois — o usuário rejeitou explicitamente ("Não, não é isso que quero") e
+     pediu o modelo mais simples: obrigatório de verdade, só que sem pré-preenchimento
+     enganoso. A migration nunca chegou a ser aplicada no banco; todo o código relacionado
+     (schema, `lib/finance` com `EntryStatus | null`, `EntryUrgency: "review"`, destaque nas
+     linhas) foi revertido antes do commit final.
+  3. Depois o usuário pediu pra remover a seção colapsada "+ mais opções" por completo —
+     Recorrência, Parcelas, Observação e o novo campo Tags (opcional, `tags: string[]`,
+     mesmo campo do CSV "Organização") ficam todos sempre visíveis também, sem nenhum campo
+     escondido no formulário, obrigatório ou não.
+  Commits `14963d5` (redesenho final) — a primeira tentativa (nullable) nunca foi commitada.
 
 ## 25. Funcionalidades em andamento
 
@@ -938,7 +961,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-aeb618e Corrige esgotamento do pool de conexoes do Supabase (causa real do 500 em /lancamentos)   <- HEAD / origin/master
+14963d5 Formulario de Novo lancamento: todos os campos visiveis, sem secao colapsada   <- HEAD / origin/master
+d770001 Atualiza PROJECT_STATE.md: bug do pool de conexoes do Supabase corrigido
+aeb618e Corrige esgotamento do pool de conexoes do Supabase (causa real do 500 em /lancamentos)
 5617415 Atualiza PROJECT_STATE.md: asterisco vermelho nos campos obrigatorios
 5ea147b Adiciona asterisco vermelho nos campos obrigatorios de Lancamento e Transferencia
 a0a3064 Documenta investigacao do erro em /painel e tecnica de teste autenticado
@@ -1067,6 +1092,9 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       conexões de vez. Requer editar env var na Vercel + redeploy (fora do alcance do
       assistente); `max: 3` já aplicado no código deve prevenir o crash enquanto isso
       não é feito.
+- [x] Novo lançamento: Data de compra/vencimento visíveis e editáveis, Responsável/
+      Situação sempre visíveis e forçados via `required` (sem pré-preenchimento),
+      Tags (opcional), sem nenhuma seção colapsada — commit `14963d5`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
