@@ -11,7 +11,7 @@ export default async function NovoLancamentoPage() {
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  const [wallets, categories, subcategories, people, recurrenceKinds, statuses, natureLabels, lastWalletEntry, lastResponsibleEntry] =
+  const [wallets, categories, subcategories, people, recurrenceKinds, statuses, natureLabels, lastWalletEntry] =
     await Promise.all([
       prisma.wallet.findMany({ where: { workspaceId, isActive: true }, orderBy: { name: "asc" } }),
       prisma.category.findMany({ orderBy: [{ nature: "asc" }, { sortOrder: "asc" }] }),
@@ -25,11 +25,6 @@ export default async function NovoLancamentoPage() {
         where: { workspaceId, createdAt: { gte: since24h } },
         orderBy: { createdAt: "desc" },
         select: { walletId: true },
-      }),
-      prisma.entry.findFirst({
-        where: { workspaceId, createdAt: { gte: since24h } },
-        orderBy: { createdAt: "desc" },
-        select: { responsibleId: true },
       }),
     ]);
 
@@ -53,7 +48,6 @@ export default async function NovoLancamentoPage() {
         statuses={statuses.map((s) => ({ code: s.code, label: s.labelPt }))}
         natureLabels={natureLabels.map((n) => ({ code: n.code, label: n.labelPt }))}
         defaultWalletId={lastWalletEntry?.walletId ?? wallets[0]?.id ?? ""}
-        defaultResponsibleId={lastResponsibleEntry?.responsibleId ?? people[0]?.id ?? ""}
         cardDueDates={cardDueDates}
         todayIso={today.toISOString().slice(0, 10)}
       />

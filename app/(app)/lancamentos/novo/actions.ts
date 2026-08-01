@@ -27,6 +27,10 @@ export async function createQuickEntry(formData: FormData) {
     nature === "DESPESA" ? -absAmount : nature === "RECEITA" ? absAmount : negative ? -absAmount : absAmount;
 
   const installmentsRaw = Number(formData.get("installmentsTotal") ?? "1");
+  const tags = String(formData.get("tags") ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
   const input = createEntrySchema.parse({
     walletId: String(formData.get("walletId") ?? ""),
@@ -41,6 +45,7 @@ export async function createQuickEntry(formData: FormData) {
     statusCode: String(formData.get("statusCode") ?? ""),
     recurrenceCode: String(formData.get("recurrenceCode") ?? "UNICA"),
     note: String(formData.get("note") ?? "").trim() || undefined,
+    tags,
     installmentsTotal: installmentsRaw >= 2 ? installmentsRaw : undefined,
   });
 

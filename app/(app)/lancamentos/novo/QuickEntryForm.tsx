@@ -48,7 +48,6 @@ export interface QuickEntryFormProps {
   /** Rótulos de exibição de Tipo (§20 — só o rótulo é editável pelo admin, a natureza em si é fixa). */
   natureLabels: CodeLabel[];
   defaultWalletId: string;
-  defaultResponsibleId: string;
   /** walletId -> dueDate (AAAA-MM-DD) da fatura vigente, só para carteiras de cartão de crédito (§12). */
   cardDueDates: Record<string, string>;
   todayIso: string;
@@ -63,7 +62,6 @@ export function QuickEntryForm({
   statuses,
   natureLabels,
   defaultWalletId,
-  defaultResponsibleId,
   cardDueDates,
   todayIso,
 }: QuickEntryFormProps) {
@@ -72,15 +70,10 @@ export function QuickEntryForm({
   const [walletId, setWalletId] = useState(defaultWalletId);
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
-  const [responsibleId, setResponsibleId] = useState(defaultResponsibleId);
-  const [statusCode, setStatusCode] = useState(() => defaultStatusFor(walletId, wallets, statuses));
+  const [transactionDate, setTransactionDate] = useState(todayIso);
+  const [dueDate, setDueDate] = useState(todayIso);
   const [description, setDescription] = useState("");
-  const [showMore, setShowMore] = useState(false);
   const [pending, setPending] = useState(false);
-
-  const wallet = wallets.find((w) => w.id === walletId);
-  const isCard = wallet?.kindCode === "CARTAO_CREDITO";
-  const dueDate = isCard ? cardDueDates[walletId] ?? todayIso : todayIso;
 
   const availableCategories = categories.filter((c) => c.nature === nature);
   const availableSubcategories = subcategories.filter((s) => s.categoryId === categoryId);
@@ -89,7 +82,13 @@ export function QuickEntryForm({
 
   function handleWalletChange(id: string) {
     setWalletId(id);
-    setStatusCode(defaultStatusFor(id, wallets, statuses));
+    // Sugestão de conveniência: cartão de crédito pré-preenche o vencimento
+    // com a fatura vigente (§12), mas o campo continua editável — o
+    // formulário é atemporal, o usuário pode lançar retroativo.
+    const wallet = wallets.find((w) => w.id === id);
+    if (wallet?.kindCode === "CARTAO_CREDITO") {
+      setDueDate(cardDueDates[id] ?? todayIso);
+    }
   }
 
   function handleNatureChange(next: Nature) {
@@ -118,12 +117,37 @@ export function QuickEntryForm({
   return (
     <div className="mx-auto w-full max-w-sm rounded-xl border border-indigo-900/50 bg-[#131A47] p-6">
       <form action={createQuickEntry} onSubmit={() => setPending(true)} className="flex flex-col gap-4">
-        <input type="hidden" name="transactionDate" value={todayIso} />
-        <input type="hidden" name="dueDate" value={dueDate} />
-        <input type="hidden" name="statusCode" value={statusCode} />
         <input type="hidden" name="negative" value={String(negative)} />
-        {/* sempre presente, mesmo com "mais opções" fechado — o select visível fica lá dentro */}
-        <input type="hidden" name="responsibleId" value={responsibleId} />
+
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-indigo-300">
+              Data de compra <span className="text-red-400">*</span>
+            </span>
+            <input
+              name="transactionDate"
+              type="date"
+              value={transactionDate}
+              onChange={(e) => setTransactionDate(e.target.value)}
+              required
+              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-indigo-300">
+              Data de vencimento <span className="text-red-400">*</span>
+            </span>
+            <input
+              name="dueDate"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              required
+              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
+            />
+          </label>
+        </div>
 
         <label className="flex flex-col gap-1">
           <span className="text-xs text-indigo-300">
@@ -232,6 +256,50 @@ export function QuickEntryForm({
           </label>
         )}
 
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-indigo-300">
+              Responsável <span className="text-red-400">*</span>
+            </span>
+            <select
+              name="responsibleId"
+              required
+              defaultValue=""
+              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
+            >
+              <option value="" disabled>
+                —
+              </option>
+              {people.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-indigo-300">
+              Situação <span className="text-red-400">*</span>
+            </span>
+            <select
+              name="statusCode"
+              required
+              defaultValue=""
+              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
+            >
+              <option value="" disabled>
+                —
+              </option>
+              {statuses.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
         <label className="flex flex-col gap-1">
           <span className="text-xs text-indigo-300">Descrição (opcional)</span>
           <input
@@ -243,83 +311,49 @@ export function QuickEntryForm({
           />
         </label>
 
-        <button
-          type="button"
-          onClick={() => setShowMore((v) => !v)}
-          className="text-left text-xs text-indigo-300 hover:text-white"
-        >
-          {showMore ? "− menos opções" : "+ mais opções"}
-        </button>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-indigo-300">Recorrência</span>
+          <select
+            name="recurrenceCode"
+            defaultValue="UNICA"
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
+          >
+            {recurrenceKinds.map((r) => (
+              <option key={r.code} value={r.code}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </label>
 
-        {showMore && (
-          <div className="flex flex-col gap-3 rounded-lg border border-indigo-900/50 p-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-indigo-300">Responsável</span>
-              <select
-                value={responsibleId}
-                onChange={(e) => setResponsibleId(e.target.value)}
-                className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
-              >
-                <option value="">—</option>
-                {people.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-indigo-300">Parcelas (1 = à vista)</span>
+          <input
+            name="installmentsTotal"
+            type="number"
+            min={1}
+            defaultValue={1}
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
+          />
+        </label>
 
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-indigo-300">Situação</span>
-              <select
-                value={statusCode}
-                onChange={(e) => setStatusCode(e.target.value)}
-                className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
-              >
-                {statuses.map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-indigo-300">Observação (opcional)</span>
+          <textarea
+            name="note"
+            rows={2}
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
+          />
+        </label>
 
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-indigo-300">Recorrência</span>
-              <select
-                name="recurrenceCode"
-                defaultValue="UNICA"
-                className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
-              >
-                {recurrenceKinds.map((r) => (
-                  <option key={r.code} value={r.code}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-indigo-300">Parcelas (1 = à vista)</span>
-              <input
-                name="installmentsTotal"
-                type="number"
-                min={1}
-                defaultValue={1}
-                className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-indigo-300">Observação</span>
-              <textarea
-                name="note"
-                rows={2}
-                className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
-              />
-            </label>
-          </div>
-        )}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-indigo-300">Tags (opcional)</span>
+          <input
+            name="tags"
+            placeholder="Separadas por vírgula — ex: viagem, reembolsável"
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-2 text-sm text-zinc-100"
+          />
+        </label>
 
         <button
           type="submit"
@@ -331,10 +365,4 @@ export function QuickEntryForm({
       </form>
     </div>
   );
-}
-
-function defaultStatusFor(walletId: string, wallets: WalletOption[], statuses: CodeLabel[]): string {
-  const wallet = wallets.find((w) => w.id === walletId);
-  const wanted = wallet?.kindCode === "CARTAO_CREDITO" ? "A_PAGAR" : "PAGO";
-  return statuses.find((s) => s.code === wanted)?.code ?? statuses[0]?.code ?? "";
 }
