@@ -16,17 +16,33 @@ datasource db {
 // Identidade e acesso (§19)
 // ---------------------------------------------------------------------------
 
+/// Papel global de plataforma (Arquitetura de Identidade/Planos, Fase 2 —
+/// substitui `isPlatformAdmin` como fonte de verdade daqui pra frente, mas o
+/// booleano antigo é mantido como legado por enquanto — ver seção 20 do
+/// ARQUITETURA-IDENTIDADE-PLANOS.md, "nunca remover dado, sempre aditivo
+/// primeiro". Nasce com só 2 valores de propósito; cresce sem precisar
+/// migrar quem já tem NONE/PLATFORM_ADMIN quando um 3º valor for necessário.
+enum PlatformRole {
+  NONE
+  PLATFORM_ADMIN
+}
+
 /// Espelha auth.users (Supabase Auth). A linha nasce por trigger no signup
 /// (ver prisma/sql/001_auth_and_rls.sql) — o FK para auth.users é criado ali,
 /// não aqui, porque auth.users não é uma tabela gerenciada pelo Prisma.
 model Profile {
   id              String   @id @db.Uuid
   fullName        String?  @map("full_name")
-  /// Papel global (§19.1) — não é papel de workspace. Dá acesso a todos os workspaces.
-  isPlatformAdmin Boolean  @default(false) @map("is_platform_admin")
-  createdAt       DateTime @default(now()) @map("created_at")
+  /// [LEGADO] Papel global (§19.1) — não é papel de workspace. Mantido em
+  /// paralelo a `platformRole` durante a migração (nunca mais escrito depois
+  /// que o backfill sincronizar os dois; remover só numa limpeza futura).
+  isPlatformAdmin Boolean      @default(false) @map("is_platform_admin")
+  /// Substitui `isPlatformAdmin` como fonte de verdade — ver comentário do enum.
+  platformRole    PlatformRole @default(NONE) @map("platform_role")
+  createdAt       DateTime     @default(now()) @map("created_at")
 
   memberships Membership[]
+  accessLogs  AccessLog[]
 
   @@map("profiles")
 }
@@ -45,6 +61,10 @@ model Workspace {
   importBatches    ImportBatch[]
   exportLogs       ExportLog[]
   workspaceInvites WorkspaceInvite[]
+  subscriptions    Subscription[]
+  entitlements     Entitlement[]
+  accessLogs       AccessLog[]
+  notifications    Notification[]
 
   @@map("workspaces")
 }
@@ -53,14 +73,30 @@ enum MembershipRole {
   TITULAR
   MEMBRO
   LEITURA
+  /// Novo (Arquitetura de Identidade/Planos) — acesso de consultor a um
+  /// workspace que não é o dele. "Consultor" não é um tipo de pessoa, é este
+  /// valor de papel numa Membership específica; a mesma Profile pode ter
+  /// TITULAR no workspace próprio e ADVISOR em N workspaces de clientes.
+  /// Nada no código hoje cria/consome este valor ainda (só a coluna existe) —
+  /// entra em uso na próxima etapa (backend/auth), não nesta (schema).
+  ADVISOR
+}
+
+enum MembershipStatus {
+  ACTIVE
+  REVOKED
 }
 
 model Membership {
-  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId String         @map("workspace_id") @db.Uuid
-  profileId   String         @map("profile_id") @db.Uuid
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String           @map("workspace_id") @db.Uuid
+  profileId   String           @map("profile_id") @db.Uuid
   role        MembershipRole
-  createdAt   DateTime       @default(now()) @map("created_at")
+  /// Revogar vira status, nunca DELETE — preserva histórico de "quem teve
+  /// acesso, entre quando e quando" (relevante sobretudo pra ADVISOR/auditoria).
+  status      MembershipStatus @default(ACTIVE)
+  revokedAt   DateTime?        @map("revoked_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   profile   Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
@@ -86,10 +122,176 @@ model WorkspaceInvite {
   createdBy   String         @map("created_by") @db.Uuid
   createdAt   DateTime       @default(now()) @map("created_at")
   acceptedAt  DateTime?      @map("accepted_at")
+  /// Novo — hoje o convite nunca expirava. Nullable de propósito: convites já
+  /// existentes ficam sem expiração (nunca invalidados retroativamente por
+  /// uma migration); só convites novos passam a receber uma data.
+  expiresAt   DateTime?      @map("expires_at")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@map("workspace_invites")
+}
+
+// ---------------------------------------------------------------------------
+// Comercial (planos) e auditoria — ARQUITETURA-IDENTIDADE-PLANOS.md, Fase 2
+// Etapa 1. Só schema/dados nesta etapa: nenhuma tela, Server Action ou rota
+// ainda lê/escreve estas tabelas — entram em uso nas próximas etapas
+// (backend/auth, depois frontend). Backfill do workspace existente (plano
+// LEGACY_INTERNAL) roda na migration desta etapa, ver seção "Comercial" nela.
+// ---------------------------------------------------------------------------
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+/// Catálogo do que é vendido — muda com frequência comercial (nome, preço),
+/// nunca é lido em código de tela por nome (sempre por `Feature.code`, via
+/// `PlanFeature`), pra renomear/reprecificar não exigir tocar em tela nenhuma.
+model Plan {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String          @unique
+  name            String
+  priceCents      Int             @map("price_cents")
+  billingInterval BillingInterval @map("billing_interval")
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  planFeatures  PlanFeature[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+/// Uma funcionalidade que pode ser liberada por plano (ex.: "modulo_mei",
+/// "ia_assistente", "open_finance"). Código de tela sempre checa por `code`
+/// via `hasFeature()`, nunca por nome/id de Plan.
+model Feature {
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code String @unique
+  name String
+
+  planFeatures PlanFeature[]
+  entitlements Entitlement[]
+
+  @@map("features")
+}
+
+/// O que cada Plan libera — join simples, sem coluna própria.
+model PlanFeature {
+  planId    String @map("plan_id") @db.Uuid
+  featureId String @map("feature_id") @db.Uuid
+
+  plan    Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  feature Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@id([planId, featureId])
+  @@map("plan_features")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum PaymentProvider {
+  /// Sem cobrança externa — usado pelo plano de backfill (LEGACY_INTERNAL).
+  NONE
+  STRIPE
+  ASAAS
+}
+
+/// Workspace × Plan ao longo do tempo. Cancelar vira `status=CANCELED`, nunca
+/// DELETE (histórico de billing é dado, não lixo). Pode haver mais de uma
+/// linha por workspace (histórico) — a aplicação decide qual é "a ativa" na
+/// próxima etapa; nenhuma constraint de unicidade aqui de propósito ainda.
+model Subscription {
+  id                     String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId            String             @map("workspace_id") @db.Uuid
+  planId                 String             @map("plan_id") @db.Uuid
+  status                 SubscriptionStatus
+  paymentProvider        PaymentProvider    @default(NONE) @map("payment_provider")
+  providerCustomerId     String?            @map("provider_customer_id")
+  providerSubscriptionId String?            @map("provider_subscription_id")
+  currentPeriodEnd       DateTime?          @map("current_period_end")
+  createdAt              DateTime           @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan      Plan      @relation(fields: [planId], references: [id])
+
+  @@index([workspaceId])
+  @@map("subscriptions")
+}
+
+/// Override pontual de feature pra um workspace específico, além do que o
+/// Plan já libera (ex.: cortesia de acesso antecipado sem mudar de plano
+/// formalmente). Nunca subtrai o que o plano já dá, só soma.
+model Entitlement {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  featureId   String    @map("feature_id") @db.Uuid
+  grantedBy   String?   @map("granted_by") @db.Uuid
+  reason      String?
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feature   Feature   @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, featureId])
+  @@map("entitlements")
+}
+
+/// Todo acesso de alguém que NÃO é dono do workspace (platformRole=
+/// PLATFORM_ADMIN ou Membership.role=ADVISOR) — nunca acesso do próprio
+/// OWNER/MEMBER/VIEWER ao seu workspace (seria ruído, não auditoria).
+/// Granularidade por rota/página nesta fase, não por campo — ver
+/// ARQUITETURA-IDENTIDADE-PLANOS.md seção 11. Escrito num único ponto
+/// (funil de sessão), não espalhado pelas telas.
+model AccessLog {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorProfileId String         @map("actor_profile_id") @db.Uuid
+  workspaceId    String         @map("workspace_id") @db.Uuid
+  /// O papel usado no momento do acesso (nem sempre coincide com o atual, se
+  /// a Membership mudar depois — é um registro histórico, não uma referência viva).
+  actorRole      MembershipRole @map("actor_role")
+  action         String
+  occurredAt     DateTime       @default(now()) @map("occurred_at")
+
+  actor     Profile   @relation(fields: [actorProfileId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, occurredAt])
+  @@map("access_logs")
+}
+
+enum NotificationVisibility {
+  /// Visível a todo mundo do workspace, incluindo o cliente (OWNER/MEMBER).
+  SHARED
+  /// Só visível a quem acessa como ADVISOR ou PLATFORM_ADMIN — os "alertas
+  /// internos" do consultor que o cliente não vê.
+  ADVISOR_ONLY
+}
+
+model Notification {
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId    String                 @map("workspace_id") @db.Uuid
+  visibility     NotificationVisibility
+  severity       String
+  message        String
+  /// Referência solta (sem FK) de propósito — o tipo de entidade relacionada
+  /// ainda não está decidido (pode ser Entry, Goal futuro, etc.); formalizar
+  /// quando o primeiro tipo de alerta real for implementado.
+  relatedEntryId String?                @map("related_entry_id") @db.Uuid
+  createdAt      DateTime               @default(now()) @map("created_at")
+  resolvedAt     DateTime?              @map("resolved_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, resolvedAt])
+  @@map("notifications")
 }
 
 // ---------------------------------------------------------------------------
