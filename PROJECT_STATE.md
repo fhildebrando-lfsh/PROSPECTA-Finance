@@ -1006,6 +1006,13 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   manualmente, renumerando o tipo "Outro" em sequência (Voucher=1 … Outros=14). Lógica nova
   verificada com uma transação de teste propositalmente revertida (sem deixar rastro no
   banco) antes do commit `a1bb5d6`.
+- ✅ **Subcategorias: seletor de categoria com cor por Tipo + botão "Ver" visível** — a
+  lista de ~200 categorias (RECEITA/DESPESA/INVESTIMENTO/OUTRO misturadas) era difícil de
+  escanear. Cada `<option>` ganhou `style` inline com a cor de fundo do seu Tipo (mesma
+  paleta do lançamento rápido: verde Receita, vermelho Despesa, azul Investimento, cinza
+  Outro) — `<option>` não aceita bem classe Tailwind pra cor de fundo entre navegadores,
+  então usa `style` inline mesmo. O botão "Ver" trocou de `BTN_GHOST` (sem borda, passava
+  despercebido) pra `BTN_SECONDARY`, igual ao "Editar". Commit `c2577eb`.
 
 ## 25. Funcionalidades em andamento
 
@@ -1017,7 +1024,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-a1bb5d6 Corrige Ordem de categoria pra nunca duplicar (empurra as demais)   <- HEAD / origin/master
+c2577eb Melhora selecao de categoria em Subcategorias: cor por Tipo e botao Ver visivel   <- HEAD / origin/master
+4820fb2 Atualiza PROJECT_STATE.md: correcao da Ordem duplicada em Categoria
+a1bb5d6 Corrige Ordem de categoria pra nunca duplicar (empurra as demais)
 9b08965 Atualiza PROJECT_STATE.md: reformulacao de Cadastros e permissao de subcategoria
 3f21ce3 Reformula Cadastros: editar sob demanda, exclusao em massa, botoes com contraste
 47d8e77 Atualiza PROJECT_STATE.md: checagem do importador e cards de Cadastros
@@ -1170,6 +1179,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Bug real corrigido: Ordem de Categoria podia duplicar — criar/editar agora empurra as
       demais categorias do mesmo Tipo em vez de duplicar o número; dado já duplicado em
       produção corrigido manualmente — commit `a1bb5d6`
+- [x] Subcategorias: cor por Tipo no seletor de categoria + botão "Ver" com estilo visível
+      — commit `c2577eb`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
