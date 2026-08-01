@@ -1,8 +1,8 @@
 import { requireProfile, requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
-import { BTN_PRIMARY, BTN_SECONDARY } from "@/components/ui/buttonStyles";
-import { createSubcategory } from "./actions";
+import { BTN_SECONDARY } from "@/components/ui/buttonStyles";
 import { SubcategoriesTable } from "./SubcategoriesTable";
+import { NewSubcategoryForm } from "./NewSubcategoryForm";
 
 /** Mesmas cores de `NATURE_STYLE` do lançamento rápido — ajuda a escanear a
  * lista longa de categorias por Tipo em vez de ler texto linha a linha. */
@@ -26,8 +26,13 @@ export default async function SubcategoriasPage({
   const canCreate = isAdmin || membership?.role !== "LEITURA";
   const { categoryId } = await searchParams;
 
-  const categories = await prisma.category.findMany({ orderBy: [{ nature: "asc" }, { sortOrder: "asc" }] });
+  const [categories, natureLabels] = await Promise.all([
+    prisma.category.findMany({ orderBy: [{ nature: "asc" }, { sortOrder: "asc" }] }),
+    prisma.natureLabel.findMany(),
+  ]);
+  const natureLabelByCode = new Map(natureLabels.map((n) => [n.code, n.labelPt]));
   const selectedCategoryId = categoryId || categories[0]?.id;
+  const selectedNature = categories.find((c) => c.id === selectedCategoryId)?.nature ?? "DESPESA";
 
   const subcategories = selectedCategoryId
     ? await prisma.subcategory.findMany({
@@ -66,24 +71,12 @@ export default async function SubcategoriasPage({
         isAdmin={isAdmin}
       />
 
-      {canCreate && selectedCategoryId && (
-        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
-          <h2 className="mb-3 text-sm font-medium text-zinc-300">Nova subcategoria</h2>
-          <form action={createSubcategory} className="flex flex-wrap items-end gap-3">
-            <input type="hidden" name="categoryId" value={selectedCategoryId} />
-            <label className="flex flex-col gap-1 text-xs text-zinc-400">
-              Nome
-              <input
-                name="name"
-                required
-                className="w-56 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-              />
-            </label>
-            <button type="submit" className={BTN_PRIMARY}>
-              Criar
-            </button>
-          </form>
-        </div>
+      {canCreate && (
+        <NewSubcategoryForm
+          categories={categories.map((c) => ({ id: c.id, name: c.name, nature: c.nature }))}
+          natureLabelByCode={natureLabelByCode}
+          defaultNature={selectedNature}
+        />
       )}
     </div>
   );
