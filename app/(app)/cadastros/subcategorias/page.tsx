@@ -31,7 +31,9 @@ export default async function SubcategoriasPage({
     prisma.natureLabel.findMany(),
   ]);
   const natureLabelByCode = new Map(natureLabels.map((n) => [n.code, n.labelPt]));
-  const selectedCategoryId = categoryId || categories[0]?.id;
+  // "—" enviado de propósito (categoryId="") conta como "não quero ver nada" — só a
+  // ausência total do parâmetro (primeira visita à página) cai no default.
+  const selectedCategoryId = categoryId !== undefined ? categoryId : categories[0]?.id;
   const selectedNature = categories.find((c) => c.id === selectedCategoryId)?.nature ?? "DESPESA";
 
   const subcategories = selectedCategoryId
@@ -55,6 +57,7 @@ export default async function SubcategoriasPage({
           defaultValue={selectedCategoryId}
           className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-zinc-100"
         >
+          <option value="">—</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id} style={NATURE_OPTION_STYLE[c.nature]}>
               {c.nature} — {c.name}
