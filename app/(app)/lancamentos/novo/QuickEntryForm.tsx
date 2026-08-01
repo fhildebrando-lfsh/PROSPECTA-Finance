@@ -126,7 +126,9 @@ export function QuickEntryForm({
         <input type="hidden" name="responsibleId" value={responsibleId} />
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-indigo-300">Valor</span>
+          <span className="text-xs text-indigo-300">
+            Valor <span className="text-red-400">*</span>
+          </span>
           <div className="flex items-center gap-2">
             {freeSign && (
               <button
@@ -168,7 +170,9 @@ export function QuickEntryForm({
 
         <div className="grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-indigo-300">Carteira</span>
+            <span className="text-xs text-indigo-300">
+              Carteira <span className="text-red-400">*</span>
+            </span>
             <select
               name="walletId"
               value={walletId}
@@ -186,7 +190,9 @@ export function QuickEntryForm({
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-indigo-300">Categoria</span>
+            <span className="text-xs text-indigo-300">
+              Categoria <span className="text-red-400">*</span>
+            </span>
             <select
               name="categoryId"
               value={categoryId}

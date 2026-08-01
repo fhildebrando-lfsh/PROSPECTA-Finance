@@ -40,7 +40,9 @@ export function TransferForm({ wallets, people, subcategories, defaultResponsibl
     >
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-400">Origem</span>
+          <span className="text-xs text-zinc-400">
+            Origem <span className="text-red-400">*</span>
+          </span>
           <select
             name="fromWalletId"
             value={fromWalletId}
@@ -61,7 +63,9 @@ export function TransferForm({ wallets, people, subcategories, defaultResponsibl
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-400">Destino</span>
+          <span className="text-xs text-zinc-400">
+            Destino <span className="text-red-400">*</span>
+          </span>
           <select
             name="toWalletId"
             value={toWalletId}
@@ -82,7 +86,9 @@ export function TransferForm({ wallets, people, subcategories, defaultResponsibl
       {sameWallet && <p className="text-xs text-red-400">Origem e destino precisam ser diferentes.</p>}
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs text-zinc-400">Valor</span>
+        <span className="text-xs text-zinc-400">
+          Valor <span className="text-red-400">*</span>
+        </span>
         <input
           name="amount"
           type="number"
@@ -96,7 +102,9 @@ export function TransferForm({ wallets, people, subcategories, defaultResponsibl
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs text-zinc-400">Data</span>
+        <span className="text-xs text-zinc-400">
+          Data <span className="text-red-400">*</span>
+        </span>
         <input
           name="date"
           type="date"
@@ -125,7 +133,9 @@ export function TransferForm({ wallets, people, subcategories, defaultResponsibl
       )}
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs text-zinc-400">Responsável</span>
+        <span className="text-xs text-zinc-400">
+          Responsável <span className="text-red-400">*</span>
+        </span>
         <select
           name="responsibleId"
           defaultValue={defaultResponsibleId}
