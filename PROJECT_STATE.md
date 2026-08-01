@@ -17,10 +17,16 @@
 > `Profile.platformRole`, `MembershipRole.ADVISOR`, `Membership.status`, tabelas
 > `Plan`/`Feature`/`PlanFeature`/`Subscription`/`Entitlement`/`AccessLog`/`Notification`,
 > trigger de signup agora checa convite pendente antes de criar workspace automático.
-> Zero mudança em frontend/backend/Server Actions nesta etapa (instrução explícita do
+> Zero mudança em frontend/backend/Server Actions nessa etapa (instrução explícita do
 > usuário) — dado real (1085 entries, 47 wallets) confirmado intacto depois de aplicar.
-> **Aguardando aprovação do usuário pra Etapa 2 (backend, `lib/auth/session.ts`)** antes
-> de continuar. Ver seção 24 pro detalhe completo.
+> **Fase 2 Etapa 2 (backend) também concluída, mesmo dia**: `lib/auth/session.ts` ganhou
+> `can()` (RBAC explícito) com `assertCanWrite`/`assertIsAdmin` reimplementados em cima
+> dele (mesma assinatura externa, zero call site mudou) e `requireMembershipForWorkspace()`
+> (novo, workspace explícito + grava `AccessLog` pra acesso `ADVISOR`); `lib/billing/
+> entitlements.ts::hasFeature()` e `lib/audit/access-log.ts::logAccess()` novos. Ainda
+> nenhuma tela/Server Action tocada. 8 testes novos pra `can()` (121 no total).
+> **Aguardando aprovação do usuário pra Etapa 3** antes de continuar. Ver seção 24 pro
+> detalhe completo.
 >
 > **Última atualização anterior:** 2026-07-31. Além das 5 pontas soltas da Fase 1 (Compromissos,
 > reverter importação, transferência entre carteiras, convidar membro, edição in-line/ações
@@ -307,11 +313,19 @@ C:\Sistema Financeiro\
 
 ### `lib/auth/session.ts`
 - `getCurrentProfile()` — perfil + memberships, com `cache()` do React (dedup por request).
-- `requireProfile()` / `requireWorkspaceId()` — pra Server Components (redirecionam se não autenticado).
-- `requireApiWorkspaceMembership()` — pra Route Handlers (lança `ApiError`, não redireciona).
+- `requireProfile()` / `requireWorkspaceId()` — pra Server Components (redirecionam se não autenticado). `requireWorkspaceId()` continua assumindo `memberships[0]`, inalterado.
+- `requireApiWorkspaceMembership()` — pra Route Handlers (lança `ApiError`, não redireciona). Ganhou `platformRole` no retorno (além de `isPlatformAdmin`, mantido).
 - `requireAdminProfile()` — existe mas **não está mais em uso** desde que as telas de Cadastros passaram a ser visíveis-porém-desabilitadas em vez de bloqueadas (ver seção 20).
-- `assertCanWrite()` — LEITURA não escreve.
-- `assertIsAdmin()` — só admin (Categoria/Subcategoria/Tipo).
+- `can(action, ctx)` — **novo (Arquitetura de Identidade/Planos, Fase 2 Etapa 2)**. RBAC explícito (não motor genérico), combina `role` de workspace + `platformRole`. `assertCanWrite()`/`assertIsAdmin()` viram wrappers finos em cima dele — mesma assinatura de sempre, nenhum call site mudou.
+- `assertCanWrite()` — LEITURA não escreve; TITULAR/MEMBRO/ADVISOR e admin escrevem.
+- `assertIsAdmin()` — só admin (Categoria/Tipo, editar/arquivar Subcategoria).
+- `requireMembershipForWorkspace(workspaceId)` — **novo**. Variante explícita de workspace (diferente de `requireWorkspaceId()`, que só olha `memberships[0]`) — valida contra as memberships reais da sessão, nunca confia no `workspaceId` recebido sem checar. Grava `AccessLog` quando o acesso é `ADVISOR`. Nenhum call site usa ainda (não existe seletor de workspace na UI) — peça pronta pra Etapa 3+.
+
+### `lib/billing/entitlements.ts` (novo, Fase 2 Etapa 2)
+- `hasFeature(workspaceId, featureCode)` — resolve `Subscription` ativa → `Plan` → `PlanFeature`, mais `Entitlement` overrides (nunca subtrai o que o plano já dá). Único lugar que deve decidir "esse workspace pode usar X" — telas nunca devem checar `plan.code`/nome direto. Nenhuma tela usa ainda; verificado manualmente contra o banco real (não é função pura, foge do padrão de teste unitário de `lib/finance`).
+
+### `lib/audit/access-log.ts` (novo, Fase 2 Etapa 2)
+- `logAccess({ actorProfileId, workspaceId, actorRole, action })` — grava em `AccessLog`. Só chamado de dentro de `requireMembershipForWorkspace()` (funil único), nunca espalhado pelas telas.
 
 ### Outros
 - `lib/supabase/admin.ts` — `createAdminClient()`, client com a service role key (contorna RLS, enxerga `auth.users` inteiro via Admin API). **Só server-side** — nunca importar num Client Component. Único consumidor hoje: `/admin/usuarios`.
@@ -1105,24 +1119,34 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   `Subscription` libera é resolvido via `Entitlement`/`hasFeature()`, não checado por
   nome de plano no código. Etapa 1 (só banco, sem tocar frontend/backend/Server Actions,
   por instrução explícita) entregue e aplicada — ver seção 10 (migrations 7 e 8, SQL 007).
-  Aguardando aprovação do usuário pra Etapa 2 (backend — `lib/auth/session.ts`).
+  Commit `185e4f0`.
+- ✅ **Arquitetura de Identidade/Planos — Fase 2 Etapa 2 (backend) concluída.** Ver
+  detalhe completo na seção 6 (`lib/auth/session.ts`, `lib/billing/entitlements.ts`,
+  `lib/audit/access-log.ts`). Resumo: `can()` novo (RBAC explícito) com
+  `assertCanWrite`/`assertIsAdmin` reimplementados em cima dele sem mudar assinatura
+  nenhuma; `requireMembershipForWorkspace()` novo (workspace explícito + `AccessLog` pra
+  `ADVISOR`); `hasFeature()` (resolução de plano/feature) e `logAccess()` novos. **Zero
+  tela/Server Action tocada** — tudo aditivo, nenhum call site existente mudou. 8 testes
+  novos pra `can()` (121 no total); `hasFeature`/`logAccess` verificados manualmente
+  contra o banco real (não são funções puras, fogem do padrão de teste unitário). Commit
+  `5ee4747`. Aguardando aprovação do usuário pra Etapa 3.
 
 ## 25. Funcionalidades em andamento
 
-**Aguardando aprovação do usuário pra prosseguir com a Etapa 2 (backend/`lib/auth/
-session.ts`) da Arquitetura de Identidade/Planos** — ver seção 24. A Etapa 1 (banco de
-dados) está concluída, aplicada em produção e verificada; nenhuma tela/Server Action/rota
-foi tocada ainda, por instrução explícita do usuário ("nesta Etapa 1... você NÃO deve
-tocar no frontend, nas rotas protegidas ou nas Server Actions existentes"). Fora isso,
-nada mais em andamento — tudo verificado (typecheck, lint, 113 testes, build de produção
-local) e commitado/pushado (ver seção 26). Não há trabalho pendente no working tree
-(exceto o `recovery-codes.txt` — ver "Problemas conhecidos" #8 — que nunca deve ser
-commitado).
+**Aguardando aprovação do usuário pra prosseguir com a Etapa 3 da Arquitetura de
+Identidade/Planos** — ver seção 24. Etapas 1 (banco) e 2 (backend) concluídas, aplicadas/
+commitadas e verificadas; nenhuma tela/Server Action/rota foi tocada ainda em nenhuma das
+duas, por instrução explícita do usuário. Fora isso, nada mais em andamento — tudo
+verificado (typecheck, lint, 121 testes, build de produção local) e commitado/pushado (ver
+seção 26). Não há trabalho pendente no working tree (exceto o `recovery-codes.txt` — ver
+"Problemas conhecidos" #8 — que nunca deve ser commitado).
 
 ## 26. Estado do Git
 
 ```
-185e4f0 Arquitetura de Identidade/Planos, Fase 2 Etapa 1: schema, migrations, trigger   <- HEAD / origin/master
+5ee4747 Arquitetura de Identidade/Planos, Fase 2 Etapa 2: backend (lib/auth/session.ts)   <- HEAD / origin/master
+a43b46b Atualiza PROJECT_STATE.md: Etapa 1 da Arquitetura de Identidade/Planos
+185e4f0 Arquitetura de Identidade/Planos, Fase 2 Etapa 1: schema, migrations, trigger
 6da50d2 Atualiza PROJECT_STATE.md: botao Excluir em Subcategoria
 2b7e769 Adiciona botao Excluir em Subcategoria (admin), so remove a subcategoria
 9952eef Atualiza PROJECT_STATE.md: opcao "-" no seletor Ver de Subcategorias
@@ -1299,10 +1323,11 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Arquitetura de Identidade/Planos: Fase 1 (documento) aprovada — commit `185e4f0`
 - [x] Arquitetura de Identidade/Planos: Fase 2 Etapa 1 (banco de dados — schema,
       migrations 7/8, trigger de signup invite-aware) — commit `185e4f0`
-- [ ] Arquitetura de Identidade/Planos: Fase 2 Etapa 2 (backend — `lib/auth/session.ts`,
-      `can()`/`hasFeature()`) — aguardando aprovação do usuário
-- [ ] Arquitetura de Identidade/Planos: Fase 2 Etapas 3+ (frontend, RLS, testes,
-      documentação da refatoração) — não iniciadas
+- [x] Arquitetura de Identidade/Planos: Fase 2 Etapa 2 (backend — `can()`,
+      `requireMembershipForWorkspace()`, `hasFeature()`, `logAccess()`) — commit `5ee4747`
+- [ ] Arquitetura de Identidade/Planos: Fase 2 Etapas 3+ (frontend, RLS, testes de
+      integração, documentação final da refatoração) — não iniciadas, aguardando
+      aprovação do usuário
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
