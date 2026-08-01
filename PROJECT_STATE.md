@@ -1013,6 +1013,22 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   Outro) — `<option>` não aceita bem classe Tailwind pra cor de fundo entre navegadores,
   então usa `style` inline mesmo. O botão "Ver" trocou de `BTN_GHOST` (sem borda, passava
   despercebido) pra `BTN_SECONDARY`, igual ao "Editar". Commit `c2577eb`.
+- ✅ **"Nova subcategoria" virou um fluxo Tipo → Categoria → Nome, independente do "Ver"** —
+  o usuário achou "horrível" ter que usar o mesmo seletor achatado de ~200 categorias
+  (nature+categoria misturados) só pra escolher onde criar uma subcategoria nova. Virou
+  `NewSubcategoryForm.tsx` (client component): escolhe o Tipo (4 opções), a Categoria
+  filtra automaticamente só as daquele Tipo, digita o Nome, cria — e ao salvar navega pra
+  `?categoryId=` da categoria escolhida, então a lista de subcategorias já existentes
+  (acima) mostra a recém-criada na hora. `categoryId` continua obrigatório no banco (a
+  subcategoria só aparece como opção no lançamento rápido dentro da categoria certa), então
+  o formulário não deixa criar "solto" só por Tipo — confirmado com o usuário antes de
+  implementar. Commit `6262705`.
+  **Ideia futura discutida, não implementada:** o usuário perguntou sobre excluir
+  subcategorias criadas por usuários "cliente" dos relatórios da Fase 2 (só as fixas/seed
+  entrariam, as ad-hoc "não entram por causa da aleatoriedade"). `Subcategory.isSystem`
+  (já existe no schema, default `true`) já é exatamente o flag que separaria "fixa" de
+  "criada pelo usuário" quando isso for implementado — não fazer nada agora, só uma nota
+  pra quando a Fase 2 (relatórios) for de fato encomendada.
 
 ## 25. Funcionalidades em andamento
 
@@ -1024,7 +1040,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-c2577eb Melhora selecao de categoria em Subcategorias: cor por Tipo e botao Ver visivel   <- HEAD / origin/master
+6262705 Nova subcategoria: fluxo Tipo -> Categoria (filtrada) -> Nome, independente do "Ver"   <- HEAD / origin/master
+0ff113d Atualiza PROJECT_STATE.md: cor por Tipo e botao Ver em Subcategorias
+c2577eb Melhora selecao de categoria em Subcategorias: cor por Tipo e botao Ver visivel
 4820fb2 Atualiza PROJECT_STATE.md: correcao da Ordem duplicada em Categoria
 a1bb5d6 Corrige Ordem de categoria pra nunca duplicar (empurra as demais)
 9b08965 Atualiza PROJECT_STATE.md: reformulacao de Cadastros e permissao de subcategoria
@@ -1181,6 +1199,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       produção corrigido manualmente — commit `a1bb5d6`
 - [x] Subcategorias: cor por Tipo no seletor de categoria + botão "Ver" com estilo visível
       — commit `c2577eb`
+- [x] "Nova subcategoria": fluxo Tipo → Categoria (filtrada) → Nome, independente do "Ver"
+      — commit `6262705`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
