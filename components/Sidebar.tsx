@@ -24,6 +24,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
+import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
 
 interface IconProps {
   className?: string;
@@ -62,13 +63,13 @@ const CADASTROS_ITEMS: NavLeaf[] = [
 ];
 
 export interface SidebarProps {
-  workspaceName: string;
+  memberships: WorkspaceOption[];
+  currentWorkspaceId: string;
   email: string | null | undefined;
-  role: string | null;
   isPlatformAdmin: boolean;
 }
 
-export function Sidebar({ workspaceName, email, role, isPlatformAdmin }: SidebarProps) {
+export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmin }: SidebarProps) {
   const pathname = usePathname();
 
   const entries: NavEntry[] = [
@@ -89,12 +90,12 @@ export function Sidebar({ workspaceName, email, role, isPlatformAdmin }: Sidebar
       </div>
 
       <div className="mx-4 mb-4 rounded-lg bg-indigo-900/40 px-3 py-2">
-        <p className="truncate text-sm font-medium text-white">{workspaceName}</p>
-        <p className="truncate text-xs text-indigo-300">
-          {email}
-          {role ? ` · ${role}` : ""}
-          {isPlatformAdmin ? " · admin" : ""}
-        </p>
+        <WorkspaceSwitcher
+          memberships={memberships}
+          currentWorkspaceId={currentWorkspaceId}
+          email={email}
+          isPlatformAdmin={isPlatformAdmin}
+        />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">

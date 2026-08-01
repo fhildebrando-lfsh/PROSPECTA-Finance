@@ -1,10 +1,11 @@
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
 import { logAccess } from "@/lib/audit/access-log";
-import type { MembershipRole, PlatformRole } from "@/app/generated/prisma/enums";
+import type { MembershipRole, MembershipStatus, PlatformRole } from "@/app/generated/prisma/enums";
 
 /**
  * Perfil + memberships do usuário logado, derivados sempre da sessão do
@@ -32,15 +33,75 @@ export async function requireProfile() {
   return profile;
 }
 
-/** Workspace primário do usuário (Fase 0: um só). Lança se não houver nenhum. */
-export async function requireWorkspaceId() {
+/**
+ * Cookie que guarda qual workspace a pessoa escolheu ver (Arquitetura de
+ * Identidade/Planos, Fase 2 Etapa 3 — seletor de workspace). Só passa a
+ * existir quando alguém troca de workspace pelo menos uma vez
+ * (`lib/workspace/switch.ts::setActiveWorkspace`); sem cookie, o
+ * comportamento é idêntico ao de sempre (primeira membership).
+ */
+export const ACTIVE_WORKSPACE_COOKIE = "active_workspace_id";
+
+interface MembershipLike {
+  workspaceId: string;
+  status: MembershipStatus;
+  role: MembershipRole;
+}
+
+/**
+ * Pura, sem I/O — decide qual Membership é "a ativa" pra sessão atual.
+ * `requestedWorkspaceId` (vindo do cookie) só vale se apontar pra uma
+ * Membership `ACTIVE` de verdade da própria pessoa; caso contrário (cookie
+ * ausente, revogado, ou de outra pessoa) cai no comportamento de sempre —
+ * a primeira membership. Nunca confia no valor sem checar contra a lista
+ * real de memberships da sessão.
+ */
+export function resolveActiveMembership<T extends MembershipLike>(
+  memberships: T[],
+  requestedWorkspaceId?: string,
+): T | undefined {
+  if (requestedWorkspaceId) {
+    const requested = memberships.find((m) => m.workspaceId === requestedWorkspaceId && m.status === "ACTIVE");
+    if (requested) return requested;
+  }
+  return memberships[0];
+}
+
+/**
+ * Resolve perfil + a Membership ativa da sessão (via cookie, com fallback
+ * pra primeira membership — ver `resolveActiveMembership`). Registra
+ * `AccessLog` quando a Membership resolvida é `ADVISOR` (§19.1 — acesso de
+ * consultor a workspace de terceiro é sempre auditado). Usado tanto por
+ * `requireWorkspaceId()` quanto pelo layout, que precisa do objeto
+ * completo (nome do workspace, papel) pra desenhar o seletor.
+ */
+export async function requireActiveMembership() {
   const profile = await requireProfile();
-  const membership = profile.memberships[0];
+  const cookieStore = await cookies();
+  const requested = cookieStore.get(ACTIVE_WORKSPACE_COOKIE)?.value;
+  const membership = resolveActiveMembership(profile.memberships, requested);
+
   if (!membership) {
     throw new Error(
       "Usuário autenticado sem workspace. O trigger on_auth_user_created deveria ter criado um no signup.",
     );
   }
+
+  if (membership.role === "ADVISOR") {
+    await logAccess({
+      actorProfileId: profile.id,
+      workspaceId: membership.workspaceId,
+      actorRole: membership.role,
+      action: "VIEW_WORKSPACE",
+    });
+  }
+
+  return { profile, membership };
+}
+
+/** Workspace ativo do usuário — ver `requireActiveMembership()`. */
+export async function requireWorkspaceId() {
+  const { membership } = await requireActiveMembership();
   return membership.workspaceId;
 }
 
@@ -59,8 +120,19 @@ export async function requireApiWorkspaceMembership(): Promise<{
   const profile = await getCurrentProfile();
   if (!profile) throw new ApiError(401, "Não autenticado.");
 
-  const membership = profile.memberships[0];
+  const cookieStore = await cookies();
+  const requested = cookieStore.get(ACTIVE_WORKSPACE_COOKIE)?.value;
+  const membership = resolveActiveMembership(profile.memberships, requested);
   if (!membership) throw new ApiError(403, "Usuário sem workspace.");
+
+  if (membership.role === "ADVISOR") {
+    await logAccess({
+      actorProfileId: profile.id,
+      workspaceId: membership.workspaceId,
+      actorRole: membership.role,
+      action: "VIEW_WORKSPACE",
+    });
+  }
 
   return {
     profileId: profile.id,

@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { requireProfile } from "@/lib/auth/session";
+import { requireActiveMembership } from "@/lib/auth/session";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { logout } from "./actions";
 
 const NAV_ITEMS = [
@@ -13,39 +14,39 @@ const NAV_ITEMS = [
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const profile = await requireProfile();
-  const primaryMembership = profile.memberships[0];
+  const { profile, membership: activeMembership } = await requireActiveMembership();
   const mobileNavItems = profile.isPlatformAdmin
     ? [...NAV_ITEMS, { href: "/admin/usuarios", label: "Admin" }]
     : NAV_ITEMS;
+  const membershipOptions = profile.memberships.map((m) => ({
+    workspaceId: m.workspaceId,
+    workspaceName: m.workspace.name,
+    role: m.role,
+  }));
 
   return (
     <div className="flex min-h-screen">
       {/* Navegação principal em desktop/tablet — no celular ela vira a barra inferior (§21). */}
       <Sidebar
-        workspaceName={primaryMembership?.workspace.name ?? "Sem workspace"}
+        memberships={membershipOptions}
+        currentWorkspaceId={activeMembership.workspaceId}
         email={profile.email}
-        role={primaryMembership?.role ?? null}
         isPlatformAdmin={profile.isPlatformAdmin}
       />
 
       <div className="flex min-h-screen flex-1 flex-col md:pl-64">
         <header className="flex items-center justify-between border-b border-indigo-900/50 bg-[#131A47] px-4 py-4 sm:px-6 md:hidden">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Image src="/logo-sidebar.png" alt="" width={28} height={28} className="shrink-0" priority />
-            <div>
-              <p className="text-sm font-medium text-white">
-                {primaryMembership?.workspace.name ?? "Sem workspace"}
-              </p>
-              <p className="text-xs text-indigo-300">
-                {profile.email}
-                {primaryMembership ? ` · ${primaryMembership.role}` : ""}
-                {profile.isPlatformAdmin ? " · admin" : ""}
-              </p>
-            </div>
+            <WorkspaceSwitcher
+              memberships={membershipOptions}
+              currentWorkspaceId={activeMembership.workspaceId}
+              email={profile.email}
+              isPlatformAdmin={profile.isPlatformAdmin}
+            />
           </div>
           <form action={logout}>
-            <button type="submit" className="text-sm text-indigo-200 hover:text-white">
+            <button type="submit" className="shrink-0 text-sm text-indigo-200 hover:text-white">
               Sair
             </button>
           </form>
