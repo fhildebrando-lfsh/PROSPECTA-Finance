@@ -702,9 +702,9 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 | `DATABASE_URL` = Session Pooler, não conexão direta | A rede do usuário não tem IPv6 (que a conexão direta do Supabase exige por padrão). |
 | FK `profiles → auth.users` removida, substituída por trigger | **Incidente evitado:** declarar o schema `auth` em `datasource.schemas` pro Prisma enxergar essa FK fazia `prisma migrate dev` tratar TODO o schema `auth` (usuários, sessões, tokens do Supabase) como drift e sugerir um **reset que apagaria a autenticação inteira**. A correção foi nunca deixar o Prisma precisar saber que `auth.users` existe. Ver `prisma/sql/002_drop_cross_schema_fk.sql`. |
 | Workspace criado automaticamente no signup (trigger) | Uso é pessoal/familiar hoje — não há fluxo de "admin cria workspace de cliente" ainda (isso é Fase 4). |
-| `Subcategory` virou admin-only (diferente do §20 original, que previa edição pelo cliente) | **Decisão explícita do usuário** durante a Conversa 3/5, sobrepondo a especificação original. `Category` continuou admin-only como já estava. |
+| `Subcategory` virou admin-only (diferente do §20 original, que previa edição pelo cliente) | **Decisão explícita do usuário** durante a Conversa 3/5, sobrepondo a especificação original. `Category` continuou admin-only como já estava. **Atualização 2026-08-01 (revertida parcialmente):** o usuário pediu que **criar** uma subcategoria nova volte a ser permitido pra qualquer membro com permissão de escrita (não só admin) — `createSubcategory` trocou `assertIsAdmin` por `assertCanWrite`. **Editar e arquivar uma subcategoria já existente continuam admin-only**, só a criação foi liberada. `Category` não mudou (continua 100% admin-only, criar e editar). |
 | `Tipo` (natureza) continua 100% fixo no código; só o rótulo de exibição é editável (`NatureLabel`) | Todo `lib/finance` assume exatamente essas 4 naturezas nas fórmulas (soma Receita+Despesa+Investimento=Balanço). Tornar dinâmico exigiria redesenhar todas as fórmulas — escopo recusado explicitamente pelo usuário quando perguntado. |
-| Categorias/Subcategorias/Tipos **visíveis mas desabilitadas** pra quem não é admin, em vez de escondidas | Pedido explícito da especificação (§20: "campo travado aparece visível e desabilitado, nunca escondido") — a primeira implementação escondia as abas, foi corrigido. |
+| Categorias/Subcategorias/Tipos **visíveis mas desabilitadas** pra quem não é admin, em vez de escondidas | Pedido explícito da especificação (§20: "campo travado aparece visível e desabilitado, nunca escondido") — a primeira implementação escondia as abas, foi corrigido. **Atualização 2026-08-01:** com o redesenho pra edição sob demanda (botão Editar em vez de campo sempre-editável), "desabilitado" virou "sem o botão Editar" — o valor continua sempre visível em texto puro pra quem não pode editar, só não ganha a affordance de clique; mesmo princípio, forma diferente. |
 | Cadastros de Categoria/Subcategoria/Tipo usam páginas separadas com forms simples (sem biblioteca de tabela) | Consistência com o resto do app (sem shadcn/ui instalado) e escopo — TanStack Table do stack recomendado não foi necessário até agora. |
 | CSV de exportação usa `;` + BOM (não `,` sem BOM) como padrão | Por causa do uso real em Excel em português (§18.3) — o importador foi atualizado pra detectar automaticamente `,` ou `;`, então não há perda de compatibilidade. |
 | `lib/entries/create.ts` centraliza criação de lançamento | Evita duplicar a lógica de parcelamento/recorrência entre `/api/entries` (POST) e o lançamento rápido — um bug corrigido em um lugar corrige os dois fluxos. |
@@ -964,6 +964,36 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   `bg-[#131A47]`/`border-indigo-900/50`, e o cabeçalho de tabela (`<thead>`) virou
   `bg-black/20` pra manter contraste com o corpo. A barra de abas do layout (hover
   `bg-zinc-900`) não é um "card" e ficou como estava, de propósito. Commit `06e6118`.
+- ✅ **Cadastros: edição sob demanda, exclusão em massa, botões com contraste** — pedido do
+  usuário após uso real, três partes:
+  1. As 6 telas trocaram o padrão "campo sempre editável" (o usuário via isso como pouco
+     profissional — a caixa fica aberta, a pessoa mexe e esquece de salvar) por um botão
+     **Editar** que libera os campos daquela linha; **Salvar** mostra um spinner enquanto
+     a Server Action roda e, ao concluir, um popup **"Salvo"** aparece por 2s
+     (`components/ui/SavedToast.tsx`, hook `useSavedToast()`). Cada tabela virou um Client
+     Component (`WalletsTable`, `PeopleTable`, `CategoriesTable`, `SubcategoriesTable`,
+     `NatureLabelsTable`), mesmo padrão que `EntriesTable.tsx` já usava em Lançamentos.
+  2. **Checkbox + exclusão em massa** em Carteiras e Responsáveis — os únicos dois cadastros
+     onde excluir de verdade faz sentido hoje (Categoria/Tipo não têm exclusão nenhuma;
+     Subcategoria só arquiva, por design, pra não quebrar histórico). Como Carteira nunca
+     teve uma ação de excluir de verdade (só `toggleWalletActive`), foi criada
+     `deleteWallet` — mesmo padrão seguro que `deletePerson` já usava: tenta excluir, e se a
+     carteira já tiver lançamentos (constraint de FK), converte o erro numa mensagem amigável
+     pedindo pra arquivar em vez de excluir. Nenhum dado é perdido silenciosamente.
+  3. **Contraste de botão real** — o padrão antigo (`border-zinc-700 hover:bg-zinc-800`)
+     ficava quase invisível sobre o `#131A47` dos cards. Criado
+     `components/ui/buttonStyles.ts` com 4 estilos (`BTN_PRIMARY` âmbar sólido,
+     `BTN_SECONDARY` borda/fundo indigo translúcido pra "Editar", `BTN_GHOST` pra
+     "Cancelar"/"Ver", `BTN_DANGER` vermelho translúcido pra "Excluir"), aplicados nas 6
+     telas.
+  **Mudança de permissão, junto:** criar uma subcategoria nova passou a valer pra qualquer
+  membro com escrita, não só admin (`createSubcategory`: `assertIsAdmin` →
+  `assertCanWrite`) — editar/arquivar uma já existente continua admin-only. Ver seção 21
+  (decisão `Subcategory` atualizada) e seção 11.
+  **Bônus pedido junto:** alerta com link direto pra `/cadastros/carteiras` ou
+  `/cadastros/responsaveis` quando a lista estiver vazia em Novo lançamento/Transferência
+  (select obrigatório sem opção nenhuma travava o formulário sem explicar o porquê).
+  Commit `3f21ce3`.
 
 ## 25. Funcionalidades em andamento
 
@@ -975,7 +1005,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-06e6118 Padroniza fundo dos cards de Cadastros para #131A47   <- HEAD / origin/master
+3f21ce3 Reformula Cadastros: editar sob demanda, exclusao em massa, botoes com contraste   <- HEAD / origin/master
+47d8e77 Atualiza PROJECT_STATE.md: checagem do importador e cards de Cadastros
+06e6118 Padroniza fundo dos cards de Cadastros para #131A47
 5c0f839 Atualiza PROJECT_STATE.md: formulario de lancamento sem secao colapsada
 14963d5 Formulario de Novo lancamento: todos os campos visiveis, sem secao colapsada
 d770001 Atualiza PROJECT_STATE.md: bug do pool de conexoes do Supabase corrigido
@@ -1116,6 +1148,11 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       código necessária
 - [x] Cadastros (Carteiras/Responsáveis/Categorias/Subcategorias/Tipos/Membros): fundo dos
       cards padronizado de `bg-zinc-900` pra `#131A47` — commit `06e6118`
+- [x] Cadastros: edição sob demanda (botão Editar/Salvar/Cancelar + spinner + popup
+      "Salvo"), checkbox/exclusão em massa em Carteiras e Responsáveis (`deleteWallet`
+      novo, seguro), botões com contraste real, criar subcategoria liberado pra qualquer
+      membro com escrita, alerta com link quando lista de carteira/responsável está vazia
+      — commit `3f21ce3`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
