@@ -1037,6 +1037,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   cadastrada"** logo abaixo do formulário, listando (mais recente primeiro) tudo que foi
   criado nesta visita à página — sem afetar o que "Ver" está mostrando em nenhum momento.
   Commit `e0f5e14`.
+- ✅ **Seletor "Ver" ganhou opção "—" (não ver nada)** — antes só listava categorias reais,
+  sem jeito de escolher "nenhuma". `categoryId=""` enviado explicitamente (opção "—"
+  escolhida + Ver clicado) agora é tratado como "quero ver a lista vazia", diferente de
+  `categoryId` **ausente** (primeira visita à página, sem ter mexido no seletor ainda), que
+  continua caindo na primeira categoria como sempre foi —
+  `categoryId !== undefined ? categoryId : categories[0]?.id` em vez do antigo
+  `categoryId || categories[0]?.id` (que tratava "" e ausente como a mesma coisa, por
+  `""` ser falsy em JS). Commit `b4b13cd`.
 
 ## 25. Funcionalidades em andamento
 
@@ -1048,7 +1056,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-e0f5e14 Corrige Nova subcategoria: nao navega mais, mostra criadas em card proprio   <- HEAD / origin/master
+b4b13cd Adiciona opcao "-" no seletor principal de Subcategorias (nao ver nada)   <- HEAD / origin/master
+dde22f2 Atualiza PROJECT_STATE.md: correcao do fluxo de Nova subcategoria
+e0f5e14 Corrige Nova subcategoria: nao navega mais, mostra criadas em card proprio
 425b0d6 Atualiza PROJECT_STATE.md: fluxo Tipo->Categoria->Nome em Nova subcategoria
 6262705 Nova subcategoria: fluxo Tipo -> Categoria (filtrada) -> Nome, independente do "Ver"
 0ff113d Atualiza PROJECT_STATE.md: cor por Tipo e botao Ver em Subcategorias
@@ -1213,6 +1223,7 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       — commit `6262705`
 - [x] Correção: parou de navegar pra longe do que "Ver" mostra; card "Subcategoria
       cadastrada" lista o que foi criado na visita — commit `e0f5e14`
+- [x] Seletor "Ver" ganhou opção "—" pra ver a lista vazia de propósito — commit `b4b13cd`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
