@@ -950,6 +950,20 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
      mesmo campo do CSV "Organização") ficam todos sempre visíveis também, sem nenhum campo
      escondido no formulário, obrigatório ou não.
   Commits `14963d5` (redesenho final) — a primeira tentativa (nullable) nunca foi commitada.
+- ✅ **Confirmado por checagem: importador de CSV/XLSX não foi afetado pelo redesenho do
+  formulário** — pedido do usuário pra garantir isso após as mudanças acima. O importador
+  (`lib/import/*`, `app/api/import/*`) é um pipeline totalmente independente (mapeamento de
+  coluna por cabeçalho, parsing próprio) que nunca importa `QuickEntryForm.tsx` nem
+  `lib/validation/entry.ts` — mapeamento de coluna confirmado correto e round-trip com
+  `EXPORT_HEADERS` intacto; os 37 testes de `tests/import/*` passam. Nenhuma mudança de
+  código foi necessária.
+- ✅ **Cadastros: fundo dos cards padronizado pra `#131A47`** — as 6 telas (Carteiras,
+  Responsáveis, Categorias, Subcategorias, Tipos, Membros) ainda usavam
+  `bg-zinc-900`/`border-zinc-800` (tema escuro de antes do rebranding), destoando do resto
+  do app. Tabelas, painéis de aviso ("campo travado") e cards de criação/convite viraram
+  `bg-[#131A47]`/`border-indigo-900/50`, e o cabeçalho de tabela (`<thead>`) virou
+  `bg-black/20` pra manter contraste com o corpo. A barra de abas do layout (hover
+  `bg-zinc-900`) não é um "card" e ficou como estava, de propósito. Commit `06e6118`.
 
 ## 25. Funcionalidades em andamento
 
@@ -961,7 +975,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-14963d5 Formulario de Novo lancamento: todos os campos visiveis, sem secao colapsada   <- HEAD / origin/master
+06e6118 Padroniza fundo dos cards de Cadastros para #131A47   <- HEAD / origin/master
+5c0f839 Atualiza PROJECT_STATE.md: formulario de lancamento sem secao colapsada
+14963d5 Formulario de Novo lancamento: todos os campos visiveis, sem secao colapsada
 d770001 Atualiza PROJECT_STATE.md: bug do pool de conexoes do Supabase corrigido
 aeb618e Corrige esgotamento do pool de conexoes do Supabase (causa real do 500 em /lancamentos)
 5617415 Atualiza PROJECT_STATE.md: asterisco vermelho nos campos obrigatorios
@@ -1095,6 +1111,11 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Novo lançamento: Data de compra/vencimento visíveis e editáveis, Responsável/
       Situação sempre visíveis e forçados via `required` (sem pré-preenchimento),
       Tags (opcional), sem nenhuma seção colapsada — commit `14963d5`
+- [x] Checagem: importador de CSV/XLSX confirmado intacto após o redesenho do formulário
+      (pipeline independente, 37 testes de `tests/import/*` passam) — nenhuma mudança de
+      código necessária
+- [x] Cadastros (Carteiras/Responsáveis/Categorias/Subcategorias/Tipos/Membros): fundo dos
+      cards padronizado de `bg-zinc-900` pra `#131A47` — commit `06e6118`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
