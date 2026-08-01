@@ -1045,6 +1045,15 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   `categoryId !== undefined ? categoryId : categories[0]?.id` em vez do antigo
   `categoryId || categories[0]?.id` (que tratava "" e ausente como a mesma coisa, por
   `""` ser falsy em JS). Commit `b4b13cd`.
+- ✅ **Botão Excluir em Subcategoria (admin)** — diferente de Carteira/Responsável
+  (`deleteWallet`/`deletePerson`, que precisam capturar erro de FK e bloquear se estiver em
+  uso), a FK `entries.subcategory_id` já é `ON DELETE SET NULL` desde a migration
+  `20260729234528_entries` (`Entry.subcategoryId` sempre foi opcional) — excluir uma
+  subcategoria **nunca** é bloqueado e **nunca** apaga lançamento, só limpa essa marcação
+  específica nas linhas que a usavam (confirmado lendo a constraint real no SQL da
+  migration, não só assumido). `deleteSubcategory` (admin-only, mesmo padrão de
+  `updateSubcategory`/`toggleSubcategoryActive`) + botão na `SubcategoriesTable` com
+  `confirm()` explicando esse comportamento antes de excluir. Commit `2b7e769`.
 
 ## 25. Funcionalidades em andamento
 
@@ -1056,7 +1065,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-b4b13cd Adiciona opcao "-" no seletor principal de Subcategorias (nao ver nada)   <- HEAD / origin/master
+2b7e769 Adiciona botao Excluir em Subcategoria (admin), so remove a subcategoria   <- HEAD / origin/master
+9952eef Atualiza PROJECT_STATE.md: opcao "-" no seletor Ver de Subcategorias
+b4b13cd Adiciona opcao "-" no seletor principal de Subcategorias (nao ver nada)
 dde22f2 Atualiza PROJECT_STATE.md: correcao do fluxo de Nova subcategoria
 e0f5e14 Corrige Nova subcategoria: nao navega mais, mostra criadas em card proprio
 425b0d6 Atualiza PROJECT_STATE.md: fluxo Tipo->Categoria->Nome em Nova subcategoria
@@ -1224,6 +1235,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Correção: parou de navegar pra longe do que "Ver" mostra; card "Subcategoria
       cadastrada" lista o que foi criado na visita — commit `e0f5e14`
 - [x] Seletor "Ver" ganhou opção "—" pra ver a lista vazia de propósito — commit `b4b13cd`
+- [x] Botão Excluir em Subcategoria (admin) — FK `SET NULL`, nunca apaga lançamento —
+      commit `2b7e769`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
