@@ -83,3 +83,23 @@ export async function toggleWalletActive(formData: FormData) {
 
   revalidatePath("/cadastros/carteiras");
 }
+
+/**
+ * Exclusão de verdade — só permitida se a carteira nunca foi usada em
+ * nenhum lançamento (a FK de `Entry.walletId` bloqueia via constraint se
+ * já tiver histórico). Pra carteira em uso, o caminho seguro continua
+ * sendo arquivar (toggleWalletActive acima).
+ */
+export async function deleteWallet(formData: FormData) {
+  const workspaceId = await requireWorkspaceId();
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
+
+  const id = String(formData.get("id") ?? "");
+  try {
+    await prisma.wallet.delete({ where: { id, workspaceId } });
+  } catch {
+    throw new Error("Não dá para excluir — essa carteira já tem lançamentos. Arquive em vez de excluir.");
+  }
+  revalidatePath("/cadastros/carteiras");
+}

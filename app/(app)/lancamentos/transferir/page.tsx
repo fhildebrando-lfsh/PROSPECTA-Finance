@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireProfile, requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { TransferForm } from "./TransferForm";
@@ -32,6 +33,26 @@ export default async function TransferirPage() {
     <div className="flex flex-col gap-4">
       <h1 className="text-center text-lg font-semibold text-zinc-100">Transferir entre carteiras</h1>
       <p className="text-center text-sm text-zinc-500">§10 R5 — cria as duas linhas (saída/entrada) juntas.</p>
+      {(wallets.length === 0 || people.length === 0) && (
+        <div className="mx-auto flex w-full max-w-sm flex-col gap-2 rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm text-amber-100">
+          {wallets.length === 0 && (
+            <p>
+              Nenhuma carteira cadastrada ainda.{" "}
+              <Link href="/cadastros/carteiras" className="font-medium underline hover:text-white">
+                Cadastrar carteira
+              </Link>
+            </p>
+          )}
+          {people.length === 0 && (
+            <p>
+              Nenhum responsável cadastrado ainda.{" "}
+              <Link href="/cadastros/responsaveis" className="font-medium underline hover:text-white">
+                Cadastrar responsável
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
       <TransferForm
         wallets={wallets.map((w) => ({ id: w.id, name: w.name }))}
         people={people.map((p) => ({ id: p.id, name: p.name }))}

@@ -1,14 +1,24 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireProfile, assertIsAdmin } from "@/lib/auth/session";
+import { requireProfile, requireWorkspaceId, assertCanWrite, assertIsAdmin } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { slugify } from "@/lib/slug";
 import { rethrowFriendly } from "@/lib/api/prisma-errors";
 
+/**
+ * Criar subcategoria é permitido pra qualquer membro com permissão de
+ * escrita no workspace (não só admin) — pedido explícito do usuário em
+ * 2026-08-01, revertendo parcialmente a decisão anterior de deixar
+ * Subcategoria 100% admin-only (ver seção 21 do PROJECT_STATE.md). Editar
+ * e arquivar uma subcategoria já existente continuam admin-only abaixo.
+ */
 export async function createSubcategory(formData: FormData) {
+  const workspaceId = await requireWorkspaceId();
   const profile = await requireProfile();
-  assertIsAdmin(profile.isPlatformAdmin);
+  const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
+  if (!membership) throw new Error("Sem acesso a este workspace.");
+  assertCanWrite(membership.role, profile.isPlatformAdmin);
 
   const categoryId = String(formData.get("categoryId") ?? "");
   const name = String(formData.get("name") ?? "").trim();

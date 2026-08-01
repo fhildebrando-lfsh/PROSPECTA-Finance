@@ -1,6 +1,8 @@
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
-import { createWallet, updateWallet, toggleWalletActive } from "./actions";
+import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
+import { createWallet } from "./actions";
+import { WalletsTable } from "./WalletsTable";
 
 export default async function CarteirasPage() {
   const workspaceId = await requireWorkspaceId();
@@ -11,85 +13,23 @@ export default async function CarteirasPage() {
     prisma.institution.findMany({ orderBy: { name: "asc" } }),
   ]);
 
+  const walletRows = wallets.map((w) => ({
+    id: w.id,
+    name: w.name,
+    kindLabel: w.kind?.labelPt ?? w.kindCode,
+    institutionId: w.institutionId ?? "",
+    closingDay: w.closingDay?.toString() ?? "",
+    dueDay: w.dueDay?.toString() ?? "",
+    creditLimit: w.creditLimit?.toString() ?? "",
+    isActive: w.isActive,
+  }));
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
-        <table className="w-full text-sm">
-          <thead className="bg-black/20 text-left text-zinc-400">
-            <tr>
-              <th className="px-3 py-2 font-medium">Nome</th>
-              <th className="px-3 py-2 font-medium">Tipo</th>
-              <th className="px-3 py-2 font-medium">Instituição</th>
-              <th className="px-3 py-2 font-medium">Fecha dia</th>
-              <th className="px-3 py-2 font-medium">Vence dia</th>
-              <th className="px-3 py-2 font-medium">Limite</th>
-              <th className="px-3 py-2 font-medium"></th>
-              <th className="px-3 py-2 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {wallets.map((w) => (
-              <tr key={w.id} className={`border-t border-indigo-900/50 ${w.isActive ? "text-zinc-200" : "text-zinc-600"}`}>
-                <td className="px-3 py-2" colSpan={6}>
-                  <form action={updateWallet} className="flex flex-wrap items-center gap-2">
-                    <input type="hidden" name="id" value={w.id} />
-                    <input
-                      name="name"
-                      defaultValue={w.name}
-                      className="w-40 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-zinc-100"
-                    />
-                    <span className="text-xs text-zinc-500">{w.kind?.labelPt ?? w.kindCode}</span>
-                    <select
-                      name="institutionId"
-                      defaultValue={w.institutionId ?? ""}
-                      className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-zinc-100"
-                    >
-                      <option value="">— sem instituição —</option>
-                      {institutions.map((i) => (
-                        <option key={i.id} value={i.id}>
-                          {i.name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      name="closingDay"
-                      placeholder="fecha"
-                      defaultValue={w.closingDay ?? ""}
-                      className="w-16 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-zinc-100"
-                    />
-                    <input
-                      type="number"
-                      name="dueDay"
-                      placeholder="vence"
-                      defaultValue={w.dueDay ?? ""}
-                      className="w-16 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-zinc-100"
-                    />
-                    <input
-                      name="creditLimit"
-                      placeholder="limite"
-                      defaultValue={w.creditLimit?.toString() ?? ""}
-                      className="w-24 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-zinc-100"
-                    />
-                    <button type="submit" className="rounded-lg border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800">
-                      Salvar
-                    </button>
-                  </form>
-                </td>
-                <td className="px-3 py-2">
-                  <form action={toggleWalletActive}>
-                    <input type="hidden" name="id" value={w.id} />
-                    <input type="hidden" name="isActive" value={String(w.isActive)} />
-                    <button type="submit" className="rounded-lg border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800">
-                      {w.isActive ? "Arquivar" : "Reativar"}
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <WalletsTable
+        wallets={walletRows}
+        institutions={institutions.map((i) => ({ id: i.id, name: i.name }))}
+      />
 
       <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
         <h2 className="mb-3 text-sm font-medium text-zinc-300">Nova carteira</h2>
@@ -130,10 +70,7 @@ export default async function CarteirasPage() {
               ))}
             </select>
           </label>
-          <button
-            type="submit"
-            className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-zinc-950 hover:bg-amber-400"
-          >
+          <button type="submit" className={BTN_PRIMARY}>
             Criar
           </button>
         </form>

@@ -1,6 +1,8 @@
 import { requireProfile } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
-import { createCategory, updateCategory } from "./actions";
+import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
+import { createCategory } from "./actions";
+import { CategoriesTable } from "./CategoriesTable";
 
 const NATURES = ["RECEITA", "DESPESA", "INVESTIMENTO", "OUTRO"] as const;
 
@@ -27,51 +29,12 @@ export default async function CategoriasPage() {
       {NATURES.map((nature) => (
         <div key={nature}>
           <h2 className="mb-2 text-sm font-medium text-zinc-300">{labelByCode.get(nature) ?? nature}</h2>
-          <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
-            <table className="w-full text-sm">
-              <thead className="bg-black/20 text-left text-zinc-400">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Ordem</th>
-                  <th className="px-3 py-2 font-medium">Nome</th>
-                  <th className="px-3 py-2 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories
-                  .filter((c) => c.nature === nature)
-                  .map((c) => (
-                    <tr key={c.id} className="border-t border-indigo-900/50 text-zinc-200">
-                      <td className="px-3 py-2" colSpan={3}>
-                        <form action={updateCategory} className="flex items-center gap-2">
-                          <input type="hidden" name="id" value={c.id} />
-                          <input
-                            type="number"
-                            name="sortOrder"
-                            defaultValue={c.sortOrder}
-                            disabled={!isAdmin}
-                            className="w-16 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-zinc-100 disabled:opacity-50"
-                          />
-                          <input
-                            name="name"
-                            defaultValue={c.name}
-                            disabled={!isAdmin}
-                            className="w-64 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-zinc-100 disabled:opacity-50"
-                          />
-                          {isAdmin && (
-                            <button
-                              type="submit"
-                              className="rounded-lg border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800"
-                            >
-                              Salvar
-                            </button>
-                          )}
-                        </form>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+          <CategoriesTable
+            categories={categories
+              .filter((c) => c.nature === nature)
+              .map((c) => ({ id: c.id, name: c.name, sortOrder: c.sortOrder }))}
+            isAdmin={isAdmin}
+          />
         </div>
       ))}
 
@@ -106,10 +69,7 @@ export default async function CategoriasPage() {
                 className="w-20 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
               />
             </label>
-            <button
-              type="submit"
-              className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-zinc-950 hover:bg-amber-400"
-            >
+            <button type="submit" className={BTN_PRIMARY}>
               Criar
             </button>
           </form>

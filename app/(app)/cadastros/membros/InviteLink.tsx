@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BTN_SECONDARY } from "@/components/ui/buttonStyles";
 
 export function InviteLink({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
@@ -19,11 +20,7 @@ export function InviteLink({ url }: { url: string }) {
         onFocus={(e) => e.target.select()}
         className="w-64 truncate rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300"
       />
-      <button
-        type="button"
-        onClick={copy}
-        className="rounded-lg border border-zinc-700 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-800"
-      >
+      <button type="button" onClick={copy} className={BTN_SECONDARY}>
         {copied ? "Copiado!" : "Copiar"}
       </button>
     </div>

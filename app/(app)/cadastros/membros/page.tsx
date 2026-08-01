@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { requireProfile, requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { formatDateBR } from "@/lib/format";
+import { BTN_DANGER, BTN_PRIMARY } from "@/components/ui/buttonStyles";
 import { inviteMember, deleteInvite } from "./actions";
 import { InviteLink } from "./InviteLink";
 
@@ -91,10 +92,7 @@ export default async function MembrosPage() {
                         <InviteLink url={inviteUrl} />
                         <form action={deleteInvite}>
                           <input type="hidden" name="id" value={inv.id} />
-                          <button
-                            type="submit"
-                            className="rounded-lg border border-red-900 px-2 py-1 text-xs text-red-400 hover:bg-red-950"
-                          >
+                          <button type="submit" className={BTN_DANGER}>
                             Excluir
                           </button>
                         </form>
@@ -146,10 +144,7 @@ export default async function MembrosPage() {
                   <option value="TITULAR">Titular</option>
                 </select>
               </label>
-              <button
-                type="submit"
-                className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-zinc-950 hover:bg-amber-400"
-              >
+              <button type="submit" className={BTN_PRIMARY}>
                 Gerar convite
               </button>
             </form>
