@@ -25,7 +25,17 @@
 > (novo, workspace explícito + grava `AccessLog` pra acesso `ADVISOR`); `lib/billing/
 > entitlements.ts::hasFeature()` e `lib/audit/access-log.ts::logAccess()` novos. Ainda
 > nenhuma tela/Server Action tocada. 8 testes novos pra `can()` (121 no total).
-> **Aguardando aprovação do usuário pra Etapa 3** antes de continuar. Ver seção 24 pro
+> **Fase 2 Etapa 3 (frontend) concluída, mesmo dia — primeira mudança de tela/Server
+> Action do redesenho**: seletor de workspace. `requireWorkspaceId()` agora respeita um
+> cookie de workspace ativo (`resolveActiveMembership()`, pura e testada — 5 casos),
+> com fallback idêntico ao de sempre (`memberships[0]`) quando não há cookie válido.
+> `WorkspaceSwitcher` (novo componente) mostra texto estático com 1 membership — **zero
+> mudança visual pro usuário real hoje**, confirmado no navegador em 4 páginas — e vira
+> dropdown com 2+, com selo "você está em workspace de cliente" quando o papel ativo é
+> `ADVISOR`. Nova Server Action `setActiveWorkspace` valida o workspace contra a sessão.
+> 126 testes no total (5 novos). Caminho multi-workspace não testado ponta-a-ponta no
+> navegador ainda (ninguém tem 2 memberships reais) — só a lógica pura.
+> **Aguardando aprovação do usuário pra Etapa 4** antes de continuar. Ver seção 24 pro
 > detalhe completo.
 >
 > **Última atualização anterior:** 2026-07-31. Além das 5 pontas soltas da Fase 1 (Compromissos,
@@ -313,19 +323,24 @@ C:\Sistema Financeiro\
 
 ### `lib/auth/session.ts`
 - `getCurrentProfile()` — perfil + memberships, com `cache()` do React (dedup por request).
-- `requireProfile()` / `requireWorkspaceId()` — pra Server Components (redirecionam se não autenticado). `requireWorkspaceId()` continua assumindo `memberships[0]`, inalterado.
-- `requireApiWorkspaceMembership()` — pra Route Handlers (lança `ApiError`, não redireciona). Ganhou `platformRole` no retorno (além de `isPlatformAdmin`, mantido).
+- `requireProfile()` — pra Server Components (redireciona se não autenticado).
+- `ACTIVE_WORKSPACE_COOKIE` / `resolveActiveMembership()` / `requireActiveMembership()` — **novos (Fase 2 Etapa 3, seletor de workspace)**. `resolveActiveMembership(memberships, requestedWorkspaceId?)` é pura (testada, 5 casos): sem `workspaceId` pedido ou pedido inválido/revogado/de outra pessoa, cai em `memberships[0]` (comportamento de sempre); com um válido, usa ele. `requireActiveMembership()` lê o cookie, resolve, e grava `AccessLog` se a membership resolvida for `ADVISOR`.
+- `requireWorkspaceId()` — agora implementado em cima de `requireActiveMembership()` (lê o cookie de workspace ativo); sem cookie, comportamento idêntico ao de sempre.
+- `requireApiWorkspaceMembership()` — pra Route Handlers (lança `ApiError`, não redireciona). Mesmo tratamento de cookie/`ADVISOR` de `requireWorkspaceId()`. Ganhou `platformRole` no retorno (além de `isPlatformAdmin`, mantido).
 - `requireAdminProfile()` — existe mas **não está mais em uso** desde que as telas de Cadastros passaram a ser visíveis-porém-desabilitadas em vez de bloqueadas (ver seção 20).
-- `can(action, ctx)` — **novo (Arquitetura de Identidade/Planos, Fase 2 Etapa 2)**. RBAC explícito (não motor genérico), combina `role` de workspace + `platformRole`. `assertCanWrite()`/`assertIsAdmin()` viram wrappers finos em cima dele — mesma assinatura de sempre, nenhum call site mudou.
+- `can(action, ctx)` — **(Fase 2 Etapa 2)**. RBAC explícito (não motor genérico), combina `role` de workspace + `platformRole`. `assertCanWrite()`/`assertIsAdmin()` viram wrappers finos em cima dele — mesma assinatura de sempre, nenhum call site mudou.
 - `assertCanWrite()` — LEITURA não escreve; TITULAR/MEMBRO/ADVISOR e admin escrevem.
 - `assertIsAdmin()` — só admin (Categoria/Tipo, editar/arquivar Subcategoria).
-- `requireMembershipForWorkspace(workspaceId)` — **novo**. Variante explícita de workspace (diferente de `requireWorkspaceId()`, que só olha `memberships[0]`) — valida contra as memberships reais da sessão, nunca confia no `workspaceId` recebido sem checar. Grava `AccessLog` quando o acesso é `ADVISOR`. Nenhum call site usa ainda (não existe seletor de workspace na UI) — peça pronta pra Etapa 3+.
+- `requireMembershipForWorkspace(workspaceId)` — variante explícita de workspace pra uso fora do fluxo de página normal (ex.: Route Handlers que recebem workspaceId por parâmetro) — valida contra as memberships reais da sessão. Grava `AccessLog` quando o acesso é `ADVISOR`.
+
+### `lib/workspace/switch.ts` (novo, Fase 2 Etapa 3)
+- `setActiveWorkspace(formData)` — Server Action que troca o `ACTIVE_WORKSPACE_COOKIE`. Valida o `workspaceId` recebido contra as memberships `ACTIVE` da sessão antes de aceitar (nunca confia no valor do form). Usado por `WorkspaceSwitcher` (seção 15).
 
 ### `lib/billing/entitlements.ts` (novo, Fase 2 Etapa 2)
 - `hasFeature(workspaceId, featureCode)` — resolve `Subscription` ativa → `Plan` → `PlanFeature`, mais `Entitlement` overrides (nunca subtrai o que o plano já dá). Único lugar que deve decidir "esse workspace pode usar X" — telas nunca devem checar `plan.code`/nome direto. Nenhuma tela usa ainda; verificado manualmente contra o banco real (não é função pura, foge do padrão de teste unitário de `lib/finance`).
 
 ### `lib/audit/access-log.ts` (novo, Fase 2 Etapa 2)
-- `logAccess({ actorProfileId, workspaceId, actorRole, action })` — grava em `AccessLog`. Só chamado de dentro de `requireMembershipForWorkspace()` (funil único), nunca espalhado pelas telas.
+- `logAccess({ actorProfileId, workspaceId, actorRole, action })` — grava em `AccessLog`. Chamado de dentro de `requireActiveMembership()`/`requireApiWorkspaceMembership()`/`requireMembershipForWorkspace()` (funil de sessão), nunca espalhado pelas telas.
 
 ### Outros
 - `lib/supabase/admin.ts` — `createAdminClient()`, client com a service role key (contorna RLS, enxerga `auth.users` inteiro via Admin API). **Só server-side** — nunca importar num Client Component. Único consumidor hoje: `/admin/usuarios`.
@@ -643,6 +658,7 @@ confirmar o e-mail do usuário direto no painel do Supabase (Authentication → 
 | `Sidebar` | Client | `components/Sidebar.tsx` — menu lateral de navegação (desktop/tablet, `md+`), fundo `#131A47` (cor exata pedida pelo usuário), item ativo em âmbar, grupos expansíveis "Lançamentos" e "Cadastros" com sub-páginas, ícones via `lucide-react`. Estilo pedido pelo usuário inspirado no sistema "Meu Vista" (mesma referência já usada pro fundo claro da tabela de Lançamentos, ver seção 21). |
 | `MobileNav` | Client | `components/MobileNav.tsx` — barra inferior do celular (`<md`), mesma cor `#131A47` e mesmos ícones do `Sidebar`, com destaque em âmbar da página atual (antes não existia esse destaque). Junto com o header mobile em `(app)/layout.tsx` (também `#131A47`), unifica a linguagem visual entre desktop e mobile — pedido explícito do usuário após o primeiro corte do Sidebar deixar os dois muito diferentes. |
 | Páginas de Cadastros | Server | `app/(app)/cadastros/{carteiras,responsaveis,categorias,subcategorias,tipos,membros}/page.tsx` — todas seguem o mesmo padrão: tabela + form inline de criação, campos `disabled` com nota quando o usuário não tem permissão (Membros usa TITULAR/admin como critério de permissão, não `assertCanWrite`) |
+| `WorkspaceSwitcher` | Client | `components/WorkspaceSwitcher.tsx` — **novo (Arquitetura de Identidade/Planos, Fase 2 Etapa 3)**. Com 1 `Membership` (todo usuário real hoje), renderiza texto estático idêntico ao de sempre; com 2+, vira `<select>` que troca o workspace ativo via `setActiveWorkspace` (`lib/workspace/switch.ts`), com selo "você está em workspace de cliente" quando o papel ativo é `ADVISOR`. Usado no `Sidebar` e no header mobile do `(app)/layout.tsx`. |
 | `StatCard` | Server (local) | Definido dentro de `painel/page.tsx`, não extraído |
 
 Não há biblioteca de componentes (shadcn/ui) instalada apesar de recomendada no §15 — os
@@ -1129,22 +1145,37 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   tela/Server Action tocada** — tudo aditivo, nenhum call site existente mudou. 8 testes
   novos pra `can()` (121 no total); `hasFeature`/`logAccess` verificados manualmente
   contra o banco real (não são funções puras, fogem do padrão de teste unitário). Commit
-  `5ee4747`. Aguardando aprovação do usuário pra Etapa 3.
+  `5ee4747`.
+- ✅ **Arquitetura de Identidade/Planos — Fase 2 Etapa 3 (frontend) concluída — primeira
+  mudança de tela/Server Action do redesenho.** Escopo escolhido (o usuário só disse
+  "avançar", sem detalhar): seletor de workspace — pré-requisito conhecido há muito tempo
+  (§19.1 "não existe seletor de workspace") e base necessária pra qualquer acesso
+  `ADVISOR` funcionar na UI. Ver detalhe completo na seção 6 (`lib/auth/session.ts`,
+  `lib/workspace/switch.ts`) e seção 15 (`WorkspaceSwitcher`). Resumo: `requireWorkspaceId()`/
+  `requireApiWorkspaceMembership()` agora respeitam `ACTIVE_WORKSPACE_COOKIE` via
+  `resolveActiveMembership()` (pura, testada), fallback idêntico ao de sempre sem cookie;
+  `WorkspaceSwitcher` só vira dropdown com 2+ memberships (hoje ninguém tem — **zero
+  mudança visual confirmada no navegador** em `/painel`, `/lancamentos`,
+  `/cadastros/carteiras`, `/lancamentos/novo`); `setActiveWorkspace` (Server Action) valida
+  antes de trocar o cookie. 126 testes no total (5 novos). **Caminho multi-workspace não
+  testado ponta-a-ponta no navegador** (ninguém tem 2 memberships reais ainda) — só a
+  lógica pura, exaustivamente (todos os casos de `resolveActiveMembership`). Commit
+  `70f6189`. Aguardando aprovação do usuário pra Etapa 4.
 
 ## 25. Funcionalidades em andamento
 
-**Aguardando aprovação do usuário pra prosseguir com a Etapa 3 da Arquitetura de
-Identidade/Planos** — ver seção 24. Etapas 1 (banco) e 2 (backend) concluídas, aplicadas/
-commitadas e verificadas; nenhuma tela/Server Action/rota foi tocada ainda em nenhuma das
-duas, por instrução explícita do usuário. Fora isso, nada mais em andamento — tudo
-verificado (typecheck, lint, 121 testes, build de produção local) e commitado/pushado (ver
-seção 26). Não há trabalho pendente no working tree (exceto o `recovery-codes.txt` — ver
-"Problemas conhecidos" #8 — que nunca deve ser commitado).
+**Aguardando aprovação do usuário pra prosseguir com a Etapa 4 da Arquitetura de
+Identidade/Planos** — ver seção 24. Etapas 1 (banco), 2 (backend) e 3 (frontend — seletor
+de workspace) concluídas, aplicadas/commitadas e verificadas. Fora isso, nada mais em
+andamento — tudo verificado (typecheck, lint, 126 testes, build de produção local) e
+commitado/pushado (ver seção 26). Não há trabalho pendente no working tree (exceto o
+`recovery-codes.txt` — ver "Problemas conhecidos" #8 — que nunca deve ser commitado).
 
 ## 26. Estado do Git
 
 ```
-5ee4747 Arquitetura de Identidade/Planos, Fase 2 Etapa 2: backend (lib/auth/session.ts)   <- HEAD / origin/master
+70f6189 Arquitetura de Identidade/Planos, Fase 2 Etapa 3: seletor de workspace   <- HEAD / origin/master
+5ee4747 Arquitetura de Identidade/Planos, Fase 2 Etapa 2: backend (lib/auth/session.ts)
 a43b46b Atualiza PROJECT_STATE.md: Etapa 1 da Arquitetura de Identidade/Planos
 185e4f0 Arquitetura de Identidade/Planos, Fase 2 Etapa 1: schema, migrations, trigger
 6da50d2 Atualiza PROJECT_STATE.md: botao Excluir em Subcategoria
@@ -1325,9 +1356,11 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       migrations 7/8, trigger de signup invite-aware) — commit `185e4f0`
 - [x] Arquitetura de Identidade/Planos: Fase 2 Etapa 2 (backend — `can()`,
       `requireMembershipForWorkspace()`, `hasFeature()`, `logAccess()`) — commit `5ee4747`
-- [ ] Arquitetura de Identidade/Planos: Fase 2 Etapas 3+ (frontend, RLS, testes de
-      integração, documentação final da refatoração) — não iniciadas, aguardando
-      aprovação do usuário
+- [x] Arquitetura de Identidade/Planos: Fase 2 Etapa 3 (frontend — seletor de workspace,
+      `WorkspaceSwitcher`, `setActiveWorkspace`) — commit `70f6189`
+- [ ] Arquitetura de Identidade/Planos: Fase 2 Etapa 4+ (RLS, fluxo de convite/onboarding
+      `ADVISOR`, testes de integração, documentação final da refatoração) — não iniciadas,
+      aguardando aprovação do usuário
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
