@@ -908,6 +908,25 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   Categoria) e `TransferForm.tsx` (Origem, Destino, Valor, Data, Responsável).
   `EntriesTable.tsx` (edição in-line) não tem nenhum campo `required`, então não recebeu o
   asterisco — commit `5ea147b`.
+- ✅ **Bug real encontrado e corrigido: erro 500 em produção em `/lancamentos` e
+  `/lancamentos/novo`** — o usuário relatou a tela de erro ao tentar salvar um lançamento
+  em 2026-08-01. Investigado com dados reais via a técnica de teste autenticado (seção 21):
+  confirmado `PrismaClientKnownRequestError` — `"(EMAXCONNSESSION) max clients reached in
+  session mode - max clients are limited to pool_size: 15"`. Causa raiz: `DATABASE_URL`
+  usa o pooler de **Sessão** do Supabase (porta 5432, limite de 15 conexões pro projeto
+  inteiro — ver decisão original na seção 21), e `lib/db/prisma.ts` não limitava quantas
+  conexões cada instância serverless da Vercel abria (`pg` teria usado o default de 10).
+  Poucas requisições concorrentes já estouravam o limite. Corrigido passando
+  `{ connectionString, max: 3 }` pro `PrismaPg` em vez de só a string — commit `aeb618e`.
+  Verificado rodando `next start` local contra o **mesmo banco de produção** com a técnica
+  de sessão autenticada: as 3 rotas (`/lancamentos`, `/lancamentos/novo`, `/painel`)
+  voltaram a `200`. **Nenhum dado foi corrompido** — checado via Prisma que os últimos
+  registros no banco eram todos da importação em lote de 2026-07-30, ou seja, a tentativa
+  de salvar do usuário nunca chegou a gravar nada (falhou antes de commitar). **Recomendação
+  pendente, não aplicada:** trocar `DATABASE_URL` na Vercel pro pooler de **Transação**
+  (porta 6543) — recomendação oficial do Supabase pra serverless, sem o teto de 15 conexões.
+  O `max: 3` já deve prevenir o crash, mas a troca de modo remove o problema de vez; requer
+  editar a env var no painel da Vercel (fora do alcance do assistente) e redeploy.
 
 ## 25. Funcionalidades em andamento
 
@@ -919,7 +938,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-5ea147b Adiciona asterisco vermelho nos campos obrigatorios de Lancamento e Transferencia   <- HEAD / origin/master
+aeb618e Corrige esgotamento do pool de conexoes do Supabase (causa real do 500 em /lancamentos)   <- HEAD / origin/master
+5617415 Atualiza PROJECT_STATE.md: asterisco vermelho nos campos obrigatorios
+5ea147b Adiciona asterisco vermelho nos campos obrigatorios de Lancamento e Transferencia
 a0a3064 Documenta investigacao do erro em /painel e tecnica de teste autenticado
 4cb1f6a Atualiza PROJECT_STATE.md: form de lancamento redesenhado, pagina de erro custom
 de68d14 Formulario de lancamento em KPI card com 4 tipos, e pagina de erro custom
@@ -1039,6 +1060,13 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Painel: gráfico de Provisão (próximos 6 meses) — commit `0dc2b0b`
 - [x] Novo lançamento em KPI card + 4 tipos, página de erro customizada — commit `de68d14`
 - [x] Asterisco vermelho nos campos obrigatórios de Lançamento/Transferência — commit `5ea147b`
+- [x] Bug real corrigido: esgotamento do pool de conexões do Supabase causando 500 em
+      `/lancamentos` e `/lancamentos/novo` — commit `aeb618e`
+- [ ] Trocar `DATABASE_URL` na Vercel do pooler de Sessão (5432) pro pooler de Transação
+      (6543) — recomendação oficial do Supabase pra serverless, remove o teto de 15
+      conexões de vez. Requer editar env var na Vercel + redeploy (fora do alcance do
+      assistente); `max: 3` já aplicado no código deve prevenir o crash enquanto isso
+      não é feito.
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
