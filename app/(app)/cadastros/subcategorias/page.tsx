@@ -1,8 +1,17 @@
 import { requireProfile, requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
-import { BTN_GHOST, BTN_PRIMARY } from "@/components/ui/buttonStyles";
+import { BTN_PRIMARY, BTN_SECONDARY } from "@/components/ui/buttonStyles";
 import { createSubcategory } from "./actions";
 import { SubcategoriesTable } from "./SubcategoriesTable";
+
+/** Mesmas cores de `NATURE_STYLE` do lançamento rápido — ajuda a escanear a
+ * lista longa de categorias por Tipo em vez de ler texto linha a linha. */
+const NATURE_OPTION_STYLE: Record<string, { backgroundColor: string; color: string }> = {
+  RECEITA: { backgroundColor: "#10b981", color: "#09090b" },
+  DESPESA: { backgroundColor: "#ef4444", color: "#09090b" },
+  INVESTIMENTO: { backgroundColor: "#3b82f6", color: "#09090b" },
+  OUTRO: { backgroundColor: "#a1a1aa", color: "#09090b" },
+};
 
 export default async function SubcategoriasPage({
   searchParams,
@@ -42,12 +51,12 @@ export default async function SubcategoriasPage({
           className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-zinc-100"
         >
           {categories.map((c) => (
-            <option key={c.id} value={c.id}>
+            <option key={c.id} value={c.id} style={NATURE_OPTION_STYLE[c.nature]}>
               {c.nature} — {c.name}
             </option>
           ))}
         </select>
-        <button type="submit" className={BTN_GHOST}>
+        <button type="submit" className={BTN_SECONDARY}>
           Ver
         </button>
       </form>
