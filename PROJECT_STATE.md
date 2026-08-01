@@ -994,6 +994,18 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   `/cadastros/responsaveis` quando a lista estiver vazia em Novo lançamento/Transferência
   (select obrigatório sem opção nenhuma travava o formulário sem explicar o porquê).
   Commit `3f21ce3`.
+- ✅ **Bug real corrigido: Ordem de Categoria podia duplicar** — o usuário testou a tela
+  recém-reformulada, criou "Voucher" com Ordem 1 dentro do tipo "Outro" e viu **dois**
+  itens com Ordem 1 (Voucher e Bens Numerários) em vez de Voucher entrar na frente e
+  empurrar o resto. `createCategory`/`updateCategory` (`app/(app)/cadastros/categorias/
+  actions.ts`) agora rodam numa transação: inserir/mover pra uma Ordem já ocupada dentro do
+  mesmo Tipo incrementa (ou decrementa, se moveu pra trás) a Ordem de todo mundo que estava
+  naquela faixa, nunca deixando duplicata. `sortOrder` só existe em `Category` (Carteira,
+  Subcategoria e Tipo não têm esse conceito), então o escopo é só essa tela. O dado
+  duplicado que já tinha ficado em produção (do teste do usuário) foi corrigido
+  manualmente, renumerando o tipo "Outro" em sequência (Voucher=1 … Outros=14). Lógica nova
+  verificada com uma transação de teste propositalmente revertida (sem deixar rastro no
+  banco) antes do commit `a1bb5d6`.
 
 ## 25. Funcionalidades em andamento
 
@@ -1005,7 +1017,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-3f21ce3 Reformula Cadastros: editar sob demanda, exclusao em massa, botoes com contraste   <- HEAD / origin/master
+a1bb5d6 Corrige Ordem de categoria pra nunca duplicar (empurra as demais)   <- HEAD / origin/master
+9b08965 Atualiza PROJECT_STATE.md: reformulacao de Cadastros e permissao de subcategoria
+3f21ce3 Reformula Cadastros: editar sob demanda, exclusao em massa, botoes com contraste
 47d8e77 Atualiza PROJECT_STATE.md: checagem do importador e cards de Cadastros
 06e6118 Padroniza fundo dos cards de Cadastros para #131A47
 5c0f839 Atualiza PROJECT_STATE.md: formulario de lancamento sem secao colapsada
@@ -1153,6 +1167,9 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       novo, seguro), botões com contraste real, criar subcategoria liberado pra qualquer
       membro com escrita, alerta com link quando lista de carteira/responsável está vazia
       — commit `3f21ce3`
+- [x] Bug real corrigido: Ordem de Categoria podia duplicar — criar/editar agora empurra as
+      demais categorias do mesmo Tipo em vez de duplicar o número; dado já duplicado em
+      produção corrigido manualmente — commit `a1bb5d6`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
