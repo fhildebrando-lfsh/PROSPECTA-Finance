@@ -1029,6 +1029,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   (já existe no schema, default `true`) já é exatamente o flag que separaria "fixa" de
   "criada pelo usuário" quando isso for implementado — não fazer nada agora, só uma nota
   pra quando a Fase 2 (relatórios) for de fato encomendada.
+- ✅ **Correção: "Nova subcategoria" não deve navegar pra longe do que "Ver" mostra** — o
+  `router.push("?categoryId=...")` do commit anterior (pensado pra "mostrar o que acabou de
+  criar") na prática mudava o que o seletor "Ver" estava exibindo, quebrando o fluxo
+  independente que o usuário queria. Removido. Em vez disso, `NewSubcategoryForm.tsx`
+  mantém um estado local (`created: CreatedItem[]`) e renderiza um novo card **"Subcategoria
+  cadastrada"** logo abaixo do formulário, listando (mais recente primeiro) tudo que foi
+  criado nesta visita à página — sem afetar o que "Ver" está mostrando em nenhum momento.
+  Commit `e0f5e14`.
 
 ## 25. Funcionalidades em andamento
 
@@ -1040,7 +1048,9 @@ commitado).
 ## 26. Estado do Git
 
 ```
-6262705 Nova subcategoria: fluxo Tipo -> Categoria (filtrada) -> Nome, independente do "Ver"   <- HEAD / origin/master
+e0f5e14 Corrige Nova subcategoria: nao navega mais, mostra criadas em card proprio   <- HEAD / origin/master
+425b0d6 Atualiza PROJECT_STATE.md: fluxo Tipo->Categoria->Nome em Nova subcategoria
+6262705 Nova subcategoria: fluxo Tipo -> Categoria (filtrada) -> Nome, independente do "Ver"
 0ff113d Atualiza PROJECT_STATE.md: cor por Tipo e botao Ver em Subcategorias
 c2577eb Melhora selecao de categoria em Subcategorias: cor por Tipo e botao Ver visivel
 4820fb2 Atualiza PROJECT_STATE.md: correcao da Ordem duplicada em Categoria
@@ -1201,6 +1211,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       — commit `c2577eb`
 - [x] "Nova subcategoria": fluxo Tipo → Categoria (filtrada) → Nome, independente do "Ver"
       — commit `6262705`
+- [x] Correção: parou de navegar pra longe do que "Ver" mostra; card "Subcategoria
+      cadastrada" lista o que foi criado na visita — commit `e0f5e14`
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
