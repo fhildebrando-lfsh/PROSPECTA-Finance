@@ -35,8 +35,11 @@
 > `ADVISOR`. Nova Server Action `setActiveWorkspace` valida o workspace contra a sessão.
 > 126 testes no total (5 novos). Caminho multi-workspace não testado ponta-a-ponta no
 > navegador ainda (ninguém tem 2 memberships reais) — só a lógica pura.
-> **Aguardando aprovação do usuário pra Etapa 4** antes de continuar. Ver seção 24 pro
-> detalhe completo.
+> **Etapa 4 (fluxo de convite/onboarding `ADVISOR`) pausada de propósito pelo usuário** —
+> vai comprar um domínio próprio primeiro (destrava o e-mail transacional quebrado,
+> "Problemas conhecidos" #9), pediu explicitamente pra ser cobrado sobre isso depois.
+> **Perguntar proativamente numa sessão futura se o domínio já foi resolvido**, não
+> assumir que continua bloqueado pra sempre. Ver seção 24 pro detalhe completo.
 >
 > **Última atualização anterior:** 2026-07-31. Além das 5 pontas soltas da Fase 1 (Compromissos,
 > reverter importação, transferência entre carteiras, convidar membro, edição in-line/ações
@@ -1160,16 +1163,31 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   antes de trocar o cookie. 126 testes no total (5 novos). **Caminho multi-workspace não
   testado ponta-a-ponta no navegador** (ninguém tem 2 memberships reais ainda) — só a
   lógica pura, exaustivamente (todos os casos de `resolveActiveMembership`). Commit
-  `70f6189`. Aguardando aprovação do usuário pra Etapa 4.
+  `70f6189`.
+- ⏸️ **Fase 2 Etapa 4 (fluxo de convite/onboarding com papel `ADVISOR`) — PAUSADA de
+  propósito pelo usuário em 2026-08-01**, não esquecida: "deixar para depois, pois irei
+  adquirir o domínio, aguarde, mas lembre-se disso para me cobrar." O onboarding real de
+  cliente depende de e-mail transacional funcionando (convite chega por e-mail), que
+  está quebrado hoje pelo motivo já documentado em "Problemas conhecidos" #9 (remetente
+  `@gmail.com` não passa DKIM/DMARC em provedor terceiro nenhum — precisa de domínio
+  próprio). O usuário decidiu comprar o domínio especificamente pra destravar isso.
+  **Numa sessão futura, perguntar proativamente se o domínio já foi comprado/configurado
+  antes de assumir que a Etapa 4 continua bloqueada** — não pausar essa checagem
+  indefinidamente. Quando destravado, a Etapa 4 é: tela de "consultor cria pré-cadastro
+  de cliente" → `WorkspaceInvite` (papel `ADVISOR` pro consultor ou o papel do cliente) →
+  cliente completa o cadastro, já capturado automaticamente pelo trigger invite-aware da
+  Etapa 1 (`prisma/sql/007_signup_invite_aware.sql`). Nenhum código escrito ainda pra
+  isso.
 
 ## 25. Funcionalidades em andamento
 
-**Aguardando aprovação do usuário pra prosseguir com a Etapa 4 da Arquitetura de
-Identidade/Planos** — ver seção 24. Etapas 1 (banco), 2 (backend) e 3 (frontend — seletor
-de workspace) concluídas, aplicadas/commitadas e verificadas. Fora isso, nada mais em
-andamento — tudo verificado (typecheck, lint, 126 testes, build de produção local) e
-commitado/pushado (ver seção 26). Não há trabalho pendente no working tree (exceto o
-`recovery-codes.txt` — ver "Problemas conhecidos" #8 — que nunca deve ser commitado).
+**Fase 2 Etapa 4 da Arquitetura de Identidade/Planos pausada de propósito** (ver seção
+24) — aguardando o usuário comprar/configurar um domínio próprio pra e-mail transacional
+funcionar. Etapas 1 (banco), 2 (backend) e 3 (frontend — seletor de workspace) concluídas,
+aplicadas/commitadas e verificadas. Fora isso, nada mais em andamento — tudo verificado
+(typecheck, lint, 126 testes, build de produção local) e commitado/pushado (ver seção 26).
+Não há trabalho pendente no working tree (exceto o `recovery-codes.txt` — ver "Problemas
+conhecidos" #8 — que nunca deve ser commitado).
 
 ## 26. Estado do Git
 
