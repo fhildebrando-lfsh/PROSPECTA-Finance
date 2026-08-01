@@ -13,9 +13,9 @@ export default async function CarteirasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="overflow-x-auto rounded-xl border border-zinc-800">
+      <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-900 text-left text-zinc-400">
+          <thead className="bg-black/20 text-left text-zinc-400">
             <tr>
               <th className="px-3 py-2 font-medium">Nome</th>
               <th className="px-3 py-2 font-medium">Tipo</th>
@@ -29,7 +29,7 @@ export default async function CarteirasPage() {
           </thead>
           <tbody>
             {wallets.map((w) => (
-              <tr key={w.id} className={`border-t border-zinc-800 ${w.isActive ? "text-zinc-200" : "text-zinc-600"}`}>
+              <tr key={w.id} className={`border-t border-indigo-900/50 ${w.isActive ? "text-zinc-200" : "text-zinc-600"}`}>
                 <td className="px-3 py-2" colSpan={6}>
                   <form action={updateWallet} className="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="id" value={w.id} />
@@ -91,7 +91,7 @@ export default async function CarteirasPage() {
         </table>
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
         <h2 className="mb-3 text-sm font-medium text-zinc-300">Nova carteira</h2>
         <form action={createWallet} className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1 text-xs text-zinc-400">

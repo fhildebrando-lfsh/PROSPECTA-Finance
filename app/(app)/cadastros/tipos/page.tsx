@@ -13,9 +13,9 @@ export default async function TiposPage() {
         As 4 naturezas (Receita, Despesa, Investimento, Outro) são fixas — toda regra de cálculo do sistema depende
         delas. {isAdmin ? "Aqui você só troca como o rótulo aparece na tela." : "Só o administrador troca o rótulo exibido."}
       </p>
-      <div className="overflow-x-auto rounded-xl border border-zinc-800">
+      <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-900 text-left text-zinc-400">
+          <thead className="bg-black/20 text-left text-zinc-400">
             <tr>
               <th className="px-3 py-2 font-medium">Código</th>
               <th className="px-3 py-2 font-medium">Rótulo exibido</th>
@@ -24,7 +24,7 @@ export default async function TiposPage() {
           </thead>
           <tbody>
             {natureLabels.map((n) => (
-              <tr key={n.code} className="border-t border-zinc-800 text-zinc-200">
+              <tr key={n.code} className="border-t border-indigo-900/50 text-zinc-200">
                 <td className="px-3 py-2 font-mono text-xs text-zinc-500">{n.code}</td>
                 <td className="px-3 py-2" colSpan={2}>
                   <form action={updateNatureLabel} className="flex items-center gap-2">

@@ -18,7 +18,7 @@ export default async function CategoriasPage() {
     <div className="flex flex-col gap-8">
       {/* §20 — campo travado fica visível e desabilitado, com o motivo ao lado, nunca escondido. */}
       {!isAdmin && (
-        <p className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-500">
+        <p className="rounded-lg border border-indigo-900/50 bg-[#131A47] px-3 py-2 text-sm text-zinc-500">
           Categoria é editada só pelo administrador — é o eixo de comparação entre períodos e (na consultoria) entre
           clientes.
         </p>
@@ -27,9 +27,9 @@ export default async function CategoriasPage() {
       {NATURES.map((nature) => (
         <div key={nature}>
           <h2 className="mb-2 text-sm font-medium text-zinc-300">{labelByCode.get(nature) ?? nature}</h2>
-          <div className="overflow-x-auto rounded-xl border border-zinc-800">
+          <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-900 text-left text-zinc-400">
+              <thead className="bg-black/20 text-left text-zinc-400">
                 <tr>
                   <th className="px-3 py-2 font-medium">Ordem</th>
                   <th className="px-3 py-2 font-medium">Nome</th>
@@ -40,7 +40,7 @@ export default async function CategoriasPage() {
                 {categories
                   .filter((c) => c.nature === nature)
                   .map((c) => (
-                    <tr key={c.id} className="border-t border-zinc-800 text-zinc-200">
+                    <tr key={c.id} className="border-t border-indigo-900/50 text-zinc-200">
                       <td className="px-3 py-2" colSpan={3}>
                         <form action={updateCategory} className="flex items-center gap-2">
                           <input type="hidden" name="id" value={c.id} />
@@ -76,7 +76,7 @@ export default async function CategoriasPage() {
       ))}
 
       {isAdmin && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
           <h2 className="mb-3 text-sm font-medium text-zinc-300">Nova categoria</h2>
           <form action={createCategory} className="flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-xs text-zinc-400">

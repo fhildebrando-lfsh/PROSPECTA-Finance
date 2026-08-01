@@ -32,9 +32,9 @@ export default async function MembrosPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h2 className="mb-2 text-sm font-medium text-zinc-300">Membros do workspace</h2>
-        <div className="overflow-x-auto rounded-xl border border-zinc-800">
+        <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-900 text-left text-zinc-400">
+            <thead className="bg-black/20 text-left text-zinc-400">
               <tr>
                 <th className="px-3 py-2 font-medium">Nome</th>
                 <th className="px-3 py-2 font-medium">Papel</th>
@@ -43,7 +43,7 @@ export default async function MembrosPage() {
             </thead>
             <tbody>
               {members.map((m) => (
-                <tr key={m.id} className="border-t border-zinc-800 text-zinc-200">
+                <tr key={m.id} className="border-t border-indigo-900/50 text-zinc-200">
                   <td className="px-3 py-2">{m.profile.fullName ?? "(sem nome)"}</td>
                   <td className="px-3 py-2 text-xs text-zinc-400">{ROLE_LABELS[m.role] ?? m.role}</td>
                   <td className="px-3 py-2 text-xs text-zinc-500">{formatDateBR(m.createdAt)}</td>
@@ -55,7 +55,7 @@ export default async function MembrosPage() {
       </div>
 
       {!canInvite && (
-        <p className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-500">
+        <p className="rounded-lg border border-indigo-900/50 bg-[#131A47] px-3 py-2 text-sm text-zinc-500">
           Só o titular do workspace (ou o administrador) pode convidar novos membros.
         </p>
       )}
@@ -72,7 +72,7 @@ export default async function MembrosPage() {
                   return (
                     <div
                       key={inv.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-3"
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-900/50 bg-[#131A47] p-3"
                     >
                       <div className="text-sm text-zinc-200">
                         {inv.email} <span className="text-xs text-zinc-500">· {ROLE_LABELS[inv.role] ?? inv.role}</span>
@@ -106,7 +106,7 @@ export default async function MembrosPage() {
             </div>
           )}
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+          <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
             <h2 className="mb-1 text-sm font-medium text-zinc-300">Convidar membro</h2>
             <p className="mb-3 text-xs text-zinc-500">
               O sistema <strong>não manda e-mail nem WhatsApp sozinho</strong> — gera um link (botão &ldquo;Copiar&rdquo;

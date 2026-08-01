@@ -24,7 +24,7 @@ export default async function SubcategoriasPage({
   return (
     <div className="flex flex-col gap-6">
       {!isAdmin && (
-        <p className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-500">
+        <p className="rounded-lg border border-indigo-900/50 bg-[#131A47] px-3 py-2 text-sm text-zinc-500">
           Subcategoria é editada só pelo administrador.
         </p>
       )}
@@ -46,9 +46,9 @@ export default async function SubcategoriasPage({
         </button>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-800">
+      <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-900 text-left text-zinc-400">
+          <thead className="bg-black/20 text-left text-zinc-400">
             <tr>
               <th className="px-3 py-2 font-medium">Nome</th>
               <th className="px-3 py-2 font-medium"></th>
@@ -56,7 +56,7 @@ export default async function SubcategoriasPage({
           </thead>
           <tbody>
             {subcategories.map((s) => (
-              <tr key={s.id} className={`border-t border-zinc-800 ${s.isActive ? "text-zinc-200" : "text-zinc-600"}`}>
+              <tr key={s.id} className={`border-t border-indigo-900/50 ${s.isActive ? "text-zinc-200" : "text-zinc-600"}`}>
                 <td className="px-3 py-2">
                   <form action={updateSubcategory} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={s.id} />
@@ -92,7 +92,7 @@ export default async function SubcategoriasPage({
       </div>
 
       {isAdmin && selectedCategoryId && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
           <h2 className="mb-3 text-sm font-medium text-zinc-300">Nova subcategoria</h2>
           <form action={createSubcategory} className="flex flex-wrap items-end gap-3">
             <input type="hidden" name="categoryId" value={selectedCategoryId} />
