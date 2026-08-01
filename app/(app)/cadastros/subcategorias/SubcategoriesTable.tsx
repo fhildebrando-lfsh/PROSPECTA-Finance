@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY } from "@/components/ui/buttonStyles";
+import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY } from "@/components/ui/buttonStyles";
 import { useSavedToast } from "@/components/ui/SavedToast";
-import { updateSubcategory, toggleSubcategoryActive } from "./actions";
+import { updateSubcategory, toggleSubcategoryActive, deleteSubcategory } from "./actions";
 
 export interface SubcategoryRow {
   id: string;
@@ -13,8 +13,27 @@ export interface SubcategoryRow {
 
 export function SubcategoriesTable({ subcategories, isAdmin }: { subcategories: SubcategoryRow[]; isAdmin: boolean }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast, notify } = useSavedToast();
+
+  async function handleDelete(id: string) {
+    if (!confirm("Excluir esta subcategoria? Lançamentos que a usam não são apagados — só perdem essa marcação.")) {
+      return;
+    }
+    setDeletingId(id);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.set("id", id);
+      await deleteSubcategory(fd);
+      notify();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
@@ -61,6 +80,14 @@ export function SubcategoriesTable({ subcategories, isAdmin }: { subcategories: 
                           {s.isActive ? "Arquivar" : "Reativar"}
                         </button>
                       </form>
+                      <button
+                        type="button"
+                        disabled={deletingId === s.id}
+                        onClick={() => handleDelete(s.id)}
+                        className={BTN_DANGER}
+                      >
+                        {deletingId === s.id ? "…" : "Excluir"}
+                      </button>
                     </div>
                   </td>
                 )}

@@ -54,7 +54,22 @@ export async function toggleSubcategoryActive(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const isActive = formData.get("isActive") === "true";
 
-  // §20 — excluir em uso é bloqueado; arquivar/desarquivar é a ação disponível.
   await prisma.subcategory.update({ where: { id }, data: { isActive: !isActive } });
+  revalidatePath("/cadastros/subcategorias");
+}
+
+/**
+ * Diferente de Carteira/Responsável: `Entry.subcategoryId` é opcional e a FK
+ * é `ON DELETE SET NULL` (ver migration `20260729234528_entries`), então
+ * excluir uma subcategoria nunca é bloqueado nem apaga lançamento nenhum —
+ * as linhas que usavam essa subcategoria só perdem essa marcação específica,
+ * mantendo categoria/valor/data intactos.
+ */
+export async function deleteSubcategory(formData: FormData) {
+  const profile = await requireProfile();
+  assertIsAdmin(profile.isPlatformAdmin);
+
+  const id = String(formData.get("id") ?? "");
+  await prisma.subcategory.delete({ where: { id } });
   revalidatePath("/cadastros/subcategorias");
 }
