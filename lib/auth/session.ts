@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
-import type { MembershipRole } from "@/app/generated/prisma/enums";
+import { logAccess } from "@/lib/audit/access-log";
+import type { MembershipRole, PlatformRole } from "@/app/generated/prisma/enums";
 
 /**
  * Perfil + memberships do usuário logado, derivados sempre da sessão do
@@ -51,6 +52,7 @@ export async function requireWorkspaceId() {
 export async function requireApiWorkspaceMembership(): Promise<{
   profileId: string;
   isPlatformAdmin: boolean;
+  platformRole: PlatformRole;
   workspaceId: string;
   role: MembershipRole;
 }> {
@@ -63,22 +65,106 @@ export async function requireApiWorkspaceMembership(): Promise<{
   return {
     profileId: profile.id,
     isPlatformAdmin: profile.isPlatformAdmin,
+    platformRole: profile.platformRole,
     workspaceId: membership.workspaceId,
     role: membership.role,
   };
 }
 
-/** §20 — LEITURA só consulta; TITULAR/MEMBRO e admin podem escrever. */
+/**
+ * Variante explícita de workspace — diferente de `requireWorkspaceId()`
+ * (que sempre assume `memberships[0]`), recebe o `workspaceId` de fora e
+ * valida contra as memberships **reais** da sessão (nunca confia cegamente
+ * no valor recebido). É a peça que um seletor de workspace (ainda não
+ * construído — Fase 2 Etapa 3+) vai usar pra deixar a mesma pessoa
+ * acessar, por exemplo, um workspace onde ela é ADVISOR em vez do seu
+ * workspace pessoal. Sem seletor nenhum ainda, nenhum call site usa isto —
+ * existe pronto pra quando existir.
+ *
+ * Acesso como ADVISOR é registrado em `AccessLog` (§19.1 da especificação:
+ * "todo acesso de administrador/consultor a workspace de terceiro é
+ * registrado"). Acesso de PLATFORM_ADMIN a um workspace onde ele **não**
+ * tem Membership nenhuma (o "admin acessa qualquer workspace" completo do
+ * §19.1) ainda não está implementado aqui de propósito — é um recurso
+ * maior, com sua própria tela/fluxo, que fica pra quando for de fato
+ * encomendado; hoje `/admin/usuarios` já cobre a necessidade atual sem
+ * precisar disso (usa a Admin API do Supabase, não Membership).
+ */
+export async function requireMembershipForWorkspace(workspaceId: string) {
+  const profile = await requireProfile();
+  const membership = profile.memberships.find((m) => m.workspaceId === workspaceId && m.status === "ACTIVE");
+
+  if (!membership) {
+    throw new ApiError(403, "Sem acesso a este workspace.");
+  }
+
+  if (membership.role === "ADVISOR") {
+    await logAccess({
+      actorProfileId: profile.id,
+      workspaceId,
+      actorRole: membership.role,
+      action: "VIEW_WORKSPACE",
+    });
+  }
+
+  return { profile, membership };
+}
+
+/**
+ * Ações que o `can()` abaixo sabe decidir. Cresce conforme a Arquitetura de
+ * Identidade/Planos (ver ARQUITETURA-IDENTIDADE-PLANOS.md seção 8) precisar
+ * de novas regras — `assertCanWrite`/`assertIsAdmin` continuam sendo a
+ * forma que o resto do código já usa, agora implementadas em cima disto.
+ */
+export type Action = "write" | "manageTaxonomy";
+
+export interface AuthContext {
+  platformRole: PlatformRole;
+  /** Ausente pra decisões que não dependem de papel de workspace (ex.: `manageTaxonomy`). */
+  role?: MembershipRole;
+}
+
+function toPlatformRole(isPlatformAdmin: boolean): PlatformRole {
+  return isPlatformAdmin ? "PLATFORM_ADMIN" : "NONE";
+}
+
+/**
+ * Função explícita de autorização (RBAC), não um motor genérico configurável
+ * — ver seção 8 do documento de arquitetura pro porquê. Combina só o papel
+ * de workspace + o papel de plataforma; nunca decide nada de plano/feature
+ * aqui (isso é `lib/billing/entitlements.ts::hasFeature()`, checado à parte
+ * — autorização e comercial são perguntas diferentes, feitas em lugares
+ * diferentes, de propósito).
+ */
+export function can(action: Action, ctx: AuthContext): boolean {
+  if (ctx.platformRole === "PLATFORM_ADMIN") return true;
+
+  switch (action) {
+    case "write":
+      return ctx.role !== undefined && ctx.role !== "LEITURA";
+    case "manageTaxonomy":
+      return false; // só admin, já coberto acima
+  }
+}
+
+/**
+ * §20 — LEITURA só consulta; TITULAR/MEMBRO/ADVISOR e admin podem escrever.
+ * Mesma assinatura de sempre — call sites existentes não mudam nada.
+ */
 export function assertCanWrite(role: MembershipRole, isPlatformAdmin: boolean) {
-  if (isPlatformAdmin) return;
-  if (role === "LEITURA") {
+  if (!can("write", { role, platformRole: toPlatformRole(isPlatformAdmin) })) {
     throw new ApiError(403, "Seu papel é somente leitura.");
   }
 }
 
-/** §20 — Categoria e Subcategoria são admin-only. Para usar em server actions. */
+/**
+ * §20 — Categoria e Tipo (e editar/arquivar Subcategoria) são admin-only.
+ * Mesma assinatura de sempre — call sites existentes não mudam nada.
+ */
 export function assertIsAdmin(isPlatformAdmin: boolean) {
-  if (!isPlatformAdmin) throw new ApiError(403, "Só o administrador pode editar isso.");
+  if (!can("manageTaxonomy", { platformRole: toPlatformRole(isPlatformAdmin) })) {
+    throw new ApiError(403, "Só o administrador pode editar isso.");
+  }
 }
 
 /** Variante para Server Components (páginas admin-only inteiras). */
