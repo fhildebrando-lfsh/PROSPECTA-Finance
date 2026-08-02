@@ -513,12 +513,23 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
    estrita (cada um acumula as features do anterior — `nucleo_financeiro` → +
    `planejamento_financeiro` → + `consultoria_recorrente` → + `modulo_mei`). Preço/
    periodicidade em placeholder (`0`/`MONTHLY`) até valores reais serem definidos —
-   ajustável por `UPDATE`, sem migration nova. As features do roadmap mais amplo
-   (`relatorios_avancados`, `organizacao_tributaria`, `preparacao_irpf`,
-   `planejamento_sucessorio`, `ia_assistente`, `open_finance`, `app_mobile`) ficam de
-   propósito sem vínculo com nenhum plano ainda — não foram mencionadas nos 4 planos
-   reais. Nenhum `Subscription` aponta pra eles ainda (nenhum cliente real assinou);
-   `LEGACY_INTERNAL` continua intacto cobrindo os 2 workspaces reais existentes.
+   ajustável por `UPDATE`, sem migration nova. Nenhum `Subscription` aponta pra eles ainda
+   (nenhum cliente real assinou); `LEGACY_INTERNAL` continua intacto cobrindo os 2
+   workspaces reais existentes.
+10. `20260802004826_plan_roadmap_features` — mapeamento do CEO das features do roadmap
+    mais amplo pros 4 planos (mesmo dia): `START` + `open_finance`/`app_mobile`; `PLUS` +
+    `ia_assistente`; `PREMIUM` + `preparacao_irpf`/`planejamento_sucessorio`;
+    `PREMIUM_NEGOCIOS` + `preparacao_irpj` (Feature **nova** — IRPJ é distinto de IRPF,
+    pessoa jurídica × pessoa física). `organizacao_tributaria` e `relatorios_avancados`
+    continuam de propósito sem vínculo com nenhum plano — não foram mencionadas neste
+    mapeamento também. **Observação levantada ao CEO, não bloqueante:** incluir Open
+    Finance no plano mais barato (`START`) inverte a lógica usual de custo-por-cliente
+    (integrações tipo Pluggy/Belvo costumam ter custo variável por conexão) — vale
+    confirmar se é intencional. Matriz final por plano:
+    - `START`: `nucleo_financeiro`, `open_finance`, `app_mobile`
+    - `PLUS`: + `planejamento_financeiro`, `ia_assistente`
+    - `PREMIUM`: + `consultoria_recorrente`, `preparacao_irpf`, `planejamento_sucessorio`
+    - `PREMIUM_NEGOCIOS`: + `modulo_mei`, `preparacao_irpj`
 
 **SQL manual (não gerenciado pelo Prisma, aplicado via `prisma db execute --file`):**
 - `001_auth_and_rls.sql` — FK profiles→auth.users, trigger de signup, RLS Fase 0.
@@ -1202,6 +1213,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   enquanto, pra evitar cliente pagando por consultoria sem consultor atribuído. Migration
   9 só populou dado (`Plan`/`PlanFeature`), nenhuma tela ainda gateia nada por
   `hasFeature()` — ver seção 10.
+- ✅ **Mapeamento das features do roadmap pros 4 planos, mesmo dia** — CEO completou a
+  matriz: `START` ganhou Open Finance + app mobile, `PLUS` ganhou IA, `PREMIUM` ganhou
+  IRPF + planejamento sucessório, `PREMIUM_NEGOCIOS` ganhou IRPJ (`preparacao_irpj`,
+  Feature nova criada — IRPJ ≠ IRPF, pessoa jurídica × física). Levantei uma observação
+  não-bloqueante ao CEO: Open Finance no plano mais barato inverte a lógica usual de
+  custo-por-cliente de integrações desse tipo (custo variável por conexão) — vale
+  confirmar se é intencional; implementado exatamente como pedido enquanto isso. Matriz
+  completa e migration ver seção 10 (migration 10).
 
 ## 25. Funcionalidades em andamento
 
@@ -1216,7 +1235,9 @@ conhecidos" #8 — que nunca deve ser commitado).
 ## 26. Estado do Git
 
 ```
-83abb46 Arquitetura de Identidade/Planos: popula catalogo real de planos comerciais   <- HEAD / origin/master
+3fadaaf Arquitetura de Identidade/Planos: mapeia features do roadmap pros planos   <- HEAD / origin/master
+2e0840e Atualiza PROJECT_STATE.md: catalogo real de planos comerciais
+83abb46 Arquitetura de Identidade/Planos: popula catalogo real de planos comerciais
 c4aca27 Documenta pausa da Etapa 4 (onboarding ADVISOR) ate compra de dominio
 719e41d Atualiza PROJECT_STATE.md: Etapa 3 da Arquitetura de Identidade/Planos
 70f6189 Arquitetura de Identidade/Planos, Fase 2 Etapa 3: seletor de workspace
@@ -1406,6 +1427,8 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       `WorkspaceSwitcher`, `setActiveWorkspace`) — commit `70f6189`
 - [x] Catálogo real de planos comerciais (Start/Plus/Premium/Premium Negócios, escada
       estrita, definido pelo CEO) — commit `83abb46`
+- [x] Mapeamento das features do roadmap (Open Finance, app mobile, IA, IRPF,
+      sucessório, IRPJ) pros 4 planos — commit `3fadaaf`
 - [ ] Arquitetura de Identidade/Planos: fluxo de convite/onboarding `ADVISOR` — **pausado
       de propósito pelo usuário** até comprar/configurar domínio próprio (ver seção 24 e
       "Problemas conhecidos" #9); perguntar proativamente numa sessão futura
