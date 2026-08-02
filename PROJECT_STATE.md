@@ -508,6 +508,17 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
    que ainda não tinha nenhuma (cobriu os 2 workspaces reais existentes), e sincronização
    de `platformRole` a partir de `isPlatformAdmin`. Idempotente (`ON CONFLICT DO NOTHING`/
    `WHERE NOT EXISTS`).
+9. `20260802003511_real_commercial_plans` — catálogo **real** de planos comerciais,
+   definido pelo CEO em 2026-08-02: `START`/`PLUS`/`PREMIUM`/`PREMIUM_NEGOCIOS`, escada
+   estrita (cada um acumula as features do anterior — `nucleo_financeiro` → +
+   `planejamento_financeiro` → + `consultoria_recorrente` → + `modulo_mei`). Preço/
+   periodicidade em placeholder (`0`/`MONTHLY`) até valores reais serem definidos —
+   ajustável por `UPDATE`, sem migration nova. As features do roadmap mais amplo
+   (`relatorios_avancados`, `organizacao_tributaria`, `preparacao_irpf`,
+   `planejamento_sucessorio`, `ia_assistente`, `open_finance`, `app_mobile`) ficam de
+   propósito sem vínculo com nenhum plano ainda — não foram mencionadas nos 4 planos
+   reais. Nenhum `Subscription` aponta pra eles ainda (nenhum cliente real assinou);
+   `LEGACY_INTERNAL` continua intacto cobrindo os 2 workspaces reais existentes.
 
 **SQL manual (não gerenciado pelo Prisma, aplicado via `prisma db execute --file`):**
 - `001_auth_and_rls.sql` — FK profiles→auth.users, trigger de signup, RLS Fase 0.
@@ -1178,6 +1189,19 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   cliente completa o cadastro, já capturado automaticamente pelo trigger invite-aware da
   Etapa 1 (`prisma/sql/007_signup_invite_aware.sql`). Nenhum código escrito ainda pra
   isso.
+- ✅ **Catálogo real de planos comerciais definido pelo CEO e populado no banco
+  (2026-08-02).** Enquanto a Etapa 4 (onboarding) está pausada, o CEO definiu os 4 planos
+  reais que serão vendidos: `START` (controle financeiro), `PLUS` (+ planejamento
+  financeiro), `PREMIUM` (+ consultoria financeira), `PREMIUM_NEGOCIOS` (+ controle PF e
+  MEI) — confirmados como **escada estrita** (cada um acumula tudo do anterior) depois de
+  eu apontar a ambiguidade entre os nomes e as descrições dadas. **Decisão importante
+  registrada, a pedido do papel de arquiteto**: assinar Premium/Premium Negócios libera a
+  *feature* de consultoria (o que o cliente vê na tela), mas **não** atribui um consultor
+  de verdade automaticamente — isso continua sendo uma ação manual do time (criar a
+  `Membership` `ADVISOR`), confirmado explicitamente pelo CEO como a abordagem certa por
+  enquanto, pra evitar cliente pagando por consultoria sem consultor atribuído. Migration
+  9 só populou dado (`Plan`/`PlanFeature`), nenhuma tela ainda gateia nada por
+  `hasFeature()` — ver seção 10.
 
 ## 25. Funcionalidades em andamento
 
@@ -1192,7 +1216,11 @@ conhecidos" #8 — que nunca deve ser commitado).
 ## 26. Estado do Git
 
 ```
-70f6189 Arquitetura de Identidade/Planos, Fase 2 Etapa 3: seletor de workspace   <- HEAD / origin/master
+83abb46 Arquitetura de Identidade/Planos: popula catalogo real de planos comerciais   <- HEAD / origin/master
+c4aca27 Documenta pausa da Etapa 4 (onboarding ADVISOR) ate compra de dominio
+719e41d Atualiza PROJECT_STATE.md: Etapa 3 da Arquitetura de Identidade/Planos
+70f6189 Arquitetura de Identidade/Planos, Fase 2 Etapa 3: seletor de workspace
+31ccab2 Atualiza PROJECT_STATE.md: Etapa 2 da Arquitetura de Identidade/Planos
 5ee4747 Arquitetura de Identidade/Planos, Fase 2 Etapa 2: backend (lib/auth/session.ts)
 a43b46b Atualiza PROJECT_STATE.md: Etapa 1 da Arquitetura de Identidade/Planos
 185e4f0 Arquitetura de Identidade/Planos, Fase 2 Etapa 1: schema, migrations, trigger
@@ -1376,9 +1404,13 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
       `requireMembershipForWorkspace()`, `hasFeature()`, `logAccess()`) — commit `5ee4747`
 - [x] Arquitetura de Identidade/Planos: Fase 2 Etapa 3 (frontend — seletor de workspace,
       `WorkspaceSwitcher`, `setActiveWorkspace`) — commit `70f6189`
-- [ ] Arquitetura de Identidade/Planos: Fase 2 Etapa 4+ (RLS, fluxo de convite/onboarding
-      `ADVISOR`, testes de integração, documentação final da refatoração) — não iniciadas,
-      aguardando aprovação do usuário
+- [x] Catálogo real de planos comerciais (Start/Plus/Premium/Premium Negócios, escada
+      estrita, definido pelo CEO) — commit `83abb46`
+- [ ] Arquitetura de Identidade/Planos: fluxo de convite/onboarding `ADVISOR` — **pausado
+      de propósito pelo usuário** até comprar/configurar domínio próprio (ver seção 24 e
+      "Problemas conhecidos" #9); perguntar proativamente numa sessão futura
+- [ ] Arquitetura de Identidade/Planos: RLS, testes de integração, documentação final da
+      refatoração — não iniciadas, aguardando aprovação do usuário
 - [ ] Teste manual logado ponta-a-ponta (login, aceitar um convite de verdade, edição
       in-line com inversão de sinal, `/admin/usuarios`, menu lateral novo, Painel
       redesenhado) — login exige senha, fora do alcance do assistente
