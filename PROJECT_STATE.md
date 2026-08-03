@@ -902,6 +902,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
      DMARC nele via Brevo (guia completo já dado ao usuário nesta conversa). **O usuário
      decidiu adiar essa compra de propósito** ("deixe esse passo para depois... posterior
      tratamos esse problema") — não é uma tarefa esquecida, é uma decisão explícita.
+   - **Atualização 2026-08-03: domínio comprado — `prospectafinance.com.br`, e-mail
+     `admin@prospectafinance.com.br`.** Configuração de DKIM/SPF/DMARC no Brevo +
+     apontamento DNS + troca do SMTP no Supabase **ainda pendente** (guia passo-a-passo
+     entregue ao usuário, ele ainda vai executar). **Nota de segurança:** antes de
+     confirmar o domínio, o usuário colou uma string (`#Prospecta210726#`) que não parecia
+     domínio válido (sem TLD, formato de senha) — foi sinalizado e não usado; o usuário
+     depois confirmou o domínio real separadamente. Não confirmar como resolvido até o
+     usuário testar um cadastro novo e confirmar que o e-mail chegou de verdade.
    - **Contorno enquanto isso:** confirmar e-mail manualmente no painel do Supabase
      (Authentication → Users → usuário → confirmar e-mail) toda vez que alguém se
      cadastrar. Funciona bem pra uso familiar/baixo volume, não escala.
