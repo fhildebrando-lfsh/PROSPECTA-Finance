@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireAdminProfile } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/db/prisma";
@@ -36,11 +37,16 @@ export default async function AdminUsuariosPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-lg font-semibold text-zinc-100">Usuários (todos os workspaces)</h1>
-        <p className="text-sm text-zinc-500">
-          Visão de plataforma — só administradores veem isto. {authUsers.length} usuário(s) cadastrado(s).
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-zinc-100">Usuários (todos os workspaces)</h1>
+          <p className="text-sm text-zinc-500">
+            Visão de plataforma — só administradores veem isto. {authUsers.length} usuário(s) cadastrado(s).
+          </p>
+        </div>
+        <Link href="/admin/clientes" className="text-sm text-indigo-300 hover:text-white">
+          Criar cliente (pré-cadastro) →
+        </Link>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-800">

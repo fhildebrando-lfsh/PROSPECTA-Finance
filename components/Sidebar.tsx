@@ -20,6 +20,7 @@ import {
   ListTree,
   UserCog,
   ShieldCheck,
+  UserPlus,
   LogOut,
   ChevronDown,
 } from "lucide-react";
@@ -53,6 +54,11 @@ const LANCAMENTOS_ITEMS: NavLeaf[] = [
   { href: "/lancamentos/importar", label: "Importar", icon: Upload },
 ];
 
+const ADMIN_ITEMS: NavLeaf[] = [
+  { href: "/admin/usuarios", label: "Usuários", icon: ShieldCheck },
+  { href: "/admin/clientes", label: "Clientes", icon: UserPlus },
+];
+
 const CADASTROS_ITEMS: NavLeaf[] = [
   { href: "/cadastros/carteiras", label: "Carteiras", icon: Wallet },
   { href: "/cadastros/responsaveis", label: "Responsáveis", icon: Users },
@@ -79,7 +85,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },
   ];
   if (isPlatformAdmin) {
-    entries.push({ href: "/admin/usuarios", label: "Admin", icon: ShieldCheck });
+    entries.push({ label: "Admin", icon: ShieldCheck, items: ADMIN_ITEMS });
   }
 
   return (

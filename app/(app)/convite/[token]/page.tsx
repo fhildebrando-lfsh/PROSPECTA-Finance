@@ -1,14 +1,21 @@
 import { requireProfile } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { isInviteExpired } from "@/lib/workspace/invite";
 import { accept } from "./actions";
 
-const ROLE_LABELS: Record<string, string> = { TITULAR: "Titular", MEMBRO: "Membro", LEITURA: "Leitura" };
+const ROLE_LABELS: Record<string, string> = {
+  TITULAR: "Titular",
+  MEMBRO: "Membro",
+  LEITURA: "Leitura",
+  ADVISOR: "Consultor",
+};
 
 export default async function ConvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const profile = await requireProfile();
 
   const invite = await prisma.workspaceInvite.findUnique({ where: { token }, include: { workspace: true } });
+  const expired = invite ? isInviteExpired(invite) : false;
 
   return (
     <div className="mx-auto flex max-w-sm flex-col gap-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
@@ -18,14 +25,20 @@ export default async function ConvitePage({ params }: { params: Promise<{ token:
 
       {invite && invite.acceptedAt && <p className="text-sm text-zinc-400">Este convite já foi aceito.</p>}
 
-      {invite && !invite.acceptedAt && profile.email?.trim().toLowerCase() !== invite.email && (
+      {invite && !invite.acceptedAt && expired && (
+        <p className="text-sm text-red-400">
+          Este convite expirou. Peça pra quem convidou gerar um novo.
+        </p>
+      )}
+
+      {invite && !invite.acceptedAt && !expired && profile.email?.trim().toLowerCase() !== invite.email && (
         <p className="text-sm text-amber-400">
           Este convite foi enviado para <strong>{invite.email}</strong>, mas você está logado como{" "}
           <strong>{profile.email}</strong>. Entre com a conta correta pra aceitar.
         </p>
       )}
 
-      {invite && !invite.acceptedAt && profile.email?.trim().toLowerCase() === invite.email && (
+      {invite && !invite.acceptedAt && !expired && profile.email?.trim().toLowerCase() === invite.email && (
         <>
           <p className="text-sm text-zinc-300">
             Você foi convidado pra entrar no workspace <strong>{invite.workspace.name}</strong> como{" "}

@@ -2,11 +2,17 @@ import { headers } from "next/headers";
 import { requireProfile, requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { formatDateBR } from "@/lib/format";
+import { isInviteExpired } from "@/lib/workspace/invite";
 import { BTN_DANGER, BTN_PRIMARY } from "@/components/ui/buttonStyles";
 import { inviteMember, deleteInvite } from "./actions";
 import { InviteLink } from "./InviteLink";
 
-const ROLE_LABELS: Record<string, string> = { TITULAR: "Titular", MEMBRO: "Membro", LEITURA: "Leitura" };
+const ROLE_LABELS: Record<string, string> = {
+  TITULAR: "Titular",
+  MEMBRO: "Membro",
+  LEITURA: "Leitura",
+  ADVISOR: "Consultor",
+};
 
 export default async function MembrosPage() {
   const workspaceId = await requireWorkspaceId();
@@ -77,6 +83,9 @@ export default async function MembrosPage() {
                     >
                       <div className="text-sm text-zinc-200">
                         {inv.email} <span className="text-xs text-zinc-500">· {ROLE_LABELS[inv.role] ?? inv.role}</span>
+                        {isInviteExpired(inv) && (
+                          <span className="ml-2 rounded-full bg-red-950 px-2 py-0.5 text-xs text-red-400">expirado</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         {inv.phone && (
@@ -142,6 +151,7 @@ export default async function MembrosPage() {
                   <option value="MEMBRO">Membro</option>
                   <option value="LEITURA">Leitura</option>
                   <option value="TITULAR">Titular</option>
+                  <option value="ADVISOR">Consultor</option>
                 </select>
               </label>
               <button type="submit" className={BTN_PRIMARY}>

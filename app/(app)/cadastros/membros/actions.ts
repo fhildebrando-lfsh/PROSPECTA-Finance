@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db/prisma";
 import { createInvite } from "@/lib/workspace/invite";
 import type { MembershipRole } from "@/app/generated/prisma/enums";
 
-const ROLES: MembershipRole[] = ["MEMBRO", "LEITURA", "TITULAR"];
+const ROLES: MembershipRole[] = ["MEMBRO", "LEITURA", "TITULAR", "ADVISOR"];
 
 async function requireTitularOrAdmin(workspaceId: string) {
   const profile = await requireProfile();
