@@ -6,7 +6,27 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-01.** Iniciado o maior redesenho arquitetural do
+> **Última atualização real: 2026-08-04.** **"Problemas conhecidos" #9 (e-mail de
+> confirmação não chegava) está RESOLVIDO de verdade** — domínio `prospectafinance.com.br`
+> configurado ponta-a-ponta: 4 registros DNS adicionados na Zona de DNS da HostGator (TXT de
+> verificação, 2 CNAME DKIM, TXT DMARC), domínio autenticado no Brevo, remetente
+> `admin@prospectafinance.com.br` cadastrado e verificado, SMTP customizado do Supabase
+> trocado do Gmail antigo pro Brevo com esse remetente. **Confirmado com cadastro real de
+> teste — e-mail chegou certo, remetente correto.** Etapa 4 (fluxo de convite `ADVISOR`)
+> não está mais bloqueada por e-mail, mas **ainda não foi retomada** (aguardando o usuário
+> pedir explicitamente).
+> Durante o teste de cadastro apareceu um segundo problema, **também já corrigido**: a conta
+> de teste caiu no workspace real do usuário (com todos os dados) em vez de um workspace
+> vazio. Causa: 3 `WorkspaceInvite` de teste de 31/07 (sobra de desenvolvimento anterior,
+> nunca limpos) ainda pendentes pro e-mail usado no teste — o trigger invite-aware (Etapa 1)
+> funcionou exatamente como projetado e aceitou o convite. **Não era bug de isolamento**,
+> mas expôs um bug real em `resolveActiveMembership()` (`lib/auth/session.ts`): o fallback
+> (`memberships[0]`) não filtrava por `status === "ACTIVE"`, então revogar a membership de
+> teste não tinha efeito nenhum na prática — a pessoa continuava caindo nesse workspace.
+> Corrigido pra filtrar por `ACTIVE` antes do fallback; 2 testes novos cobrindo membership
+> revogada (128 no total). Convites de teste e membership de teste já limpos no banco.
+>
+> **Última atualização anterior: 2026-08-01.** Iniciado o maior redesenho arquitetural do
 > projeto até agora — **Arquitetura de Identidade, Permissões e Planos**, pedido do
 > usuário pra preparar o sistema pra virar plataforma de consultoria financeira (Fase 4
 > da especificação). Documento completo de projeto em `ARQUITETURA-IDENTIDADE-PLANOS.md`
@@ -327,7 +347,7 @@ C:\Sistema Financeiro\
 ### `lib/auth/session.ts`
 - `getCurrentProfile()` — perfil + memberships, com `cache()` do React (dedup por request).
 - `requireProfile()` — pra Server Components (redireciona se não autenticado).
-- `ACTIVE_WORKSPACE_COOKIE` / `resolveActiveMembership()` / `requireActiveMembership()` — **novos (Fase 2 Etapa 3, seletor de workspace)**. `resolveActiveMembership(memberships, requestedWorkspaceId?)` é pura (testada, 5 casos): sem `workspaceId` pedido ou pedido inválido/revogado/de outra pessoa, cai em `memberships[0]` (comportamento de sempre); com um válido, usa ele. `requireActiveMembership()` lê o cookie, resolve, e grava `AccessLog` se a membership resolvida for `ADVISOR`.
+- `ACTIVE_WORKSPACE_COOKIE` / `resolveActiveMembership()` / `requireActiveMembership()` — **novos (Fase 2 Etapa 3, seletor de workspace)**. `resolveActiveMembership(memberships, requestedWorkspaceId?)` é pura (testada, 7 casos): filtra por `status === "ACTIVE"` primeiro (**corrigido em 2026-08-04** — antes o fallback não filtrava e podia devolver uma membership revogada), sem `workspaceId` pedido ou pedido inválido/revogado/de outra pessoa cai na primeira `ACTIVE` (comportamento de sempre); com um válido, usa ele; sem nenhuma `ACTIVE`, retorna `undefined`. `requireActiveMembership()` lê o cookie, resolve, e grava `AccessLog` se a membership resolvida for `ADVISOR`.
 - `requireWorkspaceId()` — agora implementado em cima de `requireActiveMembership()` (lê o cookie de workspace ativo); sem cookie, comportamento idêntico ao de sempre.
 - `requireApiWorkspaceMembership()` — pra Route Handlers (lança `ApiError`, não redireciona). Mesmo tratamento de cookie/`ADVISOR` de `requireWorkspaceId()`. Ganhou `platformRole` no retorno (além de `isPlatformAdmin`, mantido).
 - `requireAdminProfile()` — existe mas **não está mais em uso** desde que as telas de Cadastros passaram a ser visíveis-porém-desabilitadas em vez de bloqueadas (ver seção 20).
@@ -883,8 +903,10 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
    manualmente do `git add` de propósito) e o usuário foi avisado pra mover pra um lugar
    seguro fora do repositório. Se esse arquivo ainda existir numa sessão futura, não
    commitar em hipótese nenhuma e lembrar o usuário de novo.
-9. **E-mail de confirmação de cadastro do Supabase não está chegando — causa raiz
-   diagnosticada, correção adiada de propósito pelo usuário.** Confirmado na prática em
+9. ~~**E-mail de confirmação de cadastro do Supabase não está chegando.**~~ **RESOLVIDO em
+   2026-08-04** — ver bloco no topo do documento pro detalhe completo (domínio próprio +
+   DKIM/SPF/DMARC no Brevo + SMTP customizado no Supabase, confirmado com cadastro real).
+   Histórico do diagnóstico original abaixo, mantido por contexto. Confirmado na prática em
    2026-07-30 com dois provedores diferentes:
    - E-mail padrão do Supabase (sem SMTP custom): não chegou (limite do plano gratuito).
    - SMTP Gmail (`smtp.gmail.com`, senha de app de 16 caracteres, configurado
@@ -1229,16 +1251,30 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   custo-por-cliente de integrações desse tipo (custo variável por conexão) — vale
   confirmar se é intencional; implementado exatamente como pedido enquanto isso. Matriz
   completa e migration ver seção 10 (migration 10).
+- ✅ **Domínio próprio configurado e e-mail transacional funcionando de verdade
+  (2026-08-04).** `prospectafinance.com.br` (HostGator) com 4 registros DNS pro Brevo (TXT
+  de verificação, 2 CNAME DKIM `brevo1`/`brevo2._domainkey`, TXT `_dmarc`), domínio
+  autenticado no Brevo, remetente `admin@prospectafinance.com.br` verificado, SMTP
+  customizado do Supabase (Authentication → Emails) trocado pro Brevo com esse remetente.
+  Testado com cadastro real — e-mail de confirmação chegou, remetente correto. Ver
+  "Problemas conhecidos" #9 (RESOLVIDO) e o bloco no topo do documento.
+- ✅ **Bug corrigido: `resolveActiveMembership()` não ignorava membership `REVOKED` no
+  fallback (2026-08-04).** Achado ao testar o cadastro acima (uma conta de teste antiga
+  tinha 3 convites pendentes de 31/07 sobrando, aceitos automaticamente pelo trigger
+  invite-aware — comportamento correto —, mas revogar a membership resultante não tirava o
+  acesso porque o fallback (`memberships[0]`) não checava `status`). Corrigido em
+  `lib/auth/session.ts`, 2 testes novos (128 no total). Convites e membership de teste já
+  limpos no banco.
 
 ## 25. Funcionalidades em andamento
 
-**Fase 2 Etapa 4 da Arquitetura de Identidade/Planos pausada de propósito** (ver seção
-24) — aguardando o usuário comprar/configurar um domínio próprio pra e-mail transacional
-funcionar. Etapas 1 (banco), 2 (backend) e 3 (frontend — seletor de workspace) concluídas,
-aplicadas/commitadas e verificadas. Fora isso, nada mais em andamento — tudo verificado
-(typecheck, lint, 126 testes, build de produção local) e commitado/pushado (ver seção 26).
-Não há trabalho pendente no working tree (exceto o `recovery-codes.txt` — ver "Problemas
-conhecidos" #8 — que nunca deve ser commitado).
+**Fase 2 Etapa 4 da Arquitetura de Identidade/Planos não está mais bloqueada** (o e-mail
+transacional já funciona de verdade — ver seção 24) **mas ainda não foi retomada**,
+aguardando o usuário pedir explicitamente. Etapas 1 (banco), 2 (backend) e 3 (frontend —
+seletor de workspace) concluídas, aplicadas/commitadas e verificadas. Fora isso, nada mais
+em andamento — tudo verificado (typecheck, lint, 128 testes, build de produção local) e
+commitado/pushado (ver seção 26). Não há trabalho pendente no working tree (exceto o
+`recovery-codes.txt` — ver "Problemas conhecidos" #8 — que nunca deve ser commitado).
 
 ## 26. Estado do Git
 
