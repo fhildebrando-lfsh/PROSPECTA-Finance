@@ -53,4 +53,12 @@ describe("resolveActiveMembership (seletor de workspace — Fase 2 Etapa 3)", ()
   it("sem membership nenhuma, retorna undefined", () => {
     expect(resolveActiveMembership([])).toBeUndefined();
   });
+
+  it("primeira membership revogada e sem workspaceId pedido, pula pra próxima ACTIVE", () => {
+    expect(resolveActiveMembership([revoked, own])).toBe(own);
+  });
+
+  it("única membership revogada, retorna undefined (não trata revogada como ativa)", () => {
+    expect(resolveActiveMembership([revoked])).toBeUndefined();
+  });
 });

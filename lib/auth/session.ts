@@ -60,11 +60,12 @@ export function resolveActiveMembership<T extends MembershipLike>(
   memberships: T[],
   requestedWorkspaceId?: string,
 ): T | undefined {
+  const active = memberships.filter((m) => m.status === "ACTIVE");
   if (requestedWorkspaceId) {
-    const requested = memberships.find((m) => m.workspaceId === requestedWorkspaceId && m.status === "ACTIVE");
+    const requested = active.find((m) => m.workspaceId === requestedWorkspaceId);
     if (requested) return requested;
   }
-  return memberships[0];
+  return active[0];
 }
 
 /**
