@@ -26,6 +26,29 @@
 > Corrigido pra filtrar por `ACTIVE` antes do fallback; 2 testes novos cobrindo membership
 > revogada (128 no total). Convites de teste e membership de teste já limpos no banco.
 >
+> **Fase 2 Etapa 4 RETOMADA E CONCLUÍDA, mesmo dia** — usuário pediu explicitamente pra
+> avançar. Nova tela **`/admin/clientes`** (só platform admin): cria o pré-cadastro de um
+> cliente (workspace novo + `Subscription` `TRIALING`/`paymentProvider=NONE` no plano
+> escolhido + `Membership ADVISOR` opcional pro consultor + `WorkspaceInvite` `role=TITULAR`),
+> lista pré-cadastros pendentes (query: convite `TITULAR` não aceito cujo workspace ainda não
+> tem nenhum `TITULAR`) com link/WhatsApp pra compartilhar (sem envio automático de e-mail,
+> mesmo padrão do convite de membro) e botão "Cancelar" (`cancelClientPreRegistration`,
+> recusa se já tiver dono — não deixa apagar cliente ativo). `WorkspaceInvite` ganhou
+> expiração de verdade (`expiresAt`, 7 dias, ARQUITETURA-IDENTIDADE-PLANOS.md §13) —
+> `/convite/[token]` mostra "expirou" quando aplicável. "Consultor (ADVISOR)" virou opção
+> também no convite de membro já existente (`/cadastros/membros`), cobrindo "adicionar um
+> segundo consultor a um cliente que já existe" sem nenhum código novo — o fluxo de
+> convite/aceite já era genérico por `role`. Sidebar: "Admin" virou grupo (Usuários/Clientes).
+> 132 testes no total (4 novos, `isInviteExpired`). Verificado ao vivo contra dados reais via
+> Admin API (magic link + `verifyOtp`, sem senha digitada — técnica já documentada nesta
+> seção): criação, listagem, aceite simulado e cancelamento, tudo funcionando; achado e
+> corrigido um bug pequeno no caminho — o rótulo do consultor mostrava `null` (não a
+> mensagem "nenhum atribuído") quando o perfil do consultor não tinha `fullName`
+> preenchido; agora cai pro e-mail como fallback. Dados de teste sempre limpos depois.
+> **Fora do escopo desta rodada, de propósito**: envio automático de e-mail do convite de
+> cliente (continua manual), tela do cliente "ver meu consultor responsável" (§15 da
+> arquitetura), telas gateadas por `hasFeature()` (nenhuma tela nova exige gate ainda).
+>
 > **Última atualização anterior: 2026-08-01.** Iniciado o maior redesenho arquitetural do
 > projeto até agora — **Arquitetura de Identidade, Permissões e Planos**, pedido do
 > usuário pra preparar o sistema pra virar plataforma de consultoria financeira (Fase 4
@@ -1265,14 +1288,27 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   acesso porque o fallback (`memberships[0]`) não checava `status`). Corrigido em
   `lib/auth/session.ts`, 2 testes novos (128 no total). Convites e membership de teste já
   limpos no banco.
+- ✅ **Fase 2 Etapa 4 (fluxo de pré-cadastro de cliente `ADVISOR`) concluída (2026-08-04) —
+  fecha o redesenho de Identidade/Planos.** `/admin/clientes` (admin-only): cria workspace +
+  `Subscription TRIALING` + `Membership ADVISOR` opcional + `WorkspaceInvite TITULAR`,
+  reaproveitando o trigger invite-aware da Etapa 1 e o `createInvite`/`InviteLink` já
+  existentes — zero código de convite/aceite novo. `WorkspaceInvite.expiresAt` passou a ser
+  preenchido (7 dias) em convites novos, com checagem em `acceptInvite` e mensagem "expirou"
+  em `/convite/[token]`. `ADVISOR` virou opção também no convite de membro comum. Ver bloco
+  no topo do documento pro detalhe completo (query da lista de pendentes, bug pequeno achado
+  e corrigido no rótulo do consultor sem nome, verificação ao vivo sem senha).
 
 ## 25. Funcionalidades em andamento
 
-**Fase 2 Etapa 4 da Arquitetura de Identidade/Planos não está mais bloqueada** (o e-mail
-transacional já funciona de verdade — ver seção 24) **mas ainda não foi retomada**,
-aguardando o usuário pedir explicitamente. Etapas 1 (banco), 2 (backend) e 3 (frontend —
-seletor de workspace) concluídas, aplicadas/commitadas e verificadas. Fora isso, nada mais
-em andamento — tudo verificado (typecheck, lint, 128 testes, build de produção local) e
+**Fase 2 Etapa 4 da Arquitetura de Identidade/Planos concluída (2026-08-04)** — ver seção
+24 pro detalhe completo (`/admin/clientes`, expiração de convite, ADVISOR no convite de
+membro). **As 4 etapas planejadas do redesenho (banco, backend, frontend/seletor de
+workspace, onboarding de cliente) estão todas concluídas, aplicadas/commitadas e
+verificadas.** Fora do escopo aprovado, de propósito: envio automático de e-mail de
+convite (continua manual/link), tela do cliente "ver meu consultor" (§15 da arquitetura),
+telas gateadas por `hasFeature()` (nenhuma tela nova pra gatear ainda — MEI/IRPF/IA/Open
+Finance/etc. são Fase 4 da especificação original, não desta arquitetura). Nada mais em
+andamento — tudo verificado (typecheck, lint, 132 testes, build de produção local) e
 commitado/pushado (ver seção 26). Não há trabalho pendente no working tree (exceto o
 `recovery-codes.txt` — ver "Problemas conhecidos" #8 — que nunca deve ser commitado).
 
