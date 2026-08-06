@@ -2,6 +2,7 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { acceptPendingInviteForEmail } from "@/lib/workspace/invite";
 
 /** Só caminhos internos — mesma regra de `safeRedirectTo` do login (evita open redirect). */
 function safeNext(raw: string | null, fallback: string) {
@@ -26,16 +27,32 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("next");
 
   const supabase = await createClient();
+  let ok = false;
+  let fallback = "/painel";
 
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
-    if (!error) {
-      const fallback = type === "invite" ? "/definir-senha" : "/painel";
-      redirect(safeNext(next, fallback));
-    }
+    ok = !error;
+    fallback = type === "invite" ? "/definir-senha" : "/painel";
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) redirect(safeNext(next, "/painel"));
+    ok = !error;
+  }
+
+  if (ok) {
+    // Rede de segurança pra login (magic link ou Google) de um e-mail que já
+    // tinha conta antes de um convite novo ser criado — o trigger de signup
+    // só aceita convite pendente na hora do CADASTRO, nunca num login
+    // seguinte. Ver lib/workspace/invite.ts::acceptPendingInviteForEmail.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.email) {
+      await acceptPendingInviteForEmail(user.id, user.email).catch((err) =>
+        console.error("[auth/confirm] falha ao aceitar convite pendente:", err),
+      );
+    }
+    redirect(safeNext(next, fallback));
   }
 
   redirect("/login");

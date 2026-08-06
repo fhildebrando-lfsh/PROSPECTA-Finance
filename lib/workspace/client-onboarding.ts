@@ -96,12 +96,23 @@ export async function createClientPreRegistration(params: {
   let inviteUrl: string;
   try {
     inviteUrl = await sendInviteAuthEmail({ clientName, clientEmail, origin: params.origin, type: "invite" });
-  } catch {
-    emailSent = false;
-    // Mesmo se o e-mail falhar, o pré-cadastro fica criado — o admin
-    // consegue "reenviar" depois pela tela (usa magiclink, já que o
-    // auth.users pode já existir dependendo de onde a 1ª tentativa falhou).
-    inviteUrl = `${params.origin}/login`;
+  } catch (inviteErr) {
+    // `type=invite` só funciona pra e-mail que ainda não tem auth.users — se
+    // a pessoa já tinha conta (ex.: já é cliente/consultor de outro
+    // workspace), cai pra magiclink, que funciona pra qualquer e-mail já
+    // cadastrado e estabelece sessão do mesmo jeito via /auth/confirm.
+    try {
+      inviteUrl = await sendInviteAuthEmail({ clientName, clientEmail, origin: params.origin, type: "magiclink" });
+    } catch (magiclinkErr) {
+      console.error("[createClientPreRegistration] falha ao enviar e-mail de convite (invite e magiclink):", {
+        inviteErr,
+        magiclinkErr,
+      });
+      emailSent = false;
+      // Mesmo se o e-mail falhar, o pré-cadastro fica criado — o admin
+      // consegue "reenviar" depois pela tela.
+      inviteUrl = `${params.origin}/login`;
+    }
   }
 
   return { workspace, invite, emailSent, inviteUrl };

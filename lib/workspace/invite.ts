@@ -64,3 +64,34 @@ export async function acceptInvite(token: string, profileId: string, profileEmai
   ]);
   return membership;
 }
+
+/**
+ * Rede de segurança pro caso de convite (cliente ou membro) pra um e-mail que
+ * **já tem conta**. O trigger `handle_new_auth_user()` só roda em signup —
+ * quando a pessoa já existe e só faz login de novo (magic link, ou Google
+ * OAuth pra um e-mail já cadastrado), ele nunca dispara, então o convite
+ * pendente nunca seria aceito sozinho. Chamado de `/auth/confirm` depois de
+ * qualquer login bem-sucedido — idempotente (se não houver convite pendente,
+ * ou a Membership já existir por algum outro caminho, não faz nada).
+ */
+export async function acceptPendingInviteForEmail(profileId: string, email: string) {
+  const trimmed = email.trim().toLowerCase();
+  const invite = await prisma.workspaceInvite.findFirst({
+    where: { email: trimmed, acceptedAt: null },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!invite || isInviteExpired(invite)) return;
+
+  const existing = await prisma.membership.findUnique({
+    where: { workspaceId_profileId: { workspaceId: invite.workspaceId, profileId } },
+  });
+  if (existing) {
+    await prisma.workspaceInvite.update({ where: { id: invite.id }, data: { acceptedAt: new Date() } });
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.membership.create({ data: { workspaceId: invite.workspaceId, profileId, role: invite.role } }),
+    prisma.workspaceInvite.update({ where: { id: invite.id }, data: { acceptedAt: new Date() } }),
+  ]);
+}
