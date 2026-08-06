@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   UserPlus,
   UserCircle,
+  Network,
   LogOut,
   ChevronDown,
 } from "lucide-react";
@@ -58,6 +59,7 @@ const LANCAMENTOS_ITEMS: NavLeaf[] = [
 const ADMIN_ITEMS: NavLeaf[] = [
   { href: "/admin/usuarios", label: "Usuários", icon: ShieldCheck },
   { href: "/admin/clientes", label: "Clientes", icon: UserPlus },
+  { href: "/admin/consultores", label: "Consultores", icon: Network },
 ];
 
 const CADASTROS_ITEMS: NavLeaf[] = [

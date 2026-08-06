@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { setAdvisor } from "./actions";
+import { setAdvisor } from "@/app/(app)/admin/usuarios/actions";
 import { BTN_SECONDARY } from "@/components/ui/buttonStyles";
 
 interface AdvisorOption {
@@ -32,11 +32,7 @@ export function AdvisorControl({
   }
 
   return (
-    <form
-      action={setAdvisor}
-      onSubmit={() => setOpen(false)}
-      className="inline-flex items-center gap-1.5"
-    >
+    <form action={setAdvisor} onSubmit={() => setOpen(false)} className="inline-flex items-center gap-1.5">
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <select
         name="advisorProfileId"

@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/db/prisma";
 import { formatDateBR } from "@/lib/format";
 import { DeleteUserButton } from "./DeleteUserButton";
-import { AdvisorControl } from "./AdvisorControl";
+import { AdvisorControl } from "@/components/AdvisorControl";
 import { PlatformAdminToggle } from "./PlatformAdminToggle";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -67,9 +67,14 @@ export default async function AdminUsuariosPage() {
             Visão de plataforma — só administradores veem isto. {authUsers.length} usuário(s) cadastrado(s).
           </p>
         </div>
-        <Link href="/admin/clientes" className="text-sm text-indigo-300 hover:text-white">
-          Criar cliente (pré-cadastro) →
-        </Link>
+        <div className="flex gap-4">
+          <Link href="/admin/consultores" className="text-sm text-indigo-300 hover:text-white">
+            Ver por consultor →
+          </Link>
+          <Link href="/admin/clientes" className="text-sm text-indigo-300 hover:text-white">
+            Criar cliente (pré-cadastro) →
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-800">
