@@ -6,7 +6,29 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-05.** Rodada grande de pedidos do usuário, tudo
+> **Última atualização real: 2026-08-05 (continuação).** Depois do deploy da rodada
+> grande abaixo, o usuário testou de verdade em **produção** e achou 2 problemas reais
+> que o teste local não pegou: **(1)** convite de cliente pra um e-mail que já tinha
+> conta (ex.: já era admin, ou já tinha sido convidado antes) falhava calado —
+> `generateLink(type=invite)` só funciona pra e-mail novo. Corrigido:
+> `sendInviteAuthEmail` agora cai pra `type=magiclink` automaticamente quando o invite
+> falha, e `/auth/confirm` ganhou `acceptPendingInviteForEmail()` — chamado depois de
+> **qualquer** login bem-sucedido (não só signup), porque o trigger do Postgres só
+> aceita convite pendente no INSERT de `auth.users`, nunca num login seguinte (magic
+> link ou Google OAuth de quem já tinha conta antes do convite existir). **(2)** Causa
+> raiz de verdade de "nenhum e-mail chega em produção" (convite de cliente E aviso de
+> exclusão, os dois): **a `BREVO_API_KEY` salva na Vercel estava com o valor errado**
+> — Brevo respondia `401 Key not found`. Nada a ver com código; só ficou visível
+> depois de trocar o `catch` silencioso (`emailSent=false` sem rastro nenhum) por
+> `console.error` de verdade e ler os logs da Vercel (`vercel logs <url>`, CLI
+> autenticado nesta sessão via `vercel link`). Resolvido gerando uma chave API nova no
+> Brevo e colando na Vercel — **confirmado pelo usuário em produção: os dois e-mails
+> chegaram**. **Nota de segurança:** o valor da chave apareceu em texto puro num print
+> mandado no chat durante essa troca — considerar exposta, recomendado gerar mais uma
+> chave nova quando o usuário tiver um tempo (não bloqueante, e-mail já funciona com a
+> atual).
+>
+> **Última atualização anterior: 2026-08-05.** Rodada grande de pedidos do usuário, tudo
 > testado ao vivo (magic link sem senha + testes reais com conta própria) antes de
 > commitar: **(1) Confirmação de senha** — campo "confirmar senha" no cadastro
 > (`/login`), já existia em `/redefinir-senha`. **(2) Infra de e-mail transacional
