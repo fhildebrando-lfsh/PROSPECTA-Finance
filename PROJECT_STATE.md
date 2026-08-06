@@ -6,7 +6,16 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-06 (pós-fechamento).** Usuário achou um gap real
+> **Última atualização real: 2026-08-06 (mais uma continuação).** Nova aba **Admin →
+> Consultores** (`/admin/consultores`) — visão em árvore de "quem atende quem": um
+> card por consultor com a lista de clientes atendidos indentada logo abaixo, e um
+> card separado "sem consultor atribuído" pros clientes que ainda não têm ninguém.
+> Mesmo controle de atribuir/trocar (`AdvisorControl`, movido de
+> `admin/usuarios/` pra `components/` — agora compartilhado entre as duas telas).
+> Pedido explícito do usuário por "controle visual melhor" depois de mexer em
+> `/admin/usuarios`. Testado ao vivo.
+>
+> **Última atualização anterior: 2026-08-06 (pós-fechamento).** Usuário achou um gap real
 > testando `/minha-conta`/`/admin/usuarios`: consultor só podia ser atribuído na
 > criação do pré-cadastro (`/admin/clientes`) — um workspace pessoal comum (nascido
 > de signup normal, não do fluxo admin) não tinha como ganhar consultor depois.
