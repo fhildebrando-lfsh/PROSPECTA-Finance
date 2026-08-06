@@ -6,15 +6,23 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-06.** Testes finais ao vivo em produção, todos
-> confirmados funcionando: cadastro público (trigger cria perfil + workspace pessoal
-> certo, e-mail de confirmação do Supabase chega), convite de cliente com consultor
-> atribuído (e-mail chega, `/definir-senha` funciona, cai no workspace certo). Dados
-> de teste sempre limpos depois via `deleteAccount()`. **O usuário reconsiderou e
-> gerou uma chave nova no Brevo por precaução** (mudou de ideia — não é mais
-> "decisão de não rotacionar", ver histórico anterior) — chave nova confirmada
-> funcionando (deploy automático da Vercel ao editar a env var, sem erro nos logs),
-> chave antiga deve ser revogada no Brevo pelo usuário.
+> **Última atualização real: 2026-08-06 — FECHAMENTO DO DIA.** Testes finais ao vivo
+> em produção, todos confirmados funcionando: cadastro público (trigger cria perfil +
+> workspace pessoal certo, e-mail de confirmação do Supabase chega), convite de
+> cliente com consultor atribuído (e-mail chega, `/definir-senha` funciona, cai no
+> workspace certo). Dados de teste sempre limpos depois via `deleteAccount()`. **O
+> usuário reconsiderou e gerou uma chave nova no Brevo por precaução** (mudou de
+> ideia — não é mais "decisão de não rotacionar", ver histórico anterior) — chave
+> nova confirmada funcionando (deploy automático da Vercel ao editar a env var, sem
+> erro nos logs), e **a chave antiga já foi revogada no Brevo pelo usuário** —
+> ciclo de segurança fechado, nada pendente.
+>
+> **Estado geral ao fim do dia:** as 4 etapas da Arquitetura de Identidade/Planos
+> concluídas (banco, backend, seletor de workspace, pré-cadastro de cliente); e-mail
+> transacional funcionando de ponta a ponta (domínio próprio + Brevo, tanto pro
+> Supabase Auth quanto pro app); confirmação de senha, exclusão de conta (self e
+> admin), login com Google e "Meus clientes" pro consultor, todos no ar em produção e
+> testados ao vivo. Nenhum bug conhecido em aberto nesta rodada.
 >
 > **Última atualização anterior: 2026-08-05 (mais uma continuação).** Seção **"Meus
 > clientes"** nova em `/minha-conta` — lista os workspaces onde a pessoa é `ADVISOR`
