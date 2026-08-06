@@ -6,7 +6,16 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-05 (continuação).** Depois do deploy da rodada
+> **Última atualização real: 2026-08-05 (mais uma continuação).** Seção **"Meus
+> clientes"** nova em `/minha-conta` — lista os workspaces onde a pessoa é `ADVISOR`
+> ativo, com botão "Entrar como consultor" que reaproveita `setActiveWorkspace()`
+> (já existia desde a Etapa 3) pra trocar de workspace e cair no `/painel` do
+> cliente com acesso completo (o `can()` já tratava `ADVISOR` igual `TITULAR` pra
+> escrita — só faltava essa lista, a mecânica de acesso/auditoria já estava pronta).
+> Verificado ao vivo (sem senha) contra as 2 memberships `ADVISOR` reais que o
+> próprio usuário criou testando `/admin/clientes` em produção.
+>
+> **Última atualização anterior: 2026-08-05 (continuação).** Depois do deploy da rodada
 > grande abaixo, o usuário testou de verdade em **produção** e achou 2 problemas reais
 > que o teste local não pegou: **(1)** convite de cliente pra um e-mail que já tinha
 > conta (ex.: já era admin, ou já tinha sido convidado antes) falhava calado —
