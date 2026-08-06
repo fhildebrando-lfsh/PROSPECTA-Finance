@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { login, signup, requestPasswordReset, type AuthActionState } from "./actions";
 import { PasswordInput } from "@/components/PasswordInput";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 const initialState: AuthActionState = { error: null, info: null };
 
@@ -85,6 +86,14 @@ function LoginForm() {
           {mode === "login" ? "Entre com sua conta." : "Crie sua conta."}
         </p>
 
+        <GoogleSignInButton />
+
+        <div className="my-4 flex items-center gap-3 text-xs text-zinc-500">
+          <div className="h-px flex-1 bg-zinc-800" />
+          ou
+          <div className="h-px flex-1 bg-zinc-800" />
+        </div>
+
         <form action={action} className="flex flex-col gap-4">
           {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
           {mode === "signup" && (
@@ -114,6 +123,13 @@ function LoginForm() {
             Senha
             <PasswordInput name="password" required autoComplete={mode === "login" ? "current-password" : "new-password"} />
           </label>
+
+          {mode === "signup" && (
+            <label className="flex flex-col gap-1 text-sm text-zinc-300">
+              Confirmar senha
+              <PasswordInput name="confirmPassword" required autoComplete="new-password" />
+            </label>
+          )}
 
           {mode === "login" && (
             <button

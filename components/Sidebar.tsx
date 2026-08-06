@@ -21,6 +21,7 @@ import {
   UserCog,
   ShieldCheck,
   UserPlus,
+  UserCircle,
   LogOut,
   ChevronDown,
 } from "lucide-react";
@@ -87,6 +88,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
   if (isPlatformAdmin) {
     entries.push({ label: "Admin", icon: ShieldCheck, items: ADMIN_ITEMS });
   }
+  entries.push({ href: "/minha-conta", label: "Minha conta", icon: UserCircle });
 
   return (
     <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-20 md:flex md:w-64 md:flex-col md:border-r md:border-indigo-900/50 md:bg-[#131A47]">

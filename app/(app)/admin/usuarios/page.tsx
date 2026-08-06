@@ -3,6 +3,7 @@ import { requireAdminProfile } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/db/prisma";
 import { formatDateBR } from "@/lib/format";
+import { DeleteUserButton } from "./DeleteUserButton";
 
 const ROLE_LABELS: Record<string, string> = { TITULAR: "Titular", MEMBRO: "Membro", LEITURA: "Leitura" };
 
@@ -12,7 +13,7 @@ const ROLE_LABELS: Record<string, string> = { TITULAR: "Titular", MEMBRO: "Membr
  * Admin API, service role) com `Profile`/`Membership`/`Workspace` (Prisma).
  */
 export default async function AdminUsuariosPage() {
-  await requireAdminProfile();
+  const admin = await requireAdminProfile();
 
   const supabase = createAdminClient();
   const [{ data: authData, error }, profiles] = await Promise.all([
@@ -60,6 +61,7 @@ export default async function AdminUsuariosPage() {
               <th className="px-3 py-2 font-medium">E-mail confirmado</th>
               <th className="px-3 py-2 font-medium">Cadastrado em</th>
               <th className="px-3 py-2 font-medium">Último login</th>
+              <th className="px-3 py-2 font-medium">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -95,6 +97,9 @@ export default async function AdminUsuariosPage() {
                   </td>
                   <td className="px-3 py-2 text-xs text-zinc-500">
                     {u.last_sign_in_at ? formatDateBR(new Date(u.last_sign_in_at)) : "nunca"}
+                  </td>
+                  <td className="px-3 py-2">
+                    {u.id !== admin.id && <DeleteUserButton profileId={u.id} label={u.email ?? profile?.fullName ?? "usuário"} />}
                   </td>
                 </tr>
               );

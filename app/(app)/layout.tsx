@@ -45,11 +45,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               isPlatformAdmin={profile.isPlatformAdmin}
             />
           </div>
-          <form action={logout}>
-            <button type="submit" className="shrink-0 text-sm text-indigo-200 hover:text-white">
-              Sair
-            </button>
-          </form>
+          <div className="flex shrink-0 items-center gap-3">
+            <Link href="/minha-conta" className="text-sm text-indigo-200 hover:text-white">
+              Minha conta
+            </Link>
+            <form action={logout}>
+              <button type="submit" className="text-sm text-indigo-200 hover:text-white">
+                Sair
+              </button>
+            </form>
+          </div>
         </header>
 
         <main className="flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8 md:pb-8">{children}</main>

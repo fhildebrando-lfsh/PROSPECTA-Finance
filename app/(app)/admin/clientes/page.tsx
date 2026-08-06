@@ -1,26 +1,21 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { requireAdminProfile } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/db/prisma";
 import { isInviteExpired } from "@/lib/workspace/invite";
 import { formatDateBR } from "@/lib/format";
-import { BTN_DANGER, BTN_PRIMARY } from "@/components/ui/buttonStyles";
-import { InviteLink } from "@/app/(app)/cadastros/membros/InviteLink";
-import { createClient, cancelClient } from "./actions";
+import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY } from "@/components/ui/buttonStyles";
+import { createClient, cancelClient, resendInvite } from "./actions";
 
 /**
  * Fase 2 Etapa 4 (ARQUITETURA-IDENTIDADE-PLANOS.md §12) — admin cria o
  * pré-cadastro de um cliente novo (workspace + assinatura + convite, com
  * consultor opcional já atribuído como ADVISOR). Só platform admin, mesmo
- * gate de `/admin/usuarios`.
+ * gate de `/admin/usuarios`. O convite é enviado por e-mail de verdade
+ * (2026-08-05) — não é mais um link pra copiar manualmente.
  */
 export default async function AdminClientesPage() {
   await requireAdminProfile();
-
-  const headerList = await headers();
-  const protocol = headerList.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "development" ? "http" : "https");
-  const origin = `${protocol}://${headerList.get("host")}`;
 
   const supabase = createAdminClient();
   const [{ data: authData, error }, plans, profiles, pendingClients] = await Promise.all([
@@ -61,7 +56,7 @@ export default async function AdminClientesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-zinc-100">Clientes (pré-cadastro)</h1>
-          <p className="text-sm text-zinc-500">Cria o workspace, a assinatura e o convite de um cliente novo antes dele existir.</p>
+          <p className="text-sm text-zinc-500">Cria o workspace, a assinatura e manda o convite por e-mail pro cliente.</p>
         </div>
         <Link href="/admin/usuarios" className="text-sm text-indigo-300 hover:text-white">
           Ver todos os usuários →
@@ -73,8 +68,6 @@ export default async function AdminClientesPage() {
           <h2 className="mb-2 text-sm font-medium text-zinc-300">Pré-cadastros aguardando o cliente concluir</h2>
           <div className="flex flex-col gap-2">
             {pendingClients.map((inv) => {
-              const inviteUrl = `${origin}/convite/${inv.token}`;
-              const whatsappText = `Você foi convidado(a) para o PROSPECTA Finance! Acesse o link pra criar sua conta: ${inviteUrl}`;
               const plan = inv.workspace.subscriptions[0]?.plan;
               const advisor = inv.workspace.memberships[0]?.profile;
               const advisorLabel = advisor ? (advisor.fullName ?? emailByProfileId.get(advisor.id) ?? "(sem nome)") : null;
@@ -95,17 +88,12 @@ export default async function AdminClientesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {inv.phone && (
-                      <a
-                        href={`https://wa.me/${inv.phone}?text=${encodeURIComponent(whatsappText)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-emerald-800 px-2 py-1 text-xs text-emerald-300 hover:bg-emerald-950"
-                      >
-                        Enviar por WhatsApp
-                      </a>
-                    )}
-                    <InviteLink url={inviteUrl} />
+                    <form action={resendInvite}>
+                      <input type="hidden" name="workspaceId" value={inv.workspaceId} />
+                      <button type="submit" className={BTN_SECONDARY}>
+                        Reenviar convite
+                      </button>
+                    </form>
                     <form action={cancelClient}>
                       <input type="hidden" name="workspaceId" value={inv.workspaceId} />
                       <button type="submit" className={BTN_DANGER}>
@@ -123,8 +111,9 @@ export default async function AdminClientesPage() {
       <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
         <h2 className="mb-1 text-sm font-medium text-zinc-300">Criar cliente</h2>
         <p className="mb-3 text-xs text-zinc-500">
-          Gera o workspace do cliente, a assinatura no plano escolhido (sem cobrança real ainda) e um convite —{" "}
-          <strong>o sistema não manda e-mail nem WhatsApp sozinho</strong>, o link fica pronto pra você copiar/enviar.
+          Gera o workspace do cliente, a assinatura no plano escolhido (sem cobrança real ainda) e manda um e-mail de
+          convite de verdade, com um link que já leva direto pra tela de definir senha. Se não chegar, use
+          &ldquo;Reenviar convite&rdquo; na lista abaixo.
         </p>
         <form action={createClient} className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-xs text-zinc-400">
@@ -143,15 +132,6 @@ export default async function AdminClientesPage() {
               name="clientEmail"
               required
               className="w-64 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Telefone (WhatsApp, opcional)
-            <input
-              type="tel"
-              name="phone"
-              placeholder="(11) 91234-5678"
-              className="w-44 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-zinc-400">

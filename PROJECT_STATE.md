@@ -6,7 +6,52 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-04.** **"Problemas conhecidos" #9 (e-mail de
+> **Última atualização real: 2026-08-05.** Rodada grande de pedidos do usuário, tudo
+> testado ao vivo (magic link sem senha + testes reais com conta própria) antes de
+> commitar: **(1) Confirmação de senha** — campo "confirmar senha" no cadastro
+> (`/login`), já existia em `/redefinir-senha`. **(2) Infra de e-mail transacional
+> própria** (`lib/email/send.ts`, API HTTP do Brevo — `BREVO_API_KEY` novo no
+> `.env.local`/Vercel, diferente da chave SMTP do Supabase) — base pra qualquer e-mail
+> que o **app** precise mandar (não o Supabase Auth). **(3) Convite de cliente por
+> e-mail de verdade** — a Etapa 4 (seção 24, 2026-08-04) só gerava link pra copiar
+> manualmente; agora `createClientPreRegistration` chama
+> `supabase.auth.admin.generateLink({type:"invite"})`, manda por Brevo com template
+> próprio (`lib/email/templates.ts`), e o link leva pra `/auth/confirm` (agora um
+> callback único de verdade — ver "Problemas conhecidos" #4) que estabelece sessão via
+> `verifyOtp` e redireciona pra `/definir-senha` (tela nova, 2 campos de senha,
+> `useActionState`). Botão "Reenviar convite" (`type:"magiclink"`) pra quando o
+> primeiro e-mail falha/expira. **Testado ponta-a-ponta com conta real
+> (`aventuras.saf@gmail.com`)**: e-mail chegou, link levou pra tela certa, senha
+> definida (`has_password: true` confirmado direto no `auth.users`), caiu no
+> workspace certo como TITULAR. **(4) Exclusão de conta — self-service e admin**
+> (`lib/account/delete.ts::deleteAccount`/`deleteAccountAsAdmin`) — **apaga tudo de
+> verdade, sem meio-termo** (decisão explícita do usuário: LGPD/direito ao
+> esquecimento vale mais que preservar histórico aqui), com confirmação obrigatória
+> digitando "EXCLUIR" na UI (`/minha-conta`, nova tela, link no Sidebar/header mobile;
+> botão "Excluir" em `/admin/usuarios`, não aparece na própria linha do admin — usa
+> "Minha conta" pra isso). Se a pessoa é única titular ativa de um workspace, o
+> workspace inteiro é apagado (cascade cuida de `Entry`/`Wallet`/etc. — todo o schema
+> já tinha `onDelete: Cascade` até `Workspace`, verificado linha por linha antes de
+> implementar); se não é única titular, ou é só membro/consultor em outros, só a
+> `Membership` some. Exclusão pelo admin manda e-mail avisando antes de apagar.
+> **Testado de verdade** contra a conta de teste (apagou `auth.users`, `Profile` e o
+> workspace, e-mail de aviso enviado) — dobrou como limpeza dos dados de teste do item
+> 3. **(5) Login social com Google** — `GoogleSignInButton` (client, `signInWithOAuth`)
+> + `/auth/confirm` ganhou suporte a `code` (PKCE, `exchangeCodeForSession`) além de
+> `token_hash`. Precisou de configuração externa (guiada, sem o usuário colar segredo
+> nenhum no chat): credencial OAuth no Google Cloud Console (`Origens JavaScript` =
+> localhost:3000 + domínio de produção; `URI de redirecionamento` = o callback do
+> próprio Supabase, `https://<ref>.supabase.co/auth/v1/callback`, não o nosso app) +
+> Client ID/Secret colados no painel do Supabase (Authentication → Sign In / Providers
+> → Google) + **"Authentication → URL Configuration → Redirect URLs" precisou ganhar
+> `http://localhost:3000/**`** (só tinha a URL de produção — causa raiz do primeiro
+> teste falhar, o Supabase ignora silenciosamente um `redirectTo` fora da allowlist).
+> **Testado e funcionando** em localhost depois de ajustar isso. Efeito colateral
+> encontrado e corrigido no meio do caminho: um `node.exe` órfão de uma sessão de
+> preview anterior estava preso na porta 3000 (matado manualmente) e o cache do
+> Turbopack corrompeu depois de vários start/stop (`.next` limpo, resolveu).
+>
+> **Última atualização anterior: 2026-08-04.** **"Problemas conhecidos" #9 (e-mail de
 > confirmação não chegava) está RESOLVIDO de verdade** — domínio `prospectafinance.com.br`
 > configurado ponta-a-ponta: 4 registros DNS adicionados na Zona de DNS da HostGator (TXT de
 > verificação, 2 CNAME DKIM, TXT DMARC), domínio autenticado no Brevo, remetente
@@ -891,10 +936,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
    `globalThis` entre reloads e não pega o client regenerado. Aconteceu repetidas vezes
    durante o desenvolvimento; sempre resolver com `preview_stop` + `preview_start` (ou
    matar e subir `npm run dev` de novo), nunca só recarregar a página.
-4. **`app/auth/confirm/route.ts`** existe mas não está no caminho real usado hoje (ver
-   seção 8) — o e-mail de confirmação usa o link padrão do Supabase, não o formato
-   `token_hash`. Não é bug ativo, mas é código morto até o template de e-mail ser
-   customizado (precisa de SMTP próprio configurado no Supabase).
+4. ~~`app/auth/confirm/route.ts` existe mas não está no caminho real usado hoje.~~
+   **Resolvido em 2026-08-05** — agora é o callback único de verdade: convite de
+   cliente (`type=invite`) e login com Google (`code`, PKCE) passam por ali de
+   propósito; confirmação de cadastro comum ainda usa o link padrão do Supabase
+   (`?code=` direto pro Site URL) — não migrada pra essa rota porque não há mais
+   nenhum bug ativo bloqueando ela (a causa raiz, revoked membership no fallback,
+   foi corrigida em 2026-08-04), só deixaria o comportamento mais uniforme. Ver
+   bloco no topo do documento (2026-08-05) pro detalhe completo.
 5. **`requireAdminProfile()`** em `lib/auth/session.ts` — **agora tem uso**: gate de
    `/admin/usuarios` (seção 11, §19.1).
 6. **Toda a rodada de Compromissos/reverter importação/transferência/convite/edição
@@ -1297,6 +1346,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   em `/convite/[token]`. `ADVISOR` virou opção também no convite de membro comum. Ver bloco
   no topo do documento pro detalhe completo (query da lista de pendentes, bug pequeno achado
   e corrigido no rótulo do consultor sem nome, verificação ao vivo sem senha).
+- ✅ **Confirmação de senha, e-mail transacional próprio, convite de cliente por
+  e-mail de verdade, exclusão de conta (self + admin) e login com Google
+  (2026-08-05).** Ver bloco no topo do documento pro detalhe completo de cada um —
+  todos testados ao vivo contra dados/contas reais antes de commitar. Arquivos novos
+  principais: `lib/email/{send,templates}.ts`, `lib/account/delete.ts`,
+  `app/(auth)/definir-senha/*`, `app/(app)/minha-conta/*`,
+  `components/GoogleSignInButton.tsx`. `app/auth/confirm/route.ts` deixou de ser
+  código morto (ver "Problemas conhecidos" #4).
 
 ## 25. Funcionalidades em andamento
 
