@@ -6,7 +6,25 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-06 — FECHAMENTO DO DIA.** Testes finais ao vivo
+> **Última atualização real: 2026-08-06 (pós-fechamento).** Usuário achou um gap real
+> testando `/minha-conta`/`/admin/usuarios`: consultor só podia ser atribuído na
+> criação do pré-cadastro (`/admin/clientes`) — um workspace pessoal comum (nascido
+> de signup normal, não do fluxo admin) não tinha como ganhar consultor depois.
+> Corrigido: `lib/workspace/advisor.ts::assignAdvisor(workspaceId, advisorProfileId
+> | null)` funciona pra **qualquer** workspace com titular — revoga o consultor
+> atual (`status=REVOKED`, nunca apaga, preserva auditoria) e ativa/cria o novo;
+> trocar de volta pra alguém que já foi consultor antes reativa a linha existente
+> em vez de duplicar (testado explicitamente: atribuir → trocar → voltar → remover,
+> nenhuma linha duplicada, revogação correta em cada passo). `/admin/usuarios` ganhou
+> controle inline por workspace (`AdvisorControl`) e botão promover/remover admin da
+> plataforma (`PlatformAdminToggle`, bloqueado pra própria conta — evita se
+> autorremover sem querer). Pedido de "marcar quem é consultor vs. cliente" como
+> atributo separado foi **recusado por design**, explicado ao usuário: nessa
+> arquitetura "cliente" já é só "ter workspace próprio" e "consultor" já é só "ser
+> `ADVISOR` de algum workspace" — não é um rótulo fixo de pessoa (ver
+> ARQUITETURA-IDENTIDADE-PLANOS.md).
+>
+> **Última atualização anterior: 2026-08-06 — FECHAMENTO DO DIA.** Testes finais ao vivo
 > em produção, todos confirmados funcionando: cadastro público (trigger cria perfil +
 > workspace pessoal certo, e-mail de confirmação do Supabase chega), convite de
 > cliente com consultor atribuído (e-mail chega, `/definir-senha` funciona, cai no
