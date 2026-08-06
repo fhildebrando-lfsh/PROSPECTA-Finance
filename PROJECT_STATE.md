@@ -33,9 +33,10 @@
 > autenticado nesta sessão via `vercel link`). Resolvido gerando uma chave API nova no
 > Brevo e colando na Vercel — **confirmado pelo usuário em produção: os dois e-mails
 > chegaram**. **Nota de segurança:** o valor da chave apareceu em texto puro num print
-> mandado no chat durante essa troca — considerar exposta, recomendado gerar mais uma
-> chave nova quando o usuário tiver um tempo (não bloqueante, e-mail já funciona com a
-> atual).
+> mandado no chat durante essa troca — foi recomendado gerar mais uma chave nova por
+> precaução. **O usuário decidiu explicitamente não fazer isso** ("NÃO VOU GERAR NOVA
+> CHAVE NO BREVO") — decisão dele, respeitada; não sugerir de novo em sessões futuras.
+> A chave atual funciona normalmente, isso não é um problema técnico pendente.
 >
 > **Última atualização anterior: 2026-08-05.** Rodada grande de pedidos do usuário, tudo
 > testado ao vivo (magic link sem senha + testes reais com conta própria) antes de
