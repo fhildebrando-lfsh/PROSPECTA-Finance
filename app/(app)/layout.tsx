@@ -34,7 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         isPlatformAdmin={profile.isPlatformAdmin}
       />
 
-      <div className="flex min-h-screen flex-1 flex-col md:pl-64">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col md:pl-64">
         <header className="flex items-center justify-between border-b border-indigo-900/50 bg-[#131A47] px-4 py-4 sm:px-6 md:hidden">
           <div className="flex min-w-0 items-center gap-2">
             <Image src="/logo-sidebar.png" alt="" width={28} height={28} className="shrink-0" priority />
@@ -57,7 +57,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8 md:pb-8">{children}</main>
+        <main className="min-w-0 flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8 md:pb-8">{children}</main>
 
         {/* §12 — botão flutuante "+", acesso de 1 toque ao lançamento rápido em qualquer tela. */}
         <Link
