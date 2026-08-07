@@ -6,6 +6,16 @@ import { deleteAccountAsAdmin } from "@/lib/account/delete";
 import { assignAdvisor } from "@/lib/workspace/advisor";
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
+import { updatePersonalData, personalDataFromFormData } from "@/lib/profile/update";
+
+export async function updateUserPersonalData(formData: FormData) {
+  await requireAdminProfile();
+  const profileId = String(formData.get("profileId") ?? "");
+  if (!profileId) throw new ApiError(400, "Usuário inválido.");
+  await updatePersonalData(profileId, personalDataFromFormData(formData));
+  revalidatePath("/admin/usuarios");
+  revalidatePath(`/admin/usuarios/${profileId}`);
+}
 
 export type DeleteUserState = { error: string | null };
 

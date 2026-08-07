@@ -2,6 +2,9 @@ import { requireProfile } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { setActiveWorkspace } from "@/lib/workspace/switch";
 import { BTN_SECONDARY } from "@/components/ui/buttonStyles";
+import { PersonalDataForm } from "@/components/PersonalDataForm";
+import { formatCPF } from "@/lib/validation/cpf";
+import { updateMyPersonalData } from "./actions";
 import { DeleteAccountForm } from "./DeleteAccountForm";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -26,14 +29,36 @@ export default async function MinhaContaPage() {
   const advisorMemberships = profile.memberships.filter((m) => m.role === "ADVISOR" && m.status === "ACTIVE");
 
   return (
-    <div className="flex max-w-lg flex-col gap-8">
+    <div className="flex max-w-2xl flex-col gap-8">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Minha conta</h1>
         <p className="text-sm text-zinc-500">{profile.email}</p>
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-medium text-zinc-300">Seus workspaces</h2>
+        <h2 className="mb-2 text-sm font-medium text-zinc-300">Dados pessoais</h2>
+        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+          <PersonalDataForm
+            action={updateMyPersonalData}
+            initialValues={{
+              fullName: profile.fullName ?? "",
+              phone: profile.phone ?? "",
+              cpf: profile.cpf ? formatCPF(profile.cpf) : "",
+              birthDate: profile.birthDate ? profile.birthDate.toISOString().slice(0, 10) : "",
+              addressCep: profile.addressCep ?? "",
+              addressStreet: profile.addressStreet ?? "",
+              addressNumber: profile.addressNumber ?? "",
+              addressComplement: profile.addressComplement ?? "",
+              addressNeighborhood: profile.addressNeighborhood ?? "",
+              addressCity: profile.addressCity ?? "",
+              addressState: profile.addressState ?? "",
+            }}
+          />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="mb-2 text-sm font-medium text-zinc-300">Seus usuários do sistema</h2>
         <div className="flex flex-col gap-2">
           {profile.memberships.map((m) => (
             <div key={m.id} className="rounded-lg border border-indigo-900/50 bg-[#131A47] px-3 py-2 text-sm text-zinc-200">
@@ -45,7 +70,7 @@ export default async function MinhaContaPage() {
 
       {advisorMemberships.length > 0 && (
         <div>
-          <h2 className="mb-2 text-sm font-medium text-zinc-300">Meus clientes</h2>
+          <h2 className="mb-2 text-sm font-medium text-zinc-300">Meus clientes da consultoria</h2>
           <p className="mb-3 text-xs text-zinc-500">
             Entrar num cliente troca seu workspace ativo — você passa a ver e editar os dados dele, igual se fosse a
             própria pessoa. O acesso fica registrado (auditoria).

@@ -159,7 +159,14 @@ export default async function AdminUsuariosPage() {
                   <td className="px-3 py-2 text-xs text-zinc-500">
                     {u.last_sign_in_at ? formatDateBR(new Date(u.last_sign_in_at)) : "nunca"}
                   </td>
-                  <td className="px-3 py-2">{u.id !== admin.id && <DeleteUserButton profileId={u.id} label={label} />}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Link href={`/admin/usuarios/${u.id}`} className="text-xs text-indigo-300 hover:text-white">
+                        Editar dados
+                      </Link>
+                      {u.id !== admin.id && <DeleteUserButton profileId={u.id} label={label} />}
+                    </div>
+                  </td>
                 </tr>
               );
             })}
