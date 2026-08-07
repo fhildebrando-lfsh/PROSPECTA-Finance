@@ -12,6 +12,7 @@ import {
   ArrowLeftRight,
   Upload,
   CalendarClock,
+  Calendar,
   Settings2,
   Wallet,
   Users,
@@ -56,6 +57,11 @@ const LANCAMENTOS_ITEMS: NavLeaf[] = [
   { href: "/lancamentos/importar", label: "Importar", icon: Upload },
 ];
 
+const COMPROMISSOS_ITEMS: NavLeaf[] = [
+  { href: "/compromissos", label: "Lista", icon: List },
+  { href: "/compromissos/calendario", label: "Calendário", icon: Calendar },
+];
+
 const ADMIN_ITEMS: NavLeaf[] = [
   { href: "/admin/usuarios", label: "Usuários", icon: ShieldCheck },
   { href: "/admin/clientes", label: "Clientes", icon: UserPlus },
@@ -84,7 +90,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
   const entries: NavEntry[] = [
     { href: "/painel", label: "Painel", icon: LayoutDashboard },
     { label: "Lançamentos", icon: Receipt, items: LANCAMENTOS_ITEMS },
-    { href: "/compromissos", label: "Compromissos", icon: CalendarClock },
+    { label: "Compromissos", icon: CalendarClock, items: COMPROMISSOS_ITEMS },
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },
   ];
   if (isPlatformAdmin) {
