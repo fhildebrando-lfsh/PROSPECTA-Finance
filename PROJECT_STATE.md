@@ -6,7 +6,37 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-07 (continuação).** Teste manual de cadastro
+> **Última atualização real: 2026-08-07 (LGPD).** Usuário testou o formulário de
+> dados pessoais e pediu conformidade real com a LGPD (Lei nº 13.709/2018), não só
+> um aviso decorativo. **`PersonalDataForm`** ganhou trava: campos `disabled` até
+> clicar "Editar"; ao salvar, mostra `LgpdSavedModal` (não mais o toast pequeno)
+> com os direitos do titular e link pra política. **Nova página pública
+> `/politica-privacidade`** — rascunho estruturado pelos artigos da LGPD
+> (controlador, dados coletados, finalidade, base legal, operadores terceiros —
+> Supabase/Vercel/Brevo/Google/ViaCEP —, direitos do titular, retenção,
+> segurança, ANPD). **Tem placeholders `[ENTRE COLCHETES]`** (razão social/CPF do
+> controlador, nome+e-mail do encarregado/DPO) que só o usuário pode preencher —
+> **combinado explicitamente que ele preenche depois**; até lá, não é uma
+> política jurídica válida, só um esqueleto funcional, e não deve ser divulgada
+> pra clientes reais nem tratada como revisada por advogado. **Cadastro por
+> e-mail** ganhou checkbox obrigatório de aceite, validado no servidor (LGPD Art.
+> 8º §2º — ônus da prova é do controlador), gravado em
+> `Profile.privacyPolicyAcceptedAt` (migration aditiva, nullable). **Login com
+> Google não passava por esse checkbox** (fluxo separado) — fechado colocando a
+> checagem em `requireActiveMembership()` (não em `requireProfile()`, de
+> propósito — `/definir-senha` e outras etapas de onboarding usam
+> `requireProfile()` e não devem cair nessa trava no meio do fluxo): qualquer
+> pessoa sem `privacyPolicyAcceptedAt` é redirecionada pra `/aceitar-politica`
+> antes de entrar no app — pega Google **e** contas antigas retroativamente.
+> **Efeito colateral esperado, avisado ao usuário:** todo mundo que já tinha
+> conta (exceto o próprio admin, aceito manualmente durante o teste) vai ver essa
+> tela uma vez no próximo login. **`/api/me/export`** — baixa os dados do
+> `Profile` em JSON (portabilidade, Art. 18); dados financeiros continuam na
+> exportação já existente em Lançamentos, não duplicado. Tudo testado ao vivo:
+> política acessível sem login, export funcionando, trava redirecionando conta
+> antiga corretamente (confirmado contra a própria conta do admin).
+>
+> **Última atualização anterior: 2026-08-07 (continuação).** Teste manual de cadastro
 > agendado pra hoje (deixado pendente na sessão anterior) executado e confirmado:
 > trigger cria perfil+workspace certo, e-mail chega, conta de teste limpa depois.
 > **`/minha-conta` ganhou `identifyPerson()`/`firstTwoNames()`** (`lib/format.ts`) —
