@@ -6,7 +6,17 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-07.** **Dados pessoais** — migration aditiva no
+> **Última atualização real: 2026-08-07 (continuação).** Teste manual de cadastro
+> agendado pra hoje (deixado pendente na sessão anterior) executado e confirmado:
+> trigger cria perfil+workspace certo, e-mail chega, conta de teste limpa depois.
+> **`/minha-conta` ganhou `identifyPerson()`/`firstTwoNames()`** (`lib/format.ts`) —
+> "Seus usuários do sistema" e "Meus clientes da consultoria" agora mostram o
+> **titular** de cada workspace (2 primeiros nomes + e-mail, ex.: "Luis Felipe —
+> entreviaserodovias@gmail.com") em vez do nome do workspace, que podia repetir/
+> confundir entre clientes parecidos. Pedido do usuário depois de ver a tela real
+> em produção. Testado ao vivo.
+>
+> **Última atualização anterior: 2026-08-07.** **Dados pessoais** — migration aditiva no
 > `Profile` (telefone, CPF, data de nascimento, endereço completo com CEP, tudo
 > nullable). `PersonalDataForm` (`components/`) compartilhado entre `/minha-conta`
 > (a própria pessoa) e `/admin/usuarios/:id` (novo, admin edita qualquer pessoa) —
