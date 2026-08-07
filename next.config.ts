@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   // `webpack` presente e recusa rodar sob Turbopack por segurança. Um
   // `turbopack: {}` vazio confirma "sim, sei o que estou fazendo".
   turbopack: {},
+  // pdfkit lê as fontes padrão (Helvetica etc.) do disco via `__dirname` em
+  // tempo de execução — empacotado pelo bundler, `__dirname` vira um caminho
+  // virtual que não existe. Mantendo fora do bundle, roda como módulo Node
+  // normal e acha os arquivos de verdade.
+  serverExternalPackages: ["pdfkit"],
 };
 
 // Serwist ainda não suporta Turbopack nativamente (o default do Next 16).

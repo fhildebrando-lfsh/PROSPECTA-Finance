@@ -77,18 +77,6 @@ export default async function MinhaContaPage() {
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-medium text-zinc-300">Privacidade e dados</h2>
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4 text-sm">
-          <a href="/api/me/export" download className="text-indigo-300 underline hover:text-white">
-            Baixar meus dados pessoais (JSON)
-          </a>
-          <Link href="/politica-privacidade" target="_blank" className="text-indigo-300 underline hover:text-white">
-            Política de Privacidade
-          </Link>
-        </div>
-      </div>
-
-      <div>
         <h2 className="mb-2 text-sm font-medium text-zinc-300">Seus usuários do sistema</h2>
         <div className="flex flex-col gap-2">
           {profile.memberships.map((m) => (
@@ -125,6 +113,22 @@ export default async function MinhaContaPage() {
           </div>
         </div>
       )}
+
+      <div>
+        <h2 className="mb-2 text-sm font-medium text-zinc-300">Privacidade e dados</h2>
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4 text-sm">
+          <span className="text-zinc-400">Baixar meus dados pessoais:</span>
+          <a href="/api/me/export?format=json" download className="text-indigo-300 underline hover:text-white">
+            JSON
+          </a>
+          <a href="/api/me/export?format=pdf" download className="text-indigo-300 underline hover:text-white">
+            PDF
+          </a>
+          <Link href="/politica-privacidade" target="_blank" className="text-indigo-300 underline hover:text-white">
+            Política de Privacidade
+          </Link>
+        </div>
+      </div>
 
       <div>
         <h2 className="mb-2 text-sm font-medium text-zinc-300">Zona de risco</h2>
