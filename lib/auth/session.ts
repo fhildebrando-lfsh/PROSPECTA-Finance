@@ -78,6 +78,15 @@ export function resolveActiveMembership<T extends MembershipLike>(
  */
 export async function requireActiveMembership() {
   const profile = await requireProfile();
+
+  // LGPD — trava a entrada no app pra quem nunca aceitou a Política de
+  // Privacidade: contas criadas via Google (não passa pelo checkbox do
+  // cadastro por e-mail) e contas antigas de antes deste campo existir.
+  // Fica aqui (não em requireProfile) de propósito — /definir-senha e outras
+  // etapas de onboarding também chamam requireProfile() e não devem cair
+  // nessa trava no meio do fluxo.
+  if (!profile.privacyPolicyAcceptedAt) redirect("/aceitar-politica");
+
   const cookieStore = await cookies();
   const requested = cookieStore.get(ACTIVE_WORKSPACE_COOKIE)?.value;
   const membership = resolveActiveMembership(profile.memberships, requested);

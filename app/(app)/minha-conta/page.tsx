@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireProfile } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -72,6 +73,18 @@ export default async function MinhaContaPage() {
               addressState: profile.addressState ?? "",
             }}
           />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="mb-2 text-sm font-medium text-zinc-300">Privacidade e dados</h2>
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4 text-sm">
+          <a href="/api/me/export" download className="text-indigo-300 underline hover:text-white">
+            Baixar meus dados pessoais (JSON)
+          </a>
+          <Link href="/politica-privacidade" target="_blank" className="text-indigo-300 underline hover:text-white">
+            Política de Privacidade
+          </Link>
         </div>
       </div>
 

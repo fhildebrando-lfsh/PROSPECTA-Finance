@@ -131,6 +131,24 @@ function LoginForm() {
             </label>
           )}
 
+          {mode === "signup" && (
+            <label className="flex items-start gap-2 text-xs text-zinc-400">
+              <input type="checkbox" name="acceptPrivacyPolicy" required className="mt-0.5" />
+              <span>
+                Li e aceito a{" "}
+                <a
+                  href="/politica-privacidade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-300 underline hover:text-white"
+                >
+                  Política de Privacidade
+                </a>
+                , conforme a LGPD.
+              </span>
+            </label>
+          )}
+
           {mode === "login" && (
             <button
               type="button"

@@ -55,6 +55,13 @@ model Profile {
   addressCity         String?   @map("address_city")
   addressState        String?   @map("address_state")
 
+  /// LGPD (2026-08-07) — quando a pessoa aceitou a Política de Privacidade no
+  /// cadastro. Nullable de propósito: contas criadas antes deste campo existir
+  /// não têm registro retroativo (nunca inventamos consentimento que não
+  /// aconteceu) — só cadastros novos passam a exigir e gravar isso. Serve como
+  /// prova do consentimento (LGPD Art. 8º §2º: o ônus da prova é do controlador).
+  privacyPolicyAcceptedAt DateTime? @map("privacy_policy_accepted_at")
+
   memberships Membership[]
   accessLogs  AccessLog[]
 
