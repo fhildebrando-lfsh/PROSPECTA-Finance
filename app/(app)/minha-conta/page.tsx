@@ -1,9 +1,11 @@
 import { requireProfile } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { setActiveWorkspace } from "@/lib/workspace/switch";
 import { BTN_SECONDARY } from "@/components/ui/buttonStyles";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { formatCPF } from "@/lib/validation/cpf";
+import { identifyPerson } from "@/lib/format";
 import { updateMyPersonalData } from "./actions";
 import { DeleteAccountForm } from "./DeleteAccountForm";
 
@@ -27,6 +29,22 @@ export default async function MinhaContaPage() {
   }
 
   const advisorMemberships = profile.memberships.filter((m) => m.role === "ADVISOR" && m.status === "ACTIVE");
+
+  // Identifica cada workspace pelo titular dele (nome + e-mail), não pelo
+  // nome do workspace em si — mais fácil de diferenciar quando há vários
+  // clientes com nomes de workspace parecidos.
+  const workspaceIds = profile.memberships.map((m) => m.workspaceId);
+  const [titularMemberships, { data: authData }] = await Promise.all([
+    prisma.membership.findMany({
+      where: { workspaceId: { in: workspaceIds }, role: "TITULAR", status: "ACTIVE" },
+      include: { profile: true },
+    }),
+    createAdminClient().auth.admin.listUsers({ perPage: 1000 }),
+  ]);
+  const emailByProfileId = new Map(authData.users.map((u) => [u.id, u.email ?? ""]));
+  const titularByWorkspaceId = new Map(
+    titularMemberships.map((t) => [t.workspaceId, identifyPerson(t.profile.fullName, emailByProfileId.get(t.profileId) ?? "")]),
+  );
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
@@ -62,7 +80,8 @@ export default async function MinhaContaPage() {
         <div className="flex flex-col gap-2">
           {profile.memberships.map((m) => (
             <div key={m.id} className="rounded-lg border border-indigo-900/50 bg-[#131A47] px-3 py-2 text-sm text-zinc-200">
-              {m.workspace.name} <span className="text-xs text-zinc-500">· {ROLE_LABELS[m.role] ?? m.role}</span>
+              {titularByWorkspaceId.get(m.workspaceId) ?? m.workspace.name}{" "}
+              <span className="text-xs text-zinc-500">· {ROLE_LABELS[m.role] ?? m.role}</span>
             </div>
           ))}
         </div>
@@ -81,7 +100,7 @@ export default async function MinhaContaPage() {
                 key={m.id}
                 className="flex items-center justify-between gap-3 rounded-lg border border-indigo-900/50 bg-[#131A47] px-3 py-2"
               >
-                <span className="text-sm text-zinc-200">{m.workspace.name.replace(/ \(cliente\)$/, "")}</span>
+                <span className="text-sm text-zinc-200">{titularByWorkspaceId.get(m.workspaceId) ?? m.workspace.name}</span>
                 <form action={setActiveWorkspace}>
                   <input type="hidden" name="workspaceId" value={m.workspaceId} />
                   <button type="submit" className={BTN_SECONDARY}>

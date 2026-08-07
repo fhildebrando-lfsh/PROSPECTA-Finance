@@ -30,3 +30,16 @@ export function toWhatsAppDigits(raw: string): string {
   if (!digits) return "";
   return digits.length <= 11 ? `55${digits}` : digits;
 }
+
+/** Primeiro + segundo nome, pra identificar gente em listas curtas sem o nome
+ * completo tomar o espaço todo (ex.: junto do e-mail em "Meus clientes"). */
+export function firstTwoNames(fullName: string | null): string | null {
+  if (!fullName) return null;
+  return fullName.trim().split(/\s+/).slice(0, 2).join(" ") || null;
+}
+
+/** "Nome Sobrenome — email@x.com", com fallback pro e-mail sozinho sem nome. */
+export function identifyPerson(fullName: string | null, email: string): string {
+  const name = firstTwoNames(fullName);
+  return name ? `${name} — ${email}` : email;
+}
