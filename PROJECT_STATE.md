@@ -6,7 +6,22 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-07 (LGPD — portabilidade ampliada).** Usuário pediu
+> **Última atualização real: 2026-08-07 (Compromissos — aba Calendário).** Usuário pediu
+> um calendário mensal com os compromissos dentro do menu Compromissos. Sidebar: "Compromissos"
+> virou grupo com "Lista" (tela de sempre) e "Calendário" (nova); as duas telas também
+> ganharam um par de abas Lista/Calendário no topo, pra funcionar sem a sidebar no mobile.
+> Nova **`/compromissos/calendario`** (`app/(app)/compromissos/calendario/page.tsx`) —
+> grade mensal dom-sáb (navegação Anterior/Hoje/Próximo via `?month=YYYY-MM`), até 3
+> compromissos por dia (vencidos em destaque vermelho, `+N mais` quando passa disso),
+> clicar num dia seleciona (`?day=YYYY-MM-DD`) e abre um painel abaixo com a lista
+> completa daquele dia, reaproveitando a mesma `markSettled()` (Server Action) já usada
+> na Lista — "Marcar como pago/recebido" funciona igual nos dois lugares. Mesmo filtro
+> de sempre (`statusCode` `A_PAGAR`/`A_RECEBER`, workspace ativo). Testado ao vivo (magic
+> link, sem senha) contra a conta real: grade de agosto/2026 renderizou os compromissos
+> reais nos dias certos, clicar em 10/08 abriu os 4 lançamentos daquele dia (incluindo o
+> que estava atrás do "+1 mais").
+>
+> **Última atualização anterior: 2026-08-07 (LGPD — portabilidade ampliada).** Usuário pediu
 > pra mover "Privacidade e dados" pra cima da Zona de risco em `/minha-conta`, e pra
 > trocar o download único de JSON por uma escolha entre JSON e PDF — incluindo agora
 > os **lançamentos financeiros** no export, não só o `Profile`: dado financeiro
