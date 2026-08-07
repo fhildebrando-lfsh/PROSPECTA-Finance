@@ -23,7 +23,10 @@
 > produção local até adicionar `serverExternalPackages: ["pdfkit"]` no
 > `next.config.ts`. Testado ao vivo (magic link, sem senha) contra a conta real do
 > admin: JSON com 1085 lançamentos, PDF de ~41KB baixando limpo, ambos com o
-> `content-disposition` certo.
+> `content-disposition` certo. **Usuário confirmou de novo, depois de testar tudo em
+> produção:** os placeholders `[ENTRE COLCHETES]` de `/politica-privacidade` (razão
+> social/CPF do controlador, nome+e-mail do encarregado/DPO) continuam de propósito
+> pra ele preencher depois — não é pendência técnica, não retomar sozinho.
 >
 > **Última atualização anterior: 2026-08-07 (LGPD).** Usuário testou o formulário de
 > dados pessoais e pediu conformidade real com a LGPD (Lei nº 13.709/2018), não só
