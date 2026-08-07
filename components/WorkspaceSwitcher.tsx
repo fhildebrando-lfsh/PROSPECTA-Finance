@@ -36,7 +36,7 @@ export function WorkspaceSwitcher({
   const isAdvisorHere = current?.role === "ADVISOR";
 
   return (
-    <div>
+    <div className="min-w-0 flex-1">
       {memberships.length <= 1 ? (
         <p className="truncate text-sm font-medium text-white">{current?.workspaceName ?? "Sem workspace"}</p>
       ) : (
