@@ -6,7 +6,26 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-07 (LGPD).** Usuário testou o formulário de
+> **Última atualização real: 2026-08-07 (LGPD — portabilidade ampliada).** Usuário pediu
+> pra mover "Privacidade e dados" pra cima da Zona de risco em `/minha-conta`, e pra
+> trocar o download único de JSON por uma escolha entre JSON e PDF — incluindo agora
+> os **lançamentos financeiros** no export, não só o `Profile`: dado financeiro
+> também é dado pessoal protegido pela LGPD (Art. 18, V — portabilidade). `/api/me/
+> export` ganhou `?format=json|pdf` (padrão `json`) e passa a buscar os lançamentos
+> das workspaces onde a pessoa é `TITULAR`/`MEMBRO`/`LEITURA` — **exclui de propósito**
+> onde ela é só `ADVISOR` (dado do cliente, não dela), reaproveitando `toExportRow()`
+> já usado na exportação de Lançamentos. PDF gerado com **`pdfkit`** (dependência
+> nova, nenhuma outra lib de PDF existia) via novo `lib/me/export-pdf.ts` — lista
+> simples (sem tabela desenhada, pdfkit não tem grid nativo) com dados pessoais,
+> workspaces e lançamentos. **Achado no meio do caminho:** o Turbopack (dev padrão do
+> Next 16) empacotava o `pdfkit` e quebrava a leitura das fontes padrão em disco
+> (`Helvetica.afm` via `__dirname`, que vira caminho virtual sob bundle) — 500 em
+> produção local até adicionar `serverExternalPackages: ["pdfkit"]` no
+> `next.config.ts`. Testado ao vivo (magic link, sem senha) contra a conta real do
+> admin: JSON com 1085 lançamentos, PDF de ~41KB baixando limpo, ambos com o
+> `content-disposition` certo.
+>
+> **Última atualização anterior: 2026-08-07 (LGPD).** Usuário testou o formulário de
 > dados pessoais e pediu conformidade real com a LGPD (Lei nº 13.709/2018), não só
 > um aviso decorativo. **`PersonalDataForm`** ganhou trava: campos `disabled` até
 > clicar "Editar"; ao salvar, mostra `LgpdSavedModal` (não mais o toast pequeno)
