@@ -6,7 +6,24 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-06 (mais uma continuação).** Nova aba **Admin →
+> **Última atualização real: 2026-08-07.** **Dados pessoais** — migration aditiva no
+> `Profile` (telefone, CPF, data de nascimento, endereço completo com CEP, tudo
+> nullable). `PersonalDataForm` (`components/`) compartilhado entre `/minha-conta`
+> (a própria pessoa) e `/admin/usuarios/:id` (novo, admin edita qualquer pessoa) —
+> mesma `updatePersonalData()`, só muda o `profileId` alvo. CPF validado por dígito
+> verificador (`lib/validation/cpf.ts`, com testes). CEP busca endereço automático
+> via ViaCEP no blur do campo (testado ao vivo: CEP da Av. Paulista preencheu
+> logradouro/bairro/cidade/UF certos). "Excluir" um campo = deixar em branco e
+> salvar, vira `null` — não tem exclusão seletiva separada. Rótulos renomeados a
+> pedido do usuário: "Seus workspaces" → "Seus usuários do sistema", "Meus
+> clientes" → "Meus clientes da consultoria". Testado ao vivo (nome, telefone, CPF,
+> data de nascimento, CEP→endereço) contra a conta real do usuário, dados de teste
+> removidos depois. **Nota:** sessão teve instabilidade real de máquina (PC
+> reiniciou sozinho no meio do trabalho, depois ficou lento a ponto do usuário pedir
+> pra executar por partes) — nenhum dado ou código foi perdido (tudo em disco/no
+> banco remoto sobrevive a reinício local), só atrasou a verificação ao vivo.
+>
+> **Última atualização anterior: 2026-08-06 (mais uma continuação).** Nova aba **Admin →
 > Consultores** (`/admin/consultores`) — visão em árvore de "quem atende quem": um
 > card por consultor com a lista de clientes atendidos indentada logo abaixo, e um
 > card separado "sem consultor atribuído" pros clientes que ainda não têm ninguém.
