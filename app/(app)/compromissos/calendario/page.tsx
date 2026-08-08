@@ -158,7 +158,7 @@ export default async function CompromissosCalendarioPage({
                     isSelected
                       ? "border-amber-500 bg-amber-500/10"
                       : inMonth
-                        ? "border-indigo-900/50 bg-[#131A47] hover:border-indigo-700"
+                        ? "border-indigo-900/50 bg-[#3264a8] hover:border-amber-400"
                         : "border-transparent bg-transparent opacity-40 hover:opacity-70"
                   }`}
                 >
@@ -175,8 +175,8 @@ export default async function CompromissosCalendarioPage({
                     {visible.map((entry) => (
                       <span
                         key={entry.id}
-                        className={`truncate rounded px-1 py-0.5 text-[10px] leading-tight ${
-                          overdue ? "bg-rose-950/60 text-rose-300" : "bg-indigo-900/60 text-indigo-200"
+                        className={`truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${
+                          overdue ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"
                         }`}
                       >
                         {entry.description}

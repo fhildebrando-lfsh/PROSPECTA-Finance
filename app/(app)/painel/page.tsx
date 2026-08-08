@@ -216,12 +216,12 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         </div>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+      <div className="grid min-w-0 gap-6 sm:grid-cols-2">
+        <div className="min-w-0 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
           <h2 className="mb-3 text-sm font-medium text-indigo-300">Top 5 receitas</h2>
           <RankingList entries={topReceitas} entryDisplay={entryDisplay} tone="emerald" />
         </div>
-        <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+        <div className="min-w-0 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
           <h2 className="mb-3 text-sm font-medium text-indigo-300">Top 5 despesas</h2>
           <RankingList entries={topDespesas} entryDisplay={entryDisplay} tone="red" />
         </div>
