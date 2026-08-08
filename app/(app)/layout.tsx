@@ -9,11 +9,17 @@ import { logout } from "./actions";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, membership: activeMembership } = await requireActiveMembership();
-  const membershipOptions = profile.memberships.map((m) => ({
-    workspaceId: m.workspaceId,
-    workspaceName: m.workspace.name,
-    role: m.role,
-  }));
+  // Só memberships ACTIVE são exibidas — uma REVOKED (ex.: consultor trocado, ver
+  // lib/workspace/advisor.ts::assignAdvisor) nunca deve aparecer como opção
+  // selecionável no seletor de workspace; escolhê-la seria rejeitado do mesmo jeito
+  // por setActiveWorkspace(), só que como um erro genérico em vez de nem aparecer.
+  const membershipOptions = profile.memberships
+    .filter((m) => m.status === "ACTIVE")
+    .map((m) => ({
+      workspaceId: m.workspaceId,
+      workspaceName: m.workspace.name,
+      role: m.role,
+    }));
 
   return (
     <SidebarProvider>

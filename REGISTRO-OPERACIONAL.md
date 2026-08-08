@@ -428,7 +428,41 @@
 
 ---
 
-## Próximo número de registro: **029**
+### Registro Nº 029
+- **Data:** 2026-08-08
+- **Etapa concluída:** Bug real corrigido — seletor de workspace listava membership
+  REVOKED, causando erro ao trocar para "prospecta (cliente)"
+- **Descrição:** Usuário (atuando como consultor) reportou erro ("Algo deu errado") ao
+  tentar entrar no workspace "prospecta (cliente)" pelo seletor, enquanto trocar para
+  "Luis Felipe da Silva Hildebrando (pessoal)" funcionava normalmente. Investigado
+  diretamente no banco: a Membership ADVISOR do usuário para "prospecta (cliente)" foi
+  **revogada** em 2026-08-07 (o consultor daquele workspace foi trocado para Daniela
+  Araújo, via `assignAdvisor()` — revogar nunca apaga a relação anterior, só muda o
+  `status`). Causa raiz: `app/(app)/layout.tsx` construía a lista de workspaces do
+  seletor a partir de **todas** as `profile.memberships`, sem filtrar por
+  `status === "ACTIVE"` — uma membership REVOKED continuava aparecendo como opção
+  clicável. Ao escolhê-la, `setActiveWorkspace()` (que já checa `status === "ACTIVE"`
+  corretamente) rejeitava com um `throw new Error(...)` genérico, que o Next.js
+  capturava no `app/error.tsx` — daí a tela de erro. Bug pré-existente à sessão atual
+  (parte do seletor de workspace multi-membership da Arquitetura de Identidade/Planos,
+  Fase 2 Etapa 3), nunca antes exercido em produção com uma membership revogada
+  misturada a outras ativas para o mesmo usuário — só ficou visível agora que essa
+  combinação de dados passou a existir de verdade. Corrigido com um filtro
+  `.filter((m) => m.status === "ACTIVE")` antes de montar `membershipOptions`.
+  Verificado que os outros lugares que leem `profile.memberships` (`minha-conta/page.tsx`)
+  já filtravam corretamente antes de qualquer ação clicável — só o seletor tinha o gap.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** reproduzido diretamente no banco (script descartável) e confirmado que
+  a correção remove "prospecta (cliente)" da lista de opções do seletor sem afetar os
+  workspaces com membership ativa. 171 testes automatizados, `tsc --noEmit` e
+  `npm run build` limpos (53 rotas).
+- **Documentos relacionados:** `app/(app)/layout.tsx`, `lib/workspace/switch.ts`,
+  `lib/workspace/advisor.ts`, `PROJECT_STATE.md` (entrada de 2026-08-08).
+
+---
+
+## Próximo número de registro: **030**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

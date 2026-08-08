@@ -15,7 +15,43 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-08 (Compromissos → Incidentes — Registro Nº 026).**
+> **Última atualização real: 2026-08-08 (bug real: seletor de workspace listava
+> membership REVOKED — Registro Nº 029).** Usuário (atuando como consultor) reportou
+> erro genérico ao trocar para o workspace "prospecta (cliente)" pelo seletor, enquanto
+> outro workspace funcionava normalmente.
+>
+> **Causa raiz:** `app/(app)/layout.tsx` construía `membershipOptions` (a lista que
+> alimenta `Sidebar`/`WorkspaceSwitcher`) a partir de **todas** as `profile.memberships`
+> retornadas por `getCurrentProfile()`, sem filtrar por `status`. A Membership `ADVISOR`
+> do usuário para "prospecta (cliente)" tinha sido **revogada** em 2026-08-07 (consultor
+> trocado para outra pessoa via `assignAdvisor()` — revogar só muda `status`, nunca
+> apaga a linha). Uma membership `REVOKED` continuava aparecendo como opção clicável no
+> seletor; ao escolhê-la, `setActiveWorkspace()` (que já valida `status === "ACTIVE"`
+> corretamente) rejeitava com `throw new Error("Sem acesso a este workspace.")` — um
+> `throw` cru de Server Action, capturado pelo `app/error.tsx` genérico. Bug
+> pré-existente ao seletor de workspace multi-membership (Arquitetura de
+> Identidade/Planos, Fase 2 Etapa 3, muito anterior a esta sessão) — o próprio
+> `WorkspaceSwitcher.tsx` já documentava que esse cenário multi-membership "ainda não
+> existe em produção" na época em que foi escrito; só ficou visível agora que o usuário
+> passou a ter, de verdade, uma membership revogada misturada com outras ativas.
+>
+> **Correção:** um `.filter((m) => m.status === "ACTIVE")` antes de montar
+> `membershipOptions`. Conferido que os outros lugares que leem `profile.memberships`
+> (`minha-conta/page.tsx`, seções "Titular"/"Meus clientes da consultoria") já filtravam
+> corretamente antes de qualquer botão/link clicável — só a lista do seletor tinha o
+> gap; a lista puramente informativa "Seus usuários do sistema" (sem ação nenhuma
+> anexada) continua mostrando o histórico completo, de propósito.
+>
+> **Verificado direto no banco** (script descartável): confirmado que a lista antes do
+> fix incluía "prospecta (cliente)" com `status: REVOKED`, e depois do fix não inclui
+> mais. 171 testes, `tsc --noEmit` e `npm run build` limpos (o build teve um segfault
+> transitório do Node na primeira tentativa, sem relação com a mudança — passou limpo na
+> segunda).
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 029).
+>
+> **Última atualização anterior: 2026-08-08 (Compromissos → Incidentes — Registro Nº 026).**
 > O usuário pediu uma aba dedicada para "erros de lançamento" que precisam de edição,
 > citando como exemplo as parcelas órfãs que a correção do Registro Nº 025 tinha
 > deliberadamente deixado de fora (sem par correspondente, revisão manual).
