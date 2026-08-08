@@ -6,7 +6,49 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-07 (Compromissos — aba Calendário).** Usuário pediu
+> **Última atualização real: 2026-08-08 (Mobile — menu lateral + saga do overflow horizontal).**
+> Depois de testar o calendário novo pelo celular de verdade, o usuário pediu 3 coisas: (1)
+> menu lateral igual à versão web também no mobile, (2) a tela abrindo com "zoom" — precisava
+> dar zoom out pra ver direito —, e (3) os cards "Top 5 receitas"/"Top 5 despesas"
+> desproporcionais. **(1) Menu lateral no mobile:** `Sidebar` (mesmo componente/conteúdo da
+> versão web — Painel, Lançamentos, Compromissos, Cadastros, Admin, Minha conta) virou também
+> um drawer deslizante no celular, controlado por `components/SidebarContext.tsx`
+> (`SidebarProvider`/`useSidebar`, estado `mobileOpen` compartilhado entre o botão hambúrguer
+> do header e o próprio `Sidebar`, que vivem em pontos diferentes da árvore) + novo
+> `components/MobileMenuButton.tsx`. Fecha sozinho ao navegar, no X, ou clicando no fundo
+> escurecido. A barra inferior antiga (`components/MobileNav.tsx`) foi removida — ficou
+> redundante. **(2)+(3) eram o mesmo bug, achado por partes:** a causa raiz de verdade só foi
+> encontrada medindo `scrollWidth`/`clientWidth` direto no navegador (técnica: forçar
+> `width: min-content` num elemento via JS e ler o `scrollWidth` resultante — revela o
+> min-content real de um elemento sem precisar adivinhar). **Lição gravada:** `min-width: 0`
+> só permite um flex/grid item *encolher dentro de um espaço já definido* — **não** reduz o
+> "tamanho mínimo automático" que o próprio container pede quando ele mesmo ainda não tem uma
+> largura definida (ex.: um `<div className="grid">` sem `min-w-0` que é filho de um
+> `flex-col` sem largura fixa). Ao longo da investigação, 3 correções foram aplicadas nessa
+> ordem, cada uma resolvendo *parte* do sintoma: `app/(app)/layout.tsx` (os dois wrappers flex
+> do layout raiz não tinham `min-w-0`), `components/WorkspaceSwitcher.tsx` (o `<select>` de
+> trocar workspace, quando a pessoa tem 2+ memberships, vive numa linha flex do header sem
+> `min-w-0`), e `RankingList` truncate sem `min-w-0`/`shrink-0` na linha flex do item. **Só
+> depois de medir ao vivo é que a causa raiz *completa* apareceu**: o próprio grid
+> `Top 5 receitas`/`Top 5 despesas` (`app/(app)/painel/page.tsx`) e cada card dentro dele
+> também precisavam de `min-w-0` — sem isso, uma descrição de lançamento comprida (ex.:
+> "APTO FINANC. CEF - R VICENTE GOLFETO, 25") fazia o card pedir 435px de largura mínima,
+> empurrando a página inteira pra 453px numa tela de 375px — daí o navegador "dar zoom out"
+> sozinho pra caber tudo. Confirmado ao vivo: `document.body.scrollWidth` bateu exatamente
+> com `window.innerWidth` (375=375) depois da correção — nenhum overflow sobrando em
+> `/painel` nem em `/compromissos/calendario`. **Efeito colateral descoberto no meio do
+> caminho:** o cache local do Turbopack corrompeu (`Cache corruption detected: checksum
+> mismatch`) depois de vários start/stop forçados durante um período de instabilidade da
+> máquina do usuário — resolvido limpando `.next` (mesmo problema/mesma solução já registrada
+> em 2026-08-01). **Calendário** (pedido à parte, mesma sessão): fundo cinza (card) só na
+> área da grade (antes tinha ficado com a mesma cor da célula individual, sem contraste);
+> célula da data agora em `#3264a8`; chips de compromisso dentro da célula viraram fundo
+> sólido — verde (`emerald-600`) pros que ainda não venceram, vermelho (`rose-600`) pros
+> vencidos — trocando o azul anterior, que não tinha contraste nenhum contra o novo fundo
+> azul da célula. **Usuário confirmou tudo funcionando** depois do deploy ("testei, ficou
+> bom").
+>
+> **Última atualização anterior: 2026-08-07 (Compromissos — aba Calendário).** Usuário pediu
 > um calendário mensal com os compromissos dentro do menu Compromissos. Sidebar: "Compromissos"
 > virou grupo com "Lista" (tela de sempre) e "Calendário" (nova); as duas telas também
 > ganharam um par de abas Lista/Calendário no topo, pra funcionar sem a sidebar no mobile.
