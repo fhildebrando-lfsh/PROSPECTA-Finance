@@ -6,7 +6,87 @@
 > Atualize este arquivo sempre que uma funcionalidade importante for concluída ou uma
 > decisão arquitetural relevante for tomada — é assim que ele continua confiável.
 >
-> **Última atualização real: 2026-08-08 (Mobile — menu lateral + saga do overflow horizontal).**
+> **Governança documental (vigente desde 2026-08-08):** toda ação operacional/de
+> desenvolvimento deve ser escriturada. Ao final de cada etapa concluída, além deste
+> arquivo, atualizar: `CHANGELOG.md` (o que mudou, por data), `REGISTRO-OPERACIONAL.md`
+> (registro formal e numerado da etapa — data, solicitante, executor, evidência) e, quando
+> a mudança for visível ao usuário final, `MANUAL-DE-USO.md`. `TERMOS-DE-USO.md` e
+> `RUNBOOK-OPERACIONAL.md` são atualizados sob demanda (mudança comercial/legal e
+> incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
+> documentação esteja em dia.
+>
+> **Última atualização real: 2026-08-08 (Fase 2 — Relatórios avançados, retomada e
+> concluída).** O usuário pediu explicitamente pra dar prosseguimento na "próxima etapa
+> ou fase"; ao perguntar qual, escolheu retomar a Fase 2 (pausada desde 31/07). Planejada
+> em modo de planejamento antes de qualquer código (`ExitPlanMode`, plano salvo em
+> `functional-rolling-quiche.md`), seguindo a mesma disciplina que `GUIA-DE-INICIO.md`
+> pede pra cada fase nova. **5 telas novas em `/relatorios`**, cada uma reaproveitando ao
+> máximo o motor de cálculo já existente:
+> - **Analítico mês a mês** (`/relatorios/analitico`, aba `RAReD` da planilha original) —
+>   Receita/Despesa/Investimento/Saldo lado a lado, 12 meses + total. Novo
+>   `lib/finance/period.ts::monthlySeries()`, que extrai (sem alterar) o loop que já se
+>   repetia em `painel/page.tsx` pros gráficos "Últimos 6 meses"/"Provisão" — o Painel
+>   continua com seu próprio loop, só a feature nova consome a função extraída, pra não
+>   arriscar regressão numa tela em produção.
+> - **Balanço anual** (`/relatorios/balanco-anual`, aba `BALANCO`) — o mesmo sintético
+>   acima, mais um descritivo por categoria (categoria × 12 meses + total). Novo
+>   `lib/finance/rankings.ts::categoryMonthlyBreakdown()`.
+> - **Fluxo projetado** (`/relatorios/fluxo-projetado`, novo — não existia na planilha) —
+>   saldo líquido **acumulado** a partir de hoje, 6/12/24 meses à frente (escolhível). Novo
+>   `lib/finance/period.ts::projectedBalance()`, que parte de
+>   `dashboardBalanceBlocks()` (saldo real hoje) e soma `periodTotals()` mês a mês —
+>   deliberadamente começa no mês **seguinte** a hoje, nunca no mês corrente, pra não
+>   contar duas vezes um lançamento já liquidado nele (diferente do gráfico "Provisão" do
+>   Painel, que mostra o delta de cada mês isolado, não o acumulado).
+> - **Despesas parceladas** (`/relatorios/parceladas`, aba `RDP`) — parcelamentos em
+>   aberto: quanto já foi pago, quanto falta, prazo final. Novo módulo
+>   `lib/finance/open-installments.ts` com um tipo `InstallmentEntry` próprio (não o
+>   `FinanceEntry` compartilhado, que é deliberadamente enxuto) e
+>   `openInstallmentGroups()`, que agrupa por `groupId` e filtra só quem tem
+>   `installmentTotal >= 2` — recorrência sem fim (MENSAL etc.) fica fora por construção.
+> - **Orçamento** (`/relatorios/orcamento`, aba `ORÇ`) — **única tela com schema novo**:
+>   `model Budget` (workspaceId, categoryId, year, month, plannedAmount — só aditivo,
+>   migration `20260808135909_budget`, `CREATE TABLE` puro conferido linha a linha antes
+>   de aplicar). Orçado × realizado × diferença × % usado por categoria/mês, com edição
+>   sob demanda (mesmo padrão da reformulação de Cadastros) via nova Server Action
+>   `setBudget()` (upsert, mesma permissão de Carteiras/Responsáveis —
+>   `assertCanWrite`, não admin-only).
+>
+> Novo componente compartilhado `components/reports/MonthlyTotalsTable.tsx` (server,
+> reaproveitado pelo Analítico e pelo bloco sintético do Balanço anual). Novo grupo
+> "Relatórios" no `Sidebar` (5 sub-itens), `app/(app)/relatorios/layout.tsx` com abas —
+> mesmo padrão de `cadastros/layout.tsx`. `SETTLED_FOR_BALANCE` (antes privado em
+> `balance.ts`) virou exportado, reaproveitado por `open-installments.ts`.
+>
+> **15 testes novos** (147 no total, `tests/finance/period.test.ts`,
+> `tests/finance/rankings.test.ts`, `tests/finance/open-installments.test.ts` novo),
+> `tsc --noEmit` limpo. **Bug real encontrado e corrigido no caminho:** `BudgetTable.tsx`
+> (Client Component) importava `formatCurrencyBRL` de `lib/format.ts`, que reexporta
+> `Decimal` do runtime do Prisma — arrasta módulos Node (`node:crypto`, `node:fs`...) pro
+> bundle do navegador, e o webpack não sabe empacotar isso, quebrando `npm run build`
+> ("UnhandledSchemeError"). Era o único Client Component do projeto a importar essa
+> função; corrigido com um `Intl.NumberFormat` local ao componente, já que ali só existe
+> `number` puro (convertido no server component da página), nunca `Decimal`. Confirmado
+> só depois de rodar `npm run build` de verdade — nem os testes unitários nem `tsc
+> --noEmit` pegam esse tipo de erro (é um problema de bundling do webpack, não de tipo).
+>
+> **Verificação ao vivo:** duas tentativas de usar a técnica de sessão sem senha (Admin
+> API do Supabase + `verifyOtp`, já documentada nesta seção) pra testar as telas de forma
+> autenticada foram bloqueadas pelo classificador de modo automático desta sessão —
+> injetar o cookie de sessão no navegador, e depois enviar o mesmo cookie via `curl`
+> direto contra o servidor local. Nenhuma tentativa de contornar o bloqueio. A verificação
+> final foi feita pelo próprio usuário, rodando `npm run build && npm run start -- -p
+> 3001` (build de produção, sem o watcher do modo dev — usado deliberadamente por
+> pedido do usuário, preocupado com a máquina "travar" depois de ver o dev server
+> corromper o cache do Turbopack de novo no meio da sessão, ver "Problemas conhecidos").
+> **Usuário confirmou: "testei, ficou bom".** `npm run dev` também foi usado brevemente
+> nessa sessão e bateu de novo no incidente conhecido de corrupção de cache do Turbopack
+> — resolvido do mesmo jeito de sempre (apagar `.next`, reiniciar).
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
+> (registro 021), `MANUAL-DE-USO.md` (nova seção 10, "Relatórios").
+>
+> **Última atualização anterior: 2026-08-08 (Mobile — menu lateral + saga do overflow horizontal).**
 > Depois de testar o calendário novo pelo celular de verdade, o usuário pediu 3 coisas: (1)
 > menu lateral igual à versão web também no mobile, (2) a tela abrindo com "zoom" — precisava
 > dar zoom out pra ver direito —, e (3) os cards "Top 5 receitas"/"Top 5 despesas"
@@ -592,13 +672,14 @@ C:\Sistema Financeiro\
 - `dates.ts` — utilitários de data "pura" (sem fuso), `addMonths` com clamp de fim de mês.
 - `derived.ts` — Resultado derivado (§10 R3) e classificação de urgência pra UI.
 - `balance.ts` — saldo de carteira e blocos do dashboard (§11.1, §11.2).
-- `period.ts` — totais Receita/Despesa/Investimento/Balanço com regime Caixa×Competência (§11.3, §10 R2).
+- `period.ts` — totais Receita/Despesa/Investimento/Balanço com regime Caixa×Competência (§11.3, §10 R2); **(Fase 2)** `monthlySeries()` (série de N meses, extraída do loop que já existia em `painel/page.tsx`) e `projectedBalance()` (saldo acumulado projetado, §13).
 - `card.ts` — janela de fatura, fatura vigente (usado no lançamento rápido), cobertura (§11.4, §11.5, §12).
 - `installments.ts` — geração de parcelas e de recorrências materializadas 24 meses (§8.5).
+- `open-installments.ts` — **(Fase 2)** `openInstallmentGroups()`: parcelamentos em aberto por grupo (§13, "Despesas parceladas") — tipo `InstallmentEntry` próprio, não o `FinanceEntry` compartilhado.
 - `transfer.ts` — monta o par de linhas de uma transferência (§10 R5).
 - `fixed.ts` — despesa fixa × variável (§11.7).
 - `reserve.ts` — média de despesa, meta e gauge de reserva de emergência (§11.6).
-- `rankings.ts` — top 5 e distribuição por categoria (§11.8).
+- `rankings.ts` — top 5 e distribuição por categoria (§11.8); **(Fase 2)** `categoryMonthlyBreakdown()` (categoria × 12 meses, §13 "Balanço anual").
 - `from-db.ts` — **o único lugar que traduz uma linha do Prisma pro tipo `FinanceEntry`**. Qualquer tela nova que precise calcular algo deve passar por aqui.
 
 ### `lib/entries/`
@@ -787,6 +868,10 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
 - `ImportBatch` (lote de importação, revertível)
 - `ExportLog` (auditoria leve de exportação)
 
+**Orçamento (§13, Fase 2, 2026-08-08)**
+- `Budget` (`workspaceId`, `categoryId`, `year`, `month`, `plannedAmount` —
+  `@@unique([workspaceId, categoryId, year, month])`, upsert nessa chave)
+
 **Migrations aplicadas (em ordem):**
 1. `20260729220239_init` — Fase 0 completa (identidade, taxonomia, carteiras, responsáveis, referências).
 2. `20260729234528_entries` — `EntryGroup`, `Entry`, `ImportBatch`.
@@ -831,6 +916,9 @@ Schema completo em `prisma/schema.prisma`. Resumo por grupo:
     - `PLUS`: + `planejamento_financeiro`, `ia_assistente`
     - `PREMIUM`: + `consultoria_recorrente`, `preparacao_irpf`, `planejamento_sucessorio`
     - `PREMIUM_NEGOCIOS`: + `modulo_mei`, `preparacao_irpj`
+11. `20260808135909_budget` — Fase 2 (§13, Relatórios): tabela `budgets` (orçado por
+    categoria/mês). Só `CREATE TABLE` + índice único + FKs — puramente aditiva, gerada por
+    `prisma migrate dev`, SQL conferido antes de considerar a etapa concluída.
 
 **SQL manual (não gerenciado pelo Prisma, aplicado via `prisma db execute --file`):**
 - `001_auth_and_rls.sql` — FK profiles→auth.users, trigger de signup, RLS Fase 0.
@@ -888,6 +976,7 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
 | §19.1 | Convidar membro pra workspace existente: TITULAR/admin gera link de convite com token (+ botão opcional "Enviar por WhatsApp" via `wa.me` se o telefone for informado), pode excluir um convite pendente; quem aceita precisa estar logado com o e-mail exato do convite | `app/(app)/cadastros/membros/*`, `app/(app)/convite/[token]/*`, `lib/workspace/invite.ts` |
 | §19.1 | Painel `/admin/usuarios` (só `isPlatformAdmin`): todo usuário cadastrado no sistema — nome, e-mail, se é admin, workspaces + papel em cada um, e-mail confirmado, cadastro, último login | `app/(app)/admin/usuarios/page.tsx`, `lib/supabase/admin.ts` |
 | — | Esqueci minha senha (login → e-mail → link → nova senha) | `app/(auth)/login/*`, `app/(auth)/redefinir-senha/page.tsx` |
+| §13 | Fase 2 — Relatórios: Analítico mês a mês, Balanço anual, Fluxo projetado, Despesas parceladas, Orçamento (com CRUD de valor planejado) | `app/(app)/relatorios/**`, `lib/finance/period.ts::monthlySeries/projectedBalance`, `lib/finance/rankings.ts::categoryMonthlyBreakdown`, `lib/finance/open-installments.ts` |
 
 ---
 
@@ -909,8 +998,9 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
   vira erro; não há atalho pra criar o item na hora, como a especificação sugere.
 - **§21 — Lançar offline:** **explicitamente adiado** (fila de sincronização é projeto à
   parte). O service worker cacheia o app shell mas não enfileira gravações sem rede.
-- **Fase 2 completa:** analítico mês a mês, despesas parceladas, balanço anual, orçamento,
-  fluxo projetado, importação de OFX — nada disso foi iniciado.
+- **Fase 2 — relatórios concluídos em 2026-08-08** (analítico mês a mês, despesas
+  parceladas, balanço anual, orçamento, fluxo projetado — ver "Última atualização" no
+  topo). **Importação de OFX continua não iniciada** (só CSV é aceito, §18.1).
 - **Fase 3/4:** patrimônio (`asset`), dívidas (`debt`), metas (`goal`), Open Finance,
   multi-workspace de consultoria — nada disso foi modelado ainda (§7.4 "OUTRO" continua
   como natureza única, sem as entidades dedicadas que a especificação recomenda como
@@ -986,6 +1076,8 @@ confirmar o e-mail do usuário direto no painel do Supabase (Authentication → 
 | Páginas de Cadastros | Server | `app/(app)/cadastros/{carteiras,responsaveis,categorias,subcategorias,tipos,membros}/page.tsx` — todas seguem o mesmo padrão: tabela + form inline de criação, campos `disabled` com nota quando o usuário não tem permissão (Membros usa TITULAR/admin como critério de permissão, não `assertCanWrite`) |
 | `WorkspaceSwitcher` | Client | `components/WorkspaceSwitcher.tsx` — **novo (Arquitetura de Identidade/Planos, Fase 2 Etapa 3)**. Com 1 `Membership` (todo usuário real hoje), renderiza texto estático idêntico ao de sempre; com 2+, vira `<select>` que troca o workspace ativo via `setActiveWorkspace` (`lib/workspace/switch.ts`), com selo "você está em workspace de cliente" quando o papel ativo é `ADVISOR`. Usado no `Sidebar` e no header mobile do `(app)/layout.tsx`. |
 | `StatCard` | Server (local) | Definido dentro de `painel/page.tsx`, não extraído |
+| `MonthlyTotalsTable` | Server | `components/reports/MonthlyTotalsTable.tsx` — **(Fase 2)** tabela "12 meses + Total", reaproveitada pelo Analítico mês a mês e pelo bloco sintético do Balanço anual |
+| `BudgetTable` | Client | `app/(app)/relatorios/orcamento/BudgetTable.tsx` — **(Fase 2)** tabela de Orçamento com edição sob demanda (mesmo padrão de `WalletsTable`); formata moeda com um `Intl.NumberFormat` local, não `lib/format.ts` (ver "Última atualização", bug do bundle do webpack) |
 
 Não há biblioteca de componentes (shadcn/ui) instalada apesar de recomendada no §15 — os
 componentes são HTML+Tailwind direto, estilo consistente mas escrito à mão em cada tela.

@@ -27,6 +27,11 @@ import {
   LogOut,
   ChevronDown,
   X,
+  BarChart3,
+  CalendarRange,
+  TrendingUp,
+  Layers,
+  PiggyBank,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -70,6 +75,14 @@ const ADMIN_ITEMS: NavLeaf[] = [
   { href: "/admin/consultores", label: "Consultores", icon: Network },
 ];
 
+const RELATORIOS_ITEMS: NavLeaf[] = [
+  { href: "/relatorios/analitico", label: "Analítico mês a mês", icon: CalendarRange },
+  { href: "/relatorios/balanco-anual", label: "Balanço anual", icon: BarChart3 },
+  { href: "/relatorios/fluxo-projetado", label: "Fluxo projetado", icon: TrendingUp },
+  { href: "/relatorios/parceladas", label: "Despesas parceladas", icon: Layers },
+  { href: "/relatorios/orcamento", label: "Orçamento", icon: PiggyBank },
+];
+
 const CADASTROS_ITEMS: NavLeaf[] = [
   { href: "/cadastros/carteiras", label: "Carteiras", icon: Wallet },
   { href: "/cadastros/responsaveis", label: "Responsáveis", icon: Users },
@@ -100,6 +113,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { href: "/painel", label: "Painel", icon: LayoutDashboard },
     { label: "Lançamentos", icon: Receipt, items: LANCAMENTOS_ITEMS },
     { label: "Compromissos", icon: CalendarClock, items: COMPROMISSOS_ITEMS },
+    { label: "Relatórios", icon: BarChart3, items: RELATORIOS_ITEMS },
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },
   ];
   if (isPlatformAdmin) {

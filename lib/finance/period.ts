@@ -1,5 +1,6 @@
-import { Decimal, type EntryNature, type FinanceEntry, type Period, type Regime } from "./types";
-import { isWithin } from "./dates";
+import { Decimal, type EntryNature, type FinanceEntry, type FinanceWallet, type Period, type Regime } from "./types";
+import { dashboardBalanceBlocks } from "./balance";
+import { isWithin, monthRange } from "./dates";
 
 /** §10 R2 — Caixa usa `Vence` (default de todo relatório), Competência usa `Compra`. */
 export function dateForRegime(entry: Pick<FinanceEntry, "transactionDate" | "dueDate">, regime: Regime): Date {
@@ -35,4 +36,70 @@ export function periodTotals(entries: FinanceEntry[], period: Period, regime: Re
   const investimento = sumNature("INVESTIMENTO");
 
   return { receita, despesa, investimento, balanco: receita.plus(despesa).plus(investimento) };
+}
+
+export interface MonthlyPeriodTotals {
+  period: Period;
+  totals: PeriodTotals;
+}
+
+/**
+ * Série de `count` meses consecutivos a partir de `startYear`/`startMonthIndex0`
+ * (0-based), cada um com seu `periodTotals`. Extrai o loop que já existia,
+ * repetido, em `painel/page.tsx` (gráficos "Últimos 6 meses" e "Provisão") — usado
+ * pelos relatórios da Fase 2 (Analítico mês a mês, Balanço anual). Aceita offset
+ * negativo em `startMonthIndex0` (ex.: -5), igual `monthRange` já aceita.
+ */
+export function monthlySeries(
+  entries: FinanceEntry[],
+  startYear: number,
+  startMonthIndex0: number,
+  count: number,
+  regime: Regime = "caixa",
+): MonthlyPeriodTotals[] {
+  return Array.from({ length: count }, (_, i) => {
+    const period = monthRange(startYear, startMonthIndex0 + i);
+    return { period, totals: periodTotals(entries, period, regime) };
+  });
+}
+
+export interface ProjectedBalancePoint {
+  period: Period;
+  /** Saldo acumulado projetado ao final deste mês (não o delta do mês isolado). */
+  balance: Decimal;
+}
+
+export interface ProjectedBalanceResult {
+  /** Saldo líquido real hoje (§11.2), ponto de partida da projeção. */
+  current: Decimal;
+  points: ProjectedBalancePoint[];
+}
+
+/**
+ * §13 — Fluxo projetado: saldo futuro acumulado, mês a mês, a partir de
+ * `fromDate`. Diferente do gráfico "Provisão" do Painel (que mostra o delta de
+ * cada mês isoladamente): aqui cada ponto soma o mês ao acumulado anterior,
+ * começando do saldo líquido real de hoje (`dashboardBalanceBlocks`). A
+ * projeção começa no mês *seguinte* a `fromDate` (nunca no mês corrente) —
+ * somar o mês corrente contaria duas vezes qualquer lançamento já liquidado
+ * nele, que já está dentro do saldo de hoje.
+ */
+export function projectedBalance(
+  entries: FinanceEntry[],
+  wallets: FinanceWallet[],
+  fromDate: Date,
+  monthsAhead: number,
+  regime: Regime = "caixa",
+): ProjectedBalanceResult {
+  const current = dashboardBalanceBlocks(entries, wallets, fromDate).total;
+
+  let running = current;
+  const points: ProjectedBalancePoint[] = [];
+  for (let i = 1; i <= monthsAhead; i++) {
+    const period = monthRange(fromDate.getUTCFullYear(), fromDate.getUTCMonth() + i);
+    running = running.plus(periodTotals(entries, period, regime).balanco);
+    points.push({ period, balance: running });
+  }
+
+  return { current, points };
 }

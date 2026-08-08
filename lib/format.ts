@@ -11,6 +11,9 @@ export function formatCurrencyBRL(amount: Decimal | number): string {
   return currencyFormatter.format(value);
 }
 
+/** Abreviação pt-BR de mês, indexada 0-based (jan=0) — mesma lista usada no Painel. */
+export const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
 /** dd/mm/aaaa, ignorando fuso — a data já é "pura" (§15). */
 export function formatDateBR(date: Date): string {
   const day = String(date.getUTCDate()).padStart(2, "0");

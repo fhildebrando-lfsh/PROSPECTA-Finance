@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { categoryDistribution, topEntries } from "@/lib/finance/rankings";
+import { categoryDistribution, categoryMonthlyBreakdown, topEntries } from "@/lib/finance/rankings";
 import { d, makeEntry } from "./helpers";
 
 const junho2026 = { start: new Date(Date.UTC(2026, 5, 1)), end: new Date(Date.UTC(2026, 5, 30)) };
@@ -48,5 +48,34 @@ describe("categoryDistribution (§11.8)", () => {
 
   it("retorna lista vazia e não quebra quando não há despesas no período", () => {
     expect(categoryDistribution([], junho2026)).toEqual([]);
+  });
+});
+
+describe("categoryMonthlyBreakdown (§13 — Balanço anual, descritivo por categoria)", () => {
+  it("agrupa despesas por categoria com uma coluna por mês e o total anual, ordenado por total desc", () => {
+    const entries = [
+      makeEntry({ nature: "DESPESA", categoryId: "alimentacao", amount: d(-300), dueDate: new Date(Date.UTC(2026, 0, 5)) }), // jan
+      makeEntry({ nature: "DESPESA", categoryId: "alimentacao", amount: d(-100), dueDate: new Date(Date.UTC(2026, 1, 5)) }), // fev
+      makeEntry({ nature: "DESPESA", categoryId: "transporte", amount: d(-900), dueDate: new Date(Date.UTC(2026, 5, 5)) }), // jun
+      makeEntry({ nature: "RECEITA", categoryId: "alimentacao", amount: d(999), dueDate: new Date(Date.UTC(2026, 0, 5)) }), // ignorado (não é DESPESA)
+      makeEntry({ nature: "DESPESA", categoryId: "alimentacao", amount: d(-50), dueDate: new Date(Date.UTC(2025, 11, 20)) }), // fora do ano
+    ];
+
+    const rows = categoryMonthlyBreakdown(entries, 2026);
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0].categoryId).toBe("transporte"); // maior total vem primeiro
+    expect(rows[0].total.toNumber()).toBe(900);
+    expect(rows[0].monthly[5].toNumber()).toBe(900);
+    expect(rows[0].monthly[0].toNumber()).toBe(0);
+
+    const alimentacao = rows.find((r) => r.categoryId === "alimentacao")!;
+    expect(alimentacao.monthly[0].toNumber()).toBe(300);
+    expect(alimentacao.monthly[1].toNumber()).toBe(100);
+    expect(alimentacao.total.toNumber()).toBe(400);
+  });
+
+  it("retorna lista vazia quando não há despesas no ano", () => {
+    expect(categoryMonthlyBreakdown([], 2026)).toEqual([]);
   });
 });

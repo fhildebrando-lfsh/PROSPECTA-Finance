@@ -6,7 +6,7 @@ import { isSameOrBefore } from "./dates";
  * subconjunto do "Ok" de derived.ts: AQUISICAO/ATUALIZACAO afetam
  * patrimônio (§7.4), não o saldo em dinheiro da carteira.
  */
-const SETTLED_FOR_BALANCE = new Set<EntryStatus>(["PAGO", "RECEBIDO", "ISENTO"]);
+export const SETTLED_FOR_BALANCE = new Set<EntryStatus>(["PAGO", "RECEBIDO", "ISENTO"]);
 
 /**
  * saldo(carteira, data_corte) = Σ amount onde wallet_id = carteira,

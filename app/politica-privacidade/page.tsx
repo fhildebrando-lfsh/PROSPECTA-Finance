@@ -34,7 +34,7 @@ export default function PoliticaPrivacidadePage() {
         <p>
           Encarregado de proteção de dados (DPO), pra dúvidas ou exercício de direitos:{" "}
           <strong>[NOME DO ENCARREGADO — PREENCHER]</strong>, e-mail{" "}
-          <strong>[e-mail de contato do encarregado — PREENCHER]</strong>.
+          <strong>admin@prospectafinance.com.br</strong>.
         </p>
       </Section>
 
