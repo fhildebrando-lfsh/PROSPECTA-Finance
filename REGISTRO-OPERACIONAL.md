@@ -462,7 +462,21 @@
 
 ---
 
-## Próximo número de registro: **030**
+### Registro Nº 030
+- **Data:** 2026-08-08
+- **Etapa concluída:** Confirmação em produção do Registro Nº 029
+- **Descrição:** Usuário testou em produção, entrando como consultor no workspace
+  "prospecta (cliente)" — antes gerava a tela "Algo deu errado", agora a membership
+  revogada não aparece mais como opção do seletor. Confirmou que está funcionando
+  ("testei, ficou bom").
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** confirmação direta do usuário no chat, após deploy do commit `5699b6a`.
+- **Documentos relacionados:** Registro Nº 029.
+
+---
+
+## Próximo número de registro: **031**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
