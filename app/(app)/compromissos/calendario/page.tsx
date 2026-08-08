@@ -132,8 +132,8 @@ export default async function CompromissosCalendarioPage({
         </Link>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="grid min-w-[640px] grid-cols-7 gap-1.5">
+      <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+        <div className="grid min-w-[608px] grid-cols-7 gap-1.5">
           {WEEKDAY_LABELS.map((label) => (
             <div key={label} className="px-1 pb-1 text-center text-xs font-medium text-zinc-500">
               {label}
