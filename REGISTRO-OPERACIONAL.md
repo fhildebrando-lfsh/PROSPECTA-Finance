@@ -512,7 +512,26 @@
 
 ---
 
-## Próximo número de registro: **032**
+### Registro Nº 032
+- **Data:** 2026-08-08
+- **Etapa concluída:** Confirmação em produção do Registro Nº 031 (Código do cliente) e
+  encerramento do dia
+- **Descrição:** Usuário testou em produção — coluna "Código" em Admin → Usuários e o
+  seletor de workspace identificando clientes por código + nome do titular — e
+  confirmou que está funcionando ("testei, ficou bom"). Pediu para documentar tudo e
+  encerrar o dia. Fecha, de ponta a ponta, o último item pendente de documentação desta
+  sessão: todos os Registros Nº 021–031 já tinham `PROJECT_STATE.md`/`CHANGELOG.md`
+  atualizados; este registro consolida a confirmação final e o fechamento do dia (ver
+  `PROJECT_STATE.md`, bloco "FECHAMENTO DO DIA").
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** confirmação direta do usuário no chat, após deploy do commit `1f3be65`.
+- **Documentos relacionados:** Registros Nº 021–031, `PROJECT_STATE.md` (entrada de
+  2026-08-08).
+
+---
+
+## Próximo número de registro: **033**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

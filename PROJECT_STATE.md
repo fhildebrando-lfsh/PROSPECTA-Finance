@@ -15,11 +15,45 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-08 (Código do cliente — Registro Nº 031).** Usuário
-> pediu um código imutável por cliente, para diferenciar pessoas/famílias de nomes
-> parecidos: uma coluna "Código" em Admin → Usuários, e o seletor de workspace mostrando
-> `"{código}, {dois primeiros nomes do titular} (cliente)"` em vez do nome cru do
-> workspace ao listar clientes de consultoria.
+> **Última atualização real: 2026-08-08 — FECHAMENTO DO DIA (Registros Nº 021–032).**
+> Usuário confirmou o Código do cliente em produção e pediu para documentar tudo e
+> encerrar o dia. Foi o dia de maior volume de entrega da sessão — resumo do que ficou
+> no ar, testado, documentado e (quando pedido) commitado/enviado a `origin/master`:
+>
+> - **Fase 2 — Relatórios avançados** (Registro Nº 021): 5 telas em `/relatorios`
+>   (Analítico, Balanço anual, Fluxo projetado, Despesas parceladas, Orçamento).
+> - **Fase 3 — Patrimônio (Bens/Metas) + Dívidas + PDF** (Registros Nº 023/024): telas
+>   de Bens e Metas com trava de edição e gráficos, Dívidas derivada 100% do motor de
+>   parcelamento existente, botão "Baixar PDF" nas 8 telas de Relatórios/Patrimônio,
+>   Painel com seção "Metas" modular (`pinnedToPainel`) substituindo um cálculo de
+>   reserva que mostrava valor errado.
+> - **Bug real corrigido — `groupId` ausente em importação** (Registro Nº 025): CSV
+>   importado nunca recebia agrupamento de parcelas, cegando "Despesas parceladas" e
+>   "Dívidas"; corrigido no importador e retroativamente (backfill), com heurística
+>   reforçada para separar por valor de parcela (resolve o caso real "MERCADO LIVRE").
+> - **Compromissos → Incidentes** (Registro Nº 026): aba nova para revisar parcelas
+>   órfãs/ambíguas, com "Confirmar que está correto" ou edição completa da linha
+>   (incluindo número/total de parcela) e reagrupamento automático depois de corrigir.
+> - **Formalização da linguagem** (Registro Nº 025/parte da rodada): "pra"/"pro" → "para"
+>   em 63 arquivos, textos visíveis e comentários de código.
+> - **Bug real corrigido — seletor de workspace** (Registro Nº 029): membership
+>   `REVOKED` aparecia como opção clicável, causando erro genérico ao selecioná-la.
+> - **Código do cliente** (Registro Nº 031): `Workspace.clientCode` sequencial e
+>   imutável, coluna "Código" em Admin → Usuários, seletor de workspace identificando
+>   clientes por código + nome do titular.
+>
+> **Estado geral ao fim do dia:** tudo acima testado em produção pelo usuário e
+> confirmado funcionando, um item de cada vez, ao longo do dia. `npm test`/`tsc
+> --noEmit`/`npm run build` limpos antes de cada commit. Todos os commits do dia
+> enviados a `origin/master` e implantados na Vercel (`prospecta-finance.vercel.app`).
+> Nenhuma pendência conhecida em aberto desta rodada — o que ficou de fora foi por
+> escopo explícito, não esquecido: OFX (Fase 2), Open Finance (Fase 3), e qualquer
+> redesenho de papéis além do modelo atual `MembershipRole`+`isPlatformAdmin` (ver
+> seção 23, "Débitos técnicos", e a checklist da seção 28 para o detalhe completo).
+>
+> **Registrado formalmente:** `REGISTRO-OPERACIONAL.md` (Registro Nº 032, que também
+> lista os registros 021–031 individualmente, cada um já com seu próprio fechamento em
+> `CHANGELOG.md`/`MANUAL-DE-USO.md` quando aplicável).
 >
 > **Decisão de modelagem:** o código foi colocado em `Workspace`, não em `Profile` — um
 > `Profile` pode ter acesso (TITULAR ou ADVISOR) a vários workspaces, mas cada
@@ -2124,6 +2158,10 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [ ] 30 dias de uso real / correções pontuais reportadas pelo usuário (**Fase 2 pausada
       de propósito** — ver seção 27, não iniciar sem pedido explícito)
 - [ ] Banco Supabase separado pra produção (hoje dev e prod compartilham o mesmo)
-- [ ] Fase 2 (relatórios: analítico, parceladas, balanço anual, orçamento, fluxo projetado, OFX)
-- [ ] Fase 3 (patrimônio, dívidas, metas, Open Finance)
-- [ ] Fase 4 (consultoria multi-workspace)
+- [x] Fase 2 (relatórios: analítico, parceladas, balanço anual, orçamento, fluxo
+      projetado — 2026-08-08, Registro Nº 021) — OFX segue pendente, não pedido ainda
+- [x] Fase 3 (patrimônio: Bens/Metas, Dívidas — 2026-08-08, Registros Nº 023/024) — Open
+      Finance segue pendente, não pedido ainda
+- [x] Fase 4 (consultoria multi-workspace: seletor de workspace, `/admin/clientes`,
+      código do cliente — concluída em partes ao longo de 2026-08-04 a 2026-08-08,
+      Registro Nº 031 fecha a última peça pendente)
