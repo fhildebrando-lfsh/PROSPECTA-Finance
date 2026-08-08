@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAdminProfile } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/db/prisma";
-import { formatDateBR } from "@/lib/format";
+import { formatClientCode, formatDateBR } from "@/lib/format";
 import { DeleteUserButton } from "./DeleteUserButton";
 import { AdvisorControl } from "@/components/AdvisorControl";
 import { PlatformAdminToggle } from "./PlatformAdminToggle";
@@ -81,6 +81,7 @@ export default async function AdminUsuariosPage() {
         <table className="w-full text-sm">
           <thead className="bg-zinc-900 text-left text-zinc-400">
             <tr>
+              <th className="px-3 py-2 font-medium">Código</th>
               <th className="px-3 py-2 font-medium">Nome</th>
               <th className="px-3 py-2 font-medium">E-mail</th>
               <th className="px-3 py-2 font-medium">Admin da plataforma</th>
@@ -95,8 +96,14 @@ export default async function AdminUsuariosPage() {
             {authUsers.map((u) => {
               const profile = profileById.get(u.id);
               const label = u.email ?? profile?.fullName ?? "usuário";
+              // Código do próprio workspace (o que a pessoa é TITULAR) — todo
+              // profile real tem exatamente um, criado junto com o cadastro.
+              const ownWorkspaceCode = profile?.memberships.find((m) => m.role === "TITULAR")?.workspace.clientCode;
               return (
                 <tr key={u.id} className="border-t border-zinc-800 text-zinc-200">
+                  <td className="px-3 py-2 font-mono text-xs text-zinc-400">
+                    {ownWorkspaceCode != null ? formatClientCode(ownWorkspaceCode) : "—"}
+                  </td>
                   <td className="px-3 py-2">{profile?.fullName ?? "(sem nome)"}</td>
                   <td className="px-3 py-2">{u.email ?? "—"}</td>
                   <td className="px-3 py-2 text-xs">

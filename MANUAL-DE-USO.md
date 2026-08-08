@@ -61,7 +61,9 @@ topo. Fecha sozinho ao navegar, no X, ou tocando fora dele.
 
 **Trocar de workspace:** se você tem acesso a mais de um workspace (por exemplo, é
 consultor de um cliente além de ter seu próprio workspace pessoal), aparece um seletor no
-topo do menu — escolha para qual quer ir. Quando você está em um workspace de cliente como
+topo do menu — escolha para qual quer ir. Cada cliente de consultoria aparece identificado
+pelo **código + os dois primeiros nomes do titular** (ex.: "0008, Fulano de Tal"), para
+diferenciar clientes de nomes parecidos. Quando você está em um workspace de cliente como
 consultor, um selo indica isso claramente, para evitar lançar algo no lugar errado.
 
 ---
@@ -292,10 +294,11 @@ preservar o histórico.
 
 ## 14. Administração (só para administrador da plataforma)
 
-- **`/admin/usuarios`** — todos os usuários cadastrados no sistema: nome, e-mail, se é
-  admin, workspaces e papel em cada um, e-mail confirmado, data de cadastro, último login.
-  Permite editar dados pessoais de qualquer pessoa, promover/remover admin, atribuir
-  consultor, excluir conta.
+- **`/admin/usuarios`** — todos os usuários cadastrados no sistema: **código do cliente**
+  (número sequencial imutável, atribuído automaticamente ao workspace de cada pessoa ou
+  família), nome, e-mail, se é admin, workspaces e papel em cada um, e-mail confirmado,
+  data de cadastro, último login. Permite editar dados pessoais de qualquer pessoa,
+  promover/remover admin, atribuir consultor, excluir conta.
 - **`/admin/clientes`** — cria o pré-cadastro de um novo cliente de consultoria: workspace
   novo, plano escolhido, consultor responsável opcional, e um link/WhatsApp de convite para
   o cliente.

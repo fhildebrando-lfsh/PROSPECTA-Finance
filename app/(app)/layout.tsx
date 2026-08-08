@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { requireActiveMembership } from "@/lib/auth/session";
+import { prisma } from "@/lib/db/prisma";
+import { formatClientCode, firstTwoNames } from "@/lib/format";
 import { Sidebar } from "@/components/Sidebar";
 import { SidebarProvider } from "@/components/SidebarContext";
 import { MobileMenuButton } from "@/components/MobileMenuButton";
@@ -13,13 +15,33 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // lib/workspace/advisor.ts::assignAdvisor) nunca deve aparecer como opção
   // selecionável no seletor de workspace; escolhê-la seria rejeitado do mesmo jeito
   // por setActiveWorkspace(), só que como um erro genérico em vez de nem aparecer.
-  const membershipOptions = profile.memberships
-    .filter((m) => m.status === "ACTIVE")
-    .map((m) => ({
-      workspaceId: m.workspaceId,
-      workspaceName: m.workspace.name,
-      role: m.role,
-    }));
+  const activeMemberships = profile.memberships.filter((m) => m.status === "ACTIVE");
+
+  // Para as memberships ADVISOR (workspace de cliente), o seletor identifica o
+  // cliente pelo código do workspace + nome do titular, não pelo nome do
+  // workspace em si — mais preciso para o consultor diferenciar clientes com
+  // nomes parecidos, ex.: "0001, Fulano de Tal (cliente)".
+  const advisorWorkspaceIds = activeMemberships.filter((m) => m.role === "ADVISOR").map((m) => m.workspaceId);
+  const titularMemberships =
+    advisorWorkspaceIds.length > 0
+      ? await prisma.membership.findMany({
+          where: { workspaceId: { in: advisorWorkspaceIds }, role: "TITULAR", status: "ACTIVE" },
+          include: { profile: true },
+        })
+      : [];
+  const titularNameByWorkspaceId = new Map(titularMemberships.map((t) => [t.workspaceId, t.profile.fullName]));
+
+  const membershipOptions = activeMemberships.map((m) => {
+    if (m.role === "ADVISOR") {
+      const shortName = firstTwoNames(titularNameByWorkspaceId.get(m.workspaceId) ?? null) ?? m.workspace.name;
+      return {
+        workspaceId: m.workspaceId,
+        workspaceName: `${formatClientCode(m.workspace.clientCode)}, ${shortName} (cliente)`,
+        role: m.role,
+      };
+    }
+    return { workspaceId: m.workspaceId, workspaceName: m.workspace.name, role: m.role };
+  });
 
   return (
     <SidebarProvider>

@@ -15,7 +15,48 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-08 (bug real: seletor de workspace listava
+> **Última atualização real: 2026-08-08 (Código do cliente — Registro Nº 031).** Usuário
+> pediu um código imutável por cliente, para diferenciar pessoas/famílias de nomes
+> parecidos: uma coluna "Código" em Admin → Usuários, e o seletor de workspace mostrando
+> `"{código}, {dois primeiros nomes do titular} (cliente)"` em vez do nome cru do
+> workspace ao listar clientes de consultoria.
+>
+> **Decisão de modelagem:** o código foi colocado em `Workspace`, não em `Profile` — um
+> `Profile` pode ter acesso (TITULAR ou ADVISOR) a vários workspaces, mas cada
+> `Workspace` já representa exatamente "uma única pessoa ou família" (§9, a mesma
+> unidade que agrupa Carteiras/Responsáveis/lançamentos compartilhados) — bate
+> exatamente com o que o usuário pediu. `Workspace.clientCode Int @unique
+> @default(autoincrement())`.
+>
+> **Migration manual** (`20260808220000_workspace_client_code`, não gerada por
+> `prisma migrate dev` porque o ambiente não-interativo bloqueia o aviso de unique
+> constraint): coluna criada nullable → backfill sequencial por `created_at ASC` (mais
+> antigo = 0001) para os 8 workspaces já existentes → `NOT NULL` + `UNIQUE` → sequence
+> do Postgres assumindo o próximo valor livre. A sequence garante código automático
+> mesmo para workspaces que nascem fora do Prisma — o trigger `on_auth_user_created`
+> (cria o workspace pessoal no signup) só faz `INSERT INTO workspaces (name)`, então
+> depende inteiramente do `DEFAULT` da coluna, que a sequence fornece.
+>
+> **`lib/format.ts::formatClientCode()`** (novo, testado) — 4 dígitos com zero à
+> esquerda ("0001"). **Admin → Usuários**: nova coluna "Código" antes de "Nome",
+> mostrando o código do workspace onde a pessoa é TITULAR (o "próprio" dela — todo
+> profile real tem exatamente um). **Seletor de workspace**
+> (`app/(app)/layout.tsx::AppLayout`): para memberships `ADVISOR`, uma query adicional
+> busca a membership `TITULAR` de cada workspace-cliente (só quando há pelo menos uma
+> `ADVISOR`, não sempre) para pegar o nome do titular via
+> `lib/format.ts::firstTwoNames()`; memberships `TITULAR`/`MEMBRO`/`LEITURA` continuam
+> mostrando `workspace.name` sem mudança.
+>
+> **Verificado direto no banco** com dados reais: os 8 workspaces existentes numeraram
+> 0001–0008 em ordem de criação; um `INSERT` de teste recebeu 0009 corretamente da
+> sequence (removido depois). Rótulos do seletor conferidos com o profile real do
+> usuário: "0008, Luis Felipe (cliente)" e "0007, Prospecta 1 (cliente)". 173 testes (2
+> novos para `formatClientCode`), `tsc --noEmit` e `npm run build` limpos.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 031), `MANUAL-DE-USO.md` (seções 3 "Navegação" e 14 "Administração").
+>
+> **Última atualização anterior: 2026-08-08 (bug real: seletor de workspace listava
 > membership REVOKED — Registro Nº 029).** Usuário (atuando como consultor) reportou
 > erro genérico ao trocar para o workspace "prospecta (cliente)" pelo seletor, enquanto
 > outro workspace funcionava normalmente.

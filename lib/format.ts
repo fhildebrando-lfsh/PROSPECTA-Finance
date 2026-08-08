@@ -46,3 +46,8 @@ export function identifyPerson(fullName: string | null, email: string): string {
   const name = firstTwoNames(fullName);
   return name ? `${name} — ${email}` : email;
 }
+
+/** Código do cliente (`Workspace.clientCode`) — 4 dígitos com zero à esquerda ("0001"). */
+export function formatClientCode(code: number): string {
+  return String(code).padStart(4, "0");
+}

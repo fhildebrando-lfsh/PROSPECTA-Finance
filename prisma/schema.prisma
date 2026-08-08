@@ -69,9 +69,16 @@ model Profile {
 }
 
 model Workspace {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String
+  /// Código do cliente — sequencial, atribuído automaticamente na criação (via
+  /// sequence do Postgres, inclusive quando o workspace nasce pelo trigger
+  /// on_auth_user_created, não só via Prisma) e nunca reatribuído depois.
+  /// Cada workspace representa uma única pessoa ou família (§9); o código
+  /// ajuda a diferenciar clientes de nomes parecidos — ver `admin/usuarios` e
+  /// o seletor de workspace (`app/(app)/layout.tsx`).
+  clientCode Int      @unique @default(autoincrement()) @map("client_code")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   memberships      Membership[]
   people           Person[]

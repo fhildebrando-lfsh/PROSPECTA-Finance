@@ -16,6 +16,9 @@
 
 ## 2026-08-08
 
+### Adicionado
+- **Código do cliente**: cada workspace (pessoa ou família) ganhou um código sequencial imutável ("0001", "0002"...). Nova coluna "Código" em Admin → Usuários. No seletor de workspace, clientes de consultoria agora aparecem como "código, nome do titular (cliente)" em vez do nome do workspace, para diferenciar clientes de nomes parecidos.
+
 ### Corrigido
 - **Seletor de workspace** listava um workspace onde o acesso do usuário como consultor já tinha sido revogado (consultor trocado); selecioná-lo dava erro genérico em vez de simplesmente não aparecer como opção.
 

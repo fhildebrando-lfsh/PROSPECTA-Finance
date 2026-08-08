@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
+import { formatClientCode, formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { Decimal } from "@/lib/finance/types";
 
 describe("formatCurrencyBRL (§15 — locale pt-BR)", () => {
@@ -27,5 +27,16 @@ describe("formatDateBR", () => {
 
   it("ignora o horário do Date", () => {
     expect(formatDateBR(new Date(Date.UTC(2026, 5, 30, 23, 59)))).toBe("30/06/2026");
+  });
+});
+
+describe("formatClientCode", () => {
+  it("completa com zeros à esquerda até 4 dígitos", () => {
+    expect(formatClientCode(1)).toBe("0001");
+    expect(formatClientCode(42)).toBe("0042");
+  });
+
+  it("não trunca códigos com mais de 4 dígitos", () => {
+    expect(formatClientCode(12345)).toBe("12345");
   });
 });

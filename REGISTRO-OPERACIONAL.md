@@ -476,7 +476,43 @@
 
 ---
 
-## Próximo número de registro: **031**
+### Registro Nº 031
+- **Data:** 2026-08-08
+- **Etapa concluída:** Código do cliente (`Workspace.clientCode`) — coluna "Código" em
+  Admin → Usuários e identificação do cliente no seletor de workspace
+- **Descrição:** Usuário pediu um código imutável por cliente (pessoa ou família) para
+  diferenciar clientes de nomes parecidos. Cada `Workspace` já representa exatamente
+  uma pessoa ou família (§9) — o código foi adicionado ali, não em `Profile` (um
+  profile pode ter acesso a vários workspaces; o workspace é a unidade "cliente").
+  `Workspace.clientCode Int @unique @default(autoincrement())` (migration manual
+  `20260808220000_workspace_client_code`, aditiva): coluna criada nullable, backfill
+  sequencial por `created_at ASC` para os 8 workspaces existentes (0001 = mais antigo),
+  depois `NOT NULL` + `UNIQUE` + sequence do Postgres assumindo o próximo valor — a
+  sequence garante o código pra qualquer workspace novo, inclusive os criados pelo
+  trigger `on_auth_user_created` (que só insere `name`, nunca passa por Prisma). Nova
+  função `lib/format.ts::formatClientCode()` (4 dígitos com zero à esquerda, "0001"),
+  testada. **Admin → Usuários**: nova coluna "Código" antes de "Nome", mostrando o
+  código do workspace onde a pessoa é TITULAR (o "próprio" dela). **Seletor de
+  workspace** (`app/(app)/layout.tsx`): para memberships ADVISOR (workspaces de
+  cliente), o rótulo não usa mais `workspace.name` — usa
+  `"{código}, {dois primeiros nomes do titular} (cliente)"` (ex.: "0008, Luis Felipe
+  (cliente)"), buscando o nome do titular via uma query adicional por
+  `workspaceId in (...)` só quando há memberships ADVISOR.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** migration aplicada e conferida — 8 workspaces existentes numerados
+  0001–0008 em ordem de criação; testado que um `INSERT` novo recebe o próximo código
+  da sequence corretamente. 2 testes novos para `formatClientCode` (173 no total),
+  `tsc --noEmit` e `npm run build` limpos. Rótulos do seletor conferidos direto no
+  banco com dados reais do usuário: "0008, Luis Felipe (cliente)" e "0007, Prospecta 1
+  (cliente)".
+- **Documentos relacionados:** `prisma/schema.prisma`, `lib/format.ts`,
+  `app/(app)/layout.tsx`, `app/(app)/admin/usuarios/page.tsx`, `PROJECT_STATE.md`
+  (entrada de 2026-08-08).
+
+---
+
+## Próximo número de registro: **032**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
