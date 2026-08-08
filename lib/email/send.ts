@@ -3,7 +3,7 @@ const SENDER = { name: "PROSPECTA Finance", email: "admin@prospectafinance.com.b
 
 /**
  * E-mail transacional próprio do app (diferente do e-mail que o Supabase Auth
- * manda sozinho pra confirmação/recuperação de senha) — usa a API HTTP do
+ * manda sozinho para confirmação/recuperação de senha) — usa a API HTTP do
  * Brevo direto, sem SMTP (mais adequado a serverless). Precisa de
  * `BREVO_API_KEY` no ambiente (Settings → SMTP & API → Chaves API no
  * painel do Brevo — não é a mesma chave SMTP usada no Supabase).

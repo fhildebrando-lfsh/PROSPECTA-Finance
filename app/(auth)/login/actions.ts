@@ -47,7 +47,7 @@ export async function signup(
   if (password !== confirmPassword) return { error: "As senhas não coincidem.", info: null };
   // LGPD Art. 8º §2º — o ônus de provar o consentimento é do controlador,
   // então isso é validado no servidor também, não só travado no HTML.
-  if (!acceptedPrivacyPolicy) return { error: "Você precisa aceitar a Política de Privacidade pra criar a conta.", info: null };
+  if (!acceptedPrivacyPolicy) return { error: "Você precisa aceitar a Política de Privacidade para criar a conta.", info: null };
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -93,6 +93,6 @@ export async function requestPasswordReset(
 
   return {
     error: null,
-    info: "Se esse e-mail estiver cadastrado, enviamos um link pra redefinir a senha.",
+    info: "Se esse e-mail estiver cadastrado, enviamos um link para redefinir a senha.",
   };
 }

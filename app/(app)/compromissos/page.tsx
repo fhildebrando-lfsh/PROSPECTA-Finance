@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { daysBetween } from "@/lib/finance/dates";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { markSettled } from "./actions";
+import { CompromissosTabs } from "./CompromissosTabs";
 
 type Bucket = "vencidos" | "hoje" | "proximos7" | "proximos30";
 
@@ -56,15 +56,7 @@ export default async function CompromissosPage() {
         <p className="text-sm text-zinc-500">O que ainda está a pagar ou a receber, agrupado por prazo (§13).</p>
       </div>
 
-      <div className="flex gap-2 text-sm">
-        <span className="rounded-lg bg-amber-500 px-3 py-1.5 font-medium text-zinc-950">Lista</span>
-        <Link
-          href="/compromissos/calendario"
-          className="rounded-lg px-3 py-1.5 text-indigo-200 hover:bg-indigo-900/50 hover:text-white"
-        >
-          Calendário
-        </Link>
-      </div>
+      <CompromissosTabs active="lista" />
 
       {BUCKET_ORDER.map((bucket) => (
         <div key={bucket}>

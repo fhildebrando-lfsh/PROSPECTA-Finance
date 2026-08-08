@@ -8,7 +8,7 @@ const RELOAD_COOLDOWN_MS = 10_000;
 /** Erro genérico de qualquer rota — cobre principalmente o caso de o app ter
  * sido atualizado (novo deploy) enquanto a aba ainda estava aberta na versão
  * antiga: a navegação tenta buscar um chunk que já não existe mais no
- * servidor. Detecta esse padrão e recarrega a página sozinho, uma vez; pra
+ * servidor. Detecta esse padrão e recarrega a página sozinho, uma vez; para
  * qualquer outro erro, mostra a tela com o botão manual. */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const isChunkError =

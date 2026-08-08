@@ -12,7 +12,7 @@ import { createClient, cancelClient, resendInvite } from "./actions";
  * pré-cadastro de um cliente novo (workspace + assinatura + convite, com
  * consultor opcional já atribuído como ADVISOR). Só platform admin, mesmo
  * gate de `/admin/usuarios`. O convite é enviado por e-mail de verdade
- * (2026-08-05) — não é mais um link pra copiar manualmente.
+ * (2026-08-05) — não é mais um link para copiar manualmente.
  */
 export default async function AdminClientesPage() {
   await requireAdminProfile();
@@ -56,7 +56,7 @@ export default async function AdminClientesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-zinc-100">Clientes (pré-cadastro)</h1>
-          <p className="text-sm text-zinc-500">Cria o workspace, a assinatura e manda o convite por e-mail pro cliente.</p>
+          <p className="text-sm text-zinc-500">Cria o workspace, a assinatura e manda o convite por e-mail para o cliente.</p>
         </div>
         <Link href="/admin/usuarios" className="text-sm text-indigo-300 hover:text-white">
           Ver todos os usuários →
@@ -112,7 +112,7 @@ export default async function AdminClientesPage() {
         <h2 className="mb-1 text-sm font-medium text-zinc-300">Criar cliente</h2>
         <p className="mb-3 text-xs text-zinc-500">
           Gera o workspace do cliente, a assinatura no plano escolhido (sem cobrança real ainda) e manda um e-mail de
-          convite de verdade, com um link que já leva direto pra tela de definir senha. Se não chegar, use
+          convite de verdade, com um link que já leva direto para a tela de definir senha. Se não chegar, use
           &ldquo;Reenviar convite&rdquo; na lista abaixo.
         </p>
         <form action={createClient} className="flex flex-wrap items-end gap-3">

@@ -2,7 +2,7 @@ import type { EntryStatus, FinanceEntry, FinanceWallet, RecurrenceKind } from ".
 
 /**
  * As funções de /lib/finance são puras e não conhecem o Prisma — este é o
- * único lugar que traduz uma linha do banco pro tipo que elas esperam.
+ * único lugar que traduz uma linha do banco para o tipo que elas esperam.
  */
 export function toFinanceEntry(entry: {
   id: string;

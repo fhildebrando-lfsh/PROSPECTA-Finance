@@ -6,8 +6,8 @@ import { cardCoverage } from "@/lib/finance/card";
 import { monthRange } from "@/lib/finance/dates";
 import { toFinanceEntry, toFinanceWallet } from "@/lib/finance/from-db";
 import { periodTotals } from "@/lib/finance/period";
+import { goalProgress } from "@/lib/finance/goal";
 import { categoryDistribution, topEntries } from "@/lib/finance/rankings";
-import { averageMonthlyExpense, emergencyReserveCoverage } from "@/lib/finance/reserve";
 import { Decimal, type Regime } from "@/lib/finance/types";
 import { formatCurrencyBRL } from "@/lib/format";
 import { MonthlyChart, type MonthlyChartPoint } from "@/components/charts/MonthlyChart";
@@ -45,11 +45,16 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   const regime: Regime = params.regime === "competencia" ? "competencia" : "caixa";
   const view: View = params.view === "anual" || params.view === "geral" ? params.view : "mensal";
 
-  const [wallets, dbEntries] = await Promise.all([
+  const [wallets, dbEntries, goals] = await Promise.all([
     prisma.wallet.findMany({ where: { workspaceId }, include: { kind: true } }),
     prisma.entry.findMany({
       where: { workspaceId },
       include: { category: true, wallet: true },
+    }),
+    prisma.goal.findMany({
+      where: { workspaceId, isActive: true, pinnedToPainel: true },
+      include: { wallet: true },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -110,12 +115,16 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
     return { card, coverage };
   });
 
-  // §11.6 — reserva de emergência.
-  const reserveWallet = wallets.find((w) => w.goalPurpose?.toLowerCase().includes("reserva de emerg"));
-  const avgExpense = averageMonthlyExpense(entries, today, 6, regime);
-  const reserveCoverage = reserveWallet
-    ? emergencyReserveCoverage(walletBalance(entries, reserveWallet.id, today), avgExpense, 6)
-    : null;
+  // Seção "Metas" — só as metas que o usuário marcou "Mostrar no Painel" em
+  // Patrimônio → Metas (`Goal.pinnedToPainel`). Nenhum cálculo próprio aqui:
+  // mesmo saldo/meta/percentual que já aparecem em Patrimônio → Metas, via
+  // `walletBalance`/`goalProgress` — nunca um número paralelo (era a causa
+  // raiz do bug relatado: o Painel calculava sua própria meta de reserva por
+  // despesa média × 6 meses, ignorando a Goal real que o usuário criou).
+  const pinnedGoals = goals.map((g) => {
+    const balance = walletBalance(entries, g.walletId, today);
+    return { ...g, balance, progress: goalProgress(balance, g.targetAmount) };
+  });
 
   const prevMonth = painelQuery("mensal", monthIndex0 === 0 ? year - 1 : year, monthIndex0 === 0 ? 11 : monthIndex0 - 1, regime);
   const nextMonth = painelQuery("mensal", monthIndex0 === 11 ? year + 1 : year, monthIndex0 === 11 ? 0 : monthIndex0 + 1, regime);
@@ -251,14 +260,18 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         </div>
       )}
 
-      {reserveCoverage && (
+      {pinnedGoals.length > 0 && (
         <div>
-          <h2 className="mb-2 text-sm font-medium text-zinc-300">Reserva de emergência</h2>
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
-            <ReserveGauge percentage={reserveCoverage.percentage.toNumber()} />
-            <p className="font-mono text-sm tabular-nums text-indigo-300">
-              meta: {formatCurrencyBRL(reserveCoverage.target)}
-            </p>
+          <h2 className="mb-2 text-sm font-medium text-zinc-300">Metas</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {pinnedGoals.map((g) => (
+              <div key={g.id} className="flex flex-col items-center gap-2 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+                <ReserveGauge percentage={g.progress.toNumber()} label={g.name.toUpperCase()} />
+                <p className="font-mono text-sm tabular-nums text-indigo-300">
+                  {formatCurrencyBRL(g.balance)} de {formatCurrencyBRL(g.targetAmount)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       )}

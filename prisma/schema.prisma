@@ -87,6 +87,8 @@ model Workspace {
   accessLogs       AccessLog[]
   notifications    Notification[]
   budgets          Budget[]
+  assets           Asset[]
+  goals            Goal[]
 
   @@map("workspaces")
 }
@@ -352,6 +354,7 @@ model Category {
   subcategories Subcategory[]
   entries       Entry[]
   budgets       Budget[]
+  assets        Asset[]
 
   @@unique([nature, slug])
   @@map("categories")
@@ -433,6 +436,7 @@ model Wallet {
   linkedWallet Wallet?      @relation("WalletLink", fields: [linkedWalletId], references: [id])
   linkedFrom   Wallet[]     @relation("WalletLink")
   entries      Entry[]
+  goals        Goal[]
 
   @@unique([workspaceId, slug])
   @@map("wallets")
@@ -528,6 +532,11 @@ model Entry {
   recurrenceCode        String  @map("recurrence_code")
   installmentNumber     Int?    @map("installment_number")
   installmentTotal      Int?    @map("installment_total")
+  /// §13 "Incidentes" — marca que um humano revisou e confirmou que esta parcela
+  /// órfã (installmentTotal >= 2 sem groupId, ver lib/finance/incidents.ts) está
+  /// correta como está, mesmo sem par formado automaticamente. Nulo enquanto não
+  /// revisada — aparece em Compromissos → Incidentes até ser confirmada ou editada.
+  incidentAcknowledgedAt DateTime? @map("incident_acknowledged_at")
   /// §6.4 — substituem os marcadores Patrimônio/Previsão da recorrência da planilha.
   isPatrimonio          Boolean @default(false) @map("is_patrimonio")
   isProjecao            Boolean @default(false) @map("is_projecao")
@@ -549,6 +558,11 @@ model Entry {
   /// Preenchido só quando o lançamento nasceu de uma importação de CSV (§18.1).
   importBatchId String? @map("import_batch_id") @db.Uuid
 
+  /// Liga esta entry ao bem que ela documenta (Fase 3, §7.4 "Bens*") — aquisição
+  /// ou valorização/desvalorização. Nulo pra qualquer lançamento normal. Mesmo
+  /// padrão de `transferId`/`importBatchId`: FK direta, não `EntryGroup`.
+  assetId String? @map("asset_id") @db.Uuid
+
   createdBy String   @map("created_by") @db.Uuid
   updatedBy String   @map("updated_by") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
@@ -563,11 +577,17 @@ model Entry {
   recurrence  RecurrenceKind @relation(fields: [recurrenceCode], references: [code])
   status      Status         @relation(fields: [statusCode], references: [code])
   importBatch ImportBatch?   @relation(fields: [importBatchId], references: [id])
+  /// Cascade de propósito (diferente de wallet/category, que nunca cascateiam):
+  /// as entries ligadas a um bem só existem pra documentar o valor dele — sem
+  /// significado independente. Excluir o bem por engano de cadastro deve
+  /// desfazer tudo, não deixar entry órfã.
+  asset       Asset?         @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, dueDate])
   @@index([workspaceId, walletId])
   @@index([groupId])
   @@index([transferId])
+  @@index([assetId])
   @@map("entries")
 }
 
@@ -628,4 +648,55 @@ model Budget {
 
   @@unique([workspaceId, categoryId, year, month])
   @@map("budgets")
+}
+
+// ---------------------------------------------------------------------------
+// Patrimônio e Metas (Fase 3, §5/§7.4) — Dívidas (`debt`) fica de fora desta
+// etapa, adiado a pedido do usuário até haver mais clareza de uso real.
+// ---------------------------------------------------------------------------
+
+/// Um bem do patrimônio (§7.4 "Bens*"). O valor atual nunca é armazenado —
+/// é sempre a soma das `Entry` ligadas via `Entry.assetId` (aquisição +
+/// valorizações/desvalorizações), mesmo princípio de "campo calculado nunca
+/// persiste" já usado em todo o resto do sistema (§8.1).
+model Asset {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  /// Uma das categorias "Bens*" já seedadas em OUTRO — nenhuma categoria nova.
+  categoryId  String   @map("category_id") @db.Uuid
+  name        String
+  /// §20 — nunca exclui (preserva histórico de lançamentos ligados), só arquiva.
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id])
+  entries   Entry[]
+
+  @@map("assets")
+}
+
+/// Uma meta (§7.4 "Sonhos_Metas") — generaliza o que hoje só existe hardcoded
+/// pra Reserva de Emergência (`lib/finance/reserve.ts`): valor-alvo ligado a
+/// uma caixinha (`Wallet.kind = CONTA_CAIXA`) já existente. Guardar dinheiro
+/// continua sendo uma transferência normal (§10 R5) — nenhuma mudança em como
+/// o saldo da caixinha é calculado.
+model Goal {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId    String    @map("workspace_id") @db.Uuid
+  walletId       String    @map("wallet_id") @db.Uuid
+  name           String
+  targetAmount   Decimal   @map("target_amount") @db.Decimal(14, 2)
+  targetDate     DateTime? @map("target_date") @db.Date
+  isActive       Boolean   @default(true) @map("is_active")
+  /// Aparece na seção "Metas" do Painel — preferência de exibição, não dado
+  /// da meta em si (por isso fica fora da trava de edição do card, clicável
+  /// direto, mesmo espírito do botão Arquivar).
+  pinnedToPainel Boolean   @default(false) @map("pinned_to_painel")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  wallet    Wallet    @relation(fields: [walletId], references: [id])
+
+  @@map("goals")
 }

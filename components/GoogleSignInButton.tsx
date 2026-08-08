@@ -19,8 +19,8 @@ export function GoogleSignInButton() {
       setError(error.message);
       setLoading(false);
     }
-    // Em caso de sucesso o navegador é redirecionado pro Google — não há
-    // mais nada a fazer aqui, a página vai navegar pra fora.
+    // Em caso de sucesso o navegador é redirecionado para o Google — não há
+    // mais nada a fazer aqui, a página vai navegar para fora.
   }
 
   return (

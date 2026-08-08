@@ -7,9 +7,9 @@ import type { MembershipRole } from "@/app/generated/prisma/enums";
 const INVITE_TTL_DAYS = 7;
 
 /**
- * §19.1 — convite pra um workspace existente. Sem envio de e-mail ou
+ * §19.1 — convite para um workspace existente. Sem envio de e-mail ou
  * WhatsApp próprio: gera um registro com token que o TITULAR/admin
- * compartilha manualmente (link `/convite/:token`, com atalho pra abrir o
+ * compartilha manualmente (link `/convite/:token`, com atalho para abrir o
  * WhatsApp já com a mensagem pronta quando `phone` é informado).
  */
 export async function createInvite(
@@ -30,7 +30,7 @@ export async function createInvite(
   });
 }
 
-/** Pura — separada só pra ser testável sem banco. */
+/** Pura — separada só para ser testável sem banco. */
 export function isInviteExpired(invite: { expiresAt: Date | null }, now = new Date()): boolean {
   return invite.expiresAt !== null && invite.expiresAt.getTime() < now.getTime();
 }
@@ -66,10 +66,10 @@ export async function acceptInvite(token: string, profileId: string, profileEmai
 }
 
 /**
- * Rede de segurança pro caso de convite (cliente ou membro) pra um e-mail que
+ * Rede de segurança para o caso de convite (cliente ou membro) para um e-mail que
  * **já tem conta**. O trigger `handle_new_auth_user()` só roda em signup —
  * quando a pessoa já existe e só faz login de novo (magic link, ou Google
- * OAuth pra um e-mail já cadastrado), ele nunca dispara, então o convite
+ * OAuth para um e-mail já cadastrado), ele nunca dispara, então o convite
  * pendente nunca seria aceito sozinho. Chamado de `/auth/confirm` depois de
  * qualquer login bem-sucedido — idempotente (se não houver convite pendente,
  * ou a Membership já existir por algum outro caminho, não faz nada).

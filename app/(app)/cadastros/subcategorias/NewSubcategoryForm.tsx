@@ -23,10 +23,10 @@ interface CreatedItem {
 /**
  * Independente do seletor "Ver" acima — cria direto por Tipo → Categoria
  * (filtrada) → Nome, em vez de obrigar escolher antes numa lista achatada
- * de ~200 categorias. Não navega pra lugar nenhum ao salvar (isso mudava o
+ * de ~200 categorias. Não navega para lugar nenhum ao salvar (isso mudava o
  * que o "Ver" estava mostrando, o usuário achou ruim) — em vez disso, cada
  * subcategoria criada nesta sessão aparece no card "Subcategoria
- * cadastrada" abaixo, pra manter o controle do que foi criado sem perder
+ * cadastrada" abaixo, para manter o controle do que foi criado sem perder
  * o que estava sendo visualizado.
  */
 export function NewSubcategoryForm({

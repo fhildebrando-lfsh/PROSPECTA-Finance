@@ -3,6 +3,7 @@ import { assertCanWrite, requireApiWorkspaceMembership } from "@/lib/auth/sessio
 import { ApiError, apiErrorResponse } from "@/lib/api/errors";
 import { prisma } from "@/lib/db/prisma";
 import type { ColumnMapping } from "@/lib/import/column-mapping";
+import { clusterInstallmentRows } from "@/lib/import/group-installments";
 import { parseCsvWithHeaderDetection } from "@/lib/import/parse-csv";
 import { hasErrors, parseImportRow } from "@/lib/import/parse-row";
 import { buildReferenceMaps, resolveRow } from "@/lib/import/resolve";
@@ -37,6 +38,24 @@ export async function POST(request: NextRequest) {
 
     const toImport = resolvedRows.filter((row) => !hasErrors(row.parsed) && !(row.isDuplicate && skipDuplicates));
 
+    // §8.4 — group_id é sempre atribuído automaticamente, nunca digitado, mesmo
+    // quando o lançamento vem de importação (antes disso, toda linha parcelada
+    // importada ficava para sempre sem groupId — bug real que deixava "Despesas
+    // parceladas" e "Dívidas" cegos para dado importado; ver
+    // lib/import/group-installments.ts e scripts/backfill-installment-groups.ts
+    // para o retroativo).
+    const { safe: safeClusters } = clusterInstallmentRows(
+      toImport.map((row) => ({
+        row,
+        walletId: row.walletId!,
+        categoryId: row.categoryId!,
+        description: row.parsed.data.description!,
+        installmentNumber: row.parsed.data.recurrence!.installmentNumber,
+        installmentTotal: row.parsed.data.recurrence!.installmentTotal,
+        amount: row.parsed.data.amount!,
+      })),
+    );
+
     const batch = await prisma.$transaction(async (tx) => {
       const created = await tx.importBatch.create({
         data: {
@@ -47,6 +66,13 @@ export async function POST(request: NextRequest) {
           createdBy: profileId,
         },
       });
+
+      const groupIdByRow = new Map<(typeof toImport)[number], string>();
+      for (const cluster of safeClusters) {
+        if (cluster.length < 2) continue; // parcela avulsa sozinha não precisa de grupo
+        const group = await tx.entryGroup.create({ data: { workspaceId } });
+        for (const item of cluster) groupIdByRow.set(item.row, group.id);
+      }
 
       if (toImport.length > 0) {
         await tx.entry.createMany({
@@ -63,6 +89,7 @@ export async function POST(request: NextRequest) {
             dueDate: row.parsed.data.dueDate!,
             statusCode: row.parsed.data.statusCode!,
             recurrenceCode: row.parsed.data.recurrence!.recurrenceKind,
+            groupId: groupIdByRow.get(row) ?? null,
             installmentNumber: row.parsed.data.recurrence!.installmentNumber,
             installmentTotal: row.parsed.data.recurrence!.installmentTotal,
             isPatrimonio: row.parsed.data.recurrence!.isPatrimonio,

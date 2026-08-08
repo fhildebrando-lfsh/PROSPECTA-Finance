@@ -23,7 +23,7 @@ export function formatDateBR(date: Date): string {
 }
 
 /**
- * Normaliza telefone pro formato que o link `wa.me` exige: só dígitos, com
+ * Normaliza telefone para o formato que o link `wa.me` exige: só dígitos, com
  * DDI. Usuário digita no formato brasileiro comum (com DDD, sem DDI) — se o
  * número tiver 10 ou 11 dígitos (DDD + fixo/celular), assume Brasil e
  * prefixa "55". Números mais longos já são tratados como tendo DDI.
@@ -34,14 +34,14 @@ export function toWhatsAppDigits(raw: string): string {
   return digits.length <= 11 ? `55${digits}` : digits;
 }
 
-/** Primeiro + segundo nome, pra identificar gente em listas curtas sem o nome
+/** Primeiro + segundo nome, para identificar gente em listas curtas sem o nome
  * completo tomar o espaço todo (ex.: junto do e-mail em "Meus clientes"). */
 export function firstTwoNames(fullName: string | null): string | null {
   if (!fullName) return null;
   return fullName.trim().split(/\s+/).slice(0, 2).join(" ") || null;
 }
 
-/** "Nome Sobrenome — email@x.com", com fallback pro e-mail sozinho sem nome. */
+/** "Nome Sobrenome — email@x.com", com fallback para o e-mail sozinho sem nome. */
 export function identifyPerson(fullName: string | null, email: string): string {
   const name = firstTwoNames(fullName);
   return name ? `${name} — ${email}` : email;

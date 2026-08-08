@@ -8,7 +8,7 @@ import { parseIsoDate } from "@/lib/validation/entry";
  * Cria um lançamento — único, parcelado (§8.5, `installmentsTotal`) ou
  * recorrente sem fim (§8.5, materializa 24 meses quando `recurrenceCode`
  * não é UNICA/VARIAVEL). Usado tanto pela API (`/api/entries`) quanto pela
- * tela de lançamento rápido (§12), pra não duplicar a lógica de criação.
+ * tela de lançamento rápido (§12), para não duplicar a lógica de criação.
  */
 export async function createEntryOrSeries(
   workspaceId: string,

@@ -6,11 +6,11 @@ import { createEntryOrSeries } from "@/lib/entries/create";
 import { createEntrySchema } from "@/lib/validation/entry";
 
 /**
- * §12 — pra Despesa/Receita o usuário nunca digita o sinal (§8.3): escolhe o
+ * §12 — para Despesa/Receita o usuário nunca digita o sinal (§8.3): escolhe o
  * tipo e digita o valor absoluto, o sistema aplica o sinal aqui. Investimento
  * e Outro não têm uma dicotomia natural igual Despesa/Receita (compra de
  * investimento é negativa, resgate é positiva; transferência varia por
- * direção) — pra esses dois, um botão de inverter sinal (`negative`) resolve
+ * direção) — para esses dois, um botão de inverter sinal (`negative`) resolve
  * sem exigir digitação livre do sinal.
  */
 export async function createQuickEntry(formData: FormData) {

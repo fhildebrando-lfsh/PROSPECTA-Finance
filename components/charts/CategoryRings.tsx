@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 /** Mapeamento por palavra-chave no nome da categoria — a taxonomia é livre (§7), então
- * não dá pra usar um enum fixo de ícones; cai em HelpCircle quando nada bate. */
+ * não é possível usar um enum fixo de ícones; cai em HelpCircle quando nada bate. */
 function iconForCategory(name: string): LucideIcon {
   const n = name.toLowerCase();
   if (n.includes("aliment")) return UtensilsCrossed;

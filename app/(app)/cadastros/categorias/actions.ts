@@ -8,8 +8,8 @@ import { rethrowFriendly } from "@/lib/api/prisma-errors";
 import type { EntryNature } from "@/app/generated/prisma/enums";
 
 /**
- * Ordem nunca repete dentro do mesmo Tipo — inserir/mover pra uma posição já
- * ocupada empurra as demais categorias daquele Tipo pra abrir espaço, em vez
+ * Ordem nunca repete dentro do mesmo Tipo — inserir/mover para uma posição já
+ * ocupada empurra as demais categorias daquele Tipo para abrir espaço, em vez
  * de deixar dois itens com o mesmo número (pedido do usuário em 2026-08-01).
  */
 export async function createCategory(formData: FormData) {
@@ -50,13 +50,13 @@ export async function updateCategory(formData: FormData) {
 
   await prisma.$transaction(async (tx) => {
     if (sortOrder > existing.sortOrder) {
-      // moveu pra uma ordem maior: quem estava entre a antiga e a nova posição sobe um lugar
+      // moveu para uma ordem maior: quem estava entre a antiga e a nova posição sobe um lugar
       await tx.category.updateMany({
         where: { nature: existing.nature, id: { not: id }, sortOrder: { gt: existing.sortOrder, lte: sortOrder } },
         data: { sortOrder: { decrement: 1 } },
       });
     } else if (sortOrder < existing.sortOrder) {
-      // moveu pra uma ordem menor: quem estava entre a nova e a antiga posição desce um lugar
+      // moveu para uma ordem menor: quem estava entre a nova e a antiga posição desce um lugar
       await tx.category.updateMany({
         where: { nature: existing.nature, id: { not: id }, sortOrder: { gte: sortOrder, lt: existing.sortOrder } },
         data: { sortOrder: { increment: 1 } },

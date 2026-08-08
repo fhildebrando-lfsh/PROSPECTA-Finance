@@ -76,7 +76,7 @@ export default function RedefinirSenhaPage() {
 
         {status === "invalid" && (
           <p className="text-sm text-red-400">
-            Link inválido ou expirado. Volte pra tela de login e peça um novo link em &ldquo;Esqueci minha
+            Link inválido ou expirado. Volte para a tela de login e peça um novo link em &ldquo;Esqueci minha
             senha&rdquo;.
           </p>
         )}

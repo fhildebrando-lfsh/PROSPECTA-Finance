@@ -32,6 +32,11 @@ import {
   TrendingUp,
   Layers,
   PiggyBank,
+  Landmark,
+  Boxes,
+  Target,
+  TrendingDown,
+  AlertTriangle,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -67,6 +72,7 @@ const LANCAMENTOS_ITEMS: NavLeaf[] = [
 const COMPROMISSOS_ITEMS: NavLeaf[] = [
   { href: "/compromissos", label: "Lista", icon: List },
   { href: "/compromissos/calendario", label: "Calendário", icon: Calendar },
+  { href: "/compromissos/incidentes", label: "Incidentes", icon: AlertTriangle },
 ];
 
 const ADMIN_ITEMS: NavLeaf[] = [
@@ -81,6 +87,12 @@ const RELATORIOS_ITEMS: NavLeaf[] = [
   { href: "/relatorios/fluxo-projetado", label: "Fluxo projetado", icon: TrendingUp },
   { href: "/relatorios/parceladas", label: "Despesas parceladas", icon: Layers },
   { href: "/relatorios/orcamento", label: "Orçamento", icon: PiggyBank },
+];
+
+const PATRIMONIO_ITEMS: NavLeaf[] = [
+  { href: "/patrimonio/bens", label: "Bens", icon: Boxes },
+  { href: "/patrimonio/metas", label: "Metas", icon: Target },
+  { href: "/patrimonio/dividas", label: "Dívidas", icon: TrendingDown },
 ];
 
 const CADASTROS_ITEMS: NavLeaf[] = [
@@ -114,6 +126,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { label: "Lançamentos", icon: Receipt, items: LANCAMENTOS_ITEMS },
     { label: "Compromissos", icon: CalendarClock, items: COMPROMISSOS_ITEMS },
     { label: "Relatórios", icon: BarChart3, items: RELATORIOS_ITEMS },
+    { label: "Patrimônio", icon: Landmark, items: PATRIMONIO_ITEMS },
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },
   ];
   if (isPlatformAdmin) {

@@ -20,7 +20,7 @@ export function isValidCPF(raw: string): boolean {
   return digits[9] === String(d1) && digits[10] === String(d2);
 }
 
-/** 000.000.000-00, só pra exibição. */
+/** 000.000.000-00, só para exibição. */
 export function formatCPF(raw: string): string {
   const d = raw.replace(/\D/g, "").slice(0, 11);
   return d.replace(/(\d{3})(\d{0,3})(\d{0,3})(\d{0,2})/, (_m, a, b, c, e) =>

@@ -22,7 +22,7 @@ export default async function SubcategoriasPage({
   const profile = await requireProfile();
   const isAdmin = profile.isPlatformAdmin;
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
-  // §20 — editar/arquivar continua admin-only; criar é liberado pra quem tem escrita.
+  // §20 — editar/arquivar continua admin-only; criar é liberado para quem tem escrita.
   const canCreate = isAdmin || membership?.role !== "LEITURA";
   const { categoryId } = await searchParams;
 

@@ -24,7 +24,7 @@ export default async function AdminEditUserPage({ params }: { params: Promise<{ 
     <div className="flex max-w-2xl flex-col gap-4">
       <div>
         <Link href="/admin/usuarios" className="text-sm text-indigo-300 hover:text-white">
-          ← Voltar pra usuários
+          ← Voltar para usuários
         </Link>
         <h1 className="mt-1 text-lg font-semibold text-zinc-100">Editar dados pessoais</h1>
         <p className="text-sm text-zinc-500">{email}</p>

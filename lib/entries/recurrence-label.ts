@@ -1,4 +1,4 @@
-/** Reconstrói o texto de Recorrência pra exibição/exportação (§8.5, §18.2). */
+/** Reconstrói o texto de Recorrência para exibição/exportação (§8.5, §18.2). */
 export function recurrenceLabel(entry: {
   legacyRecurrenceLabel: string | null;
   installmentNumber: number | null;

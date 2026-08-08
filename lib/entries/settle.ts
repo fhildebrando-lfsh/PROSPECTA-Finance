@@ -4,7 +4,7 @@ import { ApiError } from "@/lib/api/errors";
 /**
  * §13 Compromissos — "marcar como pago" em 1 toque: A_PAGAR->PAGO,
  * A_RECEBER->RECEBIDO. Compartilhado entre a API (/api/entries/:id/settle)
- * e a Server Action da tela de Compromissos, pra não duplicar a regra.
+ * e a Server Action da tela de Compromissos, para não duplicar a regra.
  */
 export async function settleEntry(entryId: string, workspaceId: string, profileId: string) {
   const existing = await prisma.entry.findUnique({ where: { id: entryId } });

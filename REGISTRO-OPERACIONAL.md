@@ -249,7 +249,151 @@
 
 ---
 
-## Próximo número de registro: **022**
+### Registro Nº 022
+- **Data:** 2026-08-08
+- **Etapa concluída:** Commit, push e confirmação em produção do Registro Nº 021 (Fase 2)
+- **Descrição:** O trabalho descrito no Registro Nº 021 foi commitado (`ca370c3`) e enviado
+  a `origin/master`, disparando o deploy automático da Vercel. Fecha o ciclo completo da
+  etapa: planejamento → implementação → teste local → commit/push → confirmação em
+  produção.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `git push origin master` bem-sucedido; usuário confirmou o deploy em
+  produção funcionando ("conferi, o deploy na Vercel terminou, tudo ok").
+- **Documentos relacionados:** Registro Nº 021, `PROJECT_STATE.md` (entrada de 2026-08-08).
+
+---
+
+### Registro Nº 023
+- **Data:** 2026-08-08
+- **Etapa concluída:** Fase 3 (Bens/Metas) + Dívidas + Relatórios/Patrimônio em PDF
+- **Descrição:** Depois de testar Bens e Metas (Fase 3 original), o usuário pediu, na mesma
+  mensagem: botões de Editar/Salvar/Excluir mais visíveis em Bens e Metas; a Reserva de
+  Emergência do Painel vinculada de fato a uma Meta (não aparecer se não houver Meta
+  criada); uma nova tela **Dívidas** dentro de Patrimônio (parcelamentos de despesa com
+  2+ parcelas ainda em aberto — financiamentos, compras parceladas — excluindo o que já
+  foi quitado); e botão **"Baixar PDF"** em todas as telas de Relatórios e Patrimônio (8
+  no total). Dívidas reaproveita 100% o motor já existente de
+  `lib/finance/open-installments.ts` (nenhuma entidade nova no banco) com 2 funções novas
+  (`totalRemainingDebt`, `monthlyDebtCommitment`). PDFs usam `pdfkit` (já em produção via
+  exportação LGPD), com cabeçalho/rodapé de marca compartilhado
+  (`lib/reports/pdf-shared.ts`) e um builder por relatório.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** testes automatizados, `tsc --noEmit` e `npm run build` limpos; 2 PDFs
+  gerados e conferidos manualmente (inclusive correção de um bug de exibição — valores de
+  dívida apareciam com sinal negativo em contexto de magnitude, corrigido com `.abs()`).
+  Usuário confirmou em teste manual ("testei, ficou bom").
+- **Documentos relacionados:** plano em `functional-rolling-quiche.md`,
+  `PROJECT_STATE.md` (entrada de 2026-08-08).
+
+---
+
+### Registro Nº 024
+- **Data:** 2026-08-08
+- **Etapa concluída:** Refinamentos de Patrimônio/Metas/Dívidas, correção de bug real de
+  dados, Painel modulável e formalização da linguagem em todo o sistema
+- **Descrição:** Rodada de 5 frentes a partir de um feedback único e consolidado do
+  usuário: **(A)** correção do bug real que deixava lançamentos importados por CSV sem
+  `groupId` — invisíveis em "Despesas parceladas" e "Dívidas" — corrigida no importador e
+  retroativamente por script de backfill (24 grupos criados, 174 lançamentos corrigidos,
+  2 clusters ambíguos deixados de fora para revisão manual, sem risco de mesclar dados de
+  compras diferentes); **(B)** Bens: cartão travado até clicar "Editar" + gráfico de
+  evolução patrimonial (valor acumulado por data); **(C)** Metas: mesma trava de edição +
+  checkbox "Mostrar no Painel" (nova coluna `Goal.pinnedToPainel`) + remoção do cálculo
+  próprio de Reserva de Emergência do Painel (usava despesa média × 6 meses e mostrava um
+  valor incorreto — R$ 28.918,55 em vez da meta real de R$ 1.000,00 cadastrada pelo
+  usuário) — a seção final do Painel virou "Metas", 100% derivada de `Goal` de verdade;
+  **(D)** Dívidas: gráfico de diminuição do saldo devedor combinado ao longo do tempo;
+  **(E)** revisão de linguagem informal ("pra"/"pro" → "para"/"para o"/"para a") em **63
+  arquivos** de todo o sistema — telas, mensagens de erro, e-mails transacionais e
+  comentários de código — a pedido explícito do usuário ("a linguagem do sistema deve ser
+  totalmente formal e de acordo com a norma culta da língua portuguesa"), confirmado por
+  ele para cobrir também a documentação interna do código, não só o texto visível ao
+  usuário final.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** 162 testes automatizados passando (2 novos: `patrimonyEvolution`,
+  `debtDeclineTimeline`), `tsc --noEmit` limpo, `npm run build` de produção limpo (51
+  rotas). Servidor de produção local (`npm run start -- -p 3001`) reiniciado com o build
+  final para o usuário testar.
+- **Documentos relacionados:** plano em `functional-rolling-quiche.md`,
+  `PROJECT_STATE.md` (entrada de 2026-08-08), `CHANGELOG.md` (2026-08-08).
+
+---
+
+### Registro Nº 025
+- **Data:** 2026-08-08
+- **Etapa concluída:** Correção definitiva dos 2 clusters "MERCADO LIVRE" deixados de fora
+  pelo backfill do Registro Nº 024
+- **Descrição:** O usuário reportou que lançamentos "MERCADO LIVRE" precisavam aparecer em
+  Dívidas por refletirem o orçamento real. Investigação confirmou que os 2 clusters
+  ambíguos do backfill anterior eram, na verdade, **múltiplas compras diferentes** que
+  coincidiam em carteira+categoria+descrição+total de parcelas (a descrição genérica da
+  loja não distingue uma compra da outra) — não um problema de dado corrompido. A
+  heurística de agrupamento (`lib/import/group-installments.ts::clusterInstallmentRows()`,
+  usada tanto pela importação quanto pelo backfill) ganhou uma dimensão nova: dentro do
+  mesmo cluster, subdivide por **valor da parcela**, com tolerância de 2 centavos (absorve
+  só o resto da divisão do total por N parcelas iguais — não o suficiente para confundir
+  duas compras de valores diferentes). Re-executado `scripts/backfill-installment-groups.ts`
+  sobre os candidatos que ainda restavam sem `groupId`: **7 grupos novos criados, 54
+  lançamentos corrigidos, nenhum cluster ambíguo restante** — as 4 compras parceladas reais
+  de "MERCADO LIVRE" (12x cada, workspace do titular) agora aparecem em Dívidas
+  corretamente separadas, e 2 parcelas órfãs de verdade (sem par — provável lançamento
+  incompleto na fonte original) permaneceram sem grupo, como esperado.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** 2 testes novos em `tests/import/group-installments.test.ts` (separação por
+  valor + tolerância de centavo, 8 testes no total no arquivo), 165 testes automatizados no
+  total, `tsc --noEmit` e `npm run build` limpos. Verificação direta no banco (script
+  descartável) confirmou os 4 grupos "MERCADO LIVRE" com `openInstallmentGroups()`: R$
+  7.750,89 em aberto entre eles, de um total de R$ 21.100,60 de dívida aberta no workspace.
+  Servidor de produção local reiniciado com o build final.
+- **Documentos relacionados:** `PROJECT_STATE.md` (entrada de 2026-08-08),
+  `REGISTRO-OPERACIONAL.md` (Registro Nº 024, backfill original).
+
+---
+
+### Registro Nº 026
+- **Data:** 2026-08-08
+- **Etapa concluída:** Nova aba "Incidentes" em Compromissos — revisão de lançamentos
+  parcelados que a heurística de agrupamento não conseguiu combinar
+- **Descrição:** O usuário pediu uma aba dedicada a "erros de lançamento" que precisam de
+  edição, citando como exemplo justamente as parcelas órfãs (sem par correspondente) que o
+  Registro Nº 025 tinha deixado de fora de propósito. Nova coluna aditiva
+  `Entry.incidentAcknowledgedAt` (migration `20260808210858_incident_acknowledged_at`) —
+  marca que um humano revisou e aceitou a linha como está. Novo `lib/finance/incidents.ts`
+  (`isInstallmentIncident()`/`installmentIncidents()`, puro e testado): um lançamento é
+  "incidente" quando diz fazer parte de um parcelamento (`installmentTotal >= 2`) mas não
+  tem `groupId` — órfão de verdade ou cluster ambíguo, mesma condição expressa como filtro
+  de banco na nova tela `/compromissos/incidentes`. Cada linha aparece num cartão com o
+  motivo (ex.: "Parcela 12 de 12 sem outras parcelas correspondentes encontradas") e dois
+  botões: **"Confirmar que está correto"** (marca `incidentAcknowledgedAt`, sai da lista
+  sem alterar nada) e **"Editar"** (formulário completo — carteira, categoria,
+  subcategoria, responsável, descrição, valor com inversão de sinal, datas, situação, e
+  **número/total de parcelas**, que a edição normal de Lançamentos não permite tocar).
+  Depois de salvar uma edição, a Server Action tenta reagrupar automaticamente os
+  incidentes restantes do workspace com a mesma heurística do importador/backfill — se a
+  correção fizer a parcela combinar com uma irmã real, as duas saem da lista sozinhas.
+  Terceira aba do menu "Compromissos" (Lista/Calendário/Incidentes), com a barra de abas
+  extraída para `CompromissosTabs.tsx` (compartilhada pelas 3 páginas, antes duplicada em
+  cada uma).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** 6 testes novos em `tests/finance/incidents.test.ts` (171 no total),
+  `tsc --noEmit` e `npm run build` limpos (53 rotas, incluindo `/compromissos/incidentes`).
+  Verificado direto no banco: a tela lista corretamente os 4 incidentes reais do workspace
+  do titular — as 2 parcelas órfãs de "MERCADO LIVRE" (R$ 72,71 e R$ 132,53) do Registro
+  Nº 025, mais 1 parcela órfã de 10x (R$ 281,52) e 1 de outra loja não notada antes (R$
+  54,99) — confirmando que a funcionalidade generaliza corretamente além do caso que a
+  motivou. Servidor de produção local reiniciado com o build final.
+- **Documentos relacionados:** `PROJECT_STATE.md` (entrada de 2026-08-08),
+  `REGISTRO-OPERACIONAL.md` (Registro Nº 025), `MANUAL-DE-USO.md` (seção 10 "Compromissos"
+  atualizada).
+
+---
+
+## Próximo número de registro: **027**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

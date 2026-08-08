@@ -5,6 +5,7 @@ import { toFinanceEntry } from "@/lib/finance/from-db";
 import { monthlySeries, periodTotals } from "@/lib/finance/period";
 import { type Regime } from "@/lib/finance/types";
 import { MonthlyTotalsTable, type MonthlyTotalsRow } from "@/components/reports/MonthlyTotalsTable";
+import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
 
 interface SearchParams {
   year?: string;
@@ -69,6 +70,9 @@ export default async function AnaliticoPage({ searchParams }: { searchParams: Pr
           >
             trocar p/ {otherRegime === "caixa" ? "caixa" : "competência"}
           </Link>
+          <a href={`/api/relatorios/analitico/pdf?year=${year}&regime=${regime}`} className={BTN_PRIMARY}>
+            Baixar PDF
+          </a>
         </div>
       </div>
 

@@ -17,7 +17,20 @@
 ## 2026-08-08
 
 ### Adicionado
+- **Compromissos → Incidentes**: nova aba para revisar lançamentos parcelados que não puderam ser combinados automaticamente com o resto da série (parcela órfã ou cluster ambíguo). Cada linha tem um botão "Confirmar que está correto" e um "Editar" (formulário completo, incluindo número/total de parcelas). Corrigir uma linha tenta reagrupá-la automaticamente com a parcela irmã, se agora existir uma combinando.
+- **Fase 3 — Patrimônio (Bens e Metas)**: novo grupo "Patrimônio" no menu lateral, com telas de Bens (valor atual somando aquisição + valorizações/desvalorizações) e Metas (velocímetro de progresso vinculado a uma caixinha).
+- **Dívidas**: nova tela em Patrimônio, somente leitura — total em aberto, compromisso mensal, percentual da despesa média comprometido e gráfico de diminuição do saldo devedor ao longo do tempo. Considera parcelamentos de despesa com 2+ parcelas ainda em aberto.
+- **Relatórios e Patrimônio em PDF**: botão "Baixar PDF" nas 5 telas de Relatórios e nas 3 de Patrimônio (Bens, Metas, Dívidas), com identidade visual da PROSPECTA Finance.
+- **Bens e Metas: trava de edição** — cada cartão fica somente leitura até clicar em "Editar"; "Arquivar"/"Excluir" continuam sempre visíveis.
+- **Bens: gráfico de evolução patrimonial** — valor acumulado do patrimônio total, por data.
+- **Metas: checkbox "Mostrar no Painel"** — escolha quais metas aparecem na seção "Metas" do Painel (modular; nenhuma marcada = seção ausente).
 - **Fase 2 — Relatórios avançados**: 5 telas novas em `/relatorios` — Analítico mês a mês, Balanço anual, Fluxo projetado, Despesas parceladas e Orçamento (com valor planejado editável por categoria/mês, tabela nova `Budget` no banco). Novo grupo "Relatórios" no menu lateral.
+
+### Corrigido
+- **Bug real de dados**: lançamentos importados por CSV nunca recebiam o agrupamento de parcelas (`groupId`), deixando-os invisíveis em "Despesas parceladas" e "Dívidas". Corrigido daqui para frente (o importador agora agrupa por carteira/categoria/descrição/total de parcelas) e retroativamente (script de correção — 24 grupos criados, 174 lançamentos corrigidos; 2 casos ambíguos deixados de fora para revisão manual).
+- **"MERCADO LIVRE" ausente em Dívidas**: os 2 casos ambíguos acima eram, na prática, compras diferentes com a mesma loja/quantidade de parcelas (a descrição genérica não distingue uma compra da outra). O agrupamento agora também considera o valor da parcela (com tolerância de 2 centavos para o resto da divisão) — 4 compras parceladas reais de Mercado Livre passam a aparecer em Dívidas, separadas corretamente.
+- **Painel — Reserva de Emergência**: a seção usava um cálculo próprio (despesa média × 6 meses), ignorando a Meta de reserva real cadastrada pelo usuário. Substituída pela seção "Metas", que usa sempre os mesmos números já visíveis em Patrimônio → Metas.
+- **Linguagem do sistema**: revisão geral de textos e comentários de código para a norma culta da língua portuguesa (contrações informais como "pra"/"pro" substituídas por "para"/"para o"/"para a"), incluindo textos de e-mail transacional (convite) e mensagens de erro.
 - Governança documental do projeto: `MANUAL-DE-USO.md`, `REGISTRO-OPERACIONAL.md`, `CHANGELOG.md`, `TERMOS-DE-USO.md` e `RUNBOOK-OPERACIONAL.md` criados; placeholders do `TERMOS-DE-USO.md` preenchidos em conjunto com o dono do produto (foro, contato, vínculo com consultores, direito de arrependimento, mecanismo de bloqueio por inadimplência); e-mail do encarregado (DPO) sincronizado em `/politica-privacidade`.
 - Menu lateral (`Sidebar`) passou a funcionar também no mobile, como drawer deslizante — substitui a barra inferior antiga (`MobileNav`, removida).
 

@@ -13,7 +13,7 @@ export async function acceptPrivacyPolicy(
   const profile = await requireProfile();
 
   if (formData.get("acceptPrivacyPolicy") !== "on") {
-    return { error: "Você precisa aceitar a Política de Privacidade pra continuar." };
+    return { error: "Você precisa aceitar a Política de Privacidade para continuar." };
   }
 
   await prisma.profile.update({ where: { id: profile.id }, data: { privacyPolicyAcceptedAt: new Date() } });

@@ -1,7 +1,7 @@
 /**
  * §20 — "validação de nome duplicado dentro do mesmo escopo". Em vez de
- * deixar o erro cru do Postgres (P2002 unique violation) estourar pro
- * usuário, converte pra uma mensagem legível.
+ * deixar o erro cru do Postgres (P2002 unique violation) estourar para o
+ * usuário, converte para uma mensagem legível.
  */
 export function rethrowFriendly(err: unknown, duplicateMessage: string): never {
   if (isUniqueConstraintError(err)) {

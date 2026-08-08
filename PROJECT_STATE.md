@@ -15,7 +15,168 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-08 (Fase 2 — Relatórios avançados, retomada e
+> **Última atualização real: 2026-08-08 (Compromissos → Incidentes — Registro Nº 026).**
+> O usuário pediu uma aba dedicada para "erros de lançamento" que precisam de edição,
+> citando como exemplo as parcelas órfãs que a correção do Registro Nº 025 tinha
+> deliberadamente deixado de fora (sem par correspondente, revisão manual).
+>
+> **Schema (aditivo):** `Entry.incidentAcknowledgedAt DateTime?` (migration
+> `20260808210858_incident_acknowledged_at`) — marca que um humano revisou e aceitou a
+> linha como está, sem precisar apagar o sinal de "sem groupId" que a torna um incidente.
+>
+> **`lib/finance/incidents.ts` (novo, puro, testado):** `isInstallmentIncident(entry)` —
+> um lançamento é incidente quando `installmentTotal >= 2 && groupId == null &&
+> incidentAcknowledgedAt == null`. Não precisa de agregação cross-row (diferente de
+> `openInstallmentGroups`), então a mesma condição também vira o `where` direto da query
+> em `/compromissos/incidentes` — a função pura documenta/testa a regra de negócio, mesmo
+> sem ser chamada em runtime pela página.
+>
+> **Tela nova** (`/compromissos/incidentes`, 3ª aba de "Compromissos" — barra de abas
+> extraída para `CompromissosTabs.tsx`, antes duplicada em `page.tsx`/`calendario/
+> page.tsx`): cada incidente vira um cartão (`IncidentCard.tsx`, mesmo padrão de trava de
+> edição de `AssetCard`/`GoalCard`) com o motivo explicado em texto e dois botões:
+> **Confirmar que está correto** (`acknowledgeIncident()` — só grava
+> `incidentAcknowledgedAt`) e **Editar** (`updateIncidentEntry()` — formulário completo:
+> carteira, categoria, subcategoria, responsável, descrição, valor com inversão de sinal
+> para Investimento/Outro, data de compra, vencimento, situação, e **número/total de
+> parcelas** — este último par de campos não é editável na tela normal de Lançamentos por
+> design (§17), mas é justamente o que precisa ser corrigido aqui).
+>
+> **Self-healing:** depois de salvar uma edição, `updateIncidentEntry()` chama
+> `tryRegroupIncidents()`, que roda a mesma heurística do importador/backfill
+> (`clusterInstallmentRows`) sobre todos os incidentes restantes do workspace — se a
+> correção fez a parcela combinar com uma irmã real (ex.: corrigiu um valor ou uma
+> descrição digitada errado), ambas ganham `groupId` e saem da lista de incidentes
+> sozinhas, sem precisar rodar o script de backfill manualmente de novo.
+>
+> **Verificado direto no banco** (script descartável): a tela lista corretamente os 4
+> incidentes reais do workspace do titular — as 2 parcelas órfãs de "MERCADO LIVRE" do
+> Registro Nº 025 (R$ 72,71 e R$ 132,53), mais uma parcela órfã de 10x (R$ 281,52) e uma de
+> outra loja não notada antes (R$ 54,99) — confirma que a funcionalidade generaliza
+> corretamente além do caso específico que motivou o pedido, sem precisar de nenhuma lista
+> hardcoded de lojas. 6 testes novos (171 no total), `tsc --noEmit` e `npm run build`
+> limpos (53 rotas). Servidor de produção local reiniciado.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 026), `MANUAL-DE-USO.md` (seção 10 "Compromissos" atualizada).
+>
+> **Última atualização anterior: 2026-08-08 (correção definitiva dos clusters "MERCADO
+> LIVRE" — Registro Nº 025).** Depois da rodada completa abaixo, o usuário reportou que
+> lançamentos "MERCADO LIVRE" continuavam ausentes de Dívidas, pois refletem orçamento
+> real. Os 2 clusters ambíguos deixados de fora pelo backfill anterior não eram dado
+> corrompido — eram **múltiplas compras diferentes** (a descrição genérica "MERCADO
+> LIVRE" não distingue uma compra da outra, então coincidiam em carteira+categoria+
+> descrição+total de parcelas). Confirmado inspecionando as entries reais no banco: um
+> cluster de 49 linhas era na verdade 4 séries de 12x com valores de parcela bem
+> diferentes (R$ 88,24 / R$ 120,75 / R$ 474,92 / R$ 82,89) mais 1 parcela órfã (R$ 132,53,
+> sem par — provável lançamento incompleto na fonte original); outro cluster de 7 linhas
+> era 3 pares de 2x mais 1 parcela órfã (R$ 72,71).
+>
+> **Correção:** `lib/import/group-installments.ts::clusterInstallmentRows()` (usada tanto
+> pela importação de CSV quanto pelo backfill retroativo) ganhou uma dimensão nova de
+> agrupamento — dentro do mesmo cluster (carteira+categoria+descrição+total), subdivide
+> por **valor da parcela**, com tolerância de 2 centavos (`splitByAmount()`, ordena por
+> `|amount|` e corta sempre que o salto entre valores consecutivos passa da tolerância).
+> A tolerância existe porque uma compra real dividida em N parcelas iguais deixa o resto
+> de centavos numa delas (ex.: um grupo já existente e correto tinha parcelas de
+> R$ 53,98/R$ 53,96/R$ 53,96/R$ 53,96) — não pode ser exato, mas também não pode ser
+> grande o bastante para confundir duas compras de valores realmente diferentes. Re-rodado
+> `scripts/backfill-installment-groups.ts` sobre os candidatos que restavam sem `groupId`:
+> **7 grupos novos, 54 lançamentos corrigidos, nenhum cluster ambíguo restante.** As 2
+> parcelas órfãs de verdade continuam sem grupo (esperado — não têm par).
+>
+> **Verificado direto no banco** (script descartável, removido depois): as 4 compras
+> "MERCADO LIVRE" agora aparecem via `openInstallmentGroups()` como 4 dívidas separadas,
+> somando R$ 7.750,89 em aberto, dentro de R$ 21.100,60 de dívida total aberta no
+> workspace do titular. 2 testes novos em `group-installments.test.ts` (separação por
+> valor + tolerância de centavo não quebra série real), 165 testes no total, `tsc --noEmit`
+> e `npm run build` limpos. Servidor de produção local reiniciado.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 025).
+>
+> **Última atualização anterior: 2026-08-08 (Fase 3 + Dívidas + PDF + refinamentos +
+> formalização da linguagem — rodada completa).** Depois de testar Bens/Metas (Fase 3), o
+> usuário pediu numa mensagem: Editar/Salvar/Excluir mais visíveis em Bens e Metas,
+> Reserva de Emergência do Painel só aparecer com Meta real vinculada, nova tela
+> **Dívidas** em Patrimônio, e botão **"Baixar PDF"** nas 8 telas de Relatórios/Patrimônio.
+> Depois de testar essa rodada, um segundo feedback consolidado trouxe 5 frentes: (A) um
+> **bug real de dados**, (B) trava de edição + gráfico em Bens, (C) trava de edição + pin
+> no Painel + remoção de um cálculo incorreto em Metas, (D) gráfico em Dívidas, (E)
+> formalização da linguagem em **63 arquivos** de todo o sistema. Registrado formalmente
+> como Registros Nº 023 e 024 em `REGISTRO-OPERACIONAL.md` (o detalhamento completo de
+> cada frente está lá; aqui vai o essencial técnico para retomar contexto).
+>
+> **Dívidas** (`/patrimonio/dividas`) — nenhuma entidade nova no banco: deriva 100% de
+> `lib/finance/open-installments.ts::openInstallmentGroups()` (já usado por "Despesas
+> parceladas"), com 2 funções novas e testadas — `totalRemainingDebt()`,
+> `monthlyDebtCommitment()` — e, na rodada seguinte, `debtDeclineTimeline()` (saldo devedor
+> combinado dos grupos em aberto, descontado parcela a parcela, para um gráfico de
+> diminuição). Considera só `DESPESA` com `installmentTotal >= 2` ainda em aberto.
+>
+> **PDFs** (8 telas: 5 Relatórios + Bens + Metas + Dívidas) — reaproveita `pdfkit` (já em
+> produção via exportação LGPD, `lib/me/export-pdf.ts`). `lib/reports/pdf-shared.ts`
+> (cabeçalho/rodapé de marca compartilhado) + 1 builder por relatório em
+> `lib/reports/pdf/*.ts` + 1 Route Handler por relatório. Cada rota de PDF duplica a
+> busca/cálculo da página correspondente (mesmas funções puras de `lib/finance`) em vez de
+> um loader compartilhado — trade-off aceito, registrado no plano.
+>
+> **Bug real corrigido (o mais importante desta rodada):** todo lançamento importado por
+> CSV nunca recebia `groupId` (`app/api/import/commit/route.ts` grava
+> `installmentNumber`/`installmentTotal` mas nunca criava/associava um `EntryGroup`) —
+> invisível tanto em "Despesas parceladas" quanto em "Dívidas", que exigem `groupId` para
+> agrupar. Corrigido daqui para frente (o commit da importação agora agrupa por
+> `walletId`+`categoryId`+`description`+`installmentTotal`, com checagem de segurança
+> contra `installmentNumber` repetido no mesmo cluster) e retroativamente por
+> `scripts/backfill-installment-groups.ts` (novo, permanente, reexecutável — mesmo espírito
+> de `prisma/seed.ts`): **24 grupos criados, 174 lançamentos corrigidos, 2 clusters
+> ambíguos** ("MERCADO LIVRE", números de parcela repetidos) deixados de fora, sem
+> mesclar dados que podem ser de compras diferentes.
+>
+> **Bens** — `AssetCard.tsx` (Client Component) troca o formulário sempre-visível por
+> `useState` de modo visualização/edição (mesmo padrão de `WalletsTable`/`WalletEditRow`),
+> recebendo só `string`/`number`/`boolean` pré-formatados do server component, nunca
+> `Decimal`. Novo `lib/finance/patrimony.ts::patrimonyEvolution()` — soma corrida de todos
+> os lançamentos de todos os bens, ordenados por data, um ponto por evento real (não uma
+> série mensal fixa) — renderizado com o `MonthlyChart` já existente.
+>
+> **Metas** — `GoalCard.tsx`, mesma trava de edição. Nova coluna
+> `Goal.pinnedToPainel Boolean @default(false)` (migration aditiva) + Server Action
+> `toggleGoalPinned()` (fora da trava — é preferência de exibição, não dado da meta, mesmo
+> espírito do botão Arquivar). **Causa raiz do bug de Reserva de Emergência resolvida:** o
+> Painel tinha seu próprio cálculo (`emergencyReserveCoverage` = despesa média × 6 meses,
+> `lib/finance/reserve.ts`) que ignorava a `Goal` real — por isso mostrava R$ 28.918,55 com
+> a meta real cadastrada em R$ 1.000,00. Esse cálculo (junto com
+> `emergencyReserveTarget`/`reserveGaugeBand`/`ReserveGaugeBand`) foi **removido**; a seção
+> final do Painel virou "Metas", listando todas as `Goal` com `pinnedToPainel=true`, cada
+> uma com `ReserveGauge` usando o saldo real da caixinha + `goalProgress()` — os mesmos
+> números já visíveis em Patrimônio → Metas, nunca um cálculo paralelo.
+> `averageMonthlyExpense()` continua (Dívidas usa para o "% da despesa mensal média").
+>
+> **Formalização da linguagem (Fase E)** — usuário reportou um erro de norma culta
+> ("pra"/"pro" em vez de "para"/"para o"/"para a") e pediu correção em todo o sistema.
+> Varredura inicial (28 arquivos, telas/JSX) corrigida; uma segunda varredura mais ampla
+> (`\bpra\b|\bpro\b` em todo `*.{ts,tsx}`, não só telas) encontrou mais **83 ocorrências em
+> 43 arquivos** — a maioria comentários internos de código, mas também um punhado de
+> textos reais visíveis ao usuário (e-mail de convite, mensagens de erro de login/exclusão
+> de conta) que a primeira varredura tinha deixado passar por estarem em `actions.ts`/`lib/`
+> em vez de páginas. Usuário confirmou corrigir tudo, incluindo comentários internos —
+> **63 arquivos no total** corrigidos nesta etapa. Confirmado limpo com uma varredura final
+> (`\bpra\b|\bpro\b|\bcê\b|\btá\b|\bné\b|\btô\b` em todo `*.{ts,tsx}`) sem nenhum resultado.
+>
+> **Testes e verificação:** 162 testes (2 novos: `patrimonyEvolution`,
+> `debtDeclineTimeline`; testes de `emergencyReserveCoverage`/`emergencyReserveTarget`/
+> `reserveGaugeBand` removidos junto das funções), `tsc --noEmit` limpo, `npm run build`
+> limpo (51 rotas, nenhum Client Component novo — `AssetCard`, `GoalCard` — vazou
+> `Decimal` para o bundle). Servidor de produção local reiniciado na porta 3001
+> (`npm run start -- -p 3001`, após matar uma instância travada com o build antigo) para o
+> usuário testar.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
+> (registros 023 e 024), `MANUAL-DE-USO.md` (nova seção 11 "Patrimônio (Bens, Metas e
+> Dívidas)", seção 4 "Painel" e seção 10 "Relatórios" atualizadas).
+>
+> **Última atualização anterior: 2026-08-08 (Fase 2 — Relatórios avançados, retomada e
 > concluída).** O usuário pediu explicitamente pra dar prosseguimento na "próxima etapa
 > ou fase"; ao perguntar qual, escolheu retomar a Fase 2 (pausada desde 31/07). Planejada
 > em modo de planejamento antes de qualquer código (`ExitPlanMode`, plano salvo em
@@ -81,7 +242,11 @@
 > corromper o cache do Turbopack de novo no meio da sessão, ver "Problemas conhecidos").
 > **Usuário confirmou: "testei, ficou bom".** `npm run dev` também foi usado brevemente
 > nessa sessão e bateu de novo no incidente conhecido de corrupção de cache do Turbopack
-> — resolvido do mesmo jeito de sempre (apagar `.next`, reiniciar).
+> — resolvido do mesmo jeito de sempre (apagar `.next`, reiniciar). **Commitado
+> (`ca370c3`) e enviado pra `origin/master`** — deploy automático na Vercel concluído e
+> **confirmado pelo usuário em produção** ("conferi, o deploy na Vercel terminou, tudo
+> ok"). Fase 2 (Relatórios avançados) encerrada de ponta a ponta: planejada, implementada,
+> testada localmente, testada em produção, documentada.
 >
 > **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
 > (registro 021), `MANUAL-DE-USO.md` (nova seção 10, "Relatórios").

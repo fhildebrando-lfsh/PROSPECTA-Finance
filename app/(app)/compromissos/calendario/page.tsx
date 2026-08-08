@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 import { daysBetween } from "@/lib/finance/dates";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { markSettled } from "../actions";
+import { CompromissosTabs } from "../CompromissosTabs";
 
 const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTH_LABELS = [
@@ -96,15 +97,7 @@ export default async function CompromissosCalendarioPage({
         <p className="text-sm text-zinc-500">O que ainda está a pagar ou a receber, num calendário mensal (§13).</p>
       </div>
 
-      <div className="flex gap-2 text-sm">
-        <Link
-          href="/compromissos"
-          className="rounded-lg px-3 py-1.5 text-indigo-200 hover:bg-indigo-900/50 hover:text-white"
-        >
-          Lista
-        </Link>
-        <span className="rounded-lg bg-amber-500 px-3 py-1.5 font-medium text-zinc-950">Calendário</span>
-      </div>
+      <CompromissosTabs active="calendario" />
 
       <div className="flex items-center justify-between">
         <Link

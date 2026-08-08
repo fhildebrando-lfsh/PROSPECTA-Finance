@@ -7,7 +7,7 @@ import { AdvisorControl } from "@/components/AdvisorControl";
  * Visão em árvore: cada consultor (`ADVISOR`) com a lista de clientes que
  * ele atende logo abaixo. Mesma ação de atribuir/trocar consultor de
  * `/admin/usuarios` (`AdvisorControl`/`assignAdvisor`), só que organizada
- * por consultor em vez de por usuário — pra dar visão de carga de trabalho
+ * por consultor em vez de por usuário — para dar visão de carga de trabalho
  * ("quem atende quem") de um jeito que a tabela de usuários não mostra bem.
  */
 export default async function AdminConsultoresPage() {
@@ -39,7 +39,7 @@ export default async function AdminConsultoresPage() {
   };
   const advisorOptions = profiles.map((p) => ({ id: p.id, label: `${p.fullName ?? "(sem nome)"} — ${emailByProfileId.get(p.id) ?? "?"}` }));
 
-  // Só workspaces com titular contam como "cliente" pra essa visão.
+  // Só workspaces com titular contam como "cliente" para essa visão.
   const clientWorkspaces = workspaces.filter((w) => w.memberships.some((m) => m.role === "TITULAR"));
 
   const byAdvisor = new Map<string, typeof clientWorkspaces>();
@@ -59,7 +59,7 @@ export default async function AdminConsultoresPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Consultores</h1>
-        <p className="text-sm text-zinc-500">Quem atende quem — clique em &ldquo;trocar&rdquo; pra mudar o consultor de um cliente.</p>
+        <p className="text-sm text-zinc-500">Quem atende quem — clique em &ldquo;trocar&rdquo; para mudar o consultor de um cliente.</p>
       </div>
 
       <div className="flex flex-col gap-4">

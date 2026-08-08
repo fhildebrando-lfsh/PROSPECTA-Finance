@@ -1,4 +1,4 @@
-/** Casca visual simples e consistente pros e-mails transacionais do app. */
+/** Casca visual simples e consistente para os e-mails transacionais do app. */
 function emailShell(bodyHtml: string): string {
   return `
     <div style="font-family: -apple-system, Segoe UI, Arial, sans-serif; background:#09090b; padding:32px 16px;">
@@ -14,7 +14,7 @@ export function clientInviteEmail(params: { clientName: string; inviteUrl: strin
   return emailShell(`
     <p style="margin:0 0 16px; font-size:15px; line-height:1.5;">Olá, ${params.clientName}!</p>
     <p style="margin:0 0 24px; font-size:15px; line-height:1.5; color:#d4d4d8;">
-      Você foi convidado(a) pra usar o PROSPECTA Finance. Clique no botão abaixo pra criar sua senha e acessar sua conta.
+      Você foi convidado(a) para usar o PROSPECTA Finance. Clique no botão abaixo para criar sua senha e acessar sua conta.
     </p>
     <a href="${params.inviteUrl}" style="display:inline-block; background:#f59e0b; color:#09090b; font-weight:600; padding:12px 24px; border-radius:8px; text-decoration:none;">
       Criar minha senha

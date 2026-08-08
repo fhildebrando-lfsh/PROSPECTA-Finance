@@ -16,9 +16,11 @@ function arcPath(fromDeg: number, toDeg: number, radius: number) {
   return `M ${from.x} ${from.y} A ${radius} ${radius} 0 0 1 ${to.x} ${to.y}`;
 }
 
-/** §11.6 — velocímetro de 0 a 100% da meta de reserva, com as mesmas faixas de
- * `lib/finance/reserve.ts::reserveGaugeBand` (vermelho até 33%, âmbar até 66%, verde acima). */
-export function ReserveGauge({ percentage }: { percentage: number }) {
+/** Velocímetro genérico de 0 a 100% de uma meta (`Goal.targetAmount`, Fase 3) —
+ * faixas fixas: vermelho até 33%, âmbar até 66%, verde acima. `label` opcional
+ * (default "RESULTADO") identifica de qual meta é o gauge, quando há mais de uma
+ * (Painel → seção "Metas", Patrimônio → Metas). */
+export function ReserveGauge({ percentage, label = "RESULTADO" }: { percentage: number; label?: string }) {
   const clamped = Math.min(Math.max(percentage, 0), 100);
   const needleAngle = 180 - (clamped / 100) * 180;
   const needleTip = polar(needleAngle, R - STROKE / 2 - 6);
@@ -40,7 +42,7 @@ export function ReserveGauge({ percentage }: { percentage: number }) {
           100%
         </text>
       </svg>
-      <p className="-mt-2 text-xs font-medium tracking-wide text-indigo-300">RESULTADO</p>
+      <p className="-mt-2 text-xs font-medium tracking-wide text-indigo-300">{label}</p>
       <p className="font-mono text-2xl font-semibold tabular-nums text-white">{clamped.toFixed(0)}%</p>
     </div>
   );

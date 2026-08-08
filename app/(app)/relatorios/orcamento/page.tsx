@@ -7,6 +7,7 @@ import { categoryDistribution } from "@/lib/finance/rankings";
 import { type Regime } from "@/lib/finance/types";
 import { formatCurrencyBRL, MONTH_LABELS } from "@/lib/format";
 import { BudgetTable, type BudgetRow } from "./BudgetTable";
+import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
 
 interface SearchParams {
   year?: string;
@@ -57,7 +58,7 @@ export default async function OrcamentoPage({ searchParams }: { searchParams: Pr
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-500">
           Orçado × realizado por categoria de despesa — {MONTH_LABELS[monthIndex0]}/{year}, regime{" "}
-          {regime === "caixa" ? "caixa (Vence)" : "competência (Compra)"}. Clique em &ldquo;Editar&rdquo; pra definir
+          {regime === "caixa" ? "caixa (Vence)" : "competência (Compra)"}. Clique em &ldquo;Editar&rdquo; para definir
           quanto planeja gastar em cada categoria.
         </p>
         <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -73,6 +74,12 @@ export default async function OrcamentoPage({ searchParams }: { searchParams: Pr
           >
             trocar p/ {otherRegime === "caixa" ? "caixa" : "competência"}
           </Link>
+          <a
+            href={`/api/relatorios/orcamento/pdf?year=${year}&month=${monthIndex0 + 1}&regime=${regime}`}
+            className={BTN_PRIMARY}
+          >
+            Baixar PDF
+          </a>
         </div>
       </div>
 

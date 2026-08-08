@@ -81,8 +81,9 @@ Tela inicial depois do login. Mostra, para o período selecionado:
   de despesa.
 - **Cobertura de fatura** — quanto você tem guardado nas caixinhas vinculadas ao cartão
   versus o que está a pagar nele.
-- **Reserva de emergência** — velocímetro mostrando o quanto sua reserva cobre da meta
-  (baseada na média de despesa dos últimos 6 meses fechados).
+- **Metas** — um velocímetro para cada meta marcada como "Mostrar no Painel" (em
+  Patrimônio → Metas), com o saldo atual da caixinha vinculada e o quanto falta para o
+  valor-alvo. Sem nenhuma meta marcada, esta seção fica ausente.
 
 **Trocar o período:** navegue por mês, ou use o seletor **Mensal / Anual / Geral** no topo
 para ver o mês corrente, o ano inteiro (com navegação de ano) ou todo o histórico.
@@ -168,6 +169,16 @@ Mostra o que está vencendo: **vencidos, hoje, próximos 7 e próximos 30 dias**
 **Aba Calendário:** a mesma informação em uma grade mensal — navegue entre meses, clique em
 um dia para ver a lista completa daquele dia (com destaque em vermelho para os vencidos).
 
+**Aba Incidentes:** lançamentos parcelados que o sistema não conseguiu combinar
+automaticamente com o restante da série (por exemplo, uma parcela sem nenhuma outra
+correspondente encontrada — mesma carteira, categoria, descrição e valor). Cada linha
+mostra o motivo e dois botões: **"Confirmar que está correto"** (se a linha realmente está
+assim mesmo, some da lista sem alterar nada) ou **"Editar"** (formulário completo da
+linha — carteira, categoria, subcategoria, responsável, descrição, valor, datas, situação
+e o número/total de parcelas, que não é editável na tela normal de Lançamentos). Ao
+corrigir uma linha, o sistema tenta combiná-la de novo com a parcela irmã automaticamente
+— se a correção resolveu o problema, as duas saem da lista sozinhas.
+
 ---
 
 ## 10. Relatórios
@@ -189,9 +200,59 @@ navegação de ano/mês e alternância entre regime Caixa e Competência (igual 
   "Editar" na linha da categoria) e acompanhe o realizado, a diferença e o percentual já
   usado — fica vermelho quando passa do orçado, âmbar perto do limite.
 
+Todas as cinco telas têm um botão **"Baixar PDF"**, que gera um relatório com a mesma
+informação da tela, identidade visual da PROSPECTA Finance e um aviso de que o documento
+tem finalidade informativa, sem constituir recomendação de investimento.
+
 ---
 
-## 11. Cadastros
+## 11. Patrimônio (Bens, Metas e Dívidas)
+
+Três telas de acompanhamento de longo prazo, no grupo "Patrimônio" do menu lateral. Assim
+como os Relatórios, cada uma tem um botão **"Baixar PDF"** próprio.
+
+### 11.1 Bens
+
+Lista de bens (imóveis, veículos, investimentos registrados manualmente, etc.), cada um com
+o valor atual (soma de todos os lançamentos de aquisição e valorização/desvalorização
+ligados a ele) e um **gráfico de evolução patrimonial** — o valor acumulado do seu
+patrimônio total, ponto a ponto, ao longo do tempo.
+
+Cada bem aparece em um cartão travado para edição: os dados ficam visíveis, mas somente
+leitura, até você clicar em **"Editar"**; depois de alterar, clique em **"Salvar"** para
+confirmar (ou "Cancelar" para descartar). Botões **"Arquivar"** (mantém o histórico, tira da
+lista ativa) e **"Excluir"** (remove de vez, junto com o histórico de valorizações) ficam
+sempre visíveis, fora da trava de edição.
+
+### 11.2 Metas
+
+Cada meta tem um velocímetro de progresso (saldo atual da caixinha vinculada versus o
+valor-alvo) e, se definida, uma data-alvo. Mesma trava de edição de Bens: clique em
+"Editar" para alterar nome, valor-alvo ou data, depois "Salvar". Um checkbox **"Mostrar no
+Painel"**, fora da trava de edição, decide se aquela meta aparece na seção "Metas" do
+Painel — marque quantas quiser, ou nenhuma.
+
+Uma meta de reserva de emergência é uma meta como qualquer outra: crie uma vinculada à
+caixinha de reserva, com o valor-alvo real que você quer atingir. Sem essa meta criada,
+nenhum indicador de reserva aparece em lugar nenhum do sistema.
+
+### 11.3 Dívidas
+
+Somente leitura — pensada para você (e, se tiver, seu consultor) enxergarem a magnitude das
+dívidas em aberto. Considera **despesas parceladas com duas ou mais parcelas** (financiamentos,
+compras parceladas) que ainda não terminaram de pagar; parcelamentos já quitados não
+aparecem.
+
+- **Dívida total em aberto**, **compromisso mensal** (soma das próximas parcelas de cada
+  dívida) e **percentual da despesa mensal média** comprometido com dívidas, no topo.
+- **Gráfico de diminuição** — o saldo devedor combinado de todas as dívidas em aberto,
+  caindo ao longo do tempo até a última parcela.
+- Tabela com cada dívida, ordenada da maior para a menor: total contratado, parcelas pagas
+  e restantes, valor restante, próxima parcela e prazo final.
+
+---
+
+## 12. Cadastros
 
 Telas de configuração, cada uma com regra própria de quem pode editar:
 
@@ -213,7 +274,7 @@ preservar o histórico.
 
 ---
 
-## 12. Minha conta
+## 13. Minha conta
 
 - **Dados pessoais:** nome, telefone, CPF, data de nascimento, endereço (com busca
   automática pelo CEP). Campos ficam bloqueados até clicar em "Editar"; deixar um campo em
@@ -229,7 +290,7 @@ preservar o histórico.
 
 ---
 
-## 13. Administração (só para administrador da plataforma)
+## 14. Administração (só para administrador da plataforma)
 
 - **`/admin/usuarios`** — todos os usuários cadastrados no sistema: nome, e-mail, se é
   admin, workspaces e papel em cada um, e-mail confirmado, data de cadastro, último login.
@@ -243,7 +304,7 @@ preservar o histórico.
 
 ---
 
-## 14. Segurança e privacidade
+## 15. Segurança e privacidade
 
 Toda a base do sistema segue a Lei Geral de Proteção de Dados (LGPD). Detalhes completos em
 `/politica-privacidade` (dentro do sistema) e no rascunho jurídico `TERMOS-DE-USO.md`. Em
@@ -252,7 +313,7 @@ momento, e todo acesso de um consultor ou administrador ao seu workspace fica re
 
 ---
 
-## 15. Dúvidas frequentes
+## 16. Dúvidas frequentes
 
 **Lancei um valor errado, como corrijo?**
 No desktop, edite direto na tabela de Lançamentos. No celular, abra o lançamento pela tela

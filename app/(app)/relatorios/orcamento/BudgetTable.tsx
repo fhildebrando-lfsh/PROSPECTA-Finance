@@ -8,8 +8,8 @@ import { setBudget } from "./actions";
 /**
  * Formatação de moeda local, sem depender de `lib/format.ts::formatCurrencyBRL` —
  * aquela função aceita `Decimal`, o que arrasta o runtime do Prisma
- * (`node:crypto`/`node:fs`/...) pro bundle do client, e webpack não consegue
- * empacotar módulos Node pro navegador. Este componente só lida com `number`
+ * (`node:crypto`/`node:fs`/...) para o bundle do client, e webpack não consegue
+ * empacotar módulos Node para o navegador. Este componente só lida com `number`
  * puro (já convertido no server component da página), então um formatter
  * dedicado evita o import problemático.
  */

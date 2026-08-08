@@ -58,7 +58,7 @@ export interface CategoryMonthlyRow {
  * Balanço anual, bloco "descritivo por categoria" (§13, aba BALANCO da planilha
  * original) — Σ |amount| de DESPESA por categoria, com uma coluna por mês do
  * `year` + total anual. Mesmo escopo de `categoryDistribution` (só despesa),
- * generalizado pra 12 meses de uma vez num único passe sobre `entries`, em vez
+ * generalizado para 12 meses de uma vez num único passe sobre `entries`, em vez
  * de chamar `categoryDistribution` 12 vezes. Ordenado por total anual
  * decrescente.
  */

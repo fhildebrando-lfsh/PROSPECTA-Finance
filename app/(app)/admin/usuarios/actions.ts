@@ -24,8 +24,8 @@ export async function deleteUser(_prevState: DeleteUserState, formData: FormData
 
   const profileId = String(formData.get("profileId") ?? "");
   const confirmation = String(formData.get("confirmation") ?? "");
-  if (profileId === admin.id) return { error: "Use 'Minha conta' pra excluir a sua própria conta." };
-  if (confirmation !== "EXCLUIR") return { error: 'Digite "EXCLUIR" (em maiúsculas) pra confirmar.' };
+  if (profileId === admin.id) return { error: "Use 'Minha conta' para excluir a sua própria conta." };
+  if (confirmation !== "EXCLUIR") return { error: 'Digite "EXCLUIR" (em maiúsculas) para confirmar.' };
 
   await deleteAccountAsAdmin(profileId);
   revalidatePath("/admin/usuarios");
@@ -45,7 +45,7 @@ export async function setAdvisor(formData: FormData) {
 /**
  * Promove/remove admin da plataforma. Nunca a própria conta — evita se
  * autorremover por engano e ficar sem nenhum admin (teria que ir direto no
- * banco pra corrigir).
+ * banco para corrigir).
  */
 export async function setPlatformAdmin(formData: FormData) {
   const admin = await requireAdminProfile();

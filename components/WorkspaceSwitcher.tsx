@@ -19,11 +19,11 @@ export interface WorkspaceSwitcherProps {
 /**
  * Arquitetura de Identidade/Planos, Fase 2 Etapa 3 — seletor de workspace.
  * Com 1 membership só (todo usuário real hoje), renderiza texto estático
- * idêntico ao de sempre — zero mudança visual pra quem já usa o sistema.
+ * idêntico ao de sempre — zero mudança visual para quem já usa o sistema.
  * Só vira um `<select>` de verdade quando a pessoa tem mais de uma
  * Membership ativa (ex.: dono do workspace próprio + ADVISOR em workspace
  * de cliente) — cenário que ainda não existe em produção, mas o mecanismo
- * já funciona pronto pra quando existir.
+ * já funciona pronto para quando existir.
  */
 export function WorkspaceSwitcher({
   memberships,

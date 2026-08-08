@@ -27,34 +27,3 @@ export function averageMonthlyExpense(
   const sum = monthlyExpenses.reduce((total, expense) => total.plus(expense), new Decimal(0));
   return sum.div(monthsBack);
 }
-
-/** meta_reserva = despesa_mensal_média × meses_alvo (default 6, §11.6). */
-export function emergencyReserveTarget(avgMonthlyExpense: Decimal, monthsTarget = 6): Decimal {
-  return avgMonthlyExpense.abs().times(monthsTarget);
-}
-
-export interface ReserveCoverage {
-  target: Decimal;
-  ratio: Decimal;
-  percentage: Decimal;
-}
-
-export function emergencyReserveCoverage(
-  reserveBalance: Decimal,
-  avgMonthlyExpense: Decimal,
-  monthsTarget = 6,
-): ReserveCoverage {
-  const target = emergencyReserveTarget(avgMonthlyExpense, monthsTarget);
-  const ratio = target.isZero() ? new Decimal(0) : reserveBalance.div(target);
-  return { target, ratio, percentage: ratio.times(100) };
-}
-
-export type ReserveGaugeBand = "vermelho" | "ambar" | "verde";
-
-/** §11.6 — faixas do gauge: vermelho até 33%, âmbar até 66%, verde acima. */
-export function reserveGaugeBand(percentage: Decimal | number): ReserveGaugeBand {
-  const value = percentage instanceof Decimal ? percentage.toNumber() : percentage;
-  if (value < 33) return "vermelho";
-  if (value < 66) return "ambar";
-  return "verde";
-}

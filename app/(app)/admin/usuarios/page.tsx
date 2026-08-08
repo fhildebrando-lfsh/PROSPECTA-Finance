@@ -16,7 +16,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 /**
  * §19.1 — visão de plataforma: todo usuário cadastrado, em qualquer
- * workspace, só pra quem é `isPlatformAdmin`. Junta `auth.users` (via
+ * workspace, só para quem é `isPlatformAdmin`. Junta `auth.users` (via
  * Admin API, service role) com `Profile`/`Membership`/`Workspace` (Prisma).
  *
  * Também é daqui que o admin atribui/troca o consultor de qualquer

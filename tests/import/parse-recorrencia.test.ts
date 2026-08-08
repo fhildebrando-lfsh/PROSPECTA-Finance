@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseRecorrencia } from "@/lib/import/parse-recorrencia";
 
 describe("parseRecorrencia (§8.5)", () => {
-  it("número solto vira UNICA + installment_number, sem installment_total (não dá pra derivar)", () => {
+  it("número solto vira UNICA + installment_number, sem installment_total (não é possível derivar)", () => {
     expect(parseRecorrencia("105")).toEqual({
       recurrenceKind: "UNICA",
       installmentNumber: 105,

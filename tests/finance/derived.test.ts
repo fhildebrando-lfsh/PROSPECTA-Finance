@@ -36,7 +36,7 @@ describe("derivedStatus (§10 R3)", () => {
   });
 });
 
-describe("entryUrgency (classificação pra cor de linha na UI)", () => {
+describe("entryUrgency (classificação para cor de linha na UI)", () => {
   it("liquidado -> settled", () => {
     expect(entryUrgency({ status: "PAGO", dueDate: new Date(Date.UTC(2020, 0, 1)) }, today)).toBe("settled");
   });

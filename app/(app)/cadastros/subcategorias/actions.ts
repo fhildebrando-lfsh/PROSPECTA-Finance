@@ -7,7 +7,7 @@ import { slugify } from "@/lib/slug";
 import { rethrowFriendly } from "@/lib/api/prisma-errors";
 
 /**
- * Criar subcategoria é permitido pra qualquer membro com permissão de
+ * Criar subcategoria é permitido para qualquer membro com permissão de
  * escrita no workspace (não só admin) — pedido explícito do usuário em
  * 2026-08-01, revertendo parcialmente a decisão anterior de deixar
  * Subcategoria 100% admin-only (ver seção 21 do PROJECT_STATE.md). Editar

@@ -3,12 +3,12 @@ import { ApiError } from "@/lib/api/errors";
 
 /**
  * Atribui/troca/remove o consultor (`ADVISOR`) de um workspace — funciona
- * pra qualquer workspace com titular, não só os criados via pré-cadastro
+ * para qualquer workspace com titular, não só os criados via pré-cadastro
  * (`/admin/clientes`); um workspace pessoal comum pode virar cliente de
  * consultoria depois, a qualquer momento, sem precisar ter nascido assim.
  *
  * Troca de consultor nunca apaga a relação anterior — revoga
- * (`status=REVOKED`), igual a arquitetura já faz pra qualquer acesso de
+ * (`status=REVOKED`), igual a arquitetura já faz para qualquer acesso de
  * ADVISOR (histórico de auditoria: "esse consultor teve acesso entre X e
  * Y"). `advisorProfileId=null` só remove o consultor atual, sem atribuir
  * um novo.

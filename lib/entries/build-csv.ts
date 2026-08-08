@@ -8,7 +8,7 @@ function escapeCsvCell(value: string, delimiter: string): string {
 }
 
 /**
- * §18.3 — CSV pra abrir no Excel em português: UTF-8 com BOM e separador
+ * §18.3 — CSV para abrir no Excel em português: UTF-8 com BOM e separador
  * `;` (sem isso o Excel lê acento errado e junta tudo numa coluna só).
  */
 export function buildCsv(rows: ExportRow[]): string {

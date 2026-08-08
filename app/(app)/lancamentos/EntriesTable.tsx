@@ -112,7 +112,7 @@ export function EntriesTable({ entries, categories, subcategories, people, statu
       const settled = results.length - failed;
       if (failed > 0) {
         setError(
-          `${settled} marcado(s) como pago/recebido; ${failed} não se aplicavam (só funciona pra "a pagar"/"a receber").`,
+          `${settled} marcado(s) como pago/recebido; ${failed} não se aplicavam (só funciona para "a pagar"/"a receber").`,
         );
       }
       setSelected(new Set());

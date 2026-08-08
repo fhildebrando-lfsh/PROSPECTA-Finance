@@ -6,6 +6,7 @@ import { projectedBalance } from "@/lib/finance/period";
 import { type Regime } from "@/lib/finance/types";
 import { formatCurrencyBRL, MONTH_LABELS } from "@/lib/format";
 import { MonthlyChart, type MonthlyChartPoint } from "@/components/charts/MonthlyChart";
+import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
 
 interface SearchParams {
   months?: string;
@@ -77,6 +78,9 @@ export default async function FluxoProjetadoPage({ searchParams }: { searchParam
           >
             trocar p/ {otherRegime === "caixa" ? "caixa" : "competência"}
           </Link>
+          <a href={`/api/relatorios/fluxo-projetado/pdf?months=${monthsAhead}&regime=${regime}`} className={BTN_PRIMARY}>
+            Baixar PDF
+          </a>
         </div>
       </div>
 

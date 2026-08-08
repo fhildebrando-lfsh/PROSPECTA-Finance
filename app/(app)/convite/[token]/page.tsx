@@ -27,21 +27,21 @@ export default async function ConvitePage({ params }: { params: Promise<{ token:
 
       {invite && !invite.acceptedAt && expired && (
         <p className="text-sm text-red-400">
-          Este convite expirou. Peça pra quem convidou gerar um novo.
+          Este convite expirou. Peça para quem convidou gerar um novo.
         </p>
       )}
 
       {invite && !invite.acceptedAt && !expired && profile.email?.trim().toLowerCase() !== invite.email && (
         <p className="text-sm text-amber-400">
           Este convite foi enviado para <strong>{invite.email}</strong>, mas você está logado como{" "}
-          <strong>{profile.email}</strong>. Entre com a conta correta pra aceitar.
+          <strong>{profile.email}</strong>. Entre com a conta correta para aceitar.
         </p>
       )}
 
       {invite && !invite.acceptedAt && !expired && profile.email?.trim().toLowerCase() === invite.email && (
         <>
           <p className="text-sm text-zinc-300">
-            Você foi convidado pra entrar no workspace <strong>{invite.workspace.name}</strong> como{" "}
+            Você foi convidado para entrar no workspace <strong>{invite.workspace.name}</strong> como{" "}
             <strong>{ROLE_LABELS[invite.role] ?? invite.role}</strong>.
           </p>
           <form action={accept}>

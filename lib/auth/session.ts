@@ -49,8 +49,8 @@ interface MembershipLike {
 }
 
 /**
- * Pura, sem I/O — decide qual Membership é "a ativa" pra sessão atual.
- * `requestedWorkspaceId` (vindo do cookie) só vale se apontar pra uma
+ * Pura, sem I/O — decide qual Membership é "a ativa" para a sessão atual.
+ * `requestedWorkspaceId` (vindo do cookie) só vale se apontar para uma
  * Membership `ACTIVE` de verdade da própria pessoa; caso contrário (cookie
  * ausente, revogado, ou de outra pessoa) cai no comportamento de sempre —
  * a primeira membership. Nunca confia no valor sem checar contra a lista
@@ -70,16 +70,16 @@ export function resolveActiveMembership<T extends MembershipLike>(
 
 /**
  * Resolve perfil + a Membership ativa da sessão (via cookie, com fallback
- * pra primeira membership — ver `resolveActiveMembership`). Registra
+ * para a primeira membership — ver `resolveActiveMembership`). Registra
  * `AccessLog` quando a Membership resolvida é `ADVISOR` (§19.1 — acesso de
  * consultor a workspace de terceiro é sempre auditado). Usado tanto por
  * `requireWorkspaceId()` quanto pelo layout, que precisa do objeto
- * completo (nome do workspace, papel) pra desenhar o seletor.
+ * completo (nome do workspace, papel) para desenhar o seletor.
  */
 export async function requireActiveMembership() {
   const profile = await requireProfile();
 
-  // LGPD — trava a entrada no app pra quem nunca aceitou a Política de
+  // LGPD — trava a entrada no app para quem nunca aceitou a Política de
   // Privacidade: contas criadas via Google (não passa pelo checkbox do
   // cadastro por e-mail) e contas antigas de antes deste campo existir.
   // Fica aqui (não em requireProfile) de propósito — /definir-senha e outras
@@ -158,17 +158,17 @@ export async function requireApiWorkspaceMembership(): Promise<{
  * (que sempre assume `memberships[0]`), recebe o `workspaceId` de fora e
  * valida contra as memberships **reais** da sessão (nunca confia cegamente
  * no valor recebido). É a peça que um seletor de workspace (ainda não
- * construído — Fase 2 Etapa 3+) vai usar pra deixar a mesma pessoa
+ * construído — Fase 2 Etapa 3+) vai usar para deixar a mesma pessoa
  * acessar, por exemplo, um workspace onde ela é ADVISOR em vez do seu
  * workspace pessoal. Sem seletor nenhum ainda, nenhum call site usa isto —
- * existe pronto pra quando existir.
+ * existe pronto para quando existir.
  *
  * Acesso como ADVISOR é registrado em `AccessLog` (§19.1 da especificação:
  * "todo acesso de administrador/consultor a workspace de terceiro é
  * registrado"). Acesso de PLATFORM_ADMIN a um workspace onde ele **não**
  * tem Membership nenhuma (o "admin acessa qualquer workspace" completo do
  * §19.1) ainda não está implementado aqui de propósito — é um recurso
- * maior, com sua própria tela/fluxo, que fica pra quando for de fato
+ * maior, com sua própria tela/fluxo, que fica para quando for de fato
  * encomendado; hoje `/admin/usuarios` já cobre a necessidade atual sem
  * precisar disso (usa a Admin API do Supabase, não Membership).
  */
@@ -202,7 +202,7 @@ export type Action = "write" | "manageTaxonomy";
 
 export interface AuthContext {
   platformRole: PlatformRole;
-  /** Ausente pra decisões que não dependem de papel de workspace (ex.: `manageTaxonomy`). */
+  /** Ausente para decisões que não dependem de papel de workspace (ex.: `manageTaxonomy`). */
   role?: MembershipRole;
 }
 
@@ -212,7 +212,7 @@ function toPlatformRole(isPlatformAdmin: boolean): PlatformRole {
 
 /**
  * Função explícita de autorização (RBAC), não um motor genérico configurável
- * — ver seção 8 do documento de arquitetura pro porquê. Combina só o papel
+ * — ver seção 8 do documento de arquitetura para o porquê. Combina só o papel
  * de workspace + o papel de plataforma; nunca decide nada de plano/feature
  * aqui (isso é `lib/billing/entitlements.ts::hasFeature()`, checado à parte
  * — autorização e comercial são perguntas diferentes, feitas em lugares

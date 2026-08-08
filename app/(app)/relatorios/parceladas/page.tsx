@@ -2,6 +2,7 @@ import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { openInstallmentGroups, type InstallmentEntry } from "@/lib/finance/open-installments";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
+import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
 
 export default async function ParceladasPage() {
   const workspaceId = await requireWorkspaceId();
@@ -31,10 +32,15 @@ export default async function ParceladasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-sm text-zinc-500">
-        Parcelamentos em aberto — quanto já foi pago, quanto falta e o prazo final de cada compromisso. Grupos já
-        quitados não aparecem aqui.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-zinc-500">
+          Parcelamentos em aberto — quanto já foi pago, quanto falta e o prazo final de cada compromisso. Grupos já
+          quitados não aparecem aqui.
+        </p>
+        <a href="/api/relatorios/parceladas/pdf" className={BTN_PRIMARY}>
+          Baixar PDF
+        </a>
+      </div>
 
       <div className="min-w-0 overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
         <table className="w-full min-w-[860px] border-collapse text-sm">

@@ -28,7 +28,7 @@ export type EntryUrgency = "settled" | "upcoming" | "overdue";
 
 /**
  * Classificação grosseira do mesmo cálculo de `derivedStatus`, pensada
- * pra UI decidir cor de linha em vez de mostrar texto: liquidado fica
+ * para a UI decidir cor de linha em vez de mostrar texto: liquidado fica
  * discreto, a vencer é neutro, atrasado precisa chamar atenção de verdade.
  */
 export function entryUrgency(entry: { status: EntryStatus; dueDate: Date }, today: Date = new Date()): EntryUrgency {

@@ -75,7 +75,7 @@ export default async function MembrosPage() {
               <div className="flex flex-col gap-2">
                 {invites.map((inv) => {
                   const inviteUrl = `${origin}/convite/${inv.token}`;
-                  const whatsappText = `Você foi convidado(a) para o PROSPECTA Finance! Acesse o link pra criar sua conta: ${inviteUrl}`;
+                  const whatsappText = `Você foi convidado(a) para o PROSPECTA Finance! Acesse o link para criar sua conta: ${inviteUrl}`;
                   return (
                     <div
                       key={inv.id}
@@ -118,7 +118,7 @@ export default async function MembrosPage() {
             <p className="mb-3 text-xs text-zinc-500">
               O sistema <strong>não manda e-mail nem WhatsApp sozinho</strong> — gera um link (botão &ldquo;Copiar&rdquo;
               abaixo) e, se você informar o telefone, também um botão &ldquo;Enviar por WhatsApp&rdquo; que já abre a
-              conversa com a mensagem pronta; o envio final é sempre um clique seu. Só funciona bem pra quem ainda
+              conversa com a mensagem pronta; o envio final é sempre um clique seu. Só funciona bem para quem ainda
               não criou conta; se a pessoa já tem workspace próprio, ela continua vendo o dela por padrão (ainda não
               existe seletor de workspace).
             </p>

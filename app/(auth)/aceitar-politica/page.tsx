@@ -5,7 +5,7 @@ import { requireProfile } from "@/lib/auth/session";
 import { AcceptPolicyForm } from "./AcceptPolicyForm";
 
 /**
- * Trava de entrada no app pra quem nunca aceitou a Política de Privacidade
+ * Trava de entrada no app para quem nunca aceitou a Política de Privacidade
  * — pega login com Google (não passa pelo checkbox do cadastro por e-mail) e
  * contas antigas de antes desse campo existir. Ver `requireActiveMembership()`.
  */

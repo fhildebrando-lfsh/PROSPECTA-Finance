@@ -7,12 +7,12 @@ import { clientInviteEmail } from "@/lib/email/templates";
 
 /**
  * Gera um link de autenticação real do Supabase (não o nosso token de
- * `WorkspaceInvite`, que só serve pra tracking/exibição) e manda pelo Brevo.
- * `type=invite` só funciona pra e-mail que ainda não tem `auth.users` — é
- * exatamente o caso do pré-cadastro na primeira vez. Pra reenviar depois
+ * `WorkspaceInvite`, que só serve para tracking/exibição) e manda pelo Brevo.
+ * `type=invite` só funciona para e-mail que ainda não tem `auth.users` — é
+ * exatamente o caso do pré-cadastro na primeira vez. Para reenviar depois
  * (o `auth.users` já existe, só falta a pessoa definir a senha),
  * `type=magiclink` funciona igual: estabelece sessão via `/auth/confirm`,
- * que redireciona pra `/definir-senha`.
+ * que redireciona para `/definir-senha`.
  */
 async function sendInviteAuthEmail(params: {
   clientName: string;
@@ -32,7 +32,7 @@ async function sendInviteAuthEmail(params: {
   await sendEmail({
     to: params.clientEmail,
     toName: params.clientName,
-    subject: "Você foi convidado pro PROSPECTA Finance",
+    subject: "Você foi convidado para o PROSPECTA Finance",
     html: clientInviteEmail({ clientName: params.clientName, inviteUrl }),
   });
 
@@ -44,7 +44,7 @@ async function sendInviteAuthEmail(params: {
  * o registro do cliente ANTES dele existir: workspace novo (ainda sem
  * TITULAR), assinatura no plano escolhido (sempre TRIALING/sem cobrança —
  * billing real é escopo futuro), consultor já ativo como ADVISOR (se
- * indicado), e um convite pendente pro e-mail do cliente. O trigger
+ * indicado), e um convite pendente para o e-mail do cliente. O trigger
  * invite-aware (Etapa 1) cuida do resto: quando o cliente se cadastrar com
  * esse e-mail, entra direto nesse workspace como TITULAR em vez de ganhar um
  * workspace pessoal novo.
@@ -97,9 +97,9 @@ export async function createClientPreRegistration(params: {
   try {
     inviteUrl = await sendInviteAuthEmail({ clientName, clientEmail, origin: params.origin, type: "invite" });
   } catch (inviteErr) {
-    // `type=invite` só funciona pra e-mail que ainda não tem auth.users — se
+    // `type=invite` só funciona para e-mail que ainda não tem auth.users — se
     // a pessoa já tinha conta (ex.: já é cliente/consultor de outro
-    // workspace), cai pra magiclink, que funciona pra qualquer e-mail já
+    // workspace), cai para magiclink, que funciona para qualquer e-mail já
     // cadastrado e estabelece sessão do mesmo jeito via /auth/confirm.
     try {
       inviteUrl = await sendInviteAuthEmail({ clientName, clientEmail, origin: params.origin, type: "magiclink" });
@@ -118,7 +118,7 @@ export async function createClientPreRegistration(params: {
   return { workspace, invite, emailSent, inviteUrl };
 }
 
-/** Reenvia o convite pra um pré-cadastro que já existe (link novo, e-mail novo). */
+/** Reenvia o convite para um pré-cadastro que já existe (link novo, e-mail novo). */
 export async function resendClientInvite(workspaceId: string, origin: string) {
   const invite = await prisma.workspaceInvite.findFirst({
     where: { workspaceId, role: "TITULAR", acceptedAt: null },
@@ -145,7 +145,7 @@ export async function cancelClientPreRegistration(workspaceId: string) {
     where: { workspaceId, role: "TITULAR", status: "ACTIVE" },
   });
   if (hasOwner) {
-    throw new ApiError(400, "Esse cliente já completou o cadastro — não é mais um pré-cadastro pra cancelar.");
+    throw new ApiError(400, "Esse cliente já completou o cadastro — não é mais um pré-cadastro para cancelar.");
   }
 
   await prisma.workspace.delete({ where: { id: workspaceId } });

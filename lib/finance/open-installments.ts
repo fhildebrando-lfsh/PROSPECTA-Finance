@@ -5,7 +5,7 @@ import { SETTLED_FOR_BALANCE } from "./balance";
  * Subconjunto de `Entry` (não `FinanceEntry` — que é deliberadamente enxuto e
  * não carrega `description`/`installmentNumber`/`installmentTotal`) com só os
  * campos que "Despesas parceladas" (§13, aba RDP) precisa. Escopo local a
- * este relatório, pra não inflar o contrato de `FinanceEntry` usado por todo
+ * este relatório, para não inflar o contrato de `FinanceEntry` usado por todo
  * o resto do sistema.
  */
 export interface InstallmentEntry {
@@ -31,6 +31,12 @@ export interface OpenInstallmentGroup {
   remainingCount: number;
   /** Soma das parcelas ainda não liquidadas (com sinal, §8.3). */
   remainingAmount: Decimal;
+  /** Soma de todas as parcelas do grupo, pagas + a pagar — magnitude total do compromisso. */
+  totalAmount: Decimal;
+  /** Valor da próxima parcela em aberto — como todo parcelamento avança mês a mês
+   * (`installments.ts::generateInstallments`), é uma proxy correta de "quanto pesa
+   * por mês" (usado por Dívidas, §13). Nulo se não sobrou nenhuma parcela em aberto. */
+  nextInstallmentAmount: Decimal | null;
   nextDueDate: Date | null;
   /** "Prazo" — vencimento da última parcela do grupo. */
   lastDueDate: Date;
@@ -62,6 +68,7 @@ export function openInstallmentGroups(entries: InstallmentEntry[]): OpenInstallm
 
     const paidCount = sorted.length - unpaid.length;
     const remainingAmount = unpaid.reduce((sum, e) => sum.plus(e.amount), new Decimal(0));
+    const totalAmount = sorted.reduce((sum, e) => sum.plus(e.amount), new Decimal(0));
 
     groups.push({
       groupId,
@@ -72,10 +79,48 @@ export function openInstallmentGroups(entries: InstallmentEntry[]): OpenInstallm
       paidCount,
       remainingCount: unpaid.length,
       remainingAmount,
+      totalAmount,
+      nextInstallmentAmount: unpaid[0]?.amount ?? null,
       nextDueDate: unpaid[0].dueDate,
       lastDueDate: sorted[sorted.length - 1].dueDate,
     });
   }
 
   return groups.sort((a, b) => (a.nextDueDate?.getTime() ?? 0) - (b.nextDueDate?.getTime() ?? 0));
+}
+
+/** Dívida total em aberto (§13, "Dívidas") — soma de `remainingAmount` de todos os grupos. */
+export function totalRemainingDebt(groups: OpenInstallmentGroup[]): Decimal {
+  return groups.reduce((sum, g) => sum.plus(g.remainingAmount), new Decimal(0));
+}
+
+/** Compromisso mensal com dívidas — soma da próxima parcela de cada grupo (§13, "impacto no orçamento"). */
+export function monthlyDebtCommitment(groups: OpenInstallmentGroup[]): Decimal {
+  return groups.reduce((sum, g) => sum.plus(g.nextInstallmentAmount ?? new Decimal(0)), new Decimal(0));
+}
+
+export interface DebtTimelinePoint {
+  date: Date;
+  /** Saldo devedor combinado (magnitude positiva) restante nesta data. */
+  remaining: Decimal;
+}
+
+/**
+ * Linha do tempo de diminuição da dívida (§13, "Dívidas") — só considera as
+ * entries dos grupos **atualmente em aberto** (`openGroupIds`, os mesmos que
+ * já aparecem na tabela — nunca reintroduz uma dívida já quitada no gráfico).
+ * Começa no total contratado desses grupos e desconta cada parcela (paga ou
+ * futura) na sua data de vencimento, mostrando o saldo combinado encolhendo
+ * até a última parcela.
+ */
+export function debtDeclineTimeline(entries: InstallmentEntry[], openGroupIds: Set<string>): DebtTimelinePoint[] {
+  const relevant = entries.filter((e) => e.groupId && openGroupIds.has(e.groupId));
+  const total = relevant.reduce((sum, e) => sum.plus(e.amount.abs()), new Decimal(0));
+
+  const sorted = [...relevant].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+  let running = total;
+  return sorted.map((e) => {
+    running = running.minus(e.amount.abs());
+    return { date: e.dueDate, remaining: running };
+  });
 }

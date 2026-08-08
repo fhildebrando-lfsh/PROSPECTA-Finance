@@ -27,13 +27,13 @@ export function DeleteAccountForm({ ownedWorkspaceNames }: { ownedWorkspaceNames
           <>
             {" "}
             Como você é titular de <strong>{ownedWorkspaceNames.join(", ")}</strong>, todos os lançamentos, carteiras
-            e dados desse(s) workspace(s) também serão apagados pra sempre — não tem como desfazer.
+            e dados desse(s) workspace(s) também serão apagados para sempre — não há como desfazer.
           </>
         )}
       </p>
       <form action={action} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1 text-sm text-zinc-300">
-          Digite <strong>EXCLUIR</strong> pra confirmar
+          Digite <strong>EXCLUIR</strong> para confirmar
           <input
             name="confirmation"
             value={confirmation}

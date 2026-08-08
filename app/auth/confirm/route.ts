@@ -15,7 +15,7 @@ function safeNext(raw: string | null, fallback: string) {
  * via `verifyOtp` com `token_hash`/`type`) quanto login social OAuth (Google
  * etc., via `exchangeCodeForSession` com `code`). Os dois estabelecem a
  * sessão no servidor via cookie antes do redirect (diferente do link padrão
- * do Supabase, que manda `?code=` pra `Site URL` sem trocar — foi essa
+ * do Supabase, que manda `?code=` para `Site URL` sem trocar — foi essa
  * lacuna que causou o bug de "cai em /login em vez de logar direto"
  * descoberto em 2026-08-04).
  */
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (ok) {
-    // Rede de segurança pra login (magic link ou Google) de um e-mail que já
+    // Rede de segurança para login (magic link ou Google) de um e-mail que já
     // tinha conta antes de um convite novo ser criado — o trigger de signup
     // só aceita convite pendente na hora do CADASTRO, nunca num login
     // seguinte. Ver lib/workspace/invite.ts::acceptPendingInviteForEmail.

@@ -4,9 +4,9 @@ import Link from "next/link";
 
 /**
  * Aviso mostrado depois de salvar dados pessoais — não é só um texto
- * decorativo: existe pra cumprir o princípio da transparência da LGPD
+ * decorativo: existe para cumprir o princípio da transparência da LGPD
  * (Art. 6º, VI e Art. 9º) toda vez que um dado pessoal é gravado, com link
- * direto pra política de privacidade e um resumo dos direitos garantidos
+ * direto para a política de privacidade e um resumo dos direitos garantidos
  * pela lei que já funcionam de verdade no sistema hoje.
  */
 export function LgpdSavedModal({ onClose }: { onClose: () => void }) {

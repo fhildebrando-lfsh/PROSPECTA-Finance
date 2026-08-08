@@ -34,7 +34,7 @@ export function InstallPrompt() {
     if (isStandalone()) return;
 
     if (isIos()) {
-      // Adiado pra um callback (em vez de setState direto no corpo do efeito) —
+      // Adiado para um callback (em vez de setState direto no corpo do efeito) —
       // evita o cascading render que a regra react-hooks/set-state-in-effect aponta.
       const id = requestAnimationFrame(() => setVisible(true));
       return () => cancelAnimationFrame(id);

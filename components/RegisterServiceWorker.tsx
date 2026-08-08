@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-/** §21 — registra o service worker (Serwist) pra PWA instalável ficar disponível. */
+/** §21 — registra o service worker (Serwist) para a PWA instalável ficar disponível. */
 export function RegisterServiceWorker() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;

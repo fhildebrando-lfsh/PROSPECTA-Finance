@@ -7,6 +7,7 @@ import { categoryMonthlyBreakdown } from "@/lib/finance/rankings";
 import { type Regime } from "@/lib/finance/types";
 import { formatCurrencyBRL, MONTH_LABELS } from "@/lib/format";
 import { MonthlyTotalsTable, type MonthlyTotalsRow } from "@/components/reports/MonthlyTotalsTable";
+import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
 
 interface SearchParams {
   year?: string;
@@ -74,6 +75,9 @@ export default async function BalancoAnualPage({ searchParams }: { searchParams:
           >
             trocar p/ {otherRegime === "caixa" ? "caixa" : "competência"}
           </Link>
+          <a href={`/api/relatorios/balanco-anual/pdf?year=${year}&regime=${regime}`} className={BTN_PRIMARY}>
+            Baixar PDF
+          </a>
         </div>
       </div>
 

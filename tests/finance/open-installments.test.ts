@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { openInstallmentGroups, type InstallmentEntry } from "@/lib/finance/open-installments";
+import {
+  debtDeclineTimeline,
+  monthlyDebtCommitment,
+  openInstallmentGroups,
+  totalRemainingDebt,
+  type InstallmentEntry,
+} from "@/lib/finance/open-installments";
 import { d } from "./helpers";
 
 function makeInstallment(overrides: Partial<InstallmentEntry> = {}): InstallmentEntry {
@@ -34,6 +40,8 @@ describe("openInstallmentGroups (§13 — Despesas parceladas)", () => {
     expect(groups[0].paidCount).toBe(1);
     expect(groups[0].remainingCount).toBe(2);
     expect(groups[0].remainingAmount.toNumber()).toBe(-1000);
+    expect(groups[0].totalAmount.toNumber()).toBe(-1500);
+    expect(groups[0].nextInstallmentAmount?.toNumber()).toBe(-500);
     expect(groups[0].nextDueDate?.toISOString().slice(0, 10)).toBe("2026-02-10");
     expect(groups[0].lastDueDate.toISOString().slice(0, 10)).toBe("2026-03-10");
   });
@@ -65,5 +73,61 @@ describe("openInstallmentGroups (§13 — Despesas parceladas)", () => {
 
     const groups = openInstallmentGroups(entries);
     expect(groups.map((g) => g.groupId)).toEqual(["perto", "longe"]);
+  });
+});
+
+describe("totalRemainingDebt / monthlyDebtCommitment (§13 — Dívidas)", () => {
+  it("soma a dívida restante e o compromisso mensal (próxima parcela) de todos os grupos", () => {
+    const entries: InstallmentEntry[] = [
+      // dívida A: 2 parcelas restantes de -300
+      makeInstallment({ groupId: "a", installmentNumber: 1, status: "PAGO", amount: d(-300), installmentTotal: 3, dueDate: new Date(Date.UTC(2026, 0, 1)) }),
+      makeInstallment({ groupId: "a", installmentNumber: 2, status: "A_PAGAR", amount: d(-300), installmentTotal: 3, dueDate: new Date(Date.UTC(2026, 1, 1)) }),
+      makeInstallment({ groupId: "a", installmentNumber: 3, status: "A_PAGAR", amount: d(-300), installmentTotal: 3, dueDate: new Date(Date.UTC(2026, 2, 1)) }),
+      // dívida B: 1 parcela restante de -1000
+      makeInstallment({ groupId: "b", installmentNumber: 1, status: "A_PAGAR", amount: d(-1000), installmentTotal: 2, dueDate: new Date(Date.UTC(2026, 0, 15)) }),
+      makeInstallment({ groupId: "b", installmentNumber: 2, status: "A_PAGAR", amount: d(-1000), installmentTotal: 2, dueDate: new Date(Date.UTC(2026, 1, 15)) }),
+    ];
+
+    const groups = openInstallmentGroups(entries);
+
+    expect(totalRemainingDebt(groups).toNumber()).toBe(-2600); // -600 (a) + -2000 (b)
+    expect(monthlyDebtCommitment(groups).toNumber()).toBe(-1300); // -300 (próxima de a) + -1000 (próxima de b)
+  });
+
+  it("retorna zero para lista vazia", () => {
+    expect(totalRemainingDebt([]).toNumber()).toBe(0);
+    expect(monthlyDebtCommitment([]).toNumber()).toBe(0);
+  });
+});
+
+describe("debtDeclineTimeline (§13 — Dívidas, gráfico de diminuição)", () => {
+  it("começa no total contratado dos grupos em aberto e desconta cada parcela na sua data", () => {
+    const entries: InstallmentEntry[] = [
+      makeInstallment({ groupId: "a", installmentNumber: 1, status: "PAGO", amount: d(-500), installmentTotal: 3, dueDate: new Date(Date.UTC(2026, 0, 1)) }),
+      makeInstallment({ groupId: "a", installmentNumber: 2, status: "A_PAGAR", amount: d(-500), installmentTotal: 3, dueDate: new Date(Date.UTC(2026, 1, 1)) }),
+      makeInstallment({ groupId: "a", installmentNumber: 3, status: "A_PAGAR", amount: d(-500), installmentTotal: 3, dueDate: new Date(Date.UTC(2026, 2, 1)) }),
+    ];
+
+    const timeline = debtDeclineTimeline(entries, new Set(["a"]));
+
+    expect(timeline).toHaveLength(3);
+    expect(timeline[0].remaining.toNumber()).toBe(1000); // 1500 - 500 (jan)
+    expect(timeline[1].remaining.toNumber()).toBe(500); // - 500 (fev)
+    expect(timeline[2].remaining.toNumber()).toBe(0); // - 500 (mar) — quita
+  });
+
+  it("ignora entries de grupos que não estão na lista de grupos em aberto", () => {
+    const entries: InstallmentEntry[] = [
+      makeInstallment({ groupId: "aberto", installmentNumber: 1, amount: d(-100), installmentTotal: 2, dueDate: new Date(Date.UTC(2026, 0, 1)) }),
+      makeInstallment({ groupId: "quitado", installmentNumber: 1, status: "PAGO", amount: d(-9999), installmentTotal: 2, dueDate: new Date(Date.UTC(2026, 0, 1)) }),
+    ];
+
+    const timeline = debtDeclineTimeline(entries, new Set(["aberto"]));
+    expect(timeline).toHaveLength(1);
+    expect(timeline[0].remaining.toNumber()).toBe(100 - 100); // só o grupo "aberto" conta: total 100, desconta 100
+  });
+
+  it("retorna lista vazia sem nenhum grupo em aberto", () => {
+    expect(debtDeclineTimeline([], new Set())).toEqual([]);
   });
 });

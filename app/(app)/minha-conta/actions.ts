@@ -22,7 +22,7 @@ export async function deleteMyAccount(
   const profile = await requireProfile();
 
   const confirmation = String(formData.get("confirmation") ?? "");
-  if (confirmation !== "EXCLUIR") return { error: 'Digite "EXCLUIR" (em maiúsculas) pra confirmar.' };
+  if (confirmation !== "EXCLUIR") return { error: 'Digite "EXCLUIR" (em maiúsculas) para confirmar.' };
 
   await deleteAccount(profile.id);
 

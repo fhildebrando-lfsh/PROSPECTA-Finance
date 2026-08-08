@@ -18,7 +18,7 @@ interface SearchParams {
 
 // liquidado/isento = problema resolvido, fica discreto; a vencer = tem uma
 // indicação (amarelo) mas sem chamar muita atenção; atrasado = precisa de
-// atenção real — fundo rosa forte, texto preto pro contraste (modelo Meu Vista).
+// atenção real — fundo rosa forte, texto preto para o contraste (modelo Meu Vista).
 // Barra lateral usa as mesmas cores da legenda (rosa/âmbar/cinza).
 const URGENCY_ROW_CLASS: Record<string, string> = {
   overdue: "border-l-4 border-l-rose-400 bg-rose-200 text-zinc-900",

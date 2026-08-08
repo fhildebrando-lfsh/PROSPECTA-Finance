@@ -12,7 +12,7 @@ const TABS = [
 
 export default async function CadastrosLayout({ children }: { children: React.ReactNode }) {
   // §20 — as abas ficam visíveis a todo mundo; cada página decide o que
-  // desabilitar pra quem não é admin (campo travado aparece visível e
+  // desabilitar para quem não é admin (campo travado aparece visível e
   // desabilitado, com o motivo ao lado — nunca escondido).
   await requireProfile();
 

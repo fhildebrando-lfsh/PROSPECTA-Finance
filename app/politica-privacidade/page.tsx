@@ -32,7 +32,7 @@ export default function PoliticaPrivacidadePage() {
           plataforma.
         </p>
         <p>
-          Encarregado de proteção de dados (DPO), pra dúvidas ou exercício de direitos:{" "}
+          Encarregado de proteção de dados (DPO), para dúvidas ou exercício de direitos:{" "}
           <strong>[NOME DO ENCARREGADO — PREENCHER]</strong>, e-mail{" "}
           <strong>admin@prospectafinance.com.br</strong>.
         </p>
@@ -51,7 +51,7 @@ export default function PoliticaPrivacidadePage() {
           </li>
           <li>
             <strong>Dados financeiros:</strong> lançamentos, carteiras, categorias e responsáveis que você cadastra
-            pra usar o sistema — é a finalidade central do produto.
+            para usar o sistema — é a finalidade central do produto.
           </li>
           <li>
             <strong>Dados de uso e acesso:</strong> quando um consultor ou administrador acessa o seu workspace,
@@ -71,10 +71,10 @@ export default function PoliticaPrivacidadePage() {
         <p>Não usamos seus dados pessoais para publicidade nem os vendemos a terceiros.</p>
       </Section>
 
-      <Section title="4. Base legal pro tratamento">
+      <Section title="4. Base legal para o tratamento">
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <strong>Execução de contrato</strong> (Art. 7º, V) — dados de conta e dados financeiros essenciais pra
+            <strong>Execução de contrato</strong> (Art. 7º, V) — dados de conta e dados financeiros essenciais para
             você usar o serviço.
           </li>
           <li>
@@ -82,8 +82,8 @@ export default function PoliticaPrivacidadePage() {
             endereço), que você fornece por vontade própria e pode remover quando quiser.
           </li>
           <li>
-            <strong>Legítimo interesse</strong> (Art. 7º, IX) — registros de acesso/auditoria, essenciais pra
-            segurança da plataforma e pra você saber quem viu seus dados.
+            <strong>Legítimo interesse</strong> (Art. 7º, IX) — registros de acesso/auditoria, essenciais para a
+            segurança da plataforma e para você saber quem viu seus dados.
           </li>
         </ul>
       </Section>
@@ -108,7 +108,7 @@ export default function PoliticaPrivacidadePage() {
             outro dado pessoal).
           </li>
         </ul>
-        <p>Nunca vendemos ou compartilhamos seus dados com terceiros pra fins de marketing.</p>
+        <p>Nunca vendemos ou compartilhamos seus dados com terceiros para fins de marketing.</p>
       </Section>
 
       <Section title="6. Seus direitos (Art. 18 da LGPD)">
@@ -125,7 +125,7 @@ export default function PoliticaPrivacidadePage() {
           </li>
         </ul>
         <p>
-          Pra exercer qualquer um desses direitos que não esteja disponível diretamente no sistema, entre em contato
+          Para exercer qualquer um desses direitos que não esteja disponível diretamente no sistema, entre em contato
           com o encarregado (seção 1).
         </p>
       </Section>
@@ -161,7 +161,7 @@ export default function PoliticaPrivacidadePage() {
 
       <Section title="10. Alterações desta política">
         <p>
-          Podemos atualizar esta política pra refletir mudanças no sistema ou na legislação. Alterações relevantes
+          Podemos atualizar esta política para refletir mudanças no sistema ou na legislação. Alterações relevantes
           serão comunicadas por e-mail ou aviso no sistema.
         </p>
       </Section>

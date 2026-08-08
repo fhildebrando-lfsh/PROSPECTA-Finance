@@ -40,7 +40,7 @@ export async function updateSession(request: NextRequest) {
     const returnPath = url.pathname + url.search;
     url.pathname = "/login";
     url.search = "";
-    // §19.1 — convite: volta pra cá depois do login (ex.: /convite/:token).
+    // §19.1 — convite: volta para cá depois do login (ex.: /convite/:token).
     url.searchParams.set("redirectTo", returnPath);
     return NextResponse.redirect(url);
   }

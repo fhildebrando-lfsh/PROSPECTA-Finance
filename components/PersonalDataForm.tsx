@@ -26,7 +26,7 @@ const INPUT_CLASS =
  * Formulário de dados pessoais reaproveitado em `/minha-conta` (a própria
  * pessoa) e `/admin/usuarios/:id` (admin em nome de qualquer um) — recebe a
  * Server Action certa por fora, o resto é idêntico. Campos ficam travados
- * (`disabled`) por padrão — só liberam depois de clicar "Editar", pra evitar
+ * (`disabled`) por padrão — só liberam depois de clicar "Editar", para evitar
  * edição/toque acidental num dado pessoal sensível. Depois de salvar, mostra
  * um aviso de LGPD (`LgpdSavedModal`) em vez do toast pequeno padrão — dado
  * pessoal exige um aviso mais visível que "Salvo".
