@@ -393,7 +393,25 @@
 
 ---
 
-## Próximo número de registro: **027**
+### Registro Nº 027
+- **Data:** 2026-08-08
+- **Etapa concluída:** Commit e push dos Registros Nº 023–026 (Fase 3, Dívidas+PDF,
+  refinamentos, correção MERCADO LIVRE, Compromissos → Incidentes)
+- **Descrição:** Todo o trabalho descrito nos Registros Nº 023 a 026 — desde Patrimônio
+  (Bens/Metas) até a nova aba Incidentes — ficou acumulado sem commit intermediário ao
+  longo da sessão. Consolidado num único commit (`061aef2`) e enviado a `origin/master`.
+  Excluído do commit o diretório `.tmp.driveupload/` (artefato de sincronização externa
+  presente na pasta de trabalho, sem relação com o projeto).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `git push origin master` bem-sucedido (`ca370c3..061aef2`). 124 arquivos
+  alterados — 171 testes automatizados, `tsc --noEmit` e `npm run build` já confirmados
+  limpos antes do commit (ver Registros Nº 023–026).
+- **Documentos relacionados:** Registros Nº 023, 024, 025, 026.
+
+---
+
+## Próximo número de registro: **028**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
