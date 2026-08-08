@@ -411,7 +411,24 @@
 
 ---
 
-## Próximo número de registro: **028**
+### Registro Nº 028
+- **Data:** 2026-08-08
+- **Etapa concluída:** Confirmação em produção dos Registros Nº 023–027
+- **Descrição:** Usuário testou em produção (`prospecta-finance.vercel.app`) o conjunto
+  completo entregue nesta rodada — Patrimônio (Bens/Metas), Dívidas, PDFs, Painel modular,
+  correção do bug de `groupId`/MERCADO LIVRE e a nova aba Compromissos → Incidentes — e
+  confirmou que está funcionando ("testei, ficou bom"). Fecha de ponta a ponta o ciclo
+  desta etapa: planejamento → implementação → testes automatizados → build → commit → push
+  → deploy confirmado → teste manual do usuário em produção.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** confirmação direta do usuário no chat; deploy de produção verificado como
+  `Ready` via `vercel ls` antes da confirmação (Registro Nº 027).
+- **Documentos relacionados:** Registros Nº 023–027.
+
+---
+
+## Próximo número de registro: **029**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
