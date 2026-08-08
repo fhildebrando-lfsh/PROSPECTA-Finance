@@ -290,9 +290,11 @@ function RankingList({
       {entries.map((e) => {
         const display = entryDisplay.get(e.id);
         return (
-          <li key={e.id} className="flex items-center justify-between py-2 text-sm first:pt-0 last:pb-0">
-            <span className="truncate text-indigo-100">{display?.description ?? "—"}</span>
-            <span className={`font-mono tabular-nums ${tone === "emerald" ? "text-emerald-400" : "text-red-400"}`}>
+          <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-sm first:pt-0 last:pb-0">
+            <span className="min-w-0 flex-1 truncate text-indigo-100">{display?.description ?? "—"}</span>
+            <span
+              className={`shrink-0 font-mono tabular-nums ${tone === "emerald" ? "text-emerald-400" : "text-red-400"}`}
+            >
               {formatCurrencyBRL(e.amount)}
             </span>
           </li>
