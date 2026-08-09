@@ -15,7 +15,19 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-09 (Leitores de fatura em PDF para 5 bancos reais —
+> **Última atualização real: 2026-08-09 (Cadastro de Cartão de Crédito — dia só aceita
+> dígito, Limite/Anuidade em padrão monetário, Registro Nº 042).** Dois componentes
+> novos e reutilizáveis em `components/ui/`: `DayInput` (filtra letra em tempo real, trava
+> em 2 dígitos) e `CurrencyInputBRL` (digita só número, formata como "R$ 1.500,00" na
+> hora, manda pro formulário o mesmo decimal cru que o Server Action já esperava — sem
+> mudar `actions.ts`). Usados nos 4 campos de fatura/anuidade dos formulários de criar e
+> editar cartão. 9 testes novos cobrindo a conversão de moeda (ida e volta sem perder
+> centavo, campo vazio ficando vazio em vez de "R$ 0,00").
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 042).
+>
+> **Última atualização anterior: 2026-08-09 (Leitores de fatura em PDF para 5 bancos reais —
 > Nubank, Casas Bahia, Porto Seguro, Itaú e Santander — Registro Nº 041).** Depois da
 > infraestrutura de importação de PDF ficar pronta (Registro Nº 040, sem leitor de banco
 > real ainda), o usuário compartilhou ~30 faturas reais de 8+ instituições e anos

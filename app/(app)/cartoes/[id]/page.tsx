@@ -8,6 +8,8 @@ import { cardStatementTotal, cardStatementWindow, currentStatementWindow } from 
 import { toFinanceEntry } from "@/lib/finance/from-db";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY } from "@/components/ui/buttonStyles";
+import { CurrencyInputBRL } from "@/components/ui/CurrencyInputBRL";
+import { DayInput } from "@/components/ui/DayInput";
 import { archiveCreditCard, deleteCreditCard, updateCreditCard } from "../actions";
 
 const STATEMENT_HISTORY_MONTHS = 6;
@@ -276,47 +278,35 @@ export default async function CartaoDetailPage({
           </label>
           <label className="flex flex-col gap-1 text-xs text-zinc-400">
             Dia de fechamento *
-            <input
-              type="number"
+            <DayInput
               name="closingDay"
-              min="1"
-              max="28"
-              defaultValue={wallet.closingDay ?? ""}
+              defaultValue={wallet.closingDay}
               required
               className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-zinc-400">
             Dia de vencimento *
-            <input
-              type="number"
+            <DayInput
               name="dueDay"
-              min="1"
-              max="28"
-              defaultValue={wallet.dueDay ?? ""}
+              defaultValue={wallet.dueDay}
               required
               className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-zinc-400">
             Limite de crédito (R$)
-            <input
-              type="number"
+            <CurrencyInputBRL
               name="creditLimit"
-              min="0"
-              step="0.01"
-              defaultValue={wallet.creditLimit?.toString() ?? ""}
+              defaultValue={wallet.creditLimit?.toString()}
               className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-zinc-400">
             Anuidade (R$/ano)
-            <input
-              type="number"
+            <CurrencyInputBRL
               name="annualFee"
-              min="0"
-              step="0.01"
-              defaultValue={wallet.creditCard?.annualFee?.toString() ?? ""}
+              defaultValue={wallet.creditCard?.annualFee?.toString()}
               className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
             />
           </label>

@@ -36,6 +36,7 @@
 
 ### Corrigido
 - **Leitura de fatura em PDF**: a reconstrução de linha a partir do texto do PDF podia embaralhar a ordem de leitura dentro de uma mesma linha quando duas colunas da fatura ficavam muito próximas verticalmente (ex.: valor da parcela aparecendo antes do nome do estabelecimento) — corrigida a ordenação para respeitar sempre a posição horizontal real do texto.
+- **Cadastro de Cartão de Crédito**: dia de fechamento e dia de vencimento agora só aceitam número (nenhuma letra passa, no máximo 2 dígitos). Limite de crédito e Anuidade agora são digitados em formato de moeda brasileira ("R$ 1.500,00"), preenchendo da direita pra esquerda como em qualquer app de banco, sem precisar digitar vírgula ou ponto.
 
 ---
 

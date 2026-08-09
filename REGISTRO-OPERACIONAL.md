@@ -922,7 +922,38 @@
 
 ---
 
-## Próximo número de registro: **042**
+### Registro Nº 042
+- **Data:** 2026-08-09
+- **Etapa concluída:** Cadastro de Cartão de Crédito — dia de fechamento/vencimento só
+  aceita dígitos, Limite de crédito e Anuidade em padrão monetário (R$)
+- **Descrição:** Usuário pediu duas melhorias de UX no formulário de cartão (criação e
+  edição): (1) dia de fechamento/vencimento aceitando só números, no máximo 2 dígitos,
+  sem permitir letra nenhuma; (2) Limite de crédito e Anuidade recebendo o valor em
+  formato monetário brasileiro (ex.: "R$ 1.500,00"), como qualquer app de banco.
+- **O que foi feito:**
+  - `components/ui/DayInput.tsx` (novo) — campo de dia do mês que filtra qualquer
+    caractere não numérico em tempo real (não só na hora de enviar o formulário) e trava
+    em 2 dígitos.
+  - `components/ui/CurrencyInputBRL.tsx` (novo) — campo de valor em reais: os dígitos
+    digitados preenchem da direita pra esquerda (centavos primeiro), sem precisar digitar
+    vírgula ou ponto; manda pro formulário um valor escondido em decimal cru ("1500.00"),
+    o formato que o Server Action já esperava — nenhuma mudança em `actions.ts`.
+  - Os dois componentes substituem os `<input type="number">` de dia de
+    fechamento/vencimento/limite/anuidade em `app/(app)/cartoes/novo/page.tsx` e
+    `app/(app)/cartoes/[id]/page.tsx` (criação e edição).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (270/270, incluindo 9 testes novos da formatação/conversão de
+  moeda — ida e volta sem perder centavo, campo vazio ficando vazio em vez de "R$ 0,00"),
+  `npx tsc --noEmit` limpo, `npm run build` de produção concluído. Verificação visual ao
+  vivo não foi possível (mesma limitação de sessão sem senha de login já documentada).
+- **Documentos relacionados:** `components/ui/DayInput.tsx`,
+  `components/ui/CurrencyInputBRL.tsx`, `app/(app)/cartoes/novo/page.tsx`,
+  `app/(app)/cartoes/[id]/page.tsx`, `tests/components/currency-input-brl.test.ts`.
+
+---
+
+## Próximo número de registro: **043**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
+import { CurrencyInputBRL } from "@/components/ui/CurrencyInputBRL";
+import { DayInput } from "@/components/ui/DayInput";
 import { createCreditCard } from "../actions";
 
 export default async function NovoCartaoPage() {
@@ -68,33 +70,24 @@ export default async function NovoCartaoPage() {
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="flex flex-col gap-1 text-xs text-zinc-400">
               Dia de fechamento *
-              <input
-                type="number"
+              <DayInput
                 name="closingDay"
-                min="1"
-                max="28"
                 required
                 className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs text-zinc-400">
               Dia de vencimento *
-              <input
-                type="number"
+              <DayInput
                 name="dueDay"
-                min="1"
-                max="28"
                 required
                 className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs text-zinc-400">
               Limite de crédito (R$)
-              <input
-                type="number"
+              <CurrencyInputBRL
                 name="creditLimit"
-                min="0"
-                step="0.01"
                 className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
               />
             </label>
@@ -109,11 +102,8 @@ export default async function NovoCartaoPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs text-zinc-400">
               Anuidade (R$/ano)
-              <input
-                type="number"
+              <CurrencyInputBRL
                 name="annualFee"
-                min="0"
-                step="0.01"
                 className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
               />
             </label>
