@@ -192,7 +192,8 @@ cadastradas em Cartões de Crédito:
 
 Cada banco tem um formato de fatura diferente — a leitura de um banco específico só fica
 disponível depois de configurada; se o seu banco ainda não tem suporte, você verá um
-aviso na tela.
+aviso na tela. Bancos com suporte hoje: Nubank, Casas Bahia/Bradescard, Porto Seguro,
+Itaú (Signature e PDA) e Santander (incluindo as variantes 123 e Free).
 
 Em todos os formatos, se algo deu errado, o lote inteiro pode ser **revertido com um
 clique**, na tela de Importar — desde que nenhum dos lançamentos importados já tenha

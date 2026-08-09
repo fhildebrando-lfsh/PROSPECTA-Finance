@@ -862,7 +862,67 @@
 
 ---
 
-## Próximo número de registro: **041**
+### Registro Nº 041
+- **Data:** 2026-08-09
+- **Etapa concluída:** Leitores de fatura em PDF para 5 bancos reais (Nubank, Casas Bahia,
+  Porto Seguro, Itaú, Santander)
+- **Descrição:** Depois do Registro Nº 040 (infraestrutura de importação de PDF pronta,
+  sem nenhum leitor de banco real), o usuário compartilhou ~30 faturas reais de 8+
+  instituições e anos (2018-2026), com as senhas de cada uma, pedindo para "aprender tudo
+  sobre eles" e trabalhar em partes se fosse muita informação. O leitor de arquivo padrão
+  não abre PDF com senha; a extração de texto real foi feita com um script Node avulso
+  usando a mesma `pdfjs-dist` já instalada no projeto (build `legacy`, sem DOM), só para
+  estudo — nunca parte do código do produto, que já fazia (e continua fazendo) a extração
+  inteiramente no navegador.
+- **O que foi feito:**
+  - **5 leitores novos** em `lib/import/pdf-statement/parsers/`: `nubank.ts` (já existia,
+    sem commit — fechado aqui), `casas-bahia.ts`, `porto-seguro.ts`, `itau.ts` (cobre
+    Signature e PDA, mesmo layout) e `santander.ts` (cobre as variantes 123/Free/sem
+    sufixo, mesmo layout), cada um com bateria de testes usando texto extraído de faturas
+    reais como fixture (52 testes novos ao todo).
+  - **Mercado Pago ficou de fora, de propósito**: a única fatura enviada veio zerada ("Você
+    não consumiu nada esse mês"), sem nenhuma linha de transação real para basear o
+    formato — registrar um leitor adivinhado arriscaria interpretar errado o extrato real
+    do cliente. Fica pendente até uma fatura de exemplo com consumo real.
+  - **Correção de design, encontrada ao comparar os bancos entre si:** o leitor do Nubank
+    já excluía corretamente a linha de "pagamento da fatura" (não é uma compra, é dinheiro
+    saindo da conta para quitar o cartão), mas os leitores da Casas Bahia e Porto Seguro
+    (escritos antes desta comparação) estavam importando o equivalente ("PAGAMENTO
+    RECEBIDO", "PAGAMENTO"/"PAGAMENTO PIX") como se fosse um crédito/estorno — corrigido
+    nos dois para excluir também, e o leitor do Santander já nasceu com a regra certa.
+  - **Bug real encontrado e corrigido em `extract-text.ts`** (a reconstrução de linha usada
+    por TODOS os leitores, não só os novos): quando duas colunas da fatura ficam muito
+    próximas verticalmente, fragmentos de texto do PDF na mesma linha visual às vezes têm
+    coordenada Y ligeiramente diferente (variação de sub-pixel entre fontes) — o
+    agrupamento por linha já tolerava isso, mas a ORDEM final dentro da linha só respeitava
+    a posição horizontal quando o Y batia exatamente, então esses fragmentos podiam sair
+    fora de ordem (descoberto na fatura do Santander: "PARC 08/12" aparecendo antes de
+    "MERCPAGO", quando a posição horizontal real dizia o contrário). Corrigido reordenando
+    cada linha por X depois de agrupada — melhora a confiabilidade de todos os 5 leitores,
+    não só do Santander.
+  - **Bug de build de produção encontrado e corrigido**: `npm run build` nunca tinha sido
+    rodado depois que o primeiro leitor de banco (Nubank) foi registrado — só descoberto
+    ao rodar o build nesta etapa. `Decimal` era importado de `@/lib/finance/types`, que
+    reexporta de `@prisma/client/runtime/client`; esse módulo carrega imports exclusivos
+    do Node (`node:fs`, `node:crypto` etc.) que o webpack não consegue empacotar para o
+    navegador — e como `ImportWizard.tsx` (Client Component) importa o registro de
+    leitores diretamente, o build do cliente quebrava por inteiro assim que qualquer leitor
+    real existisse. Corrigido importando `Decimal` de `@prisma/client-runtime-utils`
+    (adicionado como dependência direta) — a mesma classe, só sem o import Node-only.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (261/261, incluindo os 52 testes novos dos 4 leitores desta
+  etapa), `npx tsc --noEmit` limpo, `npm run build` de produção concluído com sucesso
+  (primeira vez rodado com leitores reais registrados — foi o que revelou o bug do
+  `Decimal`/webpack).
+- **Documentos relacionados:** `lib/import/pdf-statement/extract-text.ts`,
+  `lib/import/pdf-statement/types.ts`, `lib/import/pdf-statement/parsers/{registry,nubank,
+  casas-bahia,porto-seguro,itau,santander}.ts`, `tests/import/pdf-statement/*.test.ts`,
+  `package.json` (`@prisma/client-runtime-utils`), Registro Nº 040 (etapa original).
+
+---
+
+## Próximo número de registro: **042**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

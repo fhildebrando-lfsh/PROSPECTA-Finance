@@ -15,7 +15,38 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-09 (Cartões de Crédito — cadastro, fatura, Análise
+> **Última atualização real: 2026-08-09 (Leitores de fatura em PDF para 5 bancos reais —
+> Nubank, Casas Bahia, Porto Seguro, Itaú e Santander — Registro Nº 041).** Depois da
+> infraestrutura de importação de PDF ficar pronta (Registro Nº 040, sem leitor de banco
+> real ainda), o usuário compartilhou ~30 faturas reais de 8+ instituições e anos
+> (2018-2026) com as senhas de cada uma. `lib/import/pdf-statement/parsers/` ganhou 5
+> leitores novos: `nubank.ts`, `casas-bahia.ts`, `porto-seguro.ts`, `itau.ts` (cobre
+> Signature e PDA, mesmo layout) e `santander.ts` (cobre as variantes 123/Free/sem sufixo,
+> mesmo layout) — todos testados com texto extraído de faturas reais como fixture (52
+> testes novos). Mercado Pago ficou de fora, de propósito: a única fatura enviada veio
+> zerada, sem nenhuma linha de transação real para basear o formato.
+>
+> **Correção de design encontrada ao comparar os bancos entre si:** o leitor do Nubank já
+> excluía corretamente a linha de "pagamento da fatura" (não é uma compra, é dinheiro
+> saindo da conta para quitar o cartão), mas Casas Bahia e Porto Seguro (escritos antes
+> dessa comparação) estavam importando o equivalente como se fosse um crédito — corrigido
+> nos dois; Santander já nasceu com a regra certa.
+>
+> **Dois bugs reais encontrados e corrigidos nesta etapa, ambos com efeito além dos
+> leitores novos:** (1) `extract-text.ts` (reconstrução de linha do PDF, usada por TODOS os
+> leitores) podia embaralhar a ordem de leitura dentro de uma mesma linha quando duas
+> colunas da fatura ficavam muito próximas verticalmente — corrigido reordenando por X
+> depois de agrupar por linha. (2) `npm run build` de produção nunca tinha sido rodado
+> depois que o primeiro leitor foi registrado — quebrava por inteiro, porque `Decimal`
+> vinha de `@/lib/finance/types` (que reexporta de `@prisma/client/runtime/client`, com
+> imports exclusivos do Node) e `ImportWizard.tsx` (Client Component) importa o registro de
+> leitores direto. Corrigido importando `Decimal` de `@prisma/client-runtime-utils`
+> (adicionado como dependência direta) — mesma classe, sem o import Node-only.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 041).
+>
+> **Última atualização anterior: 2026-08-09 (Cartões de Crédito — cadastro, fatura, Análise
 > de Benefícios e infraestrutura de importação de fatura em PDF, Registro Nº 040).**
 > Usuário pediu uma aba nova com dois objetivos: mostrar a fatura de cada cartão de forma
 > fácil, e analisar se pontos/milhas compensam a anuidade (evitar "jogada de número" de

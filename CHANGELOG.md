@@ -32,6 +32,10 @@
 - **Cartões de Crédito**: novo grupo no menu lateral, com cadastro completo de cartão (nome, instituição financeira — inclusive cadastrando uma nova na hora —, imagem, dia de fechamento/vencimento, limite), vinculado automaticamente a uma Carteira. Tela "Meus Cartões" mostra a fatura vigente de cada um; o detalhe de cada cartão traz o histórico das últimas faturas e um seletor para conferir qualquer fatura (passada ou futura) lançamento a lançamento contra o extrato real do banco.
 - **Análise de Benefícios** (dentro de Cartões de Crédito): compara, cartão a cartão, se os pontos/milhas ganhos compensam a anuidade — calculado sobre o gasto real dos últimos 12 meses em cada cartão, não uma promessa do banco.
 - **Importação de fatura em PDF**: além de CSV e OFX, a tela de Importar (e o botão "Importar fatura" de cada cartão) agora aceita a fatura de um cartão de crédito em PDF, com suporte a arquivo protegido por senha (nunca salva, usada só para abrir o arquivo naquele momento) e termo de consentimento. Compras parceladas: a primeira parcela lançada já gera a série inteira; parcelas que reaparecem em faturas de meses seguintes são reconhecidas e não duplicadas. A leitura do formato de cada banco é adicionada aos poucos, um de cada vez.
+- **Leitura de fatura em PDF: 5 bancos suportados** (Nubank, Casas Bahia/Bradescard, Porto Seguro, Itaú — Signature e PDA — e Santander, incluindo as variantes 123/Free), conferidos contra faturas reais de 2018 a 2026. Pagamento da própria fatura nunca é importado como lançamento (não é compra); Mercado Pago fica pendente até haver uma fatura de exemplo com algum consumo real.
+
+### Corrigido
+- **Leitura de fatura em PDF**: a reconstrução de linha a partir do texto do PDF podia embaralhar a ordem de leitura dentro de uma mesma linha quando duas colunas da fatura ficavam muito próximas verticalmente (ex.: valor da parcela aparecendo antes do nome do estabelecimento) — corrigida a ordenação para respeitar sempre a posição horizontal real do texto.
 
 ---
 
