@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth/session";
 
 const TABS = [
-  { href: "/relatorios/analitico", label: "Analítico mês a mês" },
   { href: "/relatorios/balanco-anual", label: "Balanço anual" },
   { href: "/relatorios/fluxo-projetado", label: "Fluxo projetado" },
   { href: "/relatorios/parceladas", label: "Despesas parceladas" },
