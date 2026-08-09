@@ -4,8 +4,26 @@ const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 
-/** Escopo mínimo: criar/editar/apagar eventos (não lê a agenda pessoal do cliente) + identificar a conta conectada. */
-const SCOPES = ["https://www.googleapis.com/auth/calendar.events", "openid", "email"].join(" ");
+/**
+ * Dois escopos de Agenda são necessários, não um: `calendar.events` cobre
+ * criar/editar/apagar EVENTOS, mas criar/apagar o próprio calendário
+ * dedicado (`Calendars.insert`/`Calendars.delete`) é uma operação de
+ * gerenciamento de calendário, coberta só por `calendar.calendars` — sem
+ * ele a criação do calendário falha com 403 ACCESS_TOKEN_SCOPE_INSUFFICIENT
+ * mesmo com `calendar.events` concedido (confirmado em produção, 2026-08-09).
+ * Nenhum dos dois lê a agenda pessoal do cliente fora do calendário dedicado.
+ */
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.calendars",
+  "openid",
+  "email",
+].join(" ");
+
+const REQUIRED_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.calendars",
+];
 
 const CALENDAR_NAME = "PROSPECTA Finance";
 const CALENDAR_DESCRIPTION =
@@ -97,11 +115,23 @@ export async function exchangeCodeForTokens(
     access_token: string;
     refresh_token?: string;
     expires_in: number;
+    scope?: string;
   };
   if (!json.refresh_token) {
     throw new Error(
       "Google não devolveu refresh_token — provavelmente já havia uma autorização anterior sem revogar. " +
         "Peça para o cliente remover o acesso em myaccount.google.com/permissions e conectar de novo.",
+    );
+  }
+  // Falha cedo e com mensagem clara em vez de deixar a 403 genérica da Calendar API
+  // dois passos depois — `scope` no retorno do token é o que o Google REALMENTE
+  // concedeu, que pode ser menor que o `scope` pedido na URL de autorização.
+  const grantedScopes = (json.scope ?? "").split(" ").filter(Boolean);
+  console.log("[google-calendar] escopos concedidos pelo Google:", grantedScopes.join(", ") || "(nenhum informado)");
+  const missingScopes = REQUIRED_SCOPES.filter((scope) => !grantedScopes.includes(scope));
+  if (missingScopes.length > 0) {
+    throw new Error(
+      `O Google não concedeu todas as permissões necessárias nesta autorização — faltando: ${missingScopes.join(", ")}.`,
     );
   }
 

@@ -19,6 +19,9 @@
 ### Adicionado
 - **Integração com o Google Agenda**: em Compromissos → Calendário, é possível conectar o Google Agenda do cliente (autorização própria, separada do login com Google) — o sistema cria um calendário dedicado "PROSPECTA Finance" na conta dele e passa a enviar, em tempo real, todo compromisso a pagar/a receber. Ao liquidar (pagar/receber) um lançamento, o evento correspondente some da agenda em vez de ficar marcado como concluído. Botão "Desconectar" apaga o calendário dedicado e revoga o acesso.
 
+### Corrigido
+- **Conexão com o Google Agenda falhava sempre** (`403`, permissão insuficiente) ao tentar criar o calendário dedicado, mesmo com a permissão de Agenda concedida pelo cliente — faltava um segundo escopo específico para criar/gerenciar calendários (diferente do escopo de criar/editar eventos). Corrigido e verificado com uma conexão real.
+
 ---
 
 ## 2026-08-08

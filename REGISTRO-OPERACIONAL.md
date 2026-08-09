@@ -666,7 +666,49 @@
 
 ---
 
-## Próximo número de registro: **036**
+### Registro Nº 036
+- **Data:** 2026-08-09
+- **Etapa concluída:** Google Agenda — bug real corrigido (escopo `calendar.calendars`
+  faltando) + primeira conexão real verificada ponta a ponta
+- **Descrição:** Depois do Registro Nº 035 (código pronto, mas fluxo OAuth nunca testado
+  de verdade por faltar credencial), o usuário configurou o cliente OAuth no Google Cloud
+  e tentou conectar — falhou repetidamente com `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT` na
+  chamada `calendar.v3.Calendars.Insert`, mesmo com a tela de consentimento do Google
+  mostrando a permissão de Agenda corretamente e o usuário autorizando.
+
+  **Diagnóstico:** descartadas, em ordem, três causas prováveis mas erradas —
+  `redirect_uri` incorreto (real, mas já corrigido antes deste registro: as URIs tinham
+  sido coladas no campo "Origens JavaScript autorizadas" em vez de "URIs de
+  redirecionamento autorizados"), escopo mal configurado na tela de consentimento
+  (conferido, estava correto) e propagação lenta da configuração no Google (esperado, não
+  era isso). Causa raiz encontrada só depois de instrumentar o código para logar o `scope`
+  que o Google efetivamente devolve no token (`lib/integrations/google-calendar/
+  client.ts::exchangeCodeForTokens` passou a checar e logar isso, mudança permanente, não
+  só diagnóstica) — o token **tinha** `calendar.events` concedido, confirmando que o
+  problema não era a concessão em si, mas que **criar um calendário novo
+  (`Calendars.insert`) exige um escopo diferente de criar/editar eventos**:
+  `https://www.googleapis.com/auth/calendar.calendars`. O desenho original só previa
+  `calendar.events`, insuficiente para a etapa de criação do calendário dedicado.
+- **Correção:** `SCOPES` em `client.ts` passou a pedir os dois escopos
+  (`calendar.events` + `calendar.calendars`); `REQUIRED_SCOPES` valida ambos logo após a
+  troca do código OAuth, falhando cedo com mensagem clara em vez de deixar a 403 genérica
+  da Calendar API aparecer só depois. Usuário adicionou o escopo novo em "Acesso a dados"
+  no Google Auth Platform, revogou o acesso anterior (`myaccount.google.com/permissions`)
+  e reconectou — sucesso na primeira tentativa depois da correção.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** log de produção confirma escopos concedidos incluindo
+  `.../auth/calendar.calendars` e `.../auth/calendar.events`, callback em nível `info`
+  (sem erro). Conferido direto no banco: `google_calendar_connections` com 1 linha,
+  `google_calendar_id` preenchido com um calendário real
+  (`...@group.calendar.google.com`), `revoked_at` nulo. Dois deploys de produção
+  (`vercel --prod`) durante a investigação, cada um `tsc --noEmit` limpo antes.
+- **Documentos relacionados:** `lib/integrations/google-calendar/client.ts`,
+  `PROJECT_STATE.md` §19 (nota de pendência resolvida), Registro Nº 035 (etapa original).
+
+---
+
+## Próximo número de registro: **037**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

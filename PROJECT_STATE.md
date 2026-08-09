@@ -15,7 +15,39 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-09 (Integração com o Google Agenda — Registro Nº
+> **Última atualização real: 2026-08-09 (Google Agenda — bug real do escopo
+> `calendar.calendars` corrigido + primeira conexão verificada de verdade, Registro Nº
+> 036).** Depois do código pronto (Registro Nº 035, abaixo), o usuário configurou as
+> credenciais no Google Cloud e tentou conectar pela primeira vez — falhou repetidamente
+> com `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT` na chamada que cria o calendário dedicado,
+> mesmo com a tela de consentimento do Google mostrando a permissão de Agenda
+> corretamente. Depurado ao vivo, junto com o usuário, por várias hipóteses erradas antes
+> da causa real: `redirect_uri` colado no campo errado do Google Cloud (achado e corrigido
+> cedo), depois suspeita de escopo mal configurado ou de atraso de propagação do Google
+> (ambos descartados após conferência). A causa raiz só apareceu depois de instrumentar
+> `lib/integrations/google-calendar/client.ts::exchangeCodeForTokens` para logar o `scope`
+> que o Google efetivamente devolve no token (mudança permanente, não só diagnóstica) —
+> o token **tinha** `calendar.events`, provando que **criar um calendário novo
+> (`Calendars.insert`) exige um escopo diferente de criar/editar eventos**:
+> `https://www.googleapis.com/auth/calendar.calendars`, que o desenho original não
+> previa. Corrigido (`SCOPES` pede os dois agora, `REQUIRED_SCOPES` valida ambos e falha
+> cedo com mensagem clara) e verificado: usuário reconectou depois de adicionar o escopo
+> novo no Google Cloud e revogar o acesso anterior, sucesso na primeira tentativa —
+> `google_calendar_connections` tem 1 linha real, com um calendário de verdade criado na
+> conta dele (`...@group.calendar.google.com`).
+>
+> **Nota para o futuro — se algum dia mexer de novo no escopo de uma integração Google:**
+> escopos do Google Calendar (e provavelmente de outras APIs Google) são granulares por
+> **tipo de operação**, não só por "recurso" — `calendar.events` (eventos) e
+> `calendar.calendars` (o calendário em si: criar/editar/apagar) são permissões
+> independentes, mesmo cobrindo "a mesma API". Sempre checar a documentação de referência
+> de escopos do produto específico (não assumir que um escopo "genérico" cobre todas as
+> operações que a API oferece) antes de escrever o cliente.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 036), §19 abaixo (pendência marcada como resolvida e verificada).
+>
+> **Última atualização anterior: 2026-08-09 (Integração com o Google Agenda — Registro Nº
 > 035).** Depois de confirmar a correção do pooler (Registro Nº 034), o usuário pediu
 > viabilidade + implementação de sincronização do sistema com o Google Agenda de cada
 > cliente: um sentido só (sistema → Google), vínculo por workspace, autorização do
@@ -1542,7 +1574,17 @@ Todas em `.env.local` (gitignored, nunca commitado, nunca colado em chat):
 | `DATABASE_URL` | Connection string do Postgres — **usa o "Transaction pooler" do Supabase** (porta 6543, `aws-0-sa-east-1.pooler.supabase.com`, desde 2026-08-08 — antes era o "Session pooler", porta 5432, trocado por não ter teto de 15 conexões simultâneas), não a conexão direta (a rede residencial do usuário não tem IPv6, que a conexão direta exige) |
 | `BREVO_API_KEY` | E-mail transacional próprio do app via API HTTP do Brevo (`lib/email/send.ts`), diferente do SMTP usado pelo Supabase Auth |
 | `TOKEN_ENCRYPTION_KEY` | **Nova, 2026-08-09.** Chave de criptografia (AES-256-GCM, `lib/security/crypto.ts`) dos tokens OAuth do Google Agenda gravados em `GoogleCalendarConnection`. Gerada uma vez (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`), qualquer string serve como entrada (passa por `scrypt` antes de virar chave AES). Já configurada em `.env.local` e na Vercel (`Production`/`Preview`). |
-| `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` | **Nova, 2026-08-09 — ainda PENDENTE, bloqueia o teste ponta a ponta da integração com o Google Agenda.** Credenciais OAuth de um app próprio no Google Cloud Console (`console.cloud.google.com`), separadas do login com Google. Checklist para o usuário completar: (1) criar/reaproveitar um projeto; (2) ativar a **Google Calendar API**; (3) criar uma credencial **OAuth Client ID** (tipo "Aplicativo da Web") com redirect URIs `https://prospecta-finance.vercel.app/api/integrations/google-calendar/callback` e `http://localhost:3000/api/integrations/google-calendar/callback`; (4) configurar a tela de consentimento OAuth pedindo o escopo `https://www.googleapis.com/auth/calendar.events`; (5) passar Client ID + Client Secret, que viram essas duas env vars em `.env.local` e na Vercel (mesmo padrão de `BREVO_API_KEY` — o assistente não cria nem vê essas credenciais, só usa o que for passado). |
+| `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` | **RECEBIDA, CONFIGURADA E VERIFICADA AO VIVO (2026-08-09, Registro Nº 036).** Credenciais OAuth do cliente "PROSPECTA Finance" no Google Cloud Console (`console.cloud.google.com`), app em modo **Teste** (só e-mails cadastrados como usuários de teste em Público-alvo conseguem autorizar — decisão explícita do usuário, ver nota abaixo sobre Termos de Uso). Redirect URIs: `https://prospecta-finance.vercel.app/api/integrations/google-calendar/callback` e `http://localhost:3000/api/integrations/google-calendar/callback`. **Dois escopos são necessários** — `https://www.googleapis.com/auth/calendar.events` (eventos) **e** `https://www.googleapis.com/auth/calendar.calendars` (criar/apagar o calendário dedicado em si; faltou na primeira tentativa e causou `403 ACCESS_TOKEN_SCOPE_INSUFFICIENT`, ver bloco no topo do documento). Gravadas em `.env.local` e na Vercel (`Production`/`Preview`). **Primeira conexão real bem-sucedida em 2026-08-09**: `google_calendar_connections` tem 1 linha (`fhildebrando@gmail.com`, calendário dedicado real criado). A chave secreta do cliente foi rotacionada pelo usuário no meio da investigação (a antiga, de 5 de agosto, continua ativa no Google — **pode estar em uso pelo login com Google via Supabase**, configurado no painel do Supabase, fora do alcance deste projeto; não excluir a antiga sem confirmar lá primeiro).
+
+  **Página de Termos de Uso (`/termos-de-uso`), pedida para preencher o campo "Link dos
+  Termos de Serviço" da tela de consentimento: NÃO publicada, a pedido explícito do
+  usuário em 2026-08-09 — "Não publique, aguarde."** `TERMOS-DE-USO.md` já tem, no próprio
+  topo, um aviso de que não deve virar página pública antes de revisão por advogado
+  (várias seções com lacunas `[PENDENTE]`, inclusive a de limitação de responsabilidade,
+  que corre risco de nulidade por causa do Art. 51 do CDC se publicada como está). Deixei
+  esse campo em branco na tela de consentimento por enquanto — não é obrigatório para o
+  app funcionar em modo Teste. **Não publicar `/termos-de-uso` nem sugerir isso de novo
+  numa sessão futura sem o usuário pedir explicitamente.** |
 
 Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
 
