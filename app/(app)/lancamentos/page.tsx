@@ -20,6 +20,10 @@ interface SearchParams {
 // indicação (amarelo) mas sem chamar muita atenção; atrasado = precisa de
 // atenção real — fundo rosa forte, texto preto para o contraste (modelo Meu Vista).
 // Barra lateral usa as mesmas cores da legenda (rosa/âmbar/cinza).
+// Só para a tabela densa (desktop, EntriesTable) — ela vive dentro de um
+// wrapper claro (`bg-zinc-50`), então "bg-transparent" com texto escuro
+// funciona ali. Nunca usar isto no fundo escuro do resto do app (ver
+// MOBILE_URGENCY_CARD_CLASS abaixo).
 const URGENCY_ROW_CLASS: Record<string, string> = {
   overdue: "border-l-4 border-l-rose-400 bg-rose-200 text-zinc-900",
   upcoming: "border-l-4 border-l-amber-500 bg-transparent text-zinc-900",
@@ -39,6 +43,29 @@ function situacaoLabel(urgency: string, statusLabel: string): string {
 const AMOUNT_CLASS = (amount: { isNegative(): boolean; isZero(): boolean }) => {
   if (amount.isZero()) return "text-amber-600";
   return amount.isNegative() ? "text-red-600" : "text-emerald-600";
+};
+
+// Bug real corrigido: os cards do celular (abaixo de 768px) reaproveitavam
+// URGENCY_ROW_CLASS/SITUACAO_CLASS/AMOUNT_CLASS acima, pensados pro fundo
+// claro da tabela — "bg-transparent" com texto quase preto (upcoming) ou
+// cinza médio (settled) ficava quase invisível no fundo escuro do resto do
+// app. Paleta própria, no mesmo padrão de cor já usado em Compromissos
+// (rosa/âmbar/cinza sobre fundo escuro).
+const MOBILE_URGENCY_CARD_CLASS: Record<string, string> = {
+  overdue: "border-rose-900 bg-rose-950/30 text-rose-50",
+  upcoming: "border-amber-900/60 bg-amber-950/10 text-zinc-100",
+  settled: "border-zinc-800 bg-zinc-900 text-zinc-400",
+};
+
+const MOBILE_SITUACAO_CLASS: Record<string, string> = {
+  overdue: "font-medium text-rose-300",
+  upcoming: "font-medium text-amber-400",
+  settled: "text-zinc-500",
+};
+
+const MOBILE_AMOUNT_CLASS = (amount: { isNegative(): boolean; isZero(): boolean }) => {
+  if (amount.isZero()) return "text-amber-400";
+  return amount.isNegative() ? "text-red-400" : "text-emerald-400";
 };
 
 export default async function LancamentosPage({
@@ -234,10 +261,10 @@ export default async function LancamentosPage({
         {entries.map((entry) => {
           const urgency = entryUrgency({ status: entry.statusCode as EntryStatus, dueDate: entry.dueDate }, today);
           return (
-            <div key={entry.id} className={`rounded-xl border border-zinc-300 p-3 ${URGENCY_ROW_CLASS[urgency]}`}>
+            <div key={entry.id} className={`rounded-xl border p-3 ${MOBILE_URGENCY_CARD_CLASS[urgency]}`}>
               <div className="flex items-start justify-between gap-2">
                 <span className="font-medium">{entry.description}</span>
-                <span className={`shrink-0 font-mono tabular-nums ${AMOUNT_CLASS(entry.amount)}`}>
+                <span className={`shrink-0 font-mono tabular-nums ${MOBILE_AMOUNT_CLASS(entry.amount)}`}>
                   {formatCurrencyBRL(entry.amount)}
                 </span>
               </div>
@@ -247,7 +274,7 @@ export default async function LancamentosPage({
               </p>
               <div className="mt-2 flex items-center justify-between text-xs">
                 <span className="font-mono tabular-nums opacity-80">Vence {formatDateBR(entry.dueDate)}</span>
-                <span className={SITUACAO_CLASS[urgency]}>{situacaoLabel(urgency, entry.status.labelPt)}</span>
+                <span className={MOBILE_SITUACAO_CLASS[urgency]}>{situacaoLabel(urgency, entry.status.labelPt)}</span>
               </div>
             </div>
           );
