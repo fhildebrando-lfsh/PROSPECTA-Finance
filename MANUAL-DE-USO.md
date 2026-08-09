@@ -145,10 +145,10 @@ automaticamente; isso **não conta como receita nem despesa** no seu resultado d
 
 ---
 
-## 8. Importar planilha (CSV) ou extrato bancário (OFX)
+## 8. Importar planilha (CSV), extrato bancário (OFX) ou fatura de cartão (PDF)
 
-Botão "Importar" na tela de Lançamentos. O sistema detecta o formato pela extensão do
-arquivo enviado.
+Botão "Importar" na tela de Lançamentos (ou "Importar fatura" direto na tela de um cartão,
+em Cartões de Crédito). O sistema detecta o formato pela extensão do arquivo enviado.
 
 **CSV** — fluxo em 4 passos:
 
@@ -176,7 +176,25 @@ para o extrato inteiro:
   e aparecem em **Compromissos → Incidentes** para você confirmar ou corrigir a
   categoria depois.
 
-Em ambos os formatos, se algo deu errado, o lote inteiro pode ser **revertido com um
+**PDF** (fatura de cartão de crédito) — só disponível para carteiras de cartão já
+cadastradas em Cartões de Crédito:
+
+1. **Enviar o arquivo** (.pdf) e confirmar que é uma fatura de cartão de crédito.
+2. **Escolher o cartão, o responsável e as categorias padrão** (mesma lógica do OFX).
+3. Se o PDF tiver senha, informar a senha e marcar o **termo de consentimento** — a senha
+   é usada só para abrir o arquivo naquele momento, nunca é salva em lugar nenhum (nem o
+   arquivo em si sai do seu computador; só as compras já lidas são enviadas).
+4. O sistema lê a fatura e sugere os lançamentos, com o vencimento calculado pela fatura
+   certa. Compras parceladas: a primeira vez que uma parcela aparece, todas as parcelas
+   futuras já são lançadas de uma vez; nos meses seguintes, a mesma parcela reaparecendo
+   na fatura é reconhecida e não duplicada.
+5. **Revisar a prévia e confirmar**, igual aos outros formatos.
+
+Cada banco tem um formato de fatura diferente — a leitura de um banco específico só fica
+disponível depois de configurada; se o seu banco ainda não tem suporte, você verá um
+aviso na tela.
+
+Em todos os formatos, se algo deu errado, o lote inteiro pode ser **revertido com um
 clique**, na tela de Importar — desde que nenhum dos lançamentos importados já tenha
 sido editado depois.
 
@@ -192,7 +210,7 @@ um dia para ver a lista completa daquele dia (com destaque em vermelho para os v
 
 **Aba Incidentes:** lançamentos que precisam de revisão manual — parcelas sem par
 encontrado (por exemplo, uma parcela sem nenhuma outra correspondente — mesma carteira,
-categoria, descrição e valor) ou lançamentos importados de OFX que caíram na categoria
+categoria, descrição e valor) ou lançamentos importados de OFX/PDF que caíram na categoria
 padrão por falta de histórico (§8). Cada linha
 mostra o motivo e dois botões: **"Confirmar que está correto"** (se a linha realmente está
 assim mesmo, some da lista sem alterar nada) ou **"Editar"** (formulário completo da
@@ -213,15 +231,45 @@ calendário dedicado é apagado e nenhum novo evento é enviado até conectar de
 
 ---
 
-## 10. Relatórios
+## 10. Cartões de Crédito
 
-Cinco telas de análise, acessíveis pelo grupo "Relatórios" no menu lateral, cada uma com
+Grupo próprio no menu lateral, com duas abas.
+
+**Meus Cartões:** cada cartão aparece como um cartão visual, com a imagem cadastrada (ou
+uma cor com a inicial do banco, se não tiver imagem), a fatura vigente e o vencimento.
+Clique num cartão para ver:
+
+- A fatura vigente e o histórico das últimas faturas fechadas.
+- Um **seletor de mês** para conferir qualquer fatura, passada ou futura, lançamento a
+  lançamento — útil para bater com o que o banco mostrou de verdade.
+- Os dados cadastrais (instituição, dia de fechamento/vencimento, limite, anuidade,
+  programa de pontos) editáveis a qualquer momento.
+- O botão "Importar fatura" (ver §8).
+- Arquivar (some da lista sem perder histórico) ou excluir (só se o cartão nunca teve
+  lançamento).
+
+**"+ Novo cartão"** cadastra um cartão novo — nome, instituição financeira (ou digite uma
+nova, se o seu banco ainda não estiver na lista), imagem (opcional, até 2MB), dia de
+fechamento/vencimento, limite, e os dados de anuidade/pontos usados na Análise de
+Benefícios. Todo cartão cadastrado aqui também aparece em Cadastros → Carteiras
+automaticamente — é a mesma carteira, só com esses dados extras.
+
+**Análise de Benefícios:** compara, para cada cartão com anuidade e programa de pontos
+preenchidos, se o que você ganha em pontos/milhas compensa a anuidade — calculado sobre o
+seu **gasto real** dos últimos 12 meses naquele cartão, não uma estimativa do banco.
+Benefício líquido positivo (verde) significa que o cartão está compensando; negativo
+(vermelho), que a anuidade está custando mais do que os pontos valem.
+
+---
+
+## 11. Relatórios
+
+Quatro telas de análise, acessíveis pelo grupo "Relatórios" no menu lateral, cada uma com
 navegação de ano/mês e alternância entre regime Caixa e Competência (igual ao Painel):
 
-- **Analítico mês a mês:** Receita, Despesa, Investimento e Saldo lado a lado, um mês em
-  cada coluna, com o total do ano.
-- **Balanço anual:** o mesmo resumo acima ("sintético"), mais uma tabela "descritivo por
-  categoria" — quanto você gastou em cada categoria, mês a mês, ao longo do ano.
+- **Balanço anual:** Receita, Despesa, Investimento e Saldo lado a lado, um mês em cada
+  coluna, com o total do ano ("sintético"), mais uma tabela "descritivo por categoria" —
+  quanto você gastou em cada categoria, mês a mês, ao longo do ano.
 - **Fluxo projetado:** o saldo líquido de hoje, projetado para os próximos meses (escolha
   6, 12 ou 24), considerando parcelas, recorrências e compromissos já lançados — ajuda a
   responder "daqui a 6 meses, quanto sobra?".
@@ -238,7 +286,7 @@ tem finalidade informativa, sem constituir recomendação de investimento.
 
 ---
 
-## 11. Patrimônio (Bens, Metas e Dívidas)
+## 12. Patrimônio (Bens, Metas e Dívidas)
 
 Três telas de acompanhamento de longo prazo, no grupo "Patrimônio" do menu lateral. Assim
 como os Relatórios, cada uma tem um botão **"Baixar PDF"** próprio.
@@ -284,7 +332,7 @@ aparecem.
 
 ---
 
-## 12. Cadastros
+## 13. Cadastros
 
 Telas de configuração, cada uma com regra própria de quem pode editar:
 
@@ -306,7 +354,7 @@ preservar o histórico.
 
 ---
 
-## 13. Minha conta
+## 14. Minha conta
 
 - **Dados pessoais:** nome, telefone, CPF, data de nascimento, endereço (com busca
   automática pelo CEP). Campos ficam bloqueados até clicar em "Editar"; deixar um campo em
@@ -322,7 +370,7 @@ preservar o histórico.
 
 ---
 
-## 14. Administração (só para administrador da plataforma)
+## 15. Administração (só para administrador da plataforma)
 
 - **`/admin/usuarios`** — todos os usuários cadastrados no sistema: **código do cliente**
   (número sequencial imutável, atribuído automaticamente ao workspace de cada pessoa ou
@@ -337,7 +385,7 @@ preservar o histórico.
 
 ---
 
-## 15. Segurança e privacidade
+## 16. Segurança e privacidade
 
 Toda a base do sistema segue a Lei Geral de Proteção de Dados (LGPD). Detalhes completos em
 `/politica-privacidade` (dentro do sistema) e no rascunho jurídico `TERMOS-DE-USO.md`. Em
@@ -346,7 +394,7 @@ momento, e todo acesso de um consultor ou administrador ao seu workspace fica re
 
 ---
 
-## 16. Dúvidas frequentes
+## 17. Dúvidas frequentes
 
 **Lancei um valor errado, como corrijo?**
 No desktop, edite direto na tabela de Lançamentos. No celular, abra o lançamento pela tela

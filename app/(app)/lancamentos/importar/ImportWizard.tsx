@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ImportField, ColumnMapping } from "@/lib/import/column-mapping";
+import { getFaturaParser } from "@/lib/import/pdf-statement/parsers/registry";
+import type { PdfStatementTransaction } from "@/lib/import/pdf-statement/types";
 
 interface RowIssue {
   field: string;
@@ -30,6 +32,8 @@ interface PreviewResponse {
 interface WalletOption {
   id: string;
   name: string;
+  kindCode?: string;
+  institutionSlug?: string | null;
 }
 interface PersonOption {
   id: string;
@@ -45,6 +49,9 @@ export interface ImportWizardProps {
   wallets: WalletOption[];
   people: PersonOption[];
   categories: CategoryOption[];
+  /** Vindo de "Importar fatura" na tela de um cartão específico (Cartões de Crédito). */
+  preselectedWalletId?: string;
+  forcePdf?: boolean;
 }
 
 const FIELD_LABELS: Record<ImportField, string> = {
@@ -65,17 +72,20 @@ const FIELD_LABELS: Record<ImportField, string> = {
 
 const ALL_FIELDS = Object.keys(FIELD_LABELS) as ImportField[];
 
-type Format = "csv" | "ofx";
+type Format = "csv" | "ofx" | "pdf";
 
 function detectFormat(filename: string): Format {
-  return /\.(ofx|qfx)$/i.test(filename) ? "ofx" : "csv";
+  if (/\.(ofx|qfx)$/i.test(filename)) return "ofx";
+  if (/\.pdf$/i.test(filename)) return "pdf";
+  return "csv";
 }
 
-export function ImportWizard({ wallets, people, categories }: ImportWizardProps) {
+export function ImportWizard({ wallets, people, categories, preselectedWalletId, forcePdf }: ImportWizardProps) {
   const router = useRouter();
-  const [format, setFormat] = useState<Format | null>(null);
+  const [format, setFormat] = useState<Format | null>(forcePdf ? "pdf" : null);
   const [csvText, setCsvText] = useState<string | null>(null);
   const [ofxText, setOfxText] = useState<string | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [filename, setFilename] = useState("");
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping>({});
@@ -85,15 +95,27 @@ export function ImportWizard({ wallets, people, categories }: ImportWizardProps)
   const [commitResult, setCommitResult] = useState<{ imported: number; skipped: number } | null>(null);
 
   // §18 — OFX não tem carteira/responsável/categoria por linha; escolhidos uma
-  // vez para o arquivo inteiro antes de validar.
-  const [walletId, setWalletId] = useState("");
+  // vez para o arquivo inteiro antes de validar. Fatura em PDF (Cartões de
+  // Crédito) reaproveita os mesmos campos, só a carteira fica restrita a cartão.
+  const [walletId, setWalletId] = useState(preselectedWalletId ?? "");
   const [responsibleId, setResponsibleId] = useState("");
   const [fallbackCategoryDespesaId, setFallbackCategoryDespesaId] = useState("");
   const [fallbackCategoryReceitaId, setFallbackCategoryReceitaId] = useState("");
 
+  // Fluxo específico de PDF de fatura de cartão.
+  const [isCardStatement, setIsCardStatement] = useState<boolean | null>(null);
+  const [hasPassword, setHasPassword] = useState(false);
+  const [pdfPassword, setPdfPassword] = useState("");
+  const [passwordConsent, setPasswordConsent] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [noParserWarning, setNoParserWarning] = useState<string | null>(null);
+  const [pdfTransactions, setPdfTransactions] = useState<PdfStatementTransaction[] | null>(null);
+
   const despesaCategories = categories.filter((c) => c.nature === "DESPESA");
   const receitaCategories = categories.filter((c) => c.nature === "RECEITA");
+  const cardWallets = wallets.filter((w) => w.kindCode === "CARTAO_CREDITO");
   const ofxFieldsReady = walletId && responsibleId && fallbackCategoryDespesaId && fallbackCategoryReceitaId;
+  const pdfFieldsReady = Boolean(ofxFieldsReady && (!hasPassword || (pdfPassword && passwordConsent)));
 
   async function runCsvPreview(text: string, mappingOverride?: ColumnMapping) {
     setLoading(true);
@@ -142,6 +164,39 @@ export function ImportWizard({ wallets, people, categories }: ImportWizardProps)
     }
   }
 
+  async function runPdfPreview(transactions: PdfStatementTransaction[]) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/import/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          format: "pdf",
+          transactions: transactions.map((t) => ({
+            postedDate: t.postedDate.toISOString(),
+            amount: t.amount.toString(),
+            description: t.description,
+            installmentNumber: t.installmentNumber,
+            installmentTotal: t.installmentTotal,
+          })),
+          walletId,
+          responsibleId,
+          fallbackCategoryDespesaId,
+          fallbackCategoryReceitaId,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Falha ao validar a fatura.");
+      setPreview(json);
+      setMapping(json.mapping);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -152,15 +207,60 @@ export function ImportWizard({ wallets, people, categories }: ImportWizardProps)
     setPreview(null);
     setError(null);
 
-    const text = await file.text();
     if (detected === "csv") {
+      const text = await file.text();
       setCsvText(text);
       setOfxText(null);
+      setPdfFile(null);
       await runCsvPreview(text);
-    } else {
+    } else if (detected === "ofx") {
       // OFX não roda a prévia sozinho — precisa de carteira/responsável/categorias primeiro.
+      const text = await file.text();
       setOfxText(text);
       setCsvText(null);
+      setPdfFile(null);
+    } else {
+      setPdfFile(file);
+      setCsvText(null);
+      setOfxText(null);
+      setIsCardStatement(null);
+      setHasPassword(false);
+      setPdfPassword("");
+      setPasswordConsent(false);
+      setNoParserWarning(null);
+      setPdfTransactions(null);
+    }
+  }
+
+  async function handleExtractPdf() {
+    if (!pdfFile) return;
+    setExtracting(true);
+    setError(null);
+    setNoParserWarning(null);
+    try {
+      const wallet = wallets.find((w) => w.id === walletId);
+      const parser = getFaturaParser(wallet?.institutionSlug ?? null);
+      if (!parser) {
+        setNoParserWarning(
+          "Ainda não sei ler fatura desse banco — me mande um PDF de exemplo (pode remover dados sensíveis antes) que eu adiciono o leitor.",
+        );
+        return;
+      }
+
+      const { extractPdfText } = await import("@/lib/import/pdf-statement/extract-text");
+      const { pages } = await extractPdfText(pdfFile, hasPassword ? pdfPassword : undefined);
+      const transactions = parser(pages);
+      if (transactions.length === 0) {
+        setError("Não encontrei nenhuma compra nesta fatura — confira se é o PDF certo.");
+        return;
+      }
+      setPdfTransactions(transactions);
+      await runPdfPreview(transactions);
+    } catch (err) {
+      const message = err instanceof Error && err.name === "PdfPasswordError" ? "Senha incorreta." : (err as Error).message;
+      setError(message);
+    } finally {
+      setExtracting(false);
     }
   }
 
@@ -193,7 +293,24 @@ export function ImportWizard({ wallets, people, categories }: ImportWizardProps)
               fallbackCategoryDespesaId,
               fallbackCategoryReceitaId,
             }
-          : { format: "csv", csvText, mapping, filename, skipDuplicates };
+          : format === "pdf"
+            ? {
+                format: "pdf",
+                transactions: (pdfTransactions ?? []).map((t) => ({
+                  postedDate: t.postedDate.toISOString(),
+                  amount: t.amount.toString(),
+                  description: t.description,
+                  installmentNumber: t.installmentNumber,
+                  installmentTotal: t.installmentTotal,
+                })),
+                filename,
+                skipDuplicates,
+                walletId,
+                responsibleId,
+                fallbackCategoryDespesaId,
+                fallbackCategoryReceitaId,
+              }
+            : { format: "csv", csvText, mapping, filename, skipDuplicates };
 
       const res = await fetch("/api/import/commit", {
         method: "POST",
@@ -241,7 +358,7 @@ export function ImportWizard({ wallets, people, categories }: ImportWizardProps)
         <>
           <input
             type="file"
-            accept=".csv,text/csv,.ofx,.qfx,application/x-ofx"
+            accept=".csv,text/csv,.ofx,.qfx,application/x-ofx,.pdf,application/pdf"
             onChange={handleFileChange}
             className="text-sm text-zinc-300 file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2 file:text-zinc-100"
           />
@@ -330,6 +447,152 @@ export function ImportWizard({ wallets, people, categories }: ImportWizardProps)
             </div>
           )}
 
+          {format === "pdf" && !preview && isCardStatement === null && (
+            <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+              <p className="text-sm text-zinc-300">Este PDF é uma fatura de cartão de crédito?</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCardStatement(true)}
+                  className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-amber-400"
+                >
+                  Sim
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCardStatement(false)}
+                  className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                >
+                  Não
+                </button>
+              </div>
+            </div>
+          )}
+
+          {format === "pdf" && isCardStatement === false && (
+            <p className="text-sm text-amber-400">
+              Por enquanto só oferecemos importação de PDF para fatura de cartão de crédito.
+            </p>
+          )}
+
+          {format === "pdf" && isCardStatement === true && !preview && (
+            <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+              <p className="text-sm text-zinc-300">
+                Escolha o cartão desta fatura, o responsável e as categorias padrão (usadas quando não houver
+                histórico de descrição) — a fatura só lista compras dele.
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                  Cartão de crédito
+                  <select
+                    value={walletId}
+                    onChange={(e) => setWalletId(e.target.value)}
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                  >
+                    <option value="">—</option>
+                    {cardWallets.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                  {cardWallets.length === 0 && (
+                    <span className="text-amber-400">
+                      Nenhum cartão cadastrado ainda —{" "}
+                      <a href="/cartoes/novo" className="underline">
+                        cadastre um em Cartões de Crédito
+                      </a>
+                      .
+                    </span>
+                  )}
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                  Responsável
+                  <select
+                    value={responsibleId}
+                    onChange={(e) => setResponsibleId(e.target.value)}
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                  >
+                    <option value="">—</option>
+                    {people.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                  Categoria padrão (despesas sem histórico)
+                  <select
+                    value={fallbackCategoryDespesaId}
+                    onChange={(e) => setFallbackCategoryDespesaId(e.target.value)}
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                  >
+                    <option value="">—</option>
+                    {despesaCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                  Categoria padrão (receitas sem histórico — ex.: estorno)
+                  <select
+                    value={fallbackCategoryReceitaId}
+                    onChange={(e) => setFallbackCategoryReceitaId(e.target.value)}
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                  >
+                    <option value="">—</option>
+                    {receitaCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-zinc-300">
+                <input type="checkbox" checked={hasPassword} onChange={(e) => setHasPassword(e.target.checked)} />
+                O PDF tem senha
+              </label>
+              {hasPassword && (
+                <div className="flex flex-col gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                  <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                    Senha do PDF
+                    <input
+                      type="password"
+                      value={pdfPassword}
+                      onChange={(e) => setPdfPassword(e.target.value)}
+                      className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
+                    />
+                  </label>
+                  <label className="flex items-start gap-2 text-xs text-zinc-400">
+                    <input
+                      type="checkbox"
+                      checked={passwordConsent}
+                      onChange={(e) => setPasswordConsent(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    Autorizo o uso desta senha só para abrir este arquivo agora — ela não é salva em lugar nenhum.
+                  </label>
+                </div>
+              )}
+
+              {noParserWarning && <p className="text-sm text-amber-400">{noParserWarning}</p>}
+
+              <button
+                type="button"
+                disabled={loading || extracting || !pdfFieldsReady}
+                onClick={handleExtractPdf}
+                className="w-fit rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-amber-400 disabled:opacity-50"
+              >
+                {extracting ? "Lendo o PDF…" : "Extrair fatura"}
+              </button>
+            </div>
+          )}
+
           {preview && (
             <>
               {preview.skippedRows > 0 && (
@@ -338,7 +601,9 @@ export function ImportWizard({ wallets, people, categories }: ImportWizardProps)
                   {preview.skippedRows === 1 ? "linha" : "linhas"}{" "}
                   {format === "ofx"
                     ? "sem data ou valor válidos no extrato"
-                    : "antes do cabeçalho (não pareciam fazer parte da tabela)"}
+                    : format === "pdf"
+                      ? "de parcelas que já tinham sido lançadas antes (não duplicadas)"
+                      : "antes do cabeçalho (não pareciam fazer parte da tabela)"}
                   .
                 </p>
               )}

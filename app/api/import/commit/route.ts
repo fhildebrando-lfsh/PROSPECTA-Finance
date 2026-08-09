@@ -2,13 +2,30 @@ import { after, NextResponse, type NextRequest } from "next/server";
 import { assertCanWrite, requireApiWorkspaceMembership } from "@/lib/auth/session";
 import { ApiError, apiErrorResponse } from "@/lib/api/errors";
 import { prisma } from "@/lib/db/prisma";
+import { Decimal } from "@/lib/finance/types";
 import { autoDetectMapping, type ColumnMapping } from "@/lib/import/column-mapping";
 import { clusterInstallmentRows } from "@/lib/import/group-installments";
 import { parseCsvWithHeaderDetection } from "@/lib/import/parse-csv";
 import { buildOfxImportRows, type OfxImportParams } from "@/lib/import/ofx-import";
+import { buildPdfImportRows, type PdfImportParams } from "@/lib/import/pdf-statement/pdf-import";
+import type { PdfStatementTransaction } from "@/lib/import/pdf-statement/types";
 import { hasErrors, parseImportRow } from "@/lib/import/parse-row";
 import { buildReferenceMaps, resolveRow } from "@/lib/import/resolve";
 import { syncEntryToGoogleCalendar } from "@/lib/integrations/google-calendar/sync";
+
+function deserializePdfTransactions(raw: unknown): PdfStatementTransaction[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((t) => {
+    const item = t as Record<string, unknown>;
+    return {
+      postedDate: new Date(String(item.postedDate ?? "")),
+      amount: new Decimal(String(item.amount ?? "0")),
+      description: String(item.description ?? ""),
+      installmentNumber: typeof item.installmentNumber === "number" ? item.installmentNumber : null,
+      installmentTotal: typeof item.installmentTotal === "number" ? item.installmentTotal : null,
+    };
+  });
+}
 
 /**
  * POST /api/import/commit — §18.1 passo 4 (ou §18 OFX): importa atomicamente as
@@ -23,6 +40,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const isOfx = body.format === "ofx";
+    const isPdf = body.format === "pdf";
     const skipDuplicates = body.skipDuplicates !== false;
 
     let records: Record<string, string>[];
@@ -42,6 +60,19 @@ export async function POST(request: NextRequest) {
       records = built.records;
       mapping = autoDetectMapping(built.headers);
       filename = String(body.filename ?? "extrato.ofx");
+    } else if (isPdf) {
+      const transactions = deserializePdfTransactions(body.transactions);
+      if (transactions.length === 0) throw new ApiError(400, "Nenhuma transação extraída do PDF.");
+      const params: PdfImportParams = {
+        walletId: String(body.walletId ?? ""),
+        responsibleId: String(body.responsibleId ?? ""),
+        fallbackCategoryDespesaId: String(body.fallbackCategoryDespesaId ?? ""),
+        fallbackCategoryReceitaId: String(body.fallbackCategoryReceitaId ?? ""),
+      };
+      const built = await buildPdfImportRows(workspaceId, transactions, params);
+      records = built.records;
+      mapping = autoDetectMapping(built.headers);
+      filename = String(body.filename ?? "fatura.pdf");
     } else {
       const csvText = String(body.csvText ?? "");
       const bodyMapping = body.mapping as ColumnMapping | undefined;

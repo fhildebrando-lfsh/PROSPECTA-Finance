@@ -446,9 +446,35 @@ model Wallet {
   linkedFrom   Wallet[]     @relation("WalletLink")
   entries      Entry[]
   goals        Goal[]
+  creditCard   CreditCard?
 
   @@unique([workspaceId, slug])
   @@map("wallets")
+}
+
+/// Dados exclusivos de cartão de crédito (imagem, anuidade, programa de
+/// pontos/milhas) — ligado 1:1 a uma Wallet de kindCode=CARTAO_CREDITO.
+/// Os campos de fatura em si (closingDay/dueDay/creditLimit/institutionId)
+/// continuam em Wallet, já usados por lib/finance/card.ts, importação de
+/// OFX e o lançamento rápido — aqui só o que não faz sentido para as outras
+/// 8 kinds de carteira (conta bancária, caixinha, voucher etc.).
+model CreditCard {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  walletId              String   @unique @map("wallet_id") @db.Uuid
+  imageUrl              String?  @map("image_url")
+  annualFee             Decimal? @map("annual_fee") @db.Decimal(14, 2)
+  /// Texto livre — ex.: "isento gastando R$ 1.500/mês". Só informativo, não entra em cálculo.
+  annualFeeWaiverNote   String?  @map("annual_fee_waiver_note")
+  /// Ex.: "Livelo", "Smiles", "Cashback" — só rótulo, não afeta o cálculo de benefício.
+  rewardsProgramName    String?  @map("rewards_program_name")
+  pointsPerRealSpent    Decimal? @map("points_per_real_spent") @db.Decimal(10, 4)
+  /// Quanto vale, em R$, cada ponto/milha no resgate — estimado pelo usuário.
+  pointValueEstimateBRL Decimal? @map("point_value_estimate_brl") @db.Decimal(10, 4)
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@map("credit_cards")
 }
 
 // ---------------------------------------------------------------------------

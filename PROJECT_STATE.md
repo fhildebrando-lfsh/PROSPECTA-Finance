@@ -15,7 +15,70 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-09 (Calendário de Compromissos: redesenho visual +
+> **Última atualização real: 2026-08-09 (Cartões de Crédito — cadastro, fatura, Análise
+> de Benefícios e infraestrutura de importação de fatura em PDF, Registro Nº 040).**
+> Usuário pediu uma aba nova com dois objetivos: mostrar a fatura de cada cartão de forma
+> fácil, e analisar se pontos/milhas compensam a anuidade (evitar "jogada de número" de
+> marketing bancário). Planejado em modo de planejamento — pesquisa prévia confirmou que
+> `Wallet` já tinha todos os campos de fatura (`kindCode=CARTAO_CREDITO`, `institutionId`,
+> `creditLimit`, `closingDay`, `dueDay`) e que `lib/finance/card.ts` já calculava fatura
+> (`cardStatementWindow`/`cardStatementTotal`, testadas) sem nenhuma tela usar isso —
+> confirmado pelo próprio `ESPECIFICACAO-SISTEMA-FINANCEIRO.md` §11.4, que já previa um
+> "card_statement" conceitual nunca construído.
+>
+> **Modelo de dados:** novo model `CreditCard`, 1:1 com `Wallet` por `walletId` (não
+> direto em `Wallet`, que é genérica por design para 9 tipos de carteira) — imagem,
+> anuidade, isenção, programa de pontos, pontos por R$ gasto, valor estimado do ponto. Os
+> 4 campos de fatura continuam só em `Wallet`, sem duplicação; criar um cartão pela tela
+> nova cria a `Wallet` (kindCode=CARTAO_CREDITO) e o `CreditCard` juntos, numa única ação —
+> "vinculado automaticamente em Carteiras", como pedido.
+>
+> **Telas** (`app/(app)/cartoes/`, grupo novo no menu lateral entre Compromissos e
+> Relatórios): "Meus Cartões" (grade com imagem + fatura vigente), detalhe do cartão (com
+> um **seletor de mês de fatura**, pedido explícito do usuário no meio da implementação,
+> para conferir qualquer fatura — passada ou futura — lançamento a lançamento contra o
+> extrato real do banco), "+ Novo cartão", "Análise de Benefícios" (ranking por benefício
+> líquido = pontos ganhos sobre o **gasto real dos últimos 12 meses** daquele cartão,
+> menos a anuidade — confirmado com o usuário, nunca uma estimativa digitada).
+>
+> **Infraestrutura nova, greenfield (nada disso existia no projeto):** upload de imagem via
+> bucket `credit-card-images` no Supabase Storage (público para leitura, criado por script
+> com o client admin); importação de fatura em PDF (`lib/import/pdf-statement/`) com
+> extração de texto **no navegador** via `pdfjs-dist` (o arquivo e a eventual senha nunca
+> saem do computador do cliente — só o texto/transações já extraídos viram uma
+> requisição, mesma ideia de como CSV/OFX já funcionam), suporte a senha + termo de
+> consentimento, e um registro de leitores por banco que **começa vazio** de propósito —
+> nenhum PDF de exemplo foi compartilhado ainda, cada banco formata a fatura de um jeito.
+>
+> **Regra de deduplicação de parcelamento, pedida pelo usuário como correção durante a
+> implementação (antes da importação de PDF ser escrita) — "100% imprescindível":** fatura
+> de cartão lista a mesma parcela todo mês (ex.: "MAGALU 02/10"); o texto que o banco
+> imprime raramente bate com o que a pessoa digitaria à mão, então a deduplicação da
+> importação de PDF **nunca compara texto de descrição** — sempre carteira + total de
+> parcelas + número da parcela + vencimento (`lib/import/pdf-statement/pdf-to-rows.ts`,
+> testado com dados fictícios). Quando uma série de parcelamento aparece pela primeira vez
+> (parcela 1), o importador gera a série completa de uma vez (reaproveitando
+> `generateInstallments`, a mesma função do lançamento manual) — os meses futuros já ficam
+> prontos, e a fatura do mês seguinte reconhece e pula essas parcelas quando reaparecerem.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 040), `MANUAL-DE-USO.md` §8 (estendida) e §10 (nova, seções seguintes
+> renumeradas de §10-16 para §11-17).
+>
+> **Última atualização anterior: 2026-08-09 (Relatório "Analítico mês a mês" removido —
+> redundante com Balanço anual, Registro Nº 039).** Usuário notou que a tabela sintética
+> (Receita/Despesa/Investimento/Saldo por mês) do Analítico é exatamente a mesma que já
+> aparece dentro de Balanço anual (que ainda soma o descritivo por categoria) — confirmado
+> no código: as duas telas consultavam os mesmos dados e usavam o mesmo componente
+> `MonthlyTotalsTable`, sem nada exclusivo do Analítico. Removidos por completo (não só
+> desativados): a página, a rota de PDF e o builder de PDF correspondentes, a aba em
+> `relatorios/layout.tsx`, o item no menu lateral e a menção em `MANUAL-DE-USO.md` §10
+> (agora "Quatro telas"). Relatórios (seção 12 abaixo) passa de 5 para 4 telas.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 039).
+>
+> **Última atualização anterior: 2026-08-09 (Calendário de Compromissos: redesenho visual +
 > bug real de largura mínima no celular corrigidos, Registros Nº 037 e 038).** Depois de
 > fechar a integração com o Google Agenda (Registro Nº 036), o usuário pediu para aplicar
 > uma sugestão de layout que tinha pedido ao Google Gemini para o calendário mensal de
@@ -1614,6 +1677,14 @@ Todas em `.env.local` (gitignored, nunca commitado, nunca colado em chat):
   numa sessão futura sem o usuário pedir explicitamente.** |
 
 Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
+
+**Supabase Storage — bucket `credit-card-images`** (novo, 2026-08-09, Registro Nº 040):
+público para leitura, usado só pelas imagens de cartão de crédito cadastradas em Cartões
+de Crédito. Criado por script usando `lib/supabase/admin.ts` (`storage.createBucket`) —
+sem SQL de migration, é configuração do projeto Supabase, não do banco Postgres. Nenhuma
+variável de ambiente nova (o upload usa a mesma `SUPABASE_SERVICE_ROLE_KEY` já existente).
+`next.config.ts` ganhou `images.remotePatterns` apontando pro domínio do Storage, pra
+`next/image` conseguir renderizar as imagens.
 
 **Deploy em produção:** Vercel, projeto `prospecta-finance`, branch `master` do repositório
 `github.com/fhildebrando-lfsh/PROSPECTA-Finance` (push nessa branch redeploya

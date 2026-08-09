@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  annualCardSpend,
   cardCoverage,
   cardStatementTotal,
   cardStatementWindow,
@@ -88,6 +89,30 @@ describe("cardStatementTotal (§11.4)", () => {
     ];
 
     expect(cardStatementTotal(entries, "cartao-1", window).toNumber()).toBe(-100);
+  });
+});
+
+describe("annualCardSpend (Cartões de Crédito — Análise de Benefícios)", () => {
+  it("soma o valor absoluto das despesas dos últimos 12 meses, ignorando outras carteiras/naturezas", () => {
+    const referenceDate = new Date(Date.UTC(2026, 5, 30)); // 30/jun/2026
+    const entries = [
+      makeEntry({ walletId: "cartao-1", amount: d(-100), transactionDate: new Date(Date.UTC(2026, 3, 1)) }), // dentro
+      makeEntry({ walletId: "cartao-1", amount: d(-200), transactionDate: new Date(Date.UTC(2025, 4, 1)) }), // fora (>12 meses)
+      makeEntry({
+        walletId: "cartao-1",
+        nature: "RECEITA",
+        amount: d(50),
+        transactionDate: new Date(Date.UTC(2026, 3, 1)),
+      }), // fora (não é despesa — ex.: estorno)
+      makeEntry({ walletId: "outro-cartao", amount: d(-999), transactionDate: new Date(Date.UTC(2026, 3, 1)) }),
+    ];
+
+    expect(annualCardSpend(entries, "cartao-1", referenceDate).toNumber()).toBe(100);
+  });
+
+  it("retorna zero sem nenhuma despesa no período", () => {
+    const referenceDate = new Date(Date.UTC(2026, 5, 30));
+    expect(annualCardSpend([], "cartao-1", referenceDate).toNumber()).toBe(0);
   });
 });
 

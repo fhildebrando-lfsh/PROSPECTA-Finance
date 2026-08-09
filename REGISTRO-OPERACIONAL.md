@@ -772,7 +772,97 @@
 
 ---
 
-## Próximo número de registro: **039**
+### Registro Nº 039
+- **Data:** 2026-08-09
+- **Etapa concluída:** Relatório "Analítico mês a mês" removido (redundante com Balanço
+  anual)
+- **Descrição:** Usuário identificou que a tela "Analítico mês a mês" (Receita/Despesa/
+  Investimento/Saldo lado a lado, por mês) ficou redundante — a mesma tabela ("sintético")
+  já existe dentro de "Balanço anual", que ainda soma a ela o descritivo por categoria.
+  Conferido no código antes de remover: as duas telas usavam exatamente a mesma consulta e
+  o mesmo componente (`MonthlyTotalsTable`), confirmando que não havia nenhuma informação
+  exclusiva do Analítico.
+- **Correção:** removidos a página (`app/(app)/relatorios/analitico/`), a rota de PDF
+  (`app/api/relatorios/analitico/pdf/`) e o builder de PDF
+  (`lib/reports/pdf/analitico.ts`) — nada reaproveitado por outra tela, então excluídos por
+  completo, não só desativados. Aba tirada de `app/(app)/relatorios/layout.tsx` e do menu
+  lateral (`components/Sidebar.tsx`, ícone `CalendarRange` também removido, sem mais uso).
+  `MANUAL-DE-USO.md` §10 atualizado ("Cinco telas" → "Quatro telas", descrição de "Balanço
+  anual" absorveu a frase que descrevia o sintético).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `tsc --noEmit` limpo, `npm test` (206/206), `npm run build` de produção
+  concluído sem `/relatorios/analitico` nem `/api/relatorios/analitico/pdf` na lista de
+  rotas.
+- **Documentos relacionados:** `app/(app)/relatorios/layout.tsx`, `components/Sidebar.tsx`,
+  `MANUAL-DE-USO.md` §10.
+
+---
+
+### Registro Nº 040
+- **Data:** 2026-08-09
+- **Etapa concluída:** Cartões de Crédito — cadastro completo, fatura, análise de
+  benefícios e infraestrutura de importação de fatura em PDF
+- **Descrição:** Usuário pediu uma aba nova "Cartões de Crédito" com dois objetivos:
+  mostrar a fatura de cada cartão de forma fácil, e analisar se o benefício de pontos/
+  milhas compensa a anuidade (evitar "jogada de número" de marketing bancário). Planejado
+  em modo de planejamento, com pesquisa prévia no código confirmando que `Wallet` já tinha
+  `kindCode=CARTAO_CREDITO`/`institutionId`/`creditLimit`/`closingDay`/`dueDay` e que
+  `lib/finance/card.ts` já calculava fatura (`cardStatementWindow`/`cardStatementTotal`)
+  sem nenhuma tela usar isso de verdade. Confirmado com o usuário: análise de benefício
+  calculada sobre o gasto real dos últimos 12 meses (não estimativa digitada); importação
+  de PDF constrói a infraestrutura completa nesta rodada, sem leitor de banco real (precisa
+  de um PDF de exemplo por banco).
+
+  **Refinamento pedido pelo usuário no meio da implementação, antes da importação de PDF
+  ser escrita:** (1) confirmar que todo lançamento de cartão é um `Entry` de verdade,
+  vinculado ao resto do sistema — já era assim por design; (2) regra própria de
+  deduplicação de parcelamento para a importação de fatura, "100% imprescindível" — fatura
+  de cartão lista a mesma parcela todo mês, e o texto que o banco imprime não bate com o
+  que a pessoa digitaria à mão, então a deduplicação da importação de PDF nunca compara
+  descrição, sempre carteira + total de parcelas + número da parcela + vencimento; a
+  primeira vez que uma série aparece, todas as parcelas futuras são geradas de uma vez
+  (mesma lógica do lançamento manual). Também pedido: um seletor de mês na tela do cartão
+  para conferir qualquer fatura, passada ou futura, contra o extrato real do banco.
+- **O que foi feito:**
+  - **Schema:** novo model `CreditCard` (1:1 com `Wallet` por `walletId`) — imagem,
+    anuidade, isenção, programa de pontos, pontos por R$, valor estimado do ponto. Campos
+    de fatura (`institutionId`/`creditLimit`/`closingDay`/`dueDay`) continuam só em
+    `Wallet`, sem duplicação.
+  - **`lib/finance/card.ts::annualCardSpend`** e **`lib/finance/credit-card-benefit.ts`**
+    (novo, puro) — gasto real de 12 meses e cálculo de benefício líquido, testados.
+  - **Telas** (`app/(app)/cartoes/`): "Meus Cartões" (grade com imagem/fatura vigente),
+    detalhe do cartão (fatura vigente + histórico + seletor de mês + edição + importar +
+    arquivar/excluir), "+ Novo cartão", "Análise de Benefícios" (ranking por benefício
+    líquido). Grupo novo no menu lateral, entre Compromissos e Relatórios.
+  - **Upload de imagem:** bucket novo `credit-card-images` no Supabase Storage (público
+    para leitura), criado via script com o client admin — infraestrutura que não existia
+    no projeto até agora. Server Action valida tipo/tamanho (até 2MB) antes de gravar.
+  - **Importação de fatura em PDF** (`lib/import/pdf-statement/`): extração de texto no
+    navegador via `pdfjs-dist` (senha e arquivo nunca saem do computador do cliente),
+    registro de leitores por banco (começa vazio, de propósito), síntese de linhas
+    reaproveitando o mesmo formato canônico de CSV/OFX, com a regra de deduplicação de
+    parcelamento descrita acima. Plugado no assistente de Importar existente (`.pdf` vira
+    um terceiro formato, ao lado de CSV/OFX) e nas rotas `/api/import/preview`/`commit`.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `tsc --noEmit` limpo, `npm test` (217/217, incluindo os casos de
+  deduplicação/expansão de parcelamento com dados fictícios), `npm run build` de produção
+  concluído com as 4 rotas novas (`/cartoes`, `/cartoes/[id]`, `/cartoes/novo`,
+  `/cartoes/analise`) e o bundle do `pdfjs-dist` compilando sem erro no Client Component.
+  Bucket de imagens confirmado criado no Supabase Storage. Verificação visual ao vivo não
+  foi possível nesta etapa (mesma limitação de sessão sem senha já documentada); usuário
+  orientado a conferir diretamente no navegador.
+- **Documentos relacionados:** `prisma/schema.prisma` (model `CreditCard`),
+  `prisma/migrations/20260809140000_credit_card/`, `lib/finance/card.ts`,
+  `lib/finance/credit-card-benefit.ts`, `app/(app)/cartoes/**`,
+  `lib/import/pdf-statement/**`, `app/(app)/lancamentos/importar/ImportWizard.tsx`,
+  `app/api/import/{preview,commit}/route.ts`, `components/Sidebar.tsx`,
+  `MANUAL-DE-USO.md` §8 e §10 (nova), `PROJECT_STATE.md`.
+
+---
+
+## Próximo número de registro: **041**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

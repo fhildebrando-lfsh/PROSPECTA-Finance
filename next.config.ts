@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
   // virtual que não existe. Mantendo fora do bundle, roda como módulo Node
   // normal e acha os arquivos de verdade.
   serverExternalPackages: ["pdfkit"],
+  images: {
+    // Imagens de cartão de crédito (Cartões de Crédito) ficam no bucket
+    // público `credit-card-images` do Supabase Storage.
+    remotePatterns: [{ protocol: "https", hostname: "zfugldawxhvzclooisqj.supabase.co", pathname: "/storage/v1/**" }],
+  },
 };
 
 // Serwist ainda não suporta Turbopack nativamente (o default do Next 16).

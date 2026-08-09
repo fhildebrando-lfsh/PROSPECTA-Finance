@@ -1,6 +1,25 @@
 import { Decimal, type FinanceEntry } from "./types";
 import { addDays, addMonths, isWithin } from "./dates";
 
+/**
+ * Gasto real (valor absoluto) de despesas na carteira nos últimos 12 meses
+ * antes de `referenceDate`, por `transaction_date` (mesma base de
+ * `cardStatementTotal`) — usado pela Análise de Benefícios (Cartões de
+ * Crédito) para comparar pontos/milhas ganhos contra o gasto de verdade do
+ * cliente, não uma estimativa digitada.
+ */
+export function annualCardSpend(entries: FinanceEntry[], walletId: string, referenceDate: Date): Decimal {
+  const windowStart = addMonths(referenceDate, -12);
+  return entries
+    .filter(
+      (e) =>
+        e.walletId === walletId &&
+        e.nature === "DESPESA" &&
+        isWithin(e.transactionDate, windowStart, referenceDate),
+    )
+    .reduce((sum, e) => sum.plus(e.amount.abs()), new Decimal(0));
+}
+
 export interface CardConfig {
   closingDay: number;
   dueDay: number;

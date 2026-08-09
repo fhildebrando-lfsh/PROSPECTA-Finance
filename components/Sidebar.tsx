@@ -28,7 +28,6 @@ import {
   ChevronDown,
   X,
   BarChart3,
-  CalendarRange,
   TrendingUp,
   Layers,
   PiggyBank,
@@ -37,6 +36,8 @@ import {
   Target,
   TrendingDown,
   AlertTriangle,
+  CreditCard,
+  LineChart,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -81,8 +82,12 @@ const ADMIN_ITEMS: NavLeaf[] = [
   { href: "/admin/consultores", label: "Consultores", icon: Network },
 ];
 
+const CARTOES_ITEMS: NavLeaf[] = [
+  { href: "/cartoes", label: "Meus Cartões", icon: CreditCard },
+  { href: "/cartoes/analise", label: "Análise de Benefícios", icon: LineChart },
+];
+
 const RELATORIOS_ITEMS: NavLeaf[] = [
-  { href: "/relatorios/analitico", label: "Analítico mês a mês", icon: CalendarRange },
   { href: "/relatorios/balanco-anual", label: "Balanço anual", icon: BarChart3 },
   { href: "/relatorios/fluxo-projetado", label: "Fluxo projetado", icon: TrendingUp },
   { href: "/relatorios/parceladas", label: "Despesas parceladas", icon: Layers },
@@ -125,6 +130,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { href: "/painel", label: "Painel", icon: LayoutDashboard },
     { label: "Lançamentos", icon: Receipt, items: LANCAMENTOS_ITEMS },
     { label: "Compromissos", icon: CalendarClock, items: COMPROMISSOS_ITEMS },
+    { label: "Cartões de Crédito", icon: CreditCard, items: CARTOES_ITEMS },
     { label: "Relatórios", icon: BarChart3, items: RELATORIOS_ITEMS },
     { label: "Patrimônio", icon: Landmark, items: PATRIMONIO_ITEMS },
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },

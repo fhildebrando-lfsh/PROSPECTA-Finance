@@ -4,12 +4,21 @@ import { formatDateBR } from "@/lib/format";
 import { ImportWizard } from "./ImportWizard";
 import { revertBatch } from "./actions";
 
-export default async function ImportarPage() {
+export default async function ImportarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ walletId?: string; format?: string }>;
+}) {
   const workspaceId = await requireWorkspaceId();
+  const { walletId: preselectedWalletId, format: preselectedFormat } = await searchParams;
 
   const [batches, wallets, people, categories] = await Promise.all([
     prisma.importBatch.findMany({ where: { workspaceId }, orderBy: { createdAt: "desc" }, take: 20 }),
-    prisma.wallet.findMany({ where: { workspaceId, isActive: true }, orderBy: { name: "asc" } }),
+    prisma.wallet.findMany({
+      where: { workspaceId, isActive: true },
+      include: { institution: true },
+      orderBy: { name: "asc" },
+    }),
     prisma.person.findMany({ where: { workspaceId }, orderBy: { name: "asc" } }),
     prisma.category.findMany({ orderBy: [{ nature: "asc" }, { sortOrder: "asc" }] }),
   ]);
@@ -19,15 +28,18 @@ export default async function ImportarPage() {
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Importar planilha</h1>
         <p className="text-sm text-zinc-500">
-          Exporte a aba <code className="text-zinc-300">DADOS</code> em CSV e envie aqui, ou envie um extrato
-          bancário em OFX — as categorias são sugeridas com base no histórico de lançamentos já cadastrados.
+          Exporte a aba <code className="text-zinc-300">DADOS</code> em CSV e envie aqui, envie um extrato bancário
+          em OFX, ou envie a fatura de um cartão de crédito em PDF — as categorias são sugeridas com base no
+          histórico de lançamentos já cadastrados.
         </p>
       </div>
 
       <ImportWizard
-        wallets={wallets.map((w) => ({ id: w.id, name: w.name }))}
+        wallets={wallets.map((w) => ({ id: w.id, name: w.name, kindCode: w.kindCode, institutionSlug: w.institution?.slug ?? null }))}
         people={people.map((p) => ({ id: p.id, name: p.name }))}
         categories={categories.map((c) => ({ id: c.id, nature: c.nature, name: c.name }))}
+        preselectedWalletId={preselectedFormat === "pdf" ? preselectedWalletId : undefined}
+        forcePdf={preselectedFormat === "pdf"}
       />
 
       {batches.length > 0 && (

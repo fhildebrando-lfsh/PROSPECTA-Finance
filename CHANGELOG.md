@@ -25,6 +25,14 @@
 - **Textos com numeração interna da especificação** (ex.: "(§13)", "§10 R5") apareciam em telas voltadas ao usuário final, em Compromissos (Lista, Calendário, Incidentes), Importar planilha e Transferir entre carteiras — reescritos em português comum, sem jargão de desenvolvimento.
 - **Calendário de Compromissos no celular**: o mês inteiro não cabia na tela (largura mínima fixa maior que qualquer celular), forçando rolagem horizontal e cortando a visualização. Corrigido — a grade se ajusta a qualquer tamanho de tela; no celular, cada dia mostra indicadores coloridos em vez de texto (toque no dia para ver a lista completa).
 
+### Removido
+- **Relatório "Analítico mês a mês"**: a mesma informação (Receita/Despesa/Investimento/Saldo por mês) já está dentro de "Balanço anual", que ainda soma o detalhamento por categoria — a tela separada era redundante.
+
+### Adicionado
+- **Cartões de Crédito**: novo grupo no menu lateral, com cadastro completo de cartão (nome, instituição financeira — inclusive cadastrando uma nova na hora —, imagem, dia de fechamento/vencimento, limite), vinculado automaticamente a uma Carteira. Tela "Meus Cartões" mostra a fatura vigente de cada um; o detalhe de cada cartão traz o histórico das últimas faturas e um seletor para conferir qualquer fatura (passada ou futura) lançamento a lançamento contra o extrato real do banco.
+- **Análise de Benefícios** (dentro de Cartões de Crédito): compara, cartão a cartão, se os pontos/milhas ganhos compensam a anuidade — calculado sobre o gasto real dos últimos 12 meses em cada cartão, não uma promessa do banco.
+- **Importação de fatura em PDF**: além de CSV e OFX, a tela de Importar (e o botão "Importar fatura" de cada cartão) agora aceita a fatura de um cartão de crédito em PDF, com suporte a arquivo protegido por senha (nunca salva, usada só para abrir o arquivo naquele momento) e termo de consentimento. Compras parceladas: a primeira parcela lançada já gera a série inteira; parcelas que reaparecem em faturas de meses seguintes são reconhecidas e não duplicadas. A leitura do formato de cada banco é adicionada aos poucos, um de cada vez.
+
 ---
 
 ## 2026-08-08
