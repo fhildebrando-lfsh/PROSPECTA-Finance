@@ -22,6 +22,8 @@
 
 ### Corrigido
 - **Seletor de workspace** listava um workspace onde o acesso do usuário como consultor já tinha sido revogado (consultor trocado); selecioná-lo dava erro genérico em vez de simplesmente não aparecer como opção.
+- **Cards de Lançamentos no celular** com contraste ruim (texto quase preto ou cinza sobre fundo escuro) — reaproveitavam cores pensadas para o fundo claro da tabela do desktop.
+- **Banco de dados esgotando conexões sob uso normal** ("Algo deu errado" em `/lancamentos`) — trocado o pooler do Supabase de sessão (teto de 15 conexões simultâneas) para transação (sem esse teto).
 
 ### Adicionado
 - **Compromissos → Incidentes**: nova aba para revisar lançamentos parcelados que não puderam ser combinados automaticamente com o resto da série (parcela órfã ou cluster ambíguo). Cada linha tem um botão "Confirmar que está correto" e um "Editar" (formulário completo, incluindo número/total de parcelas). Corrigir uma linha tenta reagrupá-la automaticamente com a parcela irmã, se agora existir uma combinando.

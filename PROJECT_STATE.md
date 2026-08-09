@@ -15,7 +15,37 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-08 (Importação de OFX — Registro Nº 033).** Depois do
+> **Última atualização real: 2026-08-08 (bug real: pool de conexões do Supabase esgotando
+> de novo — pooler trocado de Sessão pra Transação, Registro Nº 034).** Usuário reportou
+> "Algo deu errado" em `/lancamentos` no celular logo após o deploy da correção de
+> contraste dos cards mobile (feita antes desta entrada). Investigado direto no banco: o
+> erro real era `max clients reached in session mode - max clients are limited to
+> pool_size: 15` — o mesmo tipo de esgotamento de conexões já visto e corrigido
+> parcialmente em 2026-08-01 (`max: 3` no adapter, commit `aeb618e`), mas o teto **duro**
+> de 15 conexões do pooler de **Sessão** (porta 5432) do Supabase continuava lá,
+> compartilhado entre todas as instâncias serverless da Vercel **e** qualquer script
+> rodado localmente contra o mesmo banco (usado bastante ao longo desta sessão). Já era
+> um débito técnico conhecido, registrado como "fora do alcance do assistente" numa
+> sessão anterior — a correção exige editar variável de ambiente direto na Vercel.
+> **Usuário autorizou explicitamente** ("Pode trocar por aqui mesmo").
+>
+> **Correção:** `DATABASE_URL` trocado do pooler de **Sessão** (5432) pro pooler de
+> **Transação** (6543) do Supabase — mesmo host/usuário/senha, só a porta muda; o pooler
+> de transação multiplexa as conexões de verdade do lado do Supabase, sem teto duro por
+> cliente. Verificado ANTES de mexer em produção: reproduzido o erro direto contra o
+> banco real (script descartável rodando a mesma query de `/lancamentos`, que falhou na
+> primeira tentativa e passou na segunda — confirma que era esgotamento transitório, não
+> bug de código), depois testado 200 entries + 6 relações + 10 queries concorrentes contra
+> o pooler de transação, tudo OK. `.env.local` atualizado; env var da Vercel trocada via
+> `vercel env rm`/`vercel env add` para `Production` e `Preview` (confirmado com
+> `vercel env ls`). `lib/db/prisma.ts` — comentário atualizado, `max: 3` mantido como
+> precaução geral (não mais pra evitar estourar um teto duro que não existe mais).
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 034), §23 "Débitos técnicos" (item resolvido), §19 (env vars atualizada),
+> §21 (decisão atualizada), §24 (nota na entrada histórica do bug de 2026-08-01).
+>
+> **Última atualização anterior: 2026-08-08 (Importação de OFX — Registro Nº 033).** Depois do
 > fechamento do dia (abaixo), o usuário pediu "implemente OFX" — item da Fase 2 da
 > especificação original que nunca tinha sido construído (só CSV era aceito, §18.1).
 > Planejado em modo de planejamento, com 2 perguntas de escopo confirmadas: categoria
@@ -1454,7 +1484,7 @@ Todas em `.env.local` (gitignored, nunca commitado, nunca colado em chat):
 | `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase (público) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anônima do Supabase (público) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço (privada) — usada em `lib/supabase/admin.ts` (Admin API, página `/admin/usuarios`) |
-| `DATABASE_URL` | Connection string do Postgres — **usa o "Session pooler" do Supabase** (porta 5432, `aws-0-sa-east-1.pooler.supabase.com`), não a conexão direta (a rede residencial do usuário não tem IPv6, que a conexão direta exige) |
+| `DATABASE_URL` | Connection string do Postgres — **usa o "Transaction pooler" do Supabase** (porta 6543, `aws-0-sa-east-1.pooler.supabase.com`, desde 2026-08-08 — antes era o "Session pooler", porta 5432, trocado por não ter teto de 15 conexões simultâneas), não a conexão direta (a rede residencial do usuário não tem IPv6, que a conexão direta exige) |
 
 Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
 
@@ -1520,7 +1550,7 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 |---|---|
 | Next.js 16 em vez de 15 | Era a versão "latest" disponível ao iniciar o projeto; a especificação pede "framework mainstream com App Router", não uma versão específica. |
 | Prisma 7 com driver adapter (`@prisma/adapter-pg`) em vez do engine Rust clássico | Exigência do próprio Prisma 7 (removeu `url`/`directUrl` do schema; motor "no Rust engine" é o caminho atual). |
-| `DATABASE_URL` = Session Pooler, não conexão direta | A rede do usuário não tem IPv6 (que a conexão direta do Supabase exige por padrão). |
+| `DATABASE_URL` = Transaction Pooler (Session Pooler até 2026-08-08), não conexão direta | A rede do usuário não tem IPv6 (que a conexão direta do Supabase exige por padrão). Trocado de Session pra Transaction pooler em 2026-08-08 (Registro Nº 034) — remove o teto de 15 conexões simultâneas do projeto inteiro. |
 | FK `profiles → auth.users` removida, substituída por trigger | **Incidente evitado:** declarar o schema `auth` em `datasource.schemas` pro Prisma enxergar essa FK fazia `prisma migrate dev` tratar TODO o schema `auth` (usuários, sessões, tokens do Supabase) como drift e sugerir um **reset que apagaria a autenticação inteira**. A correção foi nunca deixar o Prisma precisar saber que `auth.users` existe. Ver `prisma/sql/002_drop_cross_schema_fk.sql`. |
 | Workspace criado automaticamente no signup (trigger) | Uso é pessoal/familiar hoje — não há fluxo de "admin cria workspace de cliente" ainda (isso é Fase 4). |
 | `Subcategory` virou admin-only (diferente do §20 original, que previa edição pelo cliente) | **Decisão explícita do usuário** durante a Conversa 3/5, sobrepondo a especificação original. `Category` continuou admin-only como já estava. **Atualização 2026-08-01 (revertida parcialmente):** o usuário pediu que **criar** uma subcategoria nova volte a ser permitido pra qualquer membro com permissão de escrita (não só admin) — `createSubcategory` trocou `assertIsAdmin` por `assertCanWrite`. **Editar e arquivar uma subcategoria já existente continuam admin-only**, só a criação foi liberada. `Category` não mudou (continua 100% admin-only, criar e editar). |
@@ -1776,10 +1806,10 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   voltaram a `200`. **Nenhum dado foi corrompido** — checado via Prisma que os últimos
   registros no banco eram todos da importação em lote de 2026-07-30, ou seja, a tentativa
   de salvar do usuário nunca chegou a gravar nada (falhou antes de commitar). **Recomendação
-  pendente, não aplicada:** trocar `DATABASE_URL` na Vercel pro pooler de **Transação**
-  (porta 6543) — recomendação oficial do Supabase pra serverless, sem o teto de 15 conexões.
-  O `max: 3` já deve prevenir o crash, mas a troca de modo remove o problema de vez; requer
-  editar a env var no painel da Vercel (fora do alcance do assistente) e redeploy.
+  pendente na época, aplicada depois:** trocar `DATABASE_URL` na Vercel pro pooler de
+  **Transação** (porta 6543) — feito em 2026-08-08 (Registro Nº 034), depois que o mesmo
+  tipo de erro derrubou `/lancamentos` de novo (`max: 3` sozinho não bastou sob uso
+  concorrente real). Ver "Última atualização" no topo do arquivo para o detalhe.
 - ✅ **Novo lançamento: todos os campos obrigatórios visíveis, sem seção escondida** —
   pedido do usuário após uso real. `QuickEntryForm.tsx` mudou em duas rodadas:
   1. Data de compra e Data de vencimento (`transactionDate`/`dueDate`) viraram campos
@@ -2183,11 +2213,12 @@ pedido como um ajuste pontual (bug fix, UI, pequena feature), não como início 
 - [x] Asterisco vermelho nos campos obrigatórios de Lançamento/Transferência — commit `5ea147b`
 - [x] Bug real corrigido: esgotamento do pool de conexões do Supabase causando 500 em
       `/lancamentos` e `/lancamentos/novo` — commit `aeb618e`
-- [ ] Trocar `DATABASE_URL` na Vercel do pooler de Sessão (5432) pro pooler de Transação
-      (6543) — recomendação oficial do Supabase pra serverless, remove o teto de 15
-      conexões de vez. Requer editar env var na Vercel + redeploy (fora do alcance do
-      assistente); `max: 3` já aplicado no código deve prevenir o crash enquanto isso
-      não é feito.
+- [x] Trocar `DATABASE_URL` na Vercel do pooler de Sessão (5432) pro pooler de Transação
+      (6543) — **resolvido 2026-08-08** (Registro Nº 034), depois de um segundo
+      esgotamento real do pool derrubar `/lancamentos` no celular. Usuário autorizou
+      explicitamente editar a env var pela CLI da Vercel; `.env.local` e as env vars de
+      `Production`/`Preview` na Vercel atualizados, `max: 3` do adapter mantido como
+      precaução geral (não mais pra evitar estourar um teto duro).
 - [x] Novo lançamento: Data de compra/vencimento visíveis e editáveis, Responsável/
       Situação sempre visíveis e forçados via `required` (sem pré-preenchimento),
       Tags (opcional), sem nenhuma seção colapsada — commit `14963d5`

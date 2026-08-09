@@ -581,7 +581,41 @@
 
 ---
 
-## Próximo número de registro: **034**
+### Registro Nº 034
+- **Data:** 2026-08-08
+- **Etapa concluída:** Bug real corrigido — banco de dados trocado do pooler de sessão
+  para o pooler de transação (elimina o teto de 15 conexões simultâneas)
+- **Descrição:** Usuário reportou "Algo deu errado" em `/lancamentos` no celular, logo
+  depois do deploy da correção de contraste (Registro anterior). Investigado direto no
+  banco: o erro real era `max clients reached in session mode - max clients are limited
+  to pool_size: 15` — o pooler de **sessão** do Supabase (porta 5432), usado desde o
+  início do projeto, limita o projeto inteiro a 15 conexões simultâneas, somando
+  instâncias serverless da Vercel em produção **e** qualquer script rodado localmente
+  contra o mesmo banco. Já era um débito técnico conhecido e documentado (§23 do
+  `PROJECT_STATE.md`, causa raiz de uma queda real em 2026-08-01) — "fora do alcance do
+  assistente" numa sessão anterior, porque a correção exige editar variável de ambiente
+  direto no painel da Vercel. Usuário autorizou explicitamente fazer a troca por aqui.
+
+  **Correção:** `DATABASE_URL` trocado do pooler de **sessão** (porta 5432) para o pooler
+  de **transação** (porta 6543) — mesmo host/usuário/senha, só a porta muda; o pooler de
+  transação multiplexa conexões de verdade no lado do Supabase, sem o teto de 15 por
+  cliente. Atualizado em `.env.local` (local) e nas variáveis de ambiente da Vercel
+  (`Production` e `Preview`, via `vercel env rm`/`vercel env add`). Comentário de
+  `lib/db/prisma.ts` atualizado para refletir a mudança (o `max: 3` do adapter continua,
+  agora só como precaução geral, não mais pra evitar estourar um teto duro).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** verificado direto no banco antes e depois — a mesma query de
+  `/lancamentos` (200 entries, 6 relações) e 10 consultas concorrentes simultâneas
+  passaram sem erro contra o pooler de transação; a versão anterior (sessão) já tinha
+  falhado uma vez nesta mesma tarde sob uso concorrente normal. `vercel env ls` confirma
+  a variável nova em `Production` e `Preview`.
+- **Documentos relacionados:** `lib/db/prisma.ts`, `.env.local` (não versionado),
+  `PROJECT_STATE.md` (§23 "Débitos técnicos", entrada resolvida; entrada de 2026-08-08).
+
+---
+
+## Próximo número de registro: **035**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
