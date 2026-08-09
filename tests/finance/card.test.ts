@@ -16,15 +16,25 @@ describe("cardStatementWindow (§11.4)", () => {
     expect(window.windowEnd.toISOString().slice(0, 10)).toBe("2026-06-10");
   });
 
-  it("vencimento é no dueDay do mês seguinte ao fechamento", () => {
+  it("dueDay <= closingDay: vencimento é no dueDay do mês SEGUINTE ao fechamento (ex.: fecha dia 10, vence dia 5)", () => {
     const window = cardStatementWindow({ closingDay: 10, dueDay: 5 }, 2026, 5);
     expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-07-05");
   });
 
-  it("funciona na virada de ano", () => {
+  it("dueDay > closingDay: vencimento é no dueDay do MESMO mês do fechamento (ex.: fecha dia 2, vence dia 10 — bug real reportado pelo usuário)", () => {
+    const window = cardStatementWindow({ closingDay: 2, dueDay: 10 }, 2026, 7); // fecha 02/ago/2026
+    expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-08-10");
+  });
+
+  it("funciona na virada de ano (dueDay <= closingDay)", () => {
     const window = cardStatementWindow({ closingDay: 10, dueDay: 5 }, 2026, 0); // fecha 10/jan/2026
     expect(window.windowStart.toISOString().slice(0, 10)).toBe("2025-12-11");
     expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-02-05");
+  });
+
+  it("funciona na virada de ano (dueDay > closingDay, fecha em dezembro)", () => {
+    const window = cardStatementWindow({ closingDay: 2, dueDay: 10 }, 2026, 11); // fecha 02/dez/2026
+    expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-12-10");
   });
 });
 

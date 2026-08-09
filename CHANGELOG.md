@@ -37,6 +37,11 @@
 ### Corrigido
 - **Leitura de fatura em PDF**: a reconstrução de linha a partir do texto do PDF podia embaralhar a ordem de leitura dentro de uma mesma linha quando duas colunas da fatura ficavam muito próximas verticalmente (ex.: valor da parcela aparecendo antes do nome do estabelecimento) — corrigida a ordenação para respeitar sempre a posição horizontal real do texto.
 - **Cadastro de Cartão de Crédito**: dia de fechamento e dia de vencimento agora só aceitam número (nenhuma letra passa, no máximo 2 dígitos). Limite de crédito e Anuidade agora são digitados em formato de moeda brasileira ("R$ 1.500,00"), preenchendo da direita pra esquerda como em qualquer app de banco, sem precisar digitar vírgula ou ponto.
+- **Vencimento da fatura de cartão de crédito calculado errado** sempre que o dia de vencimento é maior que o dia de fechamento (ex.: fecha dia 2, vence dia 10) — o sistema jogava o vencimento pro mês seguinte, quando na verdade cai no mesmo mês do fechamento. Afetava a tela de Cartões (fatura vigente, histórico, seletor de mês) e a data de vencimento gravada em lançamentos de fatura importados. Corrigido, e os lançamentos já gravados dos cartões afetados foram recalculados.
+
+### Adicionado
+- **Cartão de Crédito — lançamento a lançamento da fatura editável**: cada linha da fatura agora tem um botão "Editar", com duas colunas de descrição — a que veio do banco (sempre travada) e uma personalizada (editável, junto com categoria e subcategoria). Editar uma vez "ensina" o sistema: da próxima vez que a mesma descrição do banco aparecer em qualquer fatura importada (de qualquer cartão), já vem com a personalização aplicada.
+- **Editar cartão** (dados cadastrais) agora segue o mesmo padrão do resto do sistema: campos travados até clicar em "Editar", com Salvar/Cancelar.
 
 ---
 

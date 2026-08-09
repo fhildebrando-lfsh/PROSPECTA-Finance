@@ -953,7 +953,77 @@
 
 ---
 
-## Próximo número de registro: **043**
+### Registro Nº 043
+- **Data:** 2026-08-09
+- **Etapa concluída:** 5 melhorias na tela de Cartão de Crédito: bug de vencimento
+  corrigido (+ backfill), lançamento da fatura editável com regra de descrição
+  personalizada, "Editar cartão" travado até clicar em Editar
+- **Descrição:** Usuário testou a tela de detalhe do cartão e reportou 5 problemas: (1)
+  vencimento da fatura mostrado errado ("vence 10/09/2026" em vez de "10/08/2026") e sem
+  parênteses no intervalo; (2) mesmo bug no card da lista de cartões; (3) faltava botão de
+  editar nos lançamentos da fatura; (4) faltava separar a descrição que vem do banco
+  (travada) da personalizada (editável), com o sistema "aprendendo" a personalização pra
+  faturas futuras; (5) formulário "Editar cartão" ficava sempre editável, sem seguir o
+  padrão de trava usado em Bens/Metas. Planejado em modo de planejamento, com 3 perguntas
+  confirmadas (todas a opção recomendada): corrigir também o vencimento já gravado em
+  lançamentos antigos dos cartões afetados; a regra de descrição personalizada vale pra
+  qualquer cartão do workspace; a regra só vale pras próximas importações, não reescreve
+  lançamentos já existentes.
+- **O que foi feito:**
+  - **Causa raiz do bug de vencimento:** `cardStatementWindow` (`lib/finance/card.ts`)
+    calculava o vencimento sempre no mês seguinte ao fechamento — só está certo quando
+    `dueDay <= closingDay`; quando `dueDay > closingDay` (caso do usuário: fecha dia 2,
+    vence dia 10), o vencimento cai no MESMO mês. Corrigido com uma condição; testes novos
+    cobrindo os dois ramos (os testes existentes só cobriam o ramo que já funcionava, por
+    isso o bug não tinha sido pego antes).
+  - **Schema (migration aditiva):** `Entry.importedDescription` (descrição original da
+    fatura, nunca editável) e novo model `DescriptionRule` (regra aprendida: descrição do
+    banco normalizada → descrição/categoria/subcategoria personalizadas, por workspace).
+  - **Importação de PDF** (`lib/import/pdf-statement/`) passa a: gravar
+    `__importedDescription` em toda linha (mesmo padrão de `__autoReviewReason` já
+    existente); consultar `DescriptionRule` do workspace e aplicá-la com prioridade sobre
+    a sugestão por histórico de frequência; e também passou a preencher `Subcategoria` na
+    linha (lacuna que existia desde sempre — `CategorySuggestion.subcategoryId` nunca
+    tinha sido usado).
+  - **Tabela de lançamentos da fatura** (`app/(app)/cartoes/FaturaEntriesTable.tsx`,
+    componente novo): edição em linha por lançamento (mesmo padrão de
+    `IncidentCard.tsx`), com "Descrição da fatura" sempre travada e "Descrição
+    personalizada" + Categoria + Subcategoria editáveis. Nova Server Action
+    `updateFaturaEntry` atualiza o lançamento e, quando ele veio de importação de PDF,
+    grava/atualiza a `DescriptionRule` correspondente.
+  - **"Editar cartão"** extraído pra `app/(app)/cartoes/CardEditForm.tsx`, no molde de
+    `AssetCard.tsx`: campos desabilitados até clicar em "Editar", Salvar/Cancelar.
+    `DayInput`/`CurrencyInputBRL` ganharam prop `disabled`.
+  - **Bug real encontrado e corrigido durante o próprio backfill do vencimento:** a
+    primeira versão do script de backfill recalculava `due_date` direto de
+    `transactionDate` — mas parcelas de uma mesma série compartilham a MESMA
+    `transactionDate` por design (`lib/finance/installments.ts`), só `due_date` avança
+    mês a mês por `installmentNumber`. Isso colapsou o vencimento de parcelas 2+ de volta
+    pro vencimento da parcela 1 em toda série do cartão afetado (121 de 561 lançamentos,
+    todos parcelados). Detectado ao inspecionar o próprio log do backfill (uma sequência
+    de datas repetidas onde deveriam ser sequenciais), corrigido com um script de reparo
+    que recalcula respeitando `installmentNumber`, e a lógica corrigida foi incorporada de
+    volta no script principal (`scripts/backfill-card-due-dates.ts`) — reexecutado até
+    reportar zero mudanças (idempotente), e uma série real de 12 parcelas conferida
+    manualmente mostrando vencimentos sequenciais corretos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (277/277), `npx tsc --noEmit` limpo, `npm run build` de
+  produção concluído. Backfill rodado em produção: 561 lançamentos verificados, 513
+  corrigidos na primeira passada (depois corrigido o bug de colapso de parcelas: 121
+  lançamentos parcelados reparados), script reexecutado confirmando 0 pendências.
+- **Documentos relacionados:** `lib/finance/card.ts`, `prisma/schema.prisma`
+  (`Entry.importedDescription`, `DescriptionRule`),
+  `prisma/migrations/20260810000000_description_rules/`,
+  `lib/import/pdf-statement/{pdf-to-rows,pdf-import}.ts`, `lib/import/parse-row.ts`,
+  `lib/import/suggest-category-bulk.ts`, `app/api/import/commit/route.ts`,
+  `app/(app)/cartoes/{FaturaEntriesTable,CardEditForm,actions}.ts(x)`,
+  `app/(app)/cartoes/[id]/page.tsx`, `scripts/backfill-card-due-dates.ts`,
+  `tests/finance/card.test.ts`, `tests/import/pdf-to-rows.test.ts`.
+
+---
+
+## Próximo número de registro: **044**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

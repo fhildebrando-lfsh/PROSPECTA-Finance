@@ -8,11 +8,13 @@ export function DayInput({
   name,
   defaultValue,
   required,
+  disabled,
   className,
 }: {
   name: string;
   defaultValue?: string | number | null;
   required?: boolean;
+  disabled?: boolean;
   className?: string;
 }) {
   const [value, setValue] = useState(defaultValue != null ? String(defaultValue) : "");
@@ -27,6 +29,7 @@ export function DayInput({
       value={value}
       onChange={(e) => setValue(e.target.value.replace(/\D/g, "").slice(0, 2))}
       required={required}
+      disabled={disabled}
       className={className}
     />
   );

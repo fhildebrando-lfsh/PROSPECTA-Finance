@@ -7,10 +7,10 @@ import { addMonths } from "@/lib/finance/dates";
 import { cardStatementTotal, cardStatementWindow, currentStatementWindow } from "@/lib/finance/card";
 import { toFinanceEntry } from "@/lib/finance/from-db";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
-import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY } from "@/components/ui/buttonStyles";
-import { CurrencyInputBRL } from "@/components/ui/CurrencyInputBRL";
-import { DayInput } from "@/components/ui/DayInput";
-import { archiveCreditCard, deleteCreditCard, updateCreditCard } from "../actions";
+import { BTN_DANGER, BTN_GHOST } from "@/components/ui/buttonStyles";
+import { archiveCreditCard, deleteCreditCard } from "../actions";
+import { CardEditForm, type CardEditFormData } from "../CardEditForm";
+import { FaturaEntriesTable, type FaturaEntryRow } from "../FaturaEntriesTable";
 
 const STATEMENT_HISTORY_MONTHS = 6;
 
@@ -37,7 +37,7 @@ export default async function CartaoDetailPage({
   const { month: monthRaw } = await searchParams;
   const workspaceId = await requireWorkspaceId();
 
-  const [wallet, institutions, dbEntries] = await Promise.all([
+  const [wallet, institutions, dbEntries, categories, subcategories] = await Promise.all([
     prisma.wallet.findFirst({
       where: { id, workspaceId, kindCode: "CARTAO_CREDITO" },
       include: { institution: true, creditCard: true },
@@ -45,9 +45,11 @@ export default async function CartaoDetailPage({
     prisma.institution.findMany({ orderBy: { name: "asc" } }),
     prisma.entry.findMany({
       where: { workspaceId, walletId: id },
-      include: { category: true, responsible: true },
+      include: { category: true, subcategory: true, responsible: true },
       orderBy: { transactionDate: "desc" },
     }),
+    prisma.category.findMany({ orderBy: [{ nature: "asc" }, { sortOrder: "asc" }] }),
+    prisma.subcategory.findMany({ where: { workspaceId: null }, orderBy: { name: "asc" } }),
   ]);
 
   if (!wallet) notFound();
@@ -76,6 +78,40 @@ export default async function CartaoDetailPage({
   );
   const prevMonth = selectedMonth === 0 ? { year: selectedYear - 1, month: 11 } : { year: selectedYear, month: selectedMonth - 1 };
   const nextMonth = selectedMonth === 11 ? { year: selectedYear + 1, month: 0 } : { year: selectedYear, month: selectedMonth + 1 };
+
+  const faturaEntryRows: FaturaEntryRow[] = selectedEntries.map((e) => ({
+    id: e.id,
+    transactionDateFormatted: formatDateBR(e.transactionDate),
+    importedDescription: e.importedDescription,
+    description: e.description,
+    categoryId: e.categoryId,
+    categoryName: e.category.name,
+    subcategoryId: e.subcategoryId,
+    subcategoryName: e.subcategory?.name ?? null,
+    nature: e.nature,
+    amountFormatted: formatCurrencyBRL(e.amount),
+    isNegative: e.amount.isNegative(),
+    installmentNumber: e.installmentNumber,
+    installmentTotal: e.installmentTotal,
+  }));
+
+  const categoryOptions = categories.map((c) => ({ id: c.id, nature: c.nature, name: c.name }));
+  const subcategoryOptions = subcategories.map((s) => ({ id: s.id, categoryId: s.categoryId, name: s.name }));
+
+  const cardEditFormData: CardEditFormData = {
+    id: wallet.id,
+    name: wallet.name,
+    institutionId: wallet.institutionId,
+    closingDay: wallet.closingDay,
+    dueDay: wallet.dueDay,
+    creditLimit: wallet.creditLimit?.toString() ?? null,
+    annualFee: wallet.creditCard?.annualFee?.toString() ?? null,
+    annualFeeWaiverNote: wallet.creditCard?.annualFeeWaiverNote ?? "",
+    rewardsProgramName: wallet.creditCard?.rewardsProgramName ?? "",
+    pointsPerRealSpent: wallet.creditCard?.pointsPerRealSpent?.toString() ?? "",
+    pointValueEstimateBRL: wallet.creditCard?.pointValueEstimateBRL?.toString() ?? "",
+    hasImage: Boolean(wallet.creditCard?.imageUrl),
+  };
 
   const statementHistory = cardConfig
     ? Array.from({ length: STATEMENT_HISTORY_MONTHS }, (_, i) => {
@@ -128,8 +164,8 @@ export default async function CartaoDetailPage({
             <h2 className="text-sm font-medium text-zinc-300">
               Fatura de {formatDateBR(selectedWindow.windowEnd)}
               {isSelectedVigente && <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-300">vigente</span>}
-              {" — "}
-              {formatDateBR(selectedWindow.windowStart)} a {formatDateBR(selectedWindow.windowEnd)}, vence{" "}
+              {" — "}(
+              {formatDateBR(selectedWindow.windowStart)} a {formatDateBR(selectedWindow.windowEnd)}), vence{" "}
               {formatDateBR(selectedWindow.dueDate)}
             </h2>
             <div className="flex items-center gap-2 text-xs">
@@ -158,40 +194,10 @@ export default async function CartaoDetailPage({
           {selectedTotal && (
             <p className="mb-2 font-mono text-lg tabular-nums text-zinc-100">Total: {formatCurrencyBRL(selectedTotal.abs())}</p>
           )}
-          {selectedEntries.length === 0 ? (
+          {faturaEntryRows.length === 0 ? (
             <p className="text-sm text-zinc-600">Nenhum lançamento nesta fatura.</p>
           ) : (
-            <div className="min-w-0 overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
-              <table className="w-full min-w-[560px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-indigo-900/50 text-left text-indigo-300">
-                    <th className="px-3 py-2 font-medium">Compra</th>
-                    <th className="px-3 py-2 font-medium">Descrição</th>
-                    <th className="px-3 py-2 font-medium">Categoria</th>
-                    <th className="px-3 py-2 text-right font-medium">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedEntries.map((e) => (
-                    <tr key={e.id} className="border-b border-indigo-900/30 text-indigo-100 last:border-0">
-                      <td className="px-3 py-2">{formatDateBR(e.transactionDate)}</td>
-                      <td className="px-3 py-2 truncate">
-                        {e.description}
-                        {e.installmentTotal && (
-                          <span className="ml-1 text-xs text-zinc-500">
-                            ({e.installmentNumber}/{e.installmentTotal})
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-zinc-400">{e.category.name}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-red-400">
-                        {formatCurrencyBRL(e.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <FaturaEntriesTable entries={faturaEntryRows} categories={categoryOptions} subcategories={subcategoryOptions} />
           )}
         </div>
       )}
@@ -244,130 +250,7 @@ export default async function CartaoDetailPage({
         </a>
       </div>
 
-      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
-        <h2 className="mb-3 text-sm font-medium text-zinc-300">Editar cartão</h2>
-        <form action={updateCreditCard} className="grid gap-3 sm:grid-cols-2">
-          <input type="hidden" name="walletId" value={wallet.id} />
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Nome do cartão *
-            <input
-              name="name"
-              defaultValue={wallet.name}
-              required
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Instituição financeira
-            <select
-              name="institutionId"
-              defaultValue={wallet.institutionId ?? ""}
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            >
-              <option value="">— selecione —</option>
-              {institutions.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400 sm:col-span-2">
-            Não achou o banco? Digite o nome (cria uma instituição nova)
-            <input name="newInstitutionName" className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100" />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Dia de fechamento *
-            <DayInput
-              name="closingDay"
-              defaultValue={wallet.closingDay}
-              required
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Dia de vencimento *
-            <DayInput
-              name="dueDay"
-              defaultValue={wallet.dueDay}
-              required
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Limite de crédito (R$)
-            <CurrencyInputBRL
-              name="creditLimit"
-              defaultValue={wallet.creditLimit?.toString()}
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Anuidade (R$/ano)
-            <CurrencyInputBRL
-              name="annualFee"
-              defaultValue={wallet.creditCard?.annualFee?.toString()}
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Condição de isenção da anuidade
-            <input
-              name="annualFeeWaiverNote"
-              defaultValue={wallet.creditCard?.annualFeeWaiverNote ?? ""}
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Programa de pontos/milhas
-            <input
-              name="rewardsProgramName"
-              defaultValue={wallet.creditCard?.rewardsProgramName ?? ""}
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Pontos por R$ gasto
-            <input
-              type="number"
-              name="pointsPerRealSpent"
-              min="0"
-              step="0.0001"
-              defaultValue={wallet.creditCard?.pointsPerRealSpent?.toString() ?? ""}
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400">
-            Valor estimado de cada ponto (R$)
-            <input
-              type="number"
-              name="pointValueEstimateBRL"
-              min="0"
-              step="0.0001"
-              defaultValue={wallet.creditCard?.pointValueEstimateBRL?.toString() ?? ""}
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-400 sm:col-span-2">
-            Trocar imagem (PNG, JPEG ou WebP, até 2MB)
-            <input
-              type="file"
-              name="image"
-              accept="image/png,image/jpeg,image/webp"
-              className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-100 file:mr-2 file:rounded file:border-0 file:bg-indigo-500/20 file:px-2 file:py-1 file:text-indigo-100"
-            />
-          </label>
-          {wallet.creditCard?.imageUrl && (
-            <label className="flex items-center gap-2 text-xs text-zinc-400">
-              <input type="checkbox" name="removeImage" value="true" />
-              Remover imagem atual
-            </label>
-          )}
-          <button type="submit" className={`self-start ${BTN_PRIMARY} sm:col-span-2`}>
-            Salvar
-          </button>
-        </form>
-      </div>
+      <CardEditForm wallet={cardEditFormData} institutions={institutions} />
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-900/50 bg-[#131A47] p-4">
         <div>

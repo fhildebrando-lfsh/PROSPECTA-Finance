@@ -4,13 +4,16 @@ import { formatDateBR } from "@/lib/format";
 import type { CategorySuggestion } from "../suggest-category-bulk";
 import type { PdfStatementTransaction } from "./types";
 
-/** Mesmos cabeçalhos canônicos de `ofx-to-rows.ts` — `autoDetectMapping()` reconhece sozinho. */
+/** Mesmos cabeçalhos canônicos de `ofx-to-rows.ts`, mais "Subcategoria" (que nem OFX nem
+ * PDF preenchiam até agora — `CategorySuggestion.subcategoryId` ficava sem uso) —
+ * `autoDetectMapping()` já reconhece "Subcategoria" (ver `column-mapping.ts`). */
 export const PDF_ROW_HEADERS = [
   "Compra",
   "Vence",
   "Tipo de Carteira",
   "Tipo",
   "Categoria",
+  "Subcategoria",
   "Descrição",
   "Responsáveis",
   "Valor",
@@ -24,11 +27,25 @@ const NO_HISTORY_REVIEW_REASON =
 const ORPHAN_INSTALLMENT_REVIEW_REASON =
   "Parcela detectada na fatura sem a parcela anterior já lançada neste sistema — confira o número da parcela e o valor antes de confirmar.";
 
+/** Regra "aprendida" ao editar um lançamento de fatura em Cartões de Crédito (ver model
+ * `DescriptionRule`) — quando existe pra uma descrição, tem prioridade sobre a sugestão
+ * por histórico de frequência (`CategorySuggestion`). */
+export interface DescriptionRuleMatch {
+  customDescription: string;
+  categoryId: string;
+  categoryName: string;
+  subcategoryId: string | null;
+  subcategoryName: string | null;
+}
+
 export interface PdfRowContext {
   walletName: string;
   cardConfig: CardConfig;
   responsibleName: string;
   categorySuggestions: Map<string, CategorySuggestion>;
+  /** Chave: descrição original do banco normalizada (trim + minúsculo) — mesma
+   * normalização de `categorySuggestions`. */
+  descriptionRules: Map<string, DescriptionRuleMatch>;
   fallbackCategoryNameByNature: Record<"DESPESA" | "RECEITA", string>;
   today: Date;
   /** Chave `${installmentTotal}:${installmentNumber}:${AAAA-MM-DD do vencimento}` de
@@ -54,8 +71,14 @@ function buildRow(
   },
 ): Record<string, string> {
   const nature: "DESPESA" | "RECEITA" = input.amount.isNegative() ? "DESPESA" : "RECEITA";
-  const suggestion = ctx.categorySuggestions.get(input.description.trim().toLowerCase());
-  const categoryName = suggestion ? suggestion.categoryName : ctx.fallbackCategoryNameByNature[nature];
+  const normalizedDescription = input.description.trim().toLowerCase();
+  const rule = ctx.descriptionRules.get(normalizedDescription);
+  const suggestion = ctx.categorySuggestions.get(normalizedDescription);
+
+  const description = rule ? rule.customDescription : input.description;
+  const categoryName = rule ? rule.categoryName : suggestion ? suggestion.categoryName : ctx.fallbackCategoryNameByNature[nature];
+  const subcategoryName = rule ? rule.subcategoryName : (suggestion?.subcategoryName ?? null);
+
   const settled = input.dueDate.getTime() <= ctx.today.getTime();
   const statusLabel = nature === "DESPESA" ? (settled ? "Pago" : "A pagar") : settled ? "Recebido" : "A receber";
 
@@ -65,7 +88,8 @@ function buildRow(
     "Tipo de Carteira": ctx.walletName,
     Tipo: nature,
     Categoria: categoryName,
-    Descrição: input.description,
+    Subcategoria: subcategoryName ?? "",
+    Descrição: description,
     Responsáveis: ctx.responsibleName,
     Valor: input.amount.toFixed(2).replace(".", ","),
     Recorrência:
@@ -73,8 +97,13 @@ function buildRow(
     Situação: statusLabel,
   };
 
-  const reason = input.reviewReason ?? (!suggestion ? NO_HISTORY_REVIEW_REASON : null);
+  const reason = input.reviewReason ?? (!rule && !suggestion ? NO_HISTORY_REVIEW_REASON : null);
   if (reason) row.__autoReviewReason = reason;
+  // Chave interna, fora do ColumnMapping normal — parse-row.ts lê direto do raw row (não
+  // é uma coluna mapeável pelo usuário). Sempre o texto ORIGINAL do banco, mesmo quando
+  // uma regra substitui `Descrição` acima — é a chave estável que `DescriptionRule` usa
+  // pra reconhecer a mesma compra em faturas futuras.
+  row.__importedDescription = input.description;
   return row;
 }
 

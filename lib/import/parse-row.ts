@@ -31,6 +31,11 @@ export interface ParsedRowData {
    * usuário, então não passa por `ColumnMapping`). Vira `Entry.autoReviewReason`
    * no commit — ver lib/finance/incidents.ts. */
   reviewReason: string | null;
+  /** Preenchido só pela importação de fatura em PDF
+   * (`lib/import/pdf-statement/pdf-to-rows.ts`), lido direto de
+   * `raw.__importedDescription` (mesmo padrão de `reviewReason` — não é uma
+   * coluna mapeável pelo usuário). Vira `Entry.importedDescription` no commit. */
+  importedDescription: string | null;
 }
 
 export interface ParsedRow {
@@ -151,6 +156,7 @@ export function parseImportRow(raw: Record<string, string>, mapping: ColumnMappi
       note,
       tags,
       reviewReason: raw.__autoReviewReason || null,
+      importedDescription: raw.__importedDescription || null,
     },
   };
 }

@@ -40,7 +40,7 @@ describe("ofxTransactionsToRows", () => {
       [transaction()],
       context({
         categorySuggestions: new Map([
-          ["mercado livre", { categoryId: "c1", categoryName: "Compras Online", subcategoryId: null }],
+          ["mercado livre", { categoryId: "c1", categoryName: "Compras Online", subcategoryId: null, subcategoryName: null }],
         ]),
       }),
     );

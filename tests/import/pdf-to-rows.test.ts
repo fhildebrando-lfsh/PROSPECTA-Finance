@@ -20,6 +20,7 @@ function context(overrides: Partial<PdfRowContext> = {}): PdfRowContext {
     cardConfig: { closingDay: 10, dueDay: 5 }, // compra em 5/jul fecha dia 10/jul, vence 5/ago
     responsibleName: "Fulano",
     categorySuggestions: new Map(),
+    descriptionRules: new Map(),
     fallbackCategoryNameByNature: { DESPESA: "Outras despesas", RECEITA: "Outras receitas" },
     today: new Date(Date.UTC(2026, 7, 8)),
     existingInstallmentKeys: new Set(),
@@ -55,7 +56,11 @@ describe("pdfTransactionsToRows — primeira vez vendo uma série de parcelament
   it("cada parcela gerada não vem marcada para revisão (não é um caso órfão)", () => {
     const result = pdfTransactionsToRows(
       [transaction({ installmentNumber: 1, installmentTotal: 2 })],
-      context({ categorySuggestions: new Map([["magalu", { categoryId: "c1", categoryName: "Compras", subcategoryId: null }]]) }),
+      context({
+        categorySuggestions: new Map([
+          ["magalu", { categoryId: "c1", categoryName: "Compras", subcategoryId: null, subcategoryName: null }],
+        ]),
+      }),
     );
     expect(result.records.every((r) => r.__autoReviewReason === undefined)).toBe(true);
   });
@@ -95,6 +100,82 @@ describe("pdfTransactionsToRows — deduplicação de parcela já lançada", () 
     );
 
     expect(result.records).toHaveLength(0);
+  });
+});
+
+describe("pdfTransactionsToRows — regra de descrição personalizada (DescriptionRule)", () => {
+  it("regra tem prioridade sobre a sugestão por histórico de frequência", () => {
+    const result = pdfTransactionsToRows(
+      [transaction({ description: "Chicogrill" })],
+      context({
+        categorySuggestions: new Map([
+          ["chicogrill", { categoryId: "old", categoryName: "Outras Despesas", subcategoryId: null, subcategoryName: null }],
+        ]),
+        descriptionRules: new Map([
+          [
+            "chicogrill",
+            {
+              customDescription: "Chicogrill Hamburgueria",
+              categoryId: "new",
+              categoryName: "Alimentação",
+              subcategoryId: "sub1",
+              subcategoryName: "Lanche/Lanchonete",
+            },
+          ],
+        ]),
+      }),
+    );
+
+    expect(result.records[0].Descrição).toBe("Chicogrill Hamburgueria");
+    expect(result.records[0].Categoria).toBe("Alimentação");
+    expect(result.records[0].Subcategoria).toBe("Lanche/Lanchonete");
+    expect(result.records[0].__autoReviewReason).toBeUndefined();
+  });
+
+  it("__importedDescription sempre guarda o texto original do banco, mesmo quando a regra substitui a descrição exibida", () => {
+    const result = pdfTransactionsToRows(
+      [transaction({ description: "Chicogrill" })],
+      context({
+        descriptionRules: new Map([
+          [
+            "chicogrill",
+            {
+              customDescription: "Chicogrill Hamburgueria",
+              categoryId: "new",
+              categoryName: "Alimentação",
+              subcategoryId: null,
+              subcategoryName: null,
+            },
+          ],
+        ]),
+      }),
+    );
+
+    expect(result.records[0].__importedDescription).toBe("Chicogrill");
+  });
+
+  it("sem regra nem sugestão, __importedDescription ainda é gravado (pra uma futura edição poder criar a regra)", () => {
+    const result = pdfTransactionsToRows([transaction({ description: "Loja Nova" })], context());
+    expect(result.records[0].__importedDescription).toBe("Loja Nova");
+    expect(result.records[0].Descrição).toBe("Loja Nova");
+  });
+
+  it("sugestão por histórico também popula Subcategoria quando disponível (fechando a lacuna que existia antes)", () => {
+    const result = pdfTransactionsToRows(
+      [transaction({ description: "Uber" })],
+      context({
+        categorySuggestions: new Map([
+          ["uber", { categoryId: "c1", categoryName: "Transporte", subcategoryId: "s1", subcategoryName: "Aplicativo" }],
+        ]),
+      }),
+    );
+    expect(result.records[0].Categoria).toBe("Transporte");
+    expect(result.records[0].Subcategoria).toBe("Aplicativo");
+  });
+
+  it("sem regra nem sugestão com subcategoria, Subcategoria fica vazia (string vazia, não undefined)", () => {
+    const result = pdfTransactionsToRows([transaction()], context());
+    expect(result.records[0].Subcategoria).toBe("");
   });
 });
 

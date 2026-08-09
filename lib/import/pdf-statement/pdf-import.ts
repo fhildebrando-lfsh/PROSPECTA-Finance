@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
 import type { CardConfig } from "@/lib/finance/card";
 import { suggestCategoriesByDescription } from "../suggest-category-bulk";
-import { installmentKey, PDF_ROW_HEADERS, pdfTransactionsToRows } from "./pdf-to-rows";
+import { installmentKey, PDF_ROW_HEADERS, pdfTransactionsToRows, type DescriptionRuleMatch } from "./pdf-to-rows";
 import type { PdfStatementTransaction } from "./types";
 
 export interface PdfImportParams {
@@ -54,6 +54,33 @@ export async function buildPdfImportRows(
   const cardConfig: CardConfig = { closingDay: wallet.closingDay, dueDay: wallet.dueDay };
 
   const categorySuggestions = await suggestCategoriesByDescription(workspaceId);
+
+  // Regras "aprendidas" ao editar um lançamento de fatura (ver DescriptionRule) — uma
+  // consulta por importação, mesmo espírito de suggestCategoriesByDescription.
+  const rules = await prisma.descriptionRule.findMany({
+    where: { workspaceId },
+    select: {
+      matchDescription: true,
+      customDescription: true,
+      categoryId: true,
+      category: { select: { name: true } },
+      subcategoryId: true,
+      subcategory: { select: { name: true } },
+    },
+  });
+  const descriptionRules = new Map<string, DescriptionRuleMatch>(
+    rules.map((r) => [
+      r.matchDescription,
+      {
+        customDescription: r.customDescription,
+        categoryId: r.categoryId,
+        categoryName: r.category.name,
+        subcategoryId: r.subcategoryId,
+        subcategoryName: r.subcategory?.name ?? null,
+      },
+    ]),
+  );
+
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
@@ -72,6 +99,7 @@ export async function buildPdfImportRows(
     cardConfig,
     responsibleName: responsible.name,
     categorySuggestions,
+    descriptionRules,
     fallbackCategoryNameByNature: { DESPESA: fallbackDespesa.name, RECEITA: fallbackReceita.name },
     today,
     existingInstallmentKeys,

@@ -34,12 +34,14 @@ export function CurrencyInputBRL({
   name,
   defaultValue,
   required,
+  disabled,
   className,
   placeholder,
 }: {
   name: string;
   defaultValue?: string | number | null;
   required?: boolean;
+  disabled?: boolean;
   className?: string;
   placeholder?: string;
 }) {
@@ -58,6 +60,7 @@ export function CurrencyInputBRL({
         value={centsToDisplay(cents)}
         onChange={handleChange}
         required={required}
+        disabled={disabled}
         placeholder={placeholder ?? "R$ 0,00"}
         className={className}
       />

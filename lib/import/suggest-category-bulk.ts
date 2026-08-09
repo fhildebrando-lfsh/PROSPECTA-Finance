@@ -4,6 +4,7 @@ export interface CategorySuggestion {
   categoryId: string;
   categoryName: string;
   subcategoryId: string | null;
+  subcategoryName: string | null;
 }
 
 /**
@@ -18,10 +19,19 @@ export interface CategorySuggestion {
 export async function suggestCategoriesByDescription(workspaceId: string): Promise<Map<string, CategorySuggestion>> {
   const entries = await prisma.entry.findMany({
     where: { workspaceId },
-    select: { description: true, categoryId: true, subcategoryId: true, category: { select: { name: true } } },
+    select: {
+      description: true,
+      categoryId: true,
+      subcategoryId: true,
+      category: { select: { name: true } },
+      subcategory: { select: { name: true } },
+    },
   });
 
-  const countsByDescription = new Map<string, Map<string, { count: number; categoryName: string; subcategoryId: string | null }>>();
+  const countsByDescription = new Map<
+    string,
+    Map<string, { count: number; categoryName: string; subcategoryId: string | null; subcategoryName: string | null }>
+  >();
   for (const entry of entries) {
     const key = entry.description.trim().toLowerCase();
     if (!key) continue;
@@ -30,6 +40,7 @@ export async function suggestCategoriesByDescription(workspaceId: string): Promi
       count: 0,
       categoryName: entry.category.name,
       subcategoryId: entry.subcategoryId,
+      subcategoryName: entry.subcategory?.name ?? null,
     };
     current.count += 1;
     byCategory.set(entry.categoryId, current);
@@ -38,7 +49,9 @@ export async function suggestCategoriesByDescription(workspaceId: string): Promi
 
   const suggestions = new Map<string, CategorySuggestion>();
   for (const [description, byCategory] of countsByDescription) {
-    let best: { categoryId: string; count: number; categoryName: string; subcategoryId: string | null } | null = null;
+    let best:
+      | { categoryId: string; count: number; categoryName: string; subcategoryId: string | null; subcategoryName: string | null }
+      | null = null;
     for (const [categoryId, v] of byCategory) {
       if (!best || v.count > best.count) best = { categoryId, ...v };
     }
@@ -47,6 +60,7 @@ export async function suggestCategoriesByDescription(workspaceId: string): Promi
         categoryId: best.categoryId,
         categoryName: best.categoryName,
         subcategoryId: best.subcategoryId,
+        subcategoryName: best.subcategoryName,
       });
     }
   }

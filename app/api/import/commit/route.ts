@@ -151,6 +151,7 @@ export async function POST(request: NextRequest) {
             note: row.parsed.data.note,
             tags: row.parsed.data.tags,
             autoReviewReason: row.parsed.data.reviewReason,
+            importedDescription: row.parsed.data.importedDescription,
             importBatchId: created.id,
             createdBy: profileId,
             updatedBy: profileId,

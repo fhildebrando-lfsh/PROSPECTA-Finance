@@ -34,7 +34,11 @@ export interface StatementWindow {
 /**
  * §11.4 — janela de uma fatura que fecha no dia `closingDay` do mês/ano
  * informado: começa um dia depois do fechamento anterior e termina no
- * fechamento deste mês. Vencimento no `dueDay` do mês seguinte ao fechamento.
+ * fechamento deste mês. Vencimento no `dueDay` — no MESMO mês do fechamento
+ * quando `dueDay > closingDay` (ex.: fecha dia 2, vence dia 10 — o vencimento
+ * já cai depois do fechamento sem precisar virar o mês); no mês SEGUINTE
+ * quando `dueDay <= closingDay` (ex.: fecha dia 25, vence dia 10 — só existe
+ * uma data assim no mês seguinte, já que dia 10 já passou neste mês).
  */
 export function cardStatementWindow(
   config: CardConfig,
@@ -44,7 +48,8 @@ export function cardStatementWindow(
   const windowEnd = new Date(Date.UTC(closingYear, closingMonthIndex0, config.closingDay));
   const previousClosing = addMonths(windowEnd, -1);
   const windowStart = addDays(previousClosing, 1);
-  const dueDate = new Date(Date.UTC(closingYear, closingMonthIndex0 + 1, config.dueDay));
+  const dueMonthIndex0 = config.dueDay > config.closingDay ? closingMonthIndex0 : closingMonthIndex0 + 1;
+  const dueDate = new Date(Date.UTC(closingYear, dueMonthIndex0, config.dueDay));
 
   return { windowStart, windowEnd, dueDate };
 }

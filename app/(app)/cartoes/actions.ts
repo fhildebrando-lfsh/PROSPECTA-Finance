@@ -249,3 +249,45 @@ export async function deleteCreditCard(formData: FormData) {
   revalidatePath("/cartoes");
   redirect("/cartoes");
 }
+
+/**
+ * Edita descrição/categoria/subcategoria de um lançamento da fatura (tela de detalhe do
+ * cartão). Quando o lançamento veio de uma importação de PDF (`importedDescription`
+ * preenchido), também grava/atualiza a `DescriptionRule` correspondente — da próxima vez
+ * que a mesma descrição original do banco aparecer em qualquer fatura importada do
+ * workspace, já vem com esta personalização (confirmado com o usuário: vale pra qualquer
+ * cartão, só nas PRÓXIMAS importações — nunca reescreve outros lançamentos já existentes).
+ */
+export async function updateFaturaEntry(formData: FormData) {
+  const workspaceId = await requireWorkspaceId();
+  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
+
+  const entryId = String(formData.get("entryId") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const categoryId = String(formData.get("categoryId") ?? "");
+  const subcategoryId = String(formData.get("subcategoryId") ?? "") || null;
+
+  if (!description || !categoryId) {
+    throw new Error("Descrição e categoria são obrigatórias.");
+  }
+
+  const existing = await prisma.entry.findFirst({ where: { id: entryId, workspaceId } });
+  if (!existing) throw new Error("Lançamento não encontrado.");
+
+  await prisma.entry.update({
+    where: { id: entryId },
+    data: { description, categoryId, subcategoryId, updatedBy: profileId },
+  });
+
+  if (existing.importedDescription) {
+    const matchDescription = existing.importedDescription.trim().toLowerCase();
+    await prisma.descriptionRule.upsert({
+      where: { workspaceId_matchDescription: { workspaceId, matchDescription } },
+      create: { workspaceId, matchDescription, customDescription: description, categoryId, subcategoryId },
+      update: { customDescription: description, categoryId, subcategoryId },
+    });
+  }
+
+  revalidatePath(`/cartoes/${existing.walletId}`);
+}

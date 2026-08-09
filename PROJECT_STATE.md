@@ -15,7 +15,32 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-09 (Cadastro de Cartão de Crédito — dia só aceita
+> **Última atualização real: 2026-08-09 (5 melhorias na tela de Cartão de Crédito —
+> vencimento corrigido + backfill, lançamento da fatura editável com regra de descrição,
+> "Editar cartão" travado, Registro Nº 043).** Bug real: `cardStatementWindow`
+> (`lib/finance/card.ts`) calculava o vencimento sempre no mês seguinte ao fechamento —
+> só certo quando `dueDay <= closingDay`; corrigido com uma condição (`dueDay >
+> closingDay` mantém o vencimento no mesmo mês). Schema ganhou
+> `Entry.importedDescription` (descrição original da fatura, travada) e model
+> `DescriptionRule` (descrição do banco normalizada → descrição/categoria/subcategoria
+> personalizadas, por workspace, aplicada em importações futuras de PDF com prioridade
+> sobre a sugestão por histórico). Nova tabela de lançamentos da fatura
+> (`FaturaEntriesTable.tsx`) com edição em linha; "Editar cartão" extraído pro padrão
+> travado (`CardEditForm.tsx`, molde de `AssetCard.tsx`).
+>
+> **Bug real encontrado e corrigido durante o próprio backfill do vencimento:** a
+> primeira versão do script recalculava `due_date` direto de `transactionDate`, mas
+> parcelas de uma série compartilham a MESMA `transactionDate` por design
+> (`lib/finance/installments.ts`) — só `installmentNumber` diferencia. Isso colapsou o
+> vencimento de parcelas 2+ de volta pro vencimento da parcela 1 (121 de 561 lançamentos
+> do cartão afetado). Detectado inspecionando o próprio log do backfill, corrigido e
+> incorporado de volta em `scripts/backfill-card-due-dates.ts` — reexecutado até reportar
+> zero pendências.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 043).
+>
+> **Última atualização anterior: 2026-08-09 (Cadastro de Cartão de Crédito — dia só aceita
 > dígito, Limite/Anuidade em padrão monetário, Registro Nº 042).** Dois componentes
 > novos e reutilizáveis em `components/ui/`: `DayInput` (filtra letra em tempo real, trava
 > em 2 dígitos) e `CurrencyInputBRL` (digita só número, formata como "R$ 1.500,00" na

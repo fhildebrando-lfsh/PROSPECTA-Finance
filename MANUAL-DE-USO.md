@@ -242,9 +242,14 @@ Clique num cartão para ver:
 
 - A fatura vigente e o histórico das últimas faturas fechadas.
 - Um **seletor de mês** para conferir qualquer fatura, passada ou futura, lançamento a
-  lançamento — útil para bater com o que o banco mostrou de verdade.
+  lançamento — útil para bater com o que o banco mostrou de verdade. Cada linha tem um
+  botão "Editar": a descrição que veio da fatura fica sempre travada (é o que o banco
+  imprimiu, não dá pra mudar), mas você pode personalizar a descrição, a categoria e a
+  subcategoria. Essa personalização é lembrada — da próxima vez que a mesma descrição do
+  banco aparecer em qualquer fatura importada (de qualquer cartão), já vem com a
+  personalização aplicada, sem precisar editar de novo.
 - Os dados cadastrais (instituição, dia de fechamento/vencimento, limite, anuidade,
-  programa de pontos) editáveis a qualquer momento.
+  programa de pontos) ficam travados até clicar em "Editar", com botões Salvar/Cancelar.
 - O botão "Importar fatura" (ver §8).
 - Arquivar (some da lista sem perder histórico) ou excluir (só se o cartão nunca teve
   lançamento).
