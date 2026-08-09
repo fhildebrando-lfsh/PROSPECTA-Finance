@@ -64,6 +64,7 @@ model Profile {
 
   memberships Membership[]
   accessLogs  AccessLog[]
+  googleCalendarConnectionsCreated GoogleCalendarConnection[]
 
   @@map("profiles")
 }
@@ -96,6 +97,7 @@ model Workspace {
   budgets          Budget[]
   assets           Asset[]
   goals            Goal[]
+  googleCalendarConnection GoogleCalendarConnection?
 
   @@map("workspaces")
 }
@@ -577,6 +579,13 @@ model Entry {
   /// padrão de `transferId`/`importBatchId`: FK direta, não `EntryGroup`.
   assetId String? @map("asset_id") @db.Uuid
 
+  /// ID do evento correspondente no Google Agenda do workspace (integração,
+  /// ver GoogleCalendarConnection), preenchido só enquanto o compromisso está
+  /// A_PAGAR/A_RECEBER e o workspace tem a integração conectada. Some (volta a
+  /// nulo) quando o lançamento é liquidado ou excluído — regra confirmada com
+  /// o usuário: evento pago some da agenda, não fica marcado como concluído.
+  googleEventId String? @map("google_event_id")
+
   createdBy String   @map("created_by") @db.Uuid
   updatedBy String   @map("updated_by") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
@@ -713,4 +722,35 @@ model Goal {
   wallet    Wallet    @relation(fields: [walletId], references: [id])
 
   @@map("goals")
+}
+
+/// §13/§18 — vínculo de um workspace com o Google Agenda do titular (um sentido
+/// só: sistema → Google). OAuth próprio, separado do "Entrar com Google" do
+/// login (esse passa pelo Supabase Auth e só pede escopo de identidade) —
+/// aqui é preciso o escopo `calendar.events` e um refresh token de longa
+/// duração, guardado criptografado (nunca em texto puro, ver
+/// lib/security/crypto.ts). Um vínculo por workspace; os eventos vivem num
+/// calendário DEDICADO ("PROSPECTA Finance"), não na agenda pessoal do
+/// cliente — desconectar é 1 chamada (apaga o calendário inteiro) em vez de
+/// apagar evento por evento.
+model GoogleCalendarConnection {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId          String    @unique @map("workspace_id") @db.Uuid
+  googleAccountEmail   String    @map("google_account_email")
+  /// ID do calendário dedicado criado na conta do cliente no momento da conexão.
+  googleCalendarId     String    @map("google_calendar_id")
+  /// Criptografados em repouso (AES-256-GCM, lib/security/crypto.ts) — nunca gravados em texto puro.
+  accessToken          String    @map("access_token")
+  refreshToken         String    @map("refresh_token")
+  accessTokenExpiresAt DateTime  @map("access_token_expires_at")
+  connectedByProfileId String    @map("connected_by_profile_id") @db.Uuid
+  connectedAt          DateTime  @default(now()) @map("connected_at")
+  /// Preenchido ao desconectar — a linha fica para auditoria (quem conectou/
+  /// desconectou quando), mesmo espírito de Membership.status/revokedAt.
+  revokedAt            DateTime? @map("revoked_at")
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectedBy Profile   @relation(fields: [connectedByProfileId], references: [id])
+
+  @@map("google_calendar_connections")
 }

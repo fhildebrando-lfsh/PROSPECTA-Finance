@@ -201,6 +201,16 @@ e o número/total de parcelas, que não é editável na tela normal de Lançamen
 corrigir uma linha, o sistema tenta combiná-la de novo com a parcela irmã automaticamente
 — se a correção resolveu o problema, as duas saem da lista sozinhas.
 
+**Integração com o Google Agenda:** no topo da aba Calendário, clique em "Conectar Google
+Agenda" e autorize o acesso na sua conta Google (autorização própria, separada do
+"Continuar com Google" do login — pede permissão específica para criar eventos). O sistema
+cria um calendário próprio chamado "PROSPECTA Finance" na sua conta e passa a enviar para
+lá, em tempo real, todo compromisso a pagar/a receber: criar, editar ou pagar/receber um
+lançamento atualiza o evento correspondente na hora. Quando você marca um compromisso como
+pago ou recebido, o evento **some** da agenda — ele deixa de precisar de atenção, não fica
+marcado como concluído. Para desconectar, use o botão "Desconectar" no mesmo lugar: o
+calendário dedicado é apagado e nenhum novo evento é enviado até conectar de novo.
+
 ---
 
 ## 10. Relatórios

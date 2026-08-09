@@ -613,9 +613,60 @@
 - **Documentos relacionados:** `lib/db/prisma.ts`, `.env.local` (não versionado),
   `PROJECT_STATE.md` (§23 "Débitos técnicos", entrada resolvida; entrada de 2026-08-08).
 
+### Registro Nº 035
+- **Data:** 2026-08-09
+- **Etapa concluída:** Integração com o Google Agenda (Compromissos → Calendário)
+- **Descrição:** Usuário pediu, depois de confirmar a correção do pooler de conexões
+  (Registro Nº 034), a viabilidade e implementação de sincronização do sistema com o
+  Google Agenda de cada cliente — um sentido só (sistema → Google), vínculo por
+  workspace, com autorização própria do cliente. Confirmado com 2 perguntas: compromisso
+  liquidado remove o evento da agenda (não marca como concluído); sincronização em tempo
+  real, não em lote.
+
+  **Arquitetura:** OAuth2 próprio (Google Cloud, escopo `calendar.events`), separado do
+  "Entrar com Google" do login (que usa o broker do Supabase Auth, só identidade). Cada
+  workspace ganha um calendário **dedicado** ("PROSPECTA Finance") na conta do cliente —
+  desconectar vira 1 chamada (apagar o calendário) em vez de apagar evento por evento.
+  Tokens (`GoogleCalendarConnection.accessToken`/`refreshToken`) gravados cifrados em
+  repouso (AES-256-GCM, `lib/security/crypto.ts`, chave `TOKEN_ENCRYPTION_KEY` nova).
+  `Entry.googleEventId` liga um lançamento ao evento correspondente. Sincronização
+  (`lib/integrations/google-calendar/sync.ts`) plugada nos pontos de escrita já
+  centralizados (criar, liquidar, editar/excluir via API, importar CSV/OFX, reverter
+  importação, editar incidente), sempre via `after()` do Next.js — não bloqueia a
+  resposta ao usuário — e nunca lança exceção (melhor esforço; falha na API do Google
+  vira log, não quebra o lançamento real).
+
+  **Infraestrutura, achado durante a etapa:** `prisma migrate deploy`/`status` passou a
+  travar indefinidamente nesta máquina (o binário `schema-engine-windows.exe` ficava
+  parado em `cli can-connect-to-database`, mesmo com o banco alcançável em ~100ms via
+  `pg` puro — indício de firewall/antivírus local bloqueando especificamente esse
+  executável, não um problema do projeto nem do Supabase). Contornado aplicando o SQL da
+  migration diretamente via `pg` e registrando a entrada em `_prisma_migrations` à mão
+  (mesmo formato que o Prisma gravaria), dentro de uma transação. Documentado como débito
+  técnico (§23 do `PROJECT_STATE.md`) para as próximas migrations, caso o travamento
+  persista numa sessão futura.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (206/206), `tsc --noEmit` limpo, `npm run build` de produção
+  concluído com as 2 rotas novas (`/api/integrations/google-calendar/{connect,callback}`)
+  listadas. Migration aplicada e conferida direto no banco (`_prisma_migrations`).
+  `TOKEN_ENCRYPTION_KEY` gerada e configurada em `.env.local` e na Vercel
+  (`Production`/`Preview`, via `vercel env add`). Acesso não autenticado a
+  `/compromissos/calendario` redireciona para `/login` sem erro. **Fluxo OAuth completo
+  (autorizar no Google, ver o calendário/evento sendo criado de verdade) ainda não
+  testado ponta a ponta** — bloqueado até o usuário criar as credenciais no Google Cloud
+  Console (checklist em `PROJECT_STATE.md` §19) e informar
+  `GOOGLE_CALENDAR_CLIENT_ID`/`GOOGLE_CALENDAR_CLIENT_SECRET`.
+- **Documentos relacionados:** `prisma/schema.prisma` (model `GoogleCalendarConnection`,
+  `Entry.googleEventId`), `prisma/migrations/20260809000000_google_calendar_integration/`,
+  `lib/security/crypto.ts`, `lib/integrations/google-calendar/{client,sync}.ts`,
+  `app/api/integrations/google-calendar/{connect,callback}/route.ts`,
+  `app/(app)/compromissos/calendario/{page.tsx,actions.ts}`, `MANUAL-DE-USO.md` §9,
+  `PROJECT_STATE.md` §19/§23.
+
 ---
 
-## Próximo número de registro: **035**
+## Próximo número de registro: **036**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

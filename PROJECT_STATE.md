@@ -15,7 +15,62 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-08 (bug real: pool de conexões do Supabase esgotando
+> **Última atualização real: 2026-08-09 (Integração com o Google Agenda — Registro Nº
+> 035).** Depois de confirmar a correção do pooler (Registro Nº 034), o usuário pediu
+> viabilidade + implementação de sincronização do sistema com o Google Agenda de cada
+> cliente: um sentido só (sistema → Google), vínculo por workspace, autorização do
+> próprio cliente. Confirmado com 2 perguntas: compromisso liquidado **remove** o evento
+> da agenda (não marca como concluído); sincronização em **tempo real**.
+>
+> **Arquitetura:** OAuth2 próprio (Google Cloud, escopo `calendar.events`), **separado**
+> do "Entrar com Google" do login (que usa o broker do Supabase Auth, só identidade —
+> não dá acesso à Agenda). Novo model `GoogleCalendarConnection` (1 por workspace,
+> `accessToken`/`refreshToken` cifrados em repouso — AES-256-GCM,
+> `lib/security/crypto.ts`, chave `TOKEN_ENCRYPTION_KEY` nova) + `Entry.googleEventId`
+> (liga um lançamento ao evento correspondente). No momento da conexão o sistema cria um
+> **calendário dedicado** ("PROSPECTA Finance") na conta do cliente, em vez de escrever
+> na agenda principal dele — desconectar vira 1 chamada (apagar o calendário) em vez de
+> apagar evento por evento. `lib/integrations/google-calendar/client.ts` (fetch cru,
+> mesmo padrão de `lib/email/send.ts` pro Brevo) + `sync.ts` (`syncEntryToGoogleCalendar`/
+> `deleteEntryGoogleCalendarEvent`, nunca lançam exceção — melhor esforço, uma falha na
+> API do Google não pode quebrar um lançamento financeiro real). Lógica de decisão
+> (criar/atualizar/apagar/nada) extraída em `decideGoogleCalendarAction()`, pura e
+> testada — o resto (I/O de banco + rede) segue o padrão já estabelecido no projeto de
+> não ter teste unitário em orquestração (`settleEntry`, `createEntryOrSeries` também não
+> têm), verificado por `tsc`/build/uso real em vez disso.
+>
+> Plugado via `after()` (Next 15+, não bloqueia a resposta) nos 6 pontos de escrita já
+> centralizados: `lib/entries/create.ts::createEntryOrSeries`,
+> `lib/entries/settle.ts::settleEntry`, `app/api/entries/[id]/route.ts` (PATCH/DELETE),
+> `app/api/import/commit/route.ts`, `lib/import/revert.ts::revertImportBatch`,
+> `app/(app)/compromissos/incidentes/actions.ts::updateIncidentEntry`. Novas rotas
+> `GET /api/integrations/google-calendar/{connect,callback}` + Server Action
+> `disconnectGoogleCalendar()` + seção de conectar/desconectar em
+> `/compromissos/calendario`.
+>
+> **Achado de infraestrutura durante a etapa (fora do código do projeto):** `prisma
+> migrate deploy`/`status` passaram a travar indefinidamente nesta máquina Windows — o
+> binário `schema-engine-windows.exe` ficava parado em `cli can-connect-to-database`
+> mesmo com o banco alcançável em ~100ms via `pg` puro (testado à parte), indício de
+> firewall/antivírus local bloqueando esse executável especificamente (não `node.exe`,
+> que já tem permissão). Contornado aplicando o SQL da migration direto via `pg` +
+> gravando a linha em `_prisma_migrations` à mão (mesmo formato que o Prisma gravaria),
+> numa transação. Documentado em §23 como débito técnico/processo pra próximas
+> migrations, caso o travamento persista numa sessão futura.
+>
+> **Bloqueio para verificação ponta a ponta:** o fluxo OAuth completo (autorizar no
+> Google de verdade, confirmar que o evento aparece na agenda) só pode ser testado depois
+> que o usuário criar as credenciais no Google Cloud Console — checklist na tabela de
+> variáveis de ambiente (§19) — e informar `GOOGLE_CALENDAR_CLIENT_ID`/
+> `GOOGLE_CALENDAR_CLIENT_SECRET`. Até lá: `npm test` (206/206), `tsc --noEmit` limpo,
+> `npm run build` de produção OK (rotas novas listadas), acesso não autenticado
+> redireciona pra `/login` sem erro.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 035), `MANUAL-DE-USO.md` §9 (nova subseção "Integração com o Google
+> Agenda"), §19 (variáveis novas) e §23 (débito técnico do schema-engine) abaixo.
+>
+> **Última atualização anterior: 2026-08-08 (bug real: pool de conexões do Supabase esgotando
 > de novo — pooler trocado de Sessão pra Transação, Registro Nº 034).** Usuário reportou
 > "Algo deu errado" em `/lancamentos` no celular logo após o deploy da correção de
 > contraste dos cards mobile (feita antes desta entrada). Investigado direto no banco: o
@@ -1485,13 +1540,17 @@ Todas em `.env.local` (gitignored, nunca commitado, nunca colado em chat):
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anônima do Supabase (público) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço (privada) — usada em `lib/supabase/admin.ts` (Admin API, página `/admin/usuarios`) |
 | `DATABASE_URL` | Connection string do Postgres — **usa o "Transaction pooler" do Supabase** (porta 6543, `aws-0-sa-east-1.pooler.supabase.com`, desde 2026-08-08 — antes era o "Session pooler", porta 5432, trocado por não ter teto de 15 conexões simultâneas), não a conexão direta (a rede residencial do usuário não tem IPv6, que a conexão direta exige) |
+| `BREVO_API_KEY` | E-mail transacional próprio do app via API HTTP do Brevo (`lib/email/send.ts`), diferente do SMTP usado pelo Supabase Auth |
+| `TOKEN_ENCRYPTION_KEY` | **Nova, 2026-08-09.** Chave de criptografia (AES-256-GCM, `lib/security/crypto.ts`) dos tokens OAuth do Google Agenda gravados em `GoogleCalendarConnection`. Gerada uma vez (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`), qualquer string serve como entrada (passa por `scrypt` antes de virar chave AES). Já configurada em `.env.local` e na Vercel (`Production`/`Preview`). |
+| `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` | **Nova, 2026-08-09 — ainda PENDENTE, bloqueia o teste ponta a ponta da integração com o Google Agenda.** Credenciais OAuth de um app próprio no Google Cloud Console (`console.cloud.google.com`), separadas do login com Google. Checklist para o usuário completar: (1) criar/reaproveitar um projeto; (2) ativar a **Google Calendar API**; (3) criar uma credencial **OAuth Client ID** (tipo "Aplicativo da Web") com redirect URIs `https://prospecta-finance.vercel.app/api/integrations/google-calendar/callback` e `http://localhost:3000/api/integrations/google-calendar/callback`; (4) configurar a tela de consentimento OAuth pedindo o escopo `https://www.googleapis.com/auth/calendar.events`; (5) passar Client ID + Client Secret, que viram essas duas env vars em `.env.local` e na Vercel (mesmo padrão de `BREVO_API_KEY` — o assistente não cria nem vê essas credenciais, só usa o que for passado). |
 
 Projeto Supabase: `zfugldawxhvzclooisqj`, região `sa-east-1` (São Paulo).
 
 **Deploy em produção:** Vercel, projeto `prospecta-finance`, branch `master` do repositório
 `github.com/fhildebrando-lfsh/PROSPECTA-Finance` (push nessa branch redeploya
-automaticamente). URL: `https://prospecta-finance.vercel.app`. As 4 variáveis acima estão
-configuradas em Project Settings → Environment Variables na Vercel (mesmos valores do
+automaticamente). URL: `https://prospecta-finance.vercel.app`. As variáveis acima (exceto
+`GOOGLE_CALENDAR_CLIENT_ID`/`GOOGLE_CALENDAR_CLIENT_SECRET`, ainda pendentes — ver tabela)
+estão configuradas em Project Settings → Environment Variables na Vercel (mesmos valores do
 `.env.local`, apontando pro **mesmo banco Supabase** usado em desenvolvimento local — não há
 banco de produção separado ainda). No Supabase, Authentication → URL Configuration tem
 `Site URL` e `Redirect URLs` apontando pra essa mesma URL da Vercel (necessário pro link de
@@ -1722,6 +1781,26 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   `migrate deploy`, nunca `migrate dev`, enquanto essa migration antiga não for
   reescrita (só possível resetando o histórico de migrations, fora de cogitação com
   dado real em produção).
+- **`prisma migrate deploy`/`migrate status` travam indefinidamente nesta máquina Windows
+  (achado em 2026-08-09, Registro Nº 035):** o binário `schema-engine-windows.exe`
+  (`node_modules/@prisma/engines/schema-engine-windows.exe`) fica parado para sempre no
+  passo `cli can-connect-to-database`, mesmo com o Postgres alcançável em ~100ms via `pg`
+  puro (`new Client({connectionString}).connect()`, testado à parte) — `prisma --version`
+  roda normalmente (não é binário ausente/corrompido). Indício forte de firewall/
+  antivírus local bloqueando esse executável especificamente (diferente de `node.exe`,
+  que já tinha permissão de rede das sessões anteriores) — não é um problema do projeto,
+  do Supabase, nem de código; não foi possível confirmar/corrigir a causa raiz porque
+  `Get-NetFirewallApplicationFilter` exige privilégio de administrador, indisponível
+  nesta sessão. **Contorno usado (e documentado aqui para reuso):** aplicar o `.sql` da
+  migration diretamente via `pg` (`Client.query(sql)`) dentro de uma transação, e nessa
+  mesma transação inserir a linha correspondente em `_prisma_migrations`
+  (`id` = UUID aleatório, `checksum` = sha256 hex do arquivo `.sql`, `migration_name`,
+  `started_at`/`finished_at` = agora, `applied_steps_count` = 1 — mesmo formato que o
+  `prisma migrate deploy` gravaria, conferido contra migrations anteriores já aplicadas).
+  `prisma generate` continua funcionando normalmente (não precisa conectar no banco).
+  Se isso acontecer de novo numa sessão futura: primeiro checar se o problema ainda
+  existe (`npx prisma migrate status` com timeout curto) antes de assumir que precisa do
+  contorno — pode já ter sido corrigido (ex.: usuário aprovou um prompt de firewall).
 
 ---
 

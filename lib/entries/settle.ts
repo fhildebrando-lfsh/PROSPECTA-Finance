@@ -1,5 +1,7 @@
+import { after } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
+import { syncEntryToGoogleCalendar } from "@/lib/integrations/google-calendar/sync";
 
 /**
  * §13 Compromissos — "marcar como pago" em 1 toque: A_PAGAR->PAGO,
@@ -19,8 +21,10 @@ export async function settleEntry(entryId: string, workspaceId: string, profileI
     throw new ApiError(400, `Situação "${existing.statusCode}" não é liquidável por este atalho.`);
   }
 
-  return prisma.entry.update({
+  const updated = await prisma.entry.update({
     where: { id: entryId },
     data: { statusCode: nextStatus, settledAt: new Date(), updatedBy: profileId },
   });
+  after(() => syncEntryToGoogleCalendar(updated.id));
+  return updated;
 }

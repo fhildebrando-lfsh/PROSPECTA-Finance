@@ -1,11 +1,13 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireProfile, requireWorkspaceId, assertCanWrite } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { parseIsoDate, updateEntrySchema } from "@/lib/validation/entry";
 import { Decimal } from "@/lib/finance/types";
 import { clusterInstallmentRows } from "@/lib/import/group-installments";
+import { syncEntryToGoogleCalendar } from "@/lib/integrations/google-calendar/sync";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 async function currentMembership(workspaceId: string) {
@@ -123,5 +125,6 @@ export async function updateIncidentEntry(formData: FormData) {
   await prisma.entry.update({ where: { id }, data });
   await tryRegroupIncidents(workspaceId);
 
+  after(() => syncEntryToGoogleCalendar(id));
   revalidateIncidentPaths();
 }

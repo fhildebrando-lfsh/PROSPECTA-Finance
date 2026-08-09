@@ -5,6 +5,7 @@ import { daysBetween } from "@/lib/finance/dates";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { markSettled } from "../actions";
 import { CompromissosTabs } from "../CompromissosTabs";
+import { disconnectGoogleCalendar } from "./actions";
 
 const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTH_LABELS = [
@@ -46,11 +47,15 @@ function parseMonthParam(raw: string | undefined) {
 export default async function CompromissosCalendarioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; day?: string }>;
+  searchParams: Promise<{ month?: string; day?: string; google_connected?: string; google_error?: string }>;
 }) {
-  const { month: monthRaw, day: dayRaw } = await searchParams;
+  const { month: monthRaw, day: dayRaw, google_connected, google_error } = await searchParams;
   const workspaceId = await requireWorkspaceId();
   const { year, month } = parseMonthParam(monthRaw);
+
+  const googleConnection = await prisma.googleCalendarConnection.findFirst({
+    where: { workspaceId, revokedAt: null },
+  });
 
   const firstOfMonth = utcDate(year, month, 1);
   const lastOfMonth = utcDate(year, month + 1, 0);
@@ -98,6 +103,56 @@ export default async function CompromissosCalendarioPage({
       </div>
 
       <CompromissosTabs active="calendario" />
+
+      {google_connected && (
+        <p className="rounded-lg border border-emerald-900/50 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-300">
+          Google Agenda conectado com sucesso.
+        </p>
+      )}
+      {google_error && (
+        <p className="rounded-lg border border-rose-900/50 bg-rose-950/30 px-3 py-2 text-sm text-rose-300">
+          Não foi possível conectar ao Google Agenda. Tente novamente.
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+        {googleConnection ? (
+          <>
+            <div className="min-w-0">
+              <p className="text-sm text-zinc-100">
+                Conectado ao Google Agenda como <span className="font-medium">{googleConnection.googleAccountEmail}</span>
+              </p>
+              <p className="text-xs text-zinc-500">
+                Desde {formatDateBR(googleConnection.connectedAt)} · compromissos a pagar/a receber são enviados
+                automaticamente para um calendário dedicado ("PROSPECTA Finance") na conta do cliente.
+              </p>
+            </div>
+            <form action={disconnectGoogleCalendar}>
+              <button
+                type="submit"
+                className="rounded-lg border border-rose-900/50 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-950/50"
+              >
+                Desconectar
+              </button>
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="min-w-0">
+              <p className="text-sm text-zinc-100">Google Agenda não conectado</p>
+              <p className="text-xs text-zinc-500">
+                Conecte para enviar compromissos a pagar/a receber automaticamente para o Google Agenda do cliente.
+              </p>
+            </div>
+            <a
+              href="/api/integrations/google-calendar/connect"
+              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-zinc-950 hover:bg-amber-400"
+            >
+              Conectar Google Agenda
+            </a>
+          </>
+        )}
+      </div>
 
       <div className="flex items-center justify-between">
         <Link

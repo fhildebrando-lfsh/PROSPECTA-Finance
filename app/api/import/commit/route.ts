@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { assertCanWrite, requireApiWorkspaceMembership } from "@/lib/auth/session";
 import { ApiError, apiErrorResponse } from "@/lib/api/errors";
 import { prisma } from "@/lib/db/prisma";
@@ -8,6 +8,7 @@ import { parseCsvWithHeaderDetection } from "@/lib/import/parse-csv";
 import { buildOfxImportRows, type OfxImportParams } from "@/lib/import/ofx-import";
 import { hasErrors, parseImportRow } from "@/lib/import/parse-row";
 import { buildReferenceMaps, resolveRow } from "@/lib/import/resolve";
+import { syncEntryToGoogleCalendar } from "@/lib/integrations/google-calendar/sync";
 
 /**
  * POST /api/import/commit — §18.1 passo 4 (ou §18 OFX): importa atomicamente as
@@ -128,6 +129,13 @@ export async function POST(request: NextRequest) {
 
       return created;
     });
+
+    if (toImport.length > 0) {
+      after(async () => {
+        const imported = await prisma.entry.findMany({ where: { importBatchId: batch.id }, select: { id: true } });
+        await Promise.all(imported.map((entry) => syncEntryToGoogleCalendar(entry.id)));
+      });
+    }
 
     return NextResponse.json({
       batchId: batch.id,

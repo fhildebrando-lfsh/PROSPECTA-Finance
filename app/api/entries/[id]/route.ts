@@ -1,10 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { ApiError, apiErrorResponse } from "@/lib/api/errors";
 import { assertCanWrite, requireApiWorkspaceMembership } from "@/lib/auth/session";
 import { parseIsoDate, updateEntrySchema } from "@/lib/validation/entry";
 import { Decimal } from "@/lib/finance/types";
+import { deleteEntryGoogleCalendarEvent, syncEntryToGoogleCalendar } from "@/lib/integrations/google-calendar/sync";
 import type { Prisma } from "@/app/generated/prisma/client";
 
 async function loadOwnedEntry(id: string, workspaceId: string) {
@@ -46,6 +47,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (input.isFixedOverride !== undefined) data.isFixedOverride = input.isFixedOverride;
 
     const updated = await prisma.entry.update({ where: { id }, data });
+    after(() => syncEntryToGoogleCalendar(updated.id));
     return NextResponse.json({ entry: updated });
   } catch (err) {
     if (err instanceof ZodError) {
@@ -63,10 +65,21 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     assertCanWrite(role, isPlatformAdmin);
     const existing = await loadOwnedEntry(id, workspaceId);
 
+    let deleted: { googleEventId: string | null }[];
     if (existing.transferId) {
+      deleted = await prisma.entry.findMany({
+        where: { workspaceId, transferId: existing.transferId },
+        select: { googleEventId: true },
+      });
       await prisma.entry.deleteMany({ where: { workspaceId, transferId: existing.transferId } });
     } else {
+      deleted = [existing];
       await prisma.entry.delete({ where: { id } });
+    }
+
+    const eventIds = deleted.map((e) => e.googleEventId).filter((v): v is string => Boolean(v));
+    if (eventIds.length > 0) {
+      after(() => Promise.all(eventIds.map((eventId) => deleteEntryGoogleCalendarEvent(workspaceId, eventId))));
     }
 
     return NextResponse.json({ ok: true });
