@@ -145,9 +145,12 @@ automaticamente; isso **não conta como receita nem despesa** no seu resultado d
 
 ---
 
-## 8. Importar planilha (CSV)
+## 8. Importar planilha (CSV) ou extrato bancário (OFX)
 
-Botão "Importar" na tela de Lançamentos. Fluxo em 4 passos:
+Botão "Importar" na tela de Lançamentos. O sistema detecta o formato pela extensão do
+arquivo enviado.
+
+**CSV** — fluxo em 4 passos:
 
 1. **Enviar o arquivo** (.csv).
 2. **Conferir o mapeamento de colunas** — o sistema já reconhece os nomes usados
@@ -158,8 +161,24 @@ Botão "Importar" na tela de Lançamentos. Fluxo em 4 passos:
    entram sinalizadas, mas podem ser importadas.
 4. **Confirmar** — só as linhas válidas entram, em um lote atômico.
 
-Se algo deu errado, o lote inteiro pode ser **revertido com um clique**, na tela de
-Importar — desde que nenhum dos lançamentos importados já tenha sido editado depois.
+**OFX** (.ofx/.qfx, extrato exportado do banco) — o arquivo não traz carteira,
+responsável nem categoria por lançamento, então antes de validar você escolhe uma vez
+para o extrato inteiro:
+
+- **Carteira** e **Responsável** — aplicados a todos os lançamentos do arquivo.
+- **Categoria padrão para despesas** e **para receitas** — usadas só quando não houver
+  histórico de categoria para aquela descrição no sistema; quando você já lançou a mesma
+  descrição antes (ex.: "MERCADO LIVRE"), a categoria já usada é sugerida automaticamente.
+- Se a carteira escolhida for um **cartão de crédito**, o vencimento de cada compra é
+  calculado pela fatura certa (fechamento/vencimento da carteira), não pela data da
+  compra em si.
+- Lançamentos que caíram na categoria padrão (sem histórico) ficam marcados com um aviso
+  e aparecem em **Compromissos → Incidentes** para você confirmar ou corrigir a
+  categoria depois.
+
+Em ambos os formatos, se algo deu errado, o lote inteiro pode ser **revertido com um
+clique**, na tela de Importar — desde que nenhum dos lançamentos importados já tenha
+sido editado depois.
 
 ---
 
@@ -171,9 +190,10 @@ Mostra o que está vencendo: **vencidos, hoje, próximos 7 e próximos 30 dias**
 **Aba Calendário:** a mesma informação em uma grade mensal — navegue entre meses, clique em
 um dia para ver a lista completa daquele dia (com destaque em vermelho para os vencidos).
 
-**Aba Incidentes:** lançamentos parcelados que o sistema não conseguiu combinar
-automaticamente com o restante da série (por exemplo, uma parcela sem nenhuma outra
-correspondente encontrada — mesma carteira, categoria, descrição e valor). Cada linha
+**Aba Incidentes:** lançamentos que precisam de revisão manual — parcelas sem par
+encontrado (por exemplo, uma parcela sem nenhuma outra correspondente — mesma carteira,
+categoria, descrição e valor) ou lançamentos importados de OFX que caíram na categoria
+padrão por falta de histórico (§8). Cada linha
 mostra o motivo e dois botões: **"Confirmar que está correto"** (se a linha realmente está
 assim mesmo, some da lista sem alterar nada) ou **"Editar"** (formulário completo da
 linha — carteira, categoria, subcategoria, responsável, descrição, valor, datas, situação

@@ -4,18 +4,23 @@ import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { CompromissosTabs } from "../CompromissosTabs";
 import { IncidentCard, type IncidentCardData } from "./IncidentCard";
 
-/** §13 "Incidentes" — lançamentos parcelados (`installmentTotal >= 2`) que a
- * heurística de agrupamento (`lib/import/group-installments.ts`) não
- * conseguiu combinar com nenhuma parcela irmã: ou porque nenhum par existe
- * de verdade (parcela órfã, ex.: registro incompleto na fonte original), ou
- * porque o cluster ficou ambíguo. Mesma condição de `isInstallmentIncident()`
- * (`lib/finance/incidents.ts`), expressa aqui como filtro de banco. */
+/** §13 "Incidentes" — duas origens (§18, ver `lib/finance/incidents.ts::
+ * isEntryIncident()`, expressa aqui como filtro de banco): (1) lançamentos
+ * parcelados (`installmentTotal >= 2`) que a heurística de agrupamento
+ * (`lib/import/group-installments.ts`) não conseguiu combinar com nenhuma
+ * parcela irmã — órfã de verdade ou cluster ambíguo; (2) lançamentos
+ * importados por OFX sem histórico de categoria para a descrição, que caíram
+ * na categoria padrão escolhida no import (`lib/import/ofx-to-rows.ts`). */
 export default async function IncidentesPage() {
   const workspaceId = await requireWorkspaceId();
 
   const [incidents, wallets, categories, subcategories, people, statuses] = await Promise.all([
     prisma.entry.findMany({
-      where: { workspaceId, installmentTotal: { gte: 2 }, groupId: null, incidentAcknowledgedAt: null },
+      where: {
+        workspaceId,
+        incidentAcknowledgedAt: null,
+        OR: [{ installmentTotal: { gte: 2 }, groupId: null }, { autoReviewReason: { not: null } }],
+      },
       include: { wallet: true, category: true, responsible: true },
       orderBy: { dueDate: "asc" },
     }),
@@ -47,9 +52,10 @@ export default async function IncidentesPage() {
     categoryName: e.category.name,
     responsibleName: e.responsible.name,
     motivo:
-      e.installmentNumber != null
+      e.autoReviewReason ??
+      (e.installmentNumber != null
         ? `Parcela ${e.installmentNumber} de ${e.installmentTotal} sem outras parcelas correspondentes encontradas (mesma carteira, categoria, descrição e valor).`
-        : `Marcado como parcelamento (${e.installmentTotal}x) sem número de parcela definido.`,
+        : `Marcado como parcelamento (${e.installmentTotal}x) sem número de parcela definido.`),
   }));
 
   return (
@@ -57,8 +63,9 @@ export default async function IncidentesPage() {
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Compromissos</h1>
         <p className="text-sm text-zinc-500">
-          Lançamentos parcelados que o sistema não conseguiu combinar automaticamente com o
-          restante da série (§13) — confirme que estão corretos ou corrija a linha.
+          Lançamentos que precisam de revisão manual — parcelas sem par encontrado ou
+          importados de OFX sem histórico de categoria (§13) — confirme que estão corretos
+          ou corrija a linha.
         </p>
       </div>
 

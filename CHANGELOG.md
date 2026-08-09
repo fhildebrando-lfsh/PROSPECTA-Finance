@@ -17,6 +17,7 @@
 ## 2026-08-08
 
 ### Adicionado
+- **Importação de OFX**: além de CSV, a tela de Importar agora aceita extratos bancários em OFX (§18). Escolha carteira, responsável e uma categoria padrão (despesas/receitas) para o arquivo inteiro; categorias são sugeridas automaticamente pelo histórico de descrições já lançadas. Se a carteira for cartão de crédito, o vencimento de cada compra usa a fatura certa (fechamento/vencimento), não a data da compra. Lançamentos sem histórico de categoria ficam marcados para revisão em Compromissos → Incidentes, que passou a cobrir os dois casos (parcela órfã e categoria sem histórico).
 - **Código do cliente**: cada workspace (pessoa ou família) ganhou um código sequencial imutável ("0001", "0002"...). Nova coluna "Código" em Admin → Usuários. No seletor de workspace, clientes de consultoria agora aparecem como "código, nome do titular (cliente)" em vez do nome do workspace, para diferenciar clientes de nomes parecidos.
 
 ### Corrigido

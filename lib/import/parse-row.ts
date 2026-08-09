@@ -26,6 +26,11 @@ export interface ParsedRowData {
   statusCode: string | null;
   note: string | null;
   tags: string[];
+  /** §18 — preenchido só pela importação de OFX (`lib/import/ofx-to-rows.ts`),
+   * lido direto de `raw.__autoReviewReason` (não é uma coluna mapeável pelo
+   * usuário, então não passa por `ColumnMapping`). Vira `Entry.autoReviewReason`
+   * no commit — ver lib/finance/incidents.ts. */
+  reviewReason: string | null;
 }
 
 export interface ParsedRow {
@@ -145,6 +150,7 @@ export function parseImportRow(raw: Record<string, string>, mapping: ColumnMappi
       statusCode,
       note,
       tags,
+      reviewReason: raw.__autoReviewReason || null,
     },
   };
 }

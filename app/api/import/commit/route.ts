@@ -2,16 +2,17 @@ import { NextResponse, type NextRequest } from "next/server";
 import { assertCanWrite, requireApiWorkspaceMembership } from "@/lib/auth/session";
 import { ApiError, apiErrorResponse } from "@/lib/api/errors";
 import { prisma } from "@/lib/db/prisma";
-import type { ColumnMapping } from "@/lib/import/column-mapping";
+import { autoDetectMapping, type ColumnMapping } from "@/lib/import/column-mapping";
 import { clusterInstallmentRows } from "@/lib/import/group-installments";
 import { parseCsvWithHeaderDetection } from "@/lib/import/parse-csv";
+import { buildOfxImportRows, type OfxImportParams } from "@/lib/import/ofx-import";
 import { hasErrors, parseImportRow } from "@/lib/import/parse-row";
 import { buildReferenceMaps, resolveRow } from "@/lib/import/resolve";
 
 /**
- * POST /api/import/commit — §18.1 passo 4: importa atomicamente as linhas
- * válidas de um lote (tudo ou nada por lote, nunca por linha — as inválidas
- * simplesmente ficam de fora). Duplicatas entram por padrão como
+ * POST /api/import/commit — §18.1 passo 4 (ou §18 OFX): importa atomicamente as
+ * linhas válidas de um lote (tudo ou nada por lote, nunca por linha — as
+ * inválidas simplesmente ficam de fora). Duplicatas entram por padrão como
  * "ignoradas" (skipDuplicates=true), igual à especificação.
  */
 export async function POST(request: NextRequest) {
@@ -20,16 +21,36 @@ export async function POST(request: NextRequest) {
     assertCanWrite(role, isPlatformAdmin);
 
     const body = await request.json();
-    const csvText = String(body.csvText ?? "");
-    const mapping = body.mapping as ColumnMapping | undefined;
+    const isOfx = body.format === "ofx";
     const skipDuplicates = body.skipDuplicates !== false;
-    const filename = String(body.filename ?? "importacao.csv");
 
-    if (!csvText.trim() || !mapping) {
-      throw new ApiError(400, "csvText e mapping são obrigatórios.");
+    let records: Record<string, string>[];
+    let mapping: ColumnMapping;
+    let filename: string;
+
+    if (isOfx) {
+      const ofxText = String(body.ofxText ?? "");
+      if (!ofxText.trim()) throw new ApiError(400, "Arquivo vazio.");
+      const params: OfxImportParams = {
+        walletId: String(body.walletId ?? ""),
+        responsibleId: String(body.responsibleId ?? ""),
+        fallbackCategoryDespesaId: String(body.fallbackCategoryDespesaId ?? ""),
+        fallbackCategoryReceitaId: String(body.fallbackCategoryReceitaId ?? ""),
+      };
+      const built = await buildOfxImportRows(workspaceId, ofxText, params);
+      records = built.records;
+      mapping = autoDetectMapping(built.headers);
+      filename = String(body.filename ?? "extrato.ofx");
+    } else {
+      const csvText = String(body.csvText ?? "");
+      const bodyMapping = body.mapping as ColumnMapping | undefined;
+      if (!csvText.trim() || !bodyMapping) {
+        throw new ApiError(400, "csvText e mapping são obrigatórios.");
+      }
+      ({ records } = parseCsvWithHeaderDetection(csvText));
+      mapping = bodyMapping;
+      filename = String(body.filename ?? "importacao.csv");
     }
-
-    const { records } = parseCsvWithHeaderDetection(csvText);
 
     const refs = await buildReferenceMaps(workspaceId);
     const seenKeysInBatch = new Set<string>();
@@ -97,6 +118,7 @@ export async function POST(request: NextRequest) {
             legacyRecurrenceLabel: row.parsed.data.recurrence!.legacyLabel,
             note: row.parsed.data.note,
             tags: row.parsed.data.tags,
+            autoReviewReason: row.parsed.data.reviewReason,
             importBatchId: created.id,
             createdBy: profileId,
             updatedBy: profileId,

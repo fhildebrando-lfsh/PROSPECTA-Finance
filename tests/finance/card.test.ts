@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { cardCoverage, cardStatementTotal, cardStatementWindow, currentStatementWindow } from "@/lib/finance/card";
+import {
+  cardCoverage,
+  cardStatementTotal,
+  cardStatementWindow,
+  currentStatementWindow,
+  statementWindowForDate,
+} from "@/lib/finance/card";
 import { d, makeEntry } from "./helpers";
 
 describe("cardStatementWindow (§11.4)", () => {
@@ -46,6 +52,28 @@ describe("currentStatementWindow (§12 — Vence default de lançamento em cart�
     const today = new Date(Date.UTC(2026, 11, 15)); // 15/dez, fecha dia 10 -> vigente fecha em jan/2027
     const window = currentStatementWindow({ closingDay: 10, dueDay: 5 }, today);
     expect(window.windowEnd.toISOString().slice(0, 10)).toBe("2027-01-10");
+  });
+});
+
+describe("statementWindowForDate (§18 — importação de OFX de cartão)", () => {
+  it("mesma fórmula de currentStatementWindow, mas para qualquer data de referência", () => {
+    const purchaseDate = new Date(Date.UTC(2026, 4, 20)); // 20/mai, antes do fechamento (dia 10 de junho)
+    const window = statementWindowForDate({ closingDay: 10, dueDay: 5 }, purchaseDate);
+    expect(window.windowEnd.toISOString().slice(0, 10)).toBe("2026-06-10");
+    expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-07-05");
+  });
+
+  it("compra depois do fechamento do mês cai na fatura seguinte", () => {
+    const purchaseDate = new Date(Date.UTC(2026, 5, 15)); // 15/jun, já passou do fechamento (dia 10)
+    const window = statementWindowForDate({ closingDay: 10, dueDay: 5 }, purchaseDate);
+    expect(window.windowEnd.toISOString().slice(0, 10)).toBe("2026-07-10");
+    expect(window.dueDate.toISOString().slice(0, 10)).toBe("2026-08-05");
+  });
+
+  it("currentStatementWindow(today) e statementWindowForDate(today) dão o mesmo resultado", () => {
+    const today = new Date(Date.UTC(2026, 5, 5));
+    const config = { closingDay: 10, dueDay: 5 };
+    expect(currentStatementWindow(config, today)).toEqual(statementWindowForDate(config, today));
   });
 });
 

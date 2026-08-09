@@ -7,22 +7,29 @@ import { revertBatch } from "./actions";
 export default async function ImportarPage() {
   const workspaceId = await requireWorkspaceId();
 
-  const batches = await prisma.importBatch.findMany({
-    where: { workspaceId },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-  });
+  const [batches, wallets, people, categories] = await Promise.all([
+    prisma.importBatch.findMany({ where: { workspaceId }, orderBy: { createdAt: "desc" }, take: 20 }),
+    prisma.wallet.findMany({ where: { workspaceId, isActive: true }, orderBy: { name: "asc" } }),
+    prisma.person.findMany({ where: { workspaceId }, orderBy: { name: "asc" } }),
+    prisma.category.findMany({ orderBy: [{ nature: "asc" }, { sortOrder: "asc" }] }),
+  ]);
 
   return (
     <div className="flex flex-col gap-10">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Importar planilha</h1>
         <p className="text-sm text-zinc-500">
-          Exporte a aba <code className="text-zinc-300">DADOS</code> em CSV e envie aqui (§18.1).
+          Exporte a aba <code className="text-zinc-300">DADOS</code> em CSV e envie aqui (§18.1), ou envie um
+          extrato bancário em OFX (§18) — categorias são sugeridas pelo histórico de descrições já usadas neste
+          workspace.
         </p>
       </div>
 
-      <ImportWizard />
+      <ImportWizard
+        wallets={wallets.map((w) => ({ id: w.id, name: w.name }))}
+        people={people.map((p) => ({ id: p.id, name: p.name }))}
+        categories={categories.map((c) => ({ id: c.id, nature: c.nature, name: c.name }))}
+      />
 
       {batches.length > 0 && (
         <div>

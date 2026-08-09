@@ -539,11 +539,18 @@ model Entry {
   recurrenceCode        String  @map("recurrence_code")
   installmentNumber     Int?    @map("installment_number")
   installmentTotal      Int?    @map("installment_total")
-  /// §13 "Incidentes" — marca que um humano revisou e confirmou que esta parcela
-  /// órfã (installmentTotal >= 2 sem groupId, ver lib/finance/incidents.ts) está
-  /// correta como está, mesmo sem par formado automaticamente. Nulo enquanto não
-  /// revisada — aparece em Compromissos → Incidentes até ser confirmada ou editada.
+  /// §13 "Incidentes" — marca que um humano revisou e confirmou que esta linha (ver
+  /// lib/finance/incidents.ts::isEntryIncident — parcela órfã sem groupId, ou
+  /// importação de OFX sem histórico de categoria) está correta como está, mesmo
+  /// sinalizada automaticamente. Nulo enquanto não revisada — aparece em
+  /// Compromissos → Incidentes até ser confirmada ou editada.
   incidentAcknowledgedAt DateTime? @map("incident_acknowledged_at")
+  /// §18 — preenchido pela importação de OFX quando a categoria não teve nenhum
+  /// histórico de descrição igual no workspace e caiu na categoria padrão escolhida
+  /// pelo usuário (nunca bloqueia a linha, mas precisa de revisão manual). Nulo para
+  /// qualquer lançamento manual ou importado por CSV. Junto com `installmentTotal
+  /// >= 2 sem groupId`, é a segunda condição que faz uma linha virar "Incidente".
+  autoReviewReason String? @map("auto_review_reason")
   /// §6.4 — substituem os marcadores Patrimônio/Previsão da recorrência da planilha.
   isPatrimonio          Boolean @default(false) @map("is_patrimonio")
   isProjecao            Boolean @default(false) @map("is_projecao")

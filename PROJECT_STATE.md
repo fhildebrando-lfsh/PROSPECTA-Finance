@@ -15,7 +15,66 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-08 — FECHAMENTO DO DIA (Registros Nº 021–032).**
+> **Última atualização real: 2026-08-08 (Importação de OFX — Registro Nº 033).** Depois do
+> fechamento do dia (abaixo), o usuário pediu "implemente OFX" — item da Fase 2 da
+> especificação original que nunca tinha sido construído (só CSV era aceito, §18.1).
+> Planejado em modo de planejamento, com 2 perguntas de escopo confirmadas: categoria
+> padrão (nunca bloquear linha) + destaque de revisão quando não há histórico; usar o
+> cálculo de fatura de cartão de crédito já existente.
+>
+> **Decisão de arquitetura:** um arquivo OFX é convertido nas mesmas linhas
+> `Record<string,string>` que o importador de CSV já usa (mesmos cabeçalhos canônicos de
+> `column-mapping.ts::KNOWN_HEADERS`) — todo o resto do pipeline (validação, resolução de
+> IDs, deduplicação por `due_date+amount+description+wallet`, agrupamento de parcelas,
+> transação atômica, `ImportBatch`/revert) roda sem nenhuma mudança, CSV ou OFX. O
+> trabalho novo é só parsear OFX e sintetizar essas linhas.
+>
+> **Novo:** `lib/import/parse-ofx.ts` (parser tolerante a SGML solto — OFX 1.x de banco
+> brasileiro normalmente exporta tags de valor sem fechamento; extrai blocos `<STMTTRN>`
+> via regex, que vêm fechados mesmo em SGML solto); `lib/import/suggest-category-bulk.ts`
+> (sugestão de categoria por histórico exato de descrição, em lote — mesma ideia de
+> `/api/entries/suggest-category`, já usado no lançamento rápido); `lib/import/
+> ofx-to-rows.ts` (síntese: natureza pelo sinal do valor, categoria sugerida ou a padrão
+> escolhida pelo usuário — nunca vazio, recorrência fixa `"1"` = avulsa/não parcelada,
+> situação por comparação de data, vencimento roteado pela fatura quando a carteira é
+> cartão de crédito); `lib/import/ofx-import.ts` (orquestração — usada igual por preview
+> e commit, única fonte da resolução de carteira/responsável/categorias). `lib/finance/
+> card.ts::statementWindowForDate()` generaliza `currentStatementWindow()` pra uma data
+> de referência qualquer (comportamento idêntico pra "hoje", `currentStatementWindow`
+> passou a delegar pra ela).
+>
+> **`Entry.autoReviewReason`** (coluna nova, aditiva) generaliza "Incidente" (Registro
+> Nº 026, antes só parcela órfã sem `groupId`) para também cobrir "categoria sem
+> histórico, revisar" — `lib/finance/incidents.ts::isEntryIncident()` é a união das duas
+> condições. Compromissos → Incidentes passou a listar as duas sem nenhuma mudança
+> estrutural (o cartão com "Confirmar"/"Editar" já servia).
+>
+> **Wizard** (`ImportWizard.tsx`) detecta formato pela extensão (`.ofx`/`.qfx`); pra OFX,
+> esconde o mapeamento de colunas do CSV e pede 4 seletores obrigatórios antes de validar
+> (Carteira, Responsável, Categoria padrão de despesas, Categoria padrão de receitas) — o
+> resto da tela (estatísticas, linhas com problema, checkbox de duplicata, commit) é o
+> mesmo componente já usado por CSV.
+>
+> **Bug real encontrado e corrigido no caminho:** a migration manual do Código do cliente
+> (Registro Nº 031) quebra `prisma migrate dev` num banco vazio (`setval` pra 0, fora dos
+> limites de uma sequence — só aparece em replay de banco-sombra ou ambiente novo do
+> zero, não afeta a produção atual). Não editado (editar migration já aplicada quebra o
+> checksum e força `migrate reset`, destrutivo) — documentado em "Débitos técnicos" §23,
+> contornado escrevendo a próxima migration à mão + `prisma migrate deploy` (já era o
+> caminho usado nesta sessão por causa do ambiente não-interativo).
+>
+> **Verificado direto no banco** (script descartável, só leitura — nenhuma escrita): um
+> extrato de amostra com "MERCADO LIVRE" confirmou a sugestão batendo com a categoria
+> real já usada no workspace do usuário; uma descrição nunca vista confirmou a categoria
+> padrão + marcação `__autoReviewReason`; todas as linhas sintetizadas passaram pela
+> validação/resolução real (`parseImportRow`+`resolveRow`) sem nenhum erro inesperado. 21
+> testes novos (215 no total), `tsc --noEmit` e `npm run build` limpos. Servidor de
+> produção local reiniciado.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-08), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 033), `MANUAL-DE-USO.md` (seções 8 e 9).
+>
+> **Última atualização anterior: 2026-08-08 — FECHAMENTO DO DIA (Registros Nº 021–032).**
 > Usuário confirmou o Código do cliente em produção e pediu para documentar tudo e
 > encerrar o dia. Foi o dia de maior volume de entrega da sessão — resumo do que ficou
 > no ar, testado, documentado e (quando pedido) commitado/enviado a `origin/master`:
@@ -1615,6 +1674,24 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   arquivar como Wallet/Subcategory têm).
 - ~~Ícones do PWA gerados dinamicamente com texto "R$"~~ **Resolvido 2026-07-31** — o app
   ganhou marca própria, "PROSPECTA Finance". Ver seção 21 (decisões) e 24 (concluídas).
+- **Migration `20260808220000_workspace_client_code` quebra em banco vazio**: o
+  `SELECT setval('workspaces_client_code_seq', COALESCE(MAX(client_code), 0))` falha com
+  "value 0 is out of bounds" quando a tabela `workspaces` está vazia (sequences começam
+  em 1, não em 0) — só aparece ao rodar `prisma migrate dev` de novo (ele faz replay de
+  todas as migrations num banco-sombra vazio pra calcular o diff) ou ao inicializar um
+  ambiente novo do zero; **não afeta o banco de produção atual**, que já tinha 8
+  workspaces quando a migration rodou pela primeira vez. Não corrigido no arquivo porque
+  a migration já foi aplicada em produção — editar o `.sql` depois de aplicado quebra o
+  checksum que o Prisma guarda em `_prisma_migrations` e força um `migrate reset`
+  (destrutivo, NUNCA rodar isso neste projeto — apagaria todos os dados reais do
+  usuário). Descoberto e contornado durante a importação de OFX (Registro Nº 033):
+  criada a migration seguinte pelo caminho manual (escrever o `.sql` à mão + `prisma
+  migrate deploy`, que não faz replay em banco-sombra) em vez de `prisma migrate dev`.
+  Se algum dia for preciso rodar `prisma migrate dev` de novo neste projeto, vai falhar
+  nesse mesmo ponto — o contorno é sempre escrever a migration à mão e aplicar com
+  `migrate deploy`, nunca `migrate dev`, enquanto essa migration antiga não for
+  reescrita (só possível resetando o histórico de migrations, fora de cogitação com
+  dado real em produção).
 
 ---
 

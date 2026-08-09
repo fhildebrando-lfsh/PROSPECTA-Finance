@@ -31,13 +31,24 @@ export function cardStatementWindow(
 }
 
 /**
+ * Generalização de `currentStatementWindow` para uma data de referência qualquer,
+ * não só "hoje" — usada pela importação de OFX (§18), onde cada transação já tem
+ * sua própria data histórica de compra e precisa da fatura que a contém, não da
+ * fatura vigente no momento da importação.
+ */
+export function statementWindowForDate(config: CardConfig, referenceDate: Date): StatementWindow {
+  const closingMonthIndex0 =
+    referenceDate.getUTCDate() <= config.closingDay ? referenceDate.getUTCMonth() : referenceDate.getUTCMonth() + 1;
+  return cardStatementWindow(config, referenceDate.getUTCFullYear(), closingMonthIndex0);
+}
+
+/**
  * §12 — "Vence = vencimento da fatura vigente se cartão de crédito", usado
  * pelo lançamento rápido. Se hoje ainda não passou do fechamento deste mês,
  * a fatura vigente é a que fecha este mês; senão, a do mês seguinte.
  */
 export function currentStatementWindow(config: CardConfig, today: Date): StatementWindow {
-  const closingMonthIndex0 = today.getUTCDate() <= config.closingDay ? today.getUTCMonth() : today.getUTCMonth() + 1;
-  return cardStatementWindow(config, today.getUTCFullYear(), closingMonthIndex0);
+  return statementWindowForDate(config, today);
 }
 
 /** §11.4 — soma por `transaction_date` (Compra), não por Vence. */

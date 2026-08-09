@@ -3,6 +3,7 @@ export interface IncidentCandidateEntry {
   installmentTotal: number | null;
   groupId: string | null;
   incidentAcknowledgedAt: Date | null;
+  autoReviewReason?: string | null;
 }
 
 /**
@@ -23,6 +24,25 @@ export function isInstallmentIncident(entry: IncidentCandidateEntry): boolean {
   );
 }
 
+/**
+ * Segunda origem de incidente (§18): a importação de OFX marca
+ * `autoReviewReason` quando não encontrou histórico de categoria pra uma
+ * descrição e caiu na categoria padrão escolhida pelo usuário — nunca bloqueia
+ * a linha, mas precisa de revisão manual.
+ */
+export function isAutoReviewIncident(entry: IncidentCandidateEntry): boolean {
+  return entry.autoReviewReason != null && entry.incidentAcknowledgedAt == null;
+}
+
+/** União das duas origens — o que a tela Compromissos → Incidentes lista. */
+export function isEntryIncident(entry: IncidentCandidateEntry): boolean {
+  return isInstallmentIncident(entry) || isAutoReviewIncident(entry);
+}
+
 export function installmentIncidents<T extends IncidentCandidateEntry>(entries: T[]): T[] {
   return entries.filter(isInstallmentIncident);
+}
+
+export function entryIncidents<T extends IncidentCandidateEntry>(entries: T[]): T[] {
+  return entries.filter(isEntryIncident);
 }

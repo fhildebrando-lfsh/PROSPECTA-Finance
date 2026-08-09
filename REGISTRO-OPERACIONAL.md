@@ -531,7 +531,57 @@
 
 ---
 
-## Próximo número de registro: **033**
+### Registro Nº 033
+- **Data:** 2026-08-08
+- **Etapa concluída:** Importação de OFX (Fase 2 da especificação, item que ainda faltava)
+- **Descrição:** Usuário pediu para implementar a importação de extrato bancário em OFX,
+  prevista desde a especificação original ("importação de OFX com sugestão de
+  categorização", §3/Fase 2) mas nunca construída — só CSV era aceito (§18.1). Planejado
+  em modo de planejamento antes do código, com 2 perguntas de escopo confirmadas com o
+  usuário: (1) quando não houver histórico de categoria para uma descrição, pedir 2
+  categorias padrão no import (nunca bloquear a linha) e destacar essas linhas para
+  revisão; (2) usar o cálculo de fatura (fechamento/vencimento) já existente quando o
+  arquivo for de cartão de crédito.
+
+  **Reaproveitamento total do pipeline de CSV já testado**: um OFX é convertido em linhas
+  `Record<string,string>` com os mesmos cabeçalhos canônicos que
+  `column-mapping.ts::KNOWN_HEADERS` já reconhece — o resto (validação, resolução de IDs,
+  deduplicação, agrupamento de parcelas, transação atômica, revert de lote) roda sem
+  nenhuma mudança. Trabalho novo: `lib/import/parse-ofx.ts` (parser tolerante a SGML
+  solto — a maioria dos bancos brasileiros exporta OFX 1.x sem fechamento de tag),
+  `lib/import/suggest-category-bulk.ts` (sugestão de categoria por histórico de
+  descrição, em lote — mesma ideia do lançamento rápido), `lib/import/ofx-to-rows.ts`
+  (síntese das linhas — natureza pelo sinal, categoria sugerida ou padrão, recorrência
+  fixa "avulsa", vencimento roteado por fatura quando é cartão de crédito, situação por
+  data), `lib/import/ofx-import.ts` (orquestração, usada igual por preview e commit).
+  `lib/finance/card.ts::statementWindowForDate()` generaliza `currentStatementWindow()`
+  pra uma data de referência qualquer (comportamento idêntico pra "hoje").
+
+  **Nova coluna `Entry.autoReviewReason`** (aditiva) generaliza o conceito de "Incidente"
+  (Registro Nº 026, antes só parcela órfã) — `lib/finance/incidents.ts::isEntryIncident()`
+  passa a cobrir as duas origens. A tela Compromissos → Incidentes, já construída hoje,
+  passou a listar as duas sem nenhuma mudança estrutural (Confirmar/Editar já serviam).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** 21 testes novos (215 no total — parser OFX, síntese de linhas, cartão de
+  crédito, incidentes), `tsc --noEmit` e `npm run build` limpos (52 rotas). Verificação
+  ponta a ponta contra o banco real (script descartável, sem gravar nada): um extrato de
+  amostra com "MERCADO LIVRE" confirmou a sugestão batendo com a categoria real já usada
+  no workspace, uma descrição nova confirmou a categoria padrão + marcação de revisão, e
+  as linhas sintetizadas passaram pela validação/resolução real sem nenhum erro
+  inesperado. **Bug real encontrado e corrigido no caminho**: a migration manual do
+  Registro Nº 031 (`client_code`) quebrava a replicação em banco vazio (`setval` para 0,
+  fora dos limites de uma sequence) — só aparece ao rodar `prisma migrate dev` de novo
+  (não afeta o banco de produção, que já tinha dados); corrigido preservando o arquivo já
+  aplicado e criando a migration seguinte pelo caminho manual (`migrate deploy`, já usado
+  nesta sessão por causa do ambiente não-interativo). Servidor de produção local
+  reiniciado com o build final.
+- **Documentos relacionados:** `functional-rolling-quiche.md` (plano), `PROJECT_STATE.md`
+  (entrada de 2026-08-08), `CHANGELOG.md`, `MANUAL-DE-USO.md` (seções 8 e 9).
+
+---
+
+## Próximo número de registro: **034**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

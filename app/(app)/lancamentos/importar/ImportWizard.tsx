@@ -27,6 +27,26 @@ interface PreviewResponse {
   skippedRows: number;
 }
 
+interface WalletOption {
+  id: string;
+  name: string;
+}
+interface PersonOption {
+  id: string;
+  name: string;
+}
+interface CategoryOption {
+  id: string;
+  nature: string;
+  name: string;
+}
+
+export interface ImportWizardProps {
+  wallets: WalletOption[];
+  people: PersonOption[];
+  categories: CategoryOption[];
+}
+
 const FIELD_LABELS: Record<ImportField, string> = {
   transactionDate: "Compra (data)",
   dueDate: "Vence (data)",
@@ -45,9 +65,17 @@ const FIELD_LABELS: Record<ImportField, string> = {
 
 const ALL_FIELDS = Object.keys(FIELD_LABELS) as ImportField[];
 
-export function ImportWizard() {
+type Format = "csv" | "ofx";
+
+function detectFormat(filename: string): Format {
+  return /\.(ofx|qfx)$/i.test(filename) ? "ofx" : "csv";
+}
+
+export function ImportWizard({ wallets, people, categories }: ImportWizardProps) {
   const router = useRouter();
+  const [format, setFormat] = useState<Format | null>(null);
   const [csvText, setCsvText] = useState<string | null>(null);
+  const [ofxText, setOfxText] = useState<string | null>(null);
   const [filename, setFilename] = useState("");
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping>({});
@@ -56,14 +84,52 @@ export function ImportWizard() {
   const [skipDuplicates, setSkipDuplicates] = useState(true);
   const [commitResult, setCommitResult] = useState<{ imported: number; skipped: number } | null>(null);
 
-  async function runPreview(text: string, mappingOverride?: ColumnMapping) {
+  // §18 — OFX não tem carteira/responsável/categoria por linha; escolhidos uma
+  // vez para o arquivo inteiro antes de validar.
+  const [walletId, setWalletId] = useState("");
+  const [responsibleId, setResponsibleId] = useState("");
+  const [fallbackCategoryDespesaId, setFallbackCategoryDespesaId] = useState("");
+  const [fallbackCategoryReceitaId, setFallbackCategoryReceitaId] = useState("");
+
+  const despesaCategories = categories.filter((c) => c.nature === "DESPESA");
+  const receitaCategories = categories.filter((c) => c.nature === "RECEITA");
+  const ofxFieldsReady = walletId && responsibleId && fallbackCategoryDespesaId && fallbackCategoryReceitaId;
+
+  async function runCsvPreview(text: string, mappingOverride?: ColumnMapping) {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/import/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText: text, mapping: mappingOverride }),
+        body: JSON.stringify({ format: "csv", csvText: text, mapping: mappingOverride }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Falha ao validar o arquivo.");
+      setPreview(json);
+      setMapping(json.mapping);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runOfxPreview(text: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/import/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          format: "ofx",
+          ofxText: text,
+          walletId,
+          responsibleId,
+          fallbackCategoryDespesaId,
+          fallbackCategoryReceitaId,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Falha ao validar o arquivo.");
@@ -79,11 +145,23 @@ export function ImportWizard() {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const detected = detectFormat(file.name);
     setFilename(file.name);
+    setFormat(detected);
     setCommitResult(null);
+    setPreview(null);
+    setError(null);
+
     const text = await file.text();
-    setCsvText(text);
-    await runPreview(text);
+    if (detected === "csv") {
+      setCsvText(text);
+      setOfxText(null);
+      await runCsvPreview(text);
+    } else {
+      // OFX não roda a prévia sozinho — precisa de carteira/responsável/categorias primeiro.
+      setOfxText(text);
+      setCsvText(null);
+    }
   }
 
   function updateMappingField(field: ImportField, header: string) {
@@ -92,18 +170,35 @@ export function ImportWizard() {
   }
 
   async function handleRevalidate() {
-    if (csvText) await runPreview(csvText, mapping);
+    if (csvText) await runCsvPreview(csvText, mapping);
+  }
+
+  async function handleValidateOfx() {
+    if (ofxText && ofxFieldsReady) await runOfxPreview(ofxText);
   }
 
   async function handleCommit() {
-    if (!csvText) return;
     setLoading(true);
     setError(null);
     try {
+      const body =
+        format === "ofx"
+          ? {
+              format: "ofx",
+              ofxText,
+              filename,
+              skipDuplicates,
+              walletId,
+              responsibleId,
+              fallbackCategoryDespesaId,
+              fallbackCategoryReceitaId,
+            }
+          : { format: "csv", csvText, mapping, filename, skipDuplicates };
+
       const res = await fetch("/api/import/commit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText, mapping, filename, skipDuplicates }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Falha ao importar.");
@@ -146,7 +241,7 @@ export function ImportWizard() {
         <>
           <input
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,text/csv,.ofx,.qfx,application/x-ofx"
             onChange={handleFileChange}
             className="text-sm text-zinc-300 file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2 file:text-zinc-100"
           />
@@ -154,13 +249,97 @@ export function ImportWizard() {
           {error && <p className="text-sm text-red-400">{error}</p>}
           {loading && <p className="text-sm text-zinc-500">Processando…</p>}
 
+          {format === "ofx" && !preview && (
+            <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+              <p className="text-sm text-zinc-300">
+                OFX não traz carteira, responsável nem categoria por lançamento — escolha uma vez para o extrato
+                inteiro. A categoria é sugerida automaticamente pelo histórico de descrições já usadas; quando não
+                houver histórico, a categoria padrão abaixo é aplicada e a linha fica marcada para revisão em
+                Compromissos → Incidentes.
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                  Carteira
+                  <select
+                    value={walletId}
+                    onChange={(e) => setWalletId(e.target.value)}
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                  >
+                    <option value="">—</option>
+                    {wallets.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                  Responsável
+                  <select
+                    value={responsibleId}
+                    onChange={(e) => setResponsibleId(e.target.value)}
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                  >
+                    <option value="">—</option>
+                    {people.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                  Categoria padrão (despesas sem histórico)
+                  <select
+                    value={fallbackCategoryDespesaId}
+                    onChange={(e) => setFallbackCategoryDespesaId(e.target.value)}
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                  >
+                    <option value="">—</option>
+                    {despesaCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-zinc-400">
+                  Categoria padrão (receitas sem histórico)
+                  <select
+                    value={fallbackCategoryReceitaId}
+                    onChange={(e) => setFallbackCategoryReceitaId(e.target.value)}
+                    className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                  >
+                    <option value="">—</option>
+                    {receitaCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <button
+                type="button"
+                disabled={loading || !ofxFieldsReady}
+                onClick={handleValidateOfx}
+                className="w-fit rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-amber-400 disabled:opacity-50"
+              >
+                Validar
+              </button>
+            </div>
+          )}
+
           {preview && (
             <>
               {preview.skippedRows > 0 && (
                 <p className="text-sm text-zinc-500">
                   Ignorei {preview.skippedRows}{" "}
-                  {preview.skippedRows === 1 ? "linha" : "linhas"} antes do cabeçalho (não pareciam fazer parte da
-                  tabela).
+                  {preview.skippedRows === 1 ? "linha" : "linhas"}{" "}
+                  {format === "ofx"
+                    ? "sem data ou valor válidos no extrato"
+                    : "antes do cabeçalho (não pareciam fazer parte da tabela)"}
+                  .
                 </p>
               )}
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
@@ -171,35 +350,37 @@ export function ImportWizard() {
                 <Stat label="Duplicatas" value={preview.summary.duplicates} tone="amber" />
               </div>
 
-              <div>
-                <h2 className="mb-2 text-sm font-medium text-zinc-300">Mapeamento de colunas</h2>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {ALL_FIELDS.map((field) => (
-                    <label key={field} className="flex flex-col gap-1 text-xs text-zinc-400">
-                      {FIELD_LABELS[field]}
-                      <select
-                        value={mapping[field] ?? ""}
-                        onChange={(e) => updateMappingField(field, e.target.value)}
-                        className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
-                      >
-                        <option value="">—</option>
-                        {preview.headers.map((h) => (
-                          <option key={h} value={h}>
-                            {h}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ))}
+              {format === "csv" && (
+                <div>
+                  <h2 className="mb-2 text-sm font-medium text-zinc-300">Mapeamento de colunas</h2>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {ALL_FIELDS.map((field) => (
+                      <label key={field} className="flex flex-col gap-1 text-xs text-zinc-400">
+                        {FIELD_LABELS[field]}
+                        <select
+                          value={mapping[field] ?? ""}
+                          onChange={(e) => updateMappingField(field, e.target.value)}
+                          className="rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100"
+                        >
+                          <option value="">—</option>
+                          {preview.headers.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRevalidate}
+                    className="mt-3 rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800"
+                  >
+                    Revalidar com este mapeamento
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRevalidate}
-                  className="mt-3 rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800"
-                >
-                  Revalidar com este mapeamento
-                </button>
-              </div>
+              )}
 
               {preview.missingRequiredFields.length > 0 && (
                 <p className="text-sm text-amber-400">
