@@ -15,7 +15,34 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-09 (Google Agenda — bug real do escopo
+> **Última atualização real: 2026-08-09 (Calendário de Compromissos: redesenho visual +
+> bug real de largura mínima no celular corrigidos, Registros Nº 037 e 038).** Depois de
+> fechar a integração com o Google Agenda (Registro Nº 036), o usuário pediu para aplicar
+> uma sugestão de layout que tinha pedido ao Google Gemini para o calendário mensal de
+> Compromissos. Aplicada com uma correção: a sugestão presumiu, sem acesso ao código, que a
+> cor vermelho/verde dos eventos era despesa/receita — na verdade sempre foi **vencido
+> (vermelho) vs. dentro do prazo (verde)**; mantida a lógica real, só trocado o estilo
+> visual (bloco sólido de cor → linha com barra colorida à esquerda). Aproveitado para
+> também remover numeração interna da especificação ("(§13)", "§10 R5") que vazava para
+> texto visível ao usuário em Compromissos (Lista, Calendário, Incidentes), Importar
+> planilha e Transferir entre carteiras — comentários de código com `§N` continuam
+> normais, só texto renderizado foi reescrito.
+>
+> **Bug real encontrado logo em seguida, ainda na mesma conversa:** o usuário reportou que
+> o calendário "não está proporcionalmente aberto" no celular e parecia amador. Causa raiz:
+> a grade de 7 colunas tinha `min-width: 608px` fixo (herdado de quando só cabia via
+> rolagem horizontal) — maior que qualquer tela de celular, cortando a visualização.
+> Corrigido: grade sempre fluida (sem rolagem horizontal em nenhum tamanho de tela); como
+> texto de compromisso não cabe de forma legível em 7 colunas numa tela estreita, criada
+> uma visualização compacta só para celular — cada dia mostra indicadores coloridos
+> (pontinhos) em vez de texto truncado, mantendo a lista completa ao tocar no dia (recurso
+> que já existia). Desktop não muda. Usuário confirmou visualmente no próprio celular
+> depois do deploy.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registros Nº 037 e 038).
+>
+> **Última atualização anterior: 2026-08-09 (Google Agenda — bug real do escopo
 > `calendar.calendars` corrigido + primeira conexão verificada de verdade, Registro Nº
 > 036).** Depois do código pronto (Registro Nº 035, abaixo), o usuário configurou as
 > credenciais no Google Cloud e tentou conectar pela primeira vez — falhou repetidamente

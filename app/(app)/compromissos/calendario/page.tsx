@@ -154,15 +154,15 @@ export default async function CompromissosCalendarioPage({
         )}
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           href={`/compromissos/calendario?month=${monthParam(prev.year, prev.month)}`}
-          className="rounded-lg border border-indigo-900/50 px-3 py-1.5 text-sm text-indigo-200 hover:bg-indigo-900/50 hover:text-white"
+          className="rounded-lg border border-indigo-900/50 px-2 py-1 text-xs text-indigo-200 hover:bg-indigo-900/50 hover:text-white sm:px-3 sm:py-1.5 sm:text-sm"
         >
           ← Anterior
         </Link>
-        <div className="flex items-center gap-3">
-          <h2 className="text-base font-medium text-zinc-100">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <h2 className="text-sm font-medium text-zinc-100 sm:text-base">
             {MONTH_LABELS[month]} {year}
           </h2>
           <Link
@@ -174,16 +174,16 @@ export default async function CompromissosCalendarioPage({
         </div>
         <Link
           href={`/compromissos/calendario?month=${monthParam(next.year, next.month)}`}
-          className="rounded-lg border border-indigo-900/50 px-3 py-1.5 text-sm text-indigo-200 hover:bg-indigo-900/50 hover:text-white"
+          className="rounded-lg border border-indigo-900/50 px-2 py-1 text-xs text-indigo-200 hover:bg-indigo-900/50 hover:text-white sm:px-3 sm:py-1.5 sm:text-sm"
         >
           Próximo →
         </Link>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
-        <div className="grid min-w-[608px] grid-cols-7 gap-1.5">
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-2 sm:p-4">
+        <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
           {WEEKDAY_LABELS.map((label) => (
-            <div key={label} className="px-1 pb-1.5 text-center text-xs font-semibold text-zinc-300">
+            <div key={label} className="px-0.5 pb-1 text-center text-[11px] font-semibold text-zinc-300 sm:px-1 sm:pb-1.5 sm:text-xs">
               {label}
             </div>
           ))}
@@ -197,12 +197,14 @@ export default async function CompromissosCalendarioPage({
               const overdue = daysBetween(today, date) < 0;
               const visible = dayEntries.slice(0, 3);
               const extra = dayEntries.length - visible.length;
+              const dots = dayEntries.slice(0, 4);
+              const extraDots = dayEntries.length - dots.length;
 
               return (
                 <Link
                   key={key}
                   href={`/compromissos/calendario?month=${monthParam(year, month)}&day=${key}`}
-                  className={`flex min-h-[92px] flex-col gap-1.5 rounded-lg border p-2 text-left transition-colors ${
+                  className={`flex min-h-[52px] flex-col gap-1 rounded-lg border p-1 text-left transition-colors sm:min-h-[92px] sm:gap-1.5 sm:p-2 ${
                     isSelected
                       ? "border-amber-500 bg-amber-500/10"
                       : inMonth
@@ -211,9 +213,9 @@ export default async function CompromissosCalendarioPage({
                   }`}
                 >
                   <span
-                    className={`text-xs font-medium ${
+                    className={`text-[10px] font-medium sm:text-xs ${
                       isToday
-                        ? "flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-zinc-950"
+                        ? "flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-zinc-950 sm:h-5 sm:w-5"
                         : inMonth
                           ? "text-zinc-300"
                           : "text-zinc-600"
@@ -221,7 +223,21 @@ export default async function CompromissosCalendarioPage({
                   >
                     {date.getUTCDate()}
                   </span>
-                  <div className="flex flex-col gap-1">
+
+                  {/* Celular: só um indicador por compromisso (o texto não cabe em 7 colunas numa tela estreita) — o dia inteiro aparece embaixo ao tocar. */}
+                  {dots.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-0.5 sm:hidden">
+                      {dots.map((entry) => (
+                        <span
+                          key={entry.id}
+                          className={`h-1.5 w-1.5 rounded-full ${overdue ? "bg-rose-400" : "bg-emerald-400"}`}
+                        />
+                      ))}
+                      {extraDots > 0 && <span className="text-[9px] leading-none text-zinc-400">+{extraDots}</span>}
+                    </div>
+                  )}
+
+                  <div className="hidden flex-col gap-1 sm:flex">
                     {visible.map((entry) => (
                       <span
                         key={entry.id}

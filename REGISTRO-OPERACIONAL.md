@@ -742,7 +742,37 @@
 
 ---
 
-## Próximo número de registro: **038**
+### Registro Nº 038
+- **Data:** 2026-08-09
+- **Etapa concluída:** Bug real corrigido — grade do calendário de Compromissos não cabia
+  em telas de celular
+- **Descrição:** Logo depois do redesenho visual (Registro Nº 037), o usuário reportou que
+  o calendário mensal "não está proporcionalmente aberto na tela do app pelo celular" e
+  parecia amador. Causa raiz: a grade de 7 colunas tinha `min-width: 608px` fixo (um
+  resquício de quando a única forma de caber os textos dos eventos era rolar a tabela para
+  o lado) — maior que a largura de qualquer tela de celular, forçando rolagem horizontal e
+  cortando o calendário visualmente ao abrir.
+- **Correção:** removida a largura mínima fixa — a grade agora é totalmente fluida, sempre
+  cabe na largura da tela, sem rolagem horizontal em nenhum tamanho de dispositivo. Como
+  texto de compromisso não cabe de forma legível em 7 colunas numa tela estreita de
+  celular, criada uma visualização compacta específica para telas pequenas: cada dia
+  mostra só indicadores coloridos (pontinhos — vermelho para vencido, verde para dentro do
+  prazo) em vez do texto truncado; tocar no dia continua abrindo a lista completa abaixo da
+  grade (recurso que já existia). Em telas de desktop (`sm:` e acima) nada muda — continua
+  mostrando o texto do compromisso, como no Registro Nº 037. Cabeçalho de dias da semana,
+  espaçamento interno das células e os botões de navegação (Anterior/Próximo) também
+  ganharam tamanhos reduzidos e `flex-wrap` para telas estreitas.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `tsc --noEmit` limpo, `npm test` (206/206), deploy de produção
+  (`vercel --prod`) concluído. Usuário confirmou visualmente no próprio celular após o
+  deploy ("perfeito, ficou bom").
+- **Documentos relacionados:** `app/(app)/compromissos/calendario/page.tsx`, Registro Nº
+  037 (redesenho visual desta mesma etapa, na mesma conversa).
+
+---
+
+## Próximo número de registro: **039**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
