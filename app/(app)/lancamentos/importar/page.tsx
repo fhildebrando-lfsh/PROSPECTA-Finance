@@ -19,9 +19,8 @@ export default async function ImportarPage() {
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Importar planilha</h1>
         <p className="text-sm text-zinc-500">
-          Exporte a aba <code className="text-zinc-300">DADOS</code> em CSV e envie aqui (§18.1), ou envie um
-          extrato bancário em OFX (§18) — categorias são sugeridas pelo histórico de descrições já usadas neste
-          workspace.
+          Exporte a aba <code className="text-zinc-300">DADOS</code> em CSV e envie aqui, ou envie um extrato
+          bancário em OFX — as categorias são sugeridas com base no histórico de lançamentos já cadastrados.
         </p>
       </div>
 

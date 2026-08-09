@@ -708,7 +708,41 @@
 
 ---
 
-## Próximo número de registro: **037**
+### Registro Nº 037
+- **Data:** 2026-08-09
+- **Etapa concluída:** Calendário de Compromissos redesenhado (sugestão externa aplicada
+  com correção) + jargão interno ("§N") removido de textos voltados ao usuário
+- **Descrição:** Usuário pediu uma sugestão de layout ao Google Gemini para o calendário de
+  Compromissos e trouxe a análise para ser aplicada. Avaliada e aplicada com uma correção:
+  a sugestão presumiu, sem acesso ao código, que a cor vermelho/verde dos eventos
+  representava despesa/receita — na verdade sempre representou vencido (vermelho) vs.
+  dentro do prazo (verde); mantida essa lógica real, só trocado o estilo visual (bloco
+  sólido → linha com barra colorida à esquerda, cabeçalho dos dias da semana com mais
+  contraste, dias de outro mês com fundo mais escuro). A sugestão de sombra no botão "+"
+  flutuante já estava implementada, nenhuma mudança necessária ali.
+
+  Na mesma conversa, o usuário reportou que a descrição da aba Calendário trazia
+  "(§13)" — numeração interna da especificação técnica, sem sentido para quem usa o
+  sistema. Corrigido ali e, a pedido explícito ("pode alterar em todo o sistema que for
+  identificado inconformidade de escrita"), levantada uma varredura em todo o código por
+  esse mesmo padrão em texto renderizado (não em comentário — comentários internos como
+  `§20`, `§7` etc. continuam normalmente, são para quem lê o código, não para quem usa o
+  sistema). Encontradas mais 3 ocorrências: Compromissos → Lista, Importar planilha e
+  Transferir entre carteiras (essa última também tinha "R5", outra referência interna) —
+  todas reescritas em português comum.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `tsc --noEmit` limpo, `npm test` (206/206), deploy de produção
+  (`vercel --prod`) concluído. Verificação visual ao vivo não foi possível nesta etapa — a
+  técnica de sessão sem senha (Admin API + magic link) foi bloqueada pelo classificador de
+  permissões desta sessão; usuário orientado a conferir diretamente no navegador.
+- **Documentos relacionados:** `app/(app)/compromissos/calendario/page.tsx`,
+  `app/(app)/compromissos/page.tsx`, `app/(app)/compromissos/incidentes/page.tsx`,
+  `app/(app)/lancamentos/importar/page.tsx`, `app/(app)/lancamentos/transferir/page.tsx`.
+
+---
+
+## Próximo número de registro: **038**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

@@ -99,7 +99,7 @@ export default async function CompromissosCalendarioPage({
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Compromissos</h1>
-        <p className="text-sm text-zinc-500">O que ainda está a pagar ou a receber, num calendário mensal (§13).</p>
+        <p className="text-sm text-zinc-500">Visualize, em um calendário mensal, tudo o que ainda está a pagar ou a receber.</p>
       </div>
 
       <CompromissosTabs active="calendario" />
@@ -183,7 +183,7 @@ export default async function CompromissosCalendarioPage({
       <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
         <div className="grid min-w-[608px] grid-cols-7 gap-1.5">
           {WEEKDAY_LABELS.map((label) => (
-            <div key={label} className="px-1 pb-1 text-center text-xs font-medium text-zinc-500">
+            <div key={label} className="px-1 pb-1.5 text-center text-xs font-semibold text-zinc-300">
               {label}
             </div>
           ))}
@@ -202,35 +202,37 @@ export default async function CompromissosCalendarioPage({
                 <Link
                   key={key}
                   href={`/compromissos/calendario?month=${monthParam(year, month)}&day=${key}`}
-                  className={`flex min-h-[92px] flex-col gap-1 rounded-lg border p-1.5 text-left transition-colors ${
+                  className={`flex min-h-[92px] flex-col gap-1.5 rounded-lg border p-2 text-left transition-colors ${
                     isSelected
                       ? "border-amber-500 bg-amber-500/10"
                       : inMonth
                         ? "border-indigo-900/50 bg-[#3264a8] hover:border-amber-400"
-                        : "border-transparent bg-transparent opacity-40 hover:opacity-70"
+                        : "border-indigo-950/40 bg-[#0b0f28] opacity-70 hover:opacity-90"
                   }`}
                 >
                   <span
                     className={`text-xs font-medium ${
                       isToday
                         ? "flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-zinc-950"
-                        : "text-zinc-400"
+                        : inMonth
+                          ? "text-zinc-300"
+                          : "text-zinc-600"
                     }`}
                   >
                     {date.getUTCDate()}
                   </span>
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-1">
                     {visible.map((entry) => (
                       <span
                         key={entry.id}
-                        className={`truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${
-                          overdue ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"
+                        className={`truncate border-l-2 pl-1.5 text-[11px] font-medium leading-tight ${
+                          overdue ? "border-rose-400 text-rose-200" : "border-emerald-400 text-zinc-100"
                         }`}
                       >
                         {entry.description}
                       </span>
                     ))}
-                    {extra > 0 && <span className="text-[10px] text-zinc-500">+{extra} mais</span>}
+                    {extra > 0 && <span className="pl-1.5 text-[10px] text-zinc-400">+{extra} mais</span>}
                   </div>
                 </Link>
               );

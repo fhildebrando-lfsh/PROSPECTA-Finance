@@ -53,7 +53,7 @@ export default async function CompromissosPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Compromissos</h1>
-        <p className="text-sm text-zinc-500">O que ainda está a pagar ou a receber, agrupado por prazo (§13).</p>
+        <p className="text-sm text-zinc-500">O que ainda está a pagar ou a receber, agrupado por prazo.</p>
       </div>
 
       <CompromissosTabs active="lista" />

@@ -21,6 +21,8 @@
 
 ### Corrigido
 - **Conexão com o Google Agenda falhava sempre** (`403`, permissão insuficiente) ao tentar criar o calendário dedicado, mesmo com a permissão de Agenda concedida pelo cliente — faltava um segundo escopo específico para criar/gerenciar calendários (diferente do escopo de criar/editar eventos). Corrigido e verificado com uma conexão real.
+- **Calendário de Compromissos**: eventos de cada dia eram blocos de cor sólida que truncavam o texto agressivamente e ficavam confusos quando havia vários no mesmo dia — agora usam uma linha com uma barra colorida à esquerda (vermelha para vencido, verde para dentro do prazo), com mais espaço para o texto. Cabeçalho dos dias da semana com mais contraste; dias de outro mês com fundo mais escuro para se distinguir dos dias do mês atual.
+- **Textos com numeração interna da especificação** (ex.: "(§13)", "§10 R5") apareciam em telas voltadas ao usuário final, em Compromissos (Lista, Calendário, Incidentes), Importar planilha e Transferir entre carteiras — reescritos em português comum, sem jargão de desenvolvimento.
 
 ---
 

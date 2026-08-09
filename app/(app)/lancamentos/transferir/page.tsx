@@ -32,7 +32,9 @@ export default async function TransferirPage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-center text-lg font-semibold text-zinc-100">Transferir entre carteiras</h1>
-      <p className="text-center text-sm text-zinc-500">§10 R5 — cria as duas linhas (saída/entrada) juntas.</p>
+      <p className="text-center text-sm text-zinc-500">
+        Move dinheiro entre carteiras registrando as duas pontas (saída e entrada) de uma vez.
+      </p>
       {(wallets.length === 0 || people.length === 0) && (
         <div className="mx-auto flex w-full max-w-sm flex-col gap-2 rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm text-amber-100">
           {wallets.length === 0 && (

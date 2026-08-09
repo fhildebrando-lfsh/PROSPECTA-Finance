@@ -64,7 +64,7 @@ export default async function IncidentesPage() {
         <h1 className="text-lg font-semibold text-zinc-100">Compromissos</h1>
         <p className="text-sm text-zinc-500">
           Lançamentos que precisam de revisão manual — parcelas sem par encontrado ou
-          importados de OFX sem histórico de categoria (§13) — confirme que estão corretos
+          importados de OFX sem histórico de categoria — confirme que estão corretos
           ou corrija a linha.
         </p>
       </div>
