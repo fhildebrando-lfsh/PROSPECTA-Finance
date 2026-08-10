@@ -1,17 +1,13 @@
-import { after, NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { assertCanWrite, requireApiWorkspaceMembership } from "@/lib/auth/session";
 import { ApiError, apiErrorResponse } from "@/lib/api/errors";
-import { prisma } from "@/lib/db/prisma";
 import { Decimal } from "@/lib/finance/types";
 import { autoDetectMapping, type ColumnMapping } from "@/lib/import/column-mapping";
-import { clusterInstallmentRows } from "@/lib/import/group-installments";
+import { commitImportBatch } from "@/lib/import/commit";
 import { parseCsvWithHeaderDetection } from "@/lib/import/parse-csv";
 import { buildOfxImportRows, type OfxImportParams } from "@/lib/import/ofx-import";
 import { buildPdfImportRows, type PdfImportParams } from "@/lib/import/pdf-statement/pdf-import";
 import type { PdfStatementTransaction } from "@/lib/import/pdf-statement/types";
-import { hasErrors, parseImportRow } from "@/lib/import/parse-row";
-import { buildReferenceMaps, resolveRow } from "@/lib/import/resolve";
-import { syncEntryToGoogleCalendar } from "@/lib/integrations/google-calendar/sync";
 
 function deserializePdfTransactions(raw: unknown): PdfStatementTransaction[] {
   if (!Array.isArray(raw)) return [];
@@ -84,96 +80,9 @@ export async function POST(request: NextRequest) {
       filename = String(body.filename ?? "importacao.csv");
     }
 
-    const refs = await buildReferenceMaps(workspaceId);
-    const seenKeysInBatch = new Set<string>();
+    const result = await commitImportBatch({ workspaceId, profileId, records, mapping, filename, skipDuplicates });
 
-    const resolvedRows = records.map((raw) => resolveRow(parseImportRow(raw, mapping), refs, seenKeysInBatch));
-
-    const toImport = resolvedRows.filter((row) => !hasErrors(row.parsed) && !(row.isDuplicate && skipDuplicates));
-
-    // §8.4 — group_id é sempre atribuído automaticamente, nunca digitado, mesmo
-    // quando o lançamento vem de importação (antes disso, toda linha parcelada
-    // importada ficava para sempre sem groupId — bug real que deixava "Despesas
-    // parceladas" e "Dívidas" cegos para dado importado; ver
-    // lib/import/group-installments.ts e scripts/backfill-installment-groups.ts
-    // para o retroativo).
-    const { safe: safeClusters } = clusterInstallmentRows(
-      toImport.map((row) => ({
-        row,
-        walletId: row.walletId!,
-        categoryId: row.categoryId!,
-        description: row.parsed.data.description!,
-        installmentNumber: row.parsed.data.recurrence!.installmentNumber,
-        installmentTotal: row.parsed.data.recurrence!.installmentTotal,
-        amount: row.parsed.data.amount!,
-      })),
-    );
-
-    const batch = await prisma.$transaction(async (tx) => {
-      const created = await tx.importBatch.create({
-        data: {
-          workspaceId,
-          originalFilename: filename,
-          importedCount: toImport.length,
-          errorCount: resolvedRows.length - toImport.length,
-          createdBy: profileId,
-        },
-      });
-
-      const groupIdByRow = new Map<(typeof toImport)[number], string>();
-      for (const cluster of safeClusters) {
-        if (cluster.length < 2) continue; // parcela avulsa sozinha não precisa de grupo
-        const group = await tx.entryGroup.create({ data: { workspaceId } });
-        for (const item of cluster) groupIdByRow.set(item.row, group.id);
-      }
-
-      if (toImport.length > 0) {
-        await tx.entry.createMany({
-          data: toImport.map((row) => ({
-            workspaceId,
-            walletId: row.walletId!,
-            categoryId: row.categoryId!,
-            subcategoryId: row.subcategoryId,
-            responsibleId: row.responsibleId!,
-            nature: row.parsed.data.nature!,
-            amount: row.parsed.data.amount!,
-            description: row.parsed.data.description!,
-            transactionDate: row.parsed.data.transactionDate!,
-            dueDate: row.parsed.data.dueDate!,
-            statusCode: row.parsed.data.statusCode!,
-            recurrenceCode: row.parsed.data.recurrence!.recurrenceKind,
-            groupId: groupIdByRow.get(row) ?? null,
-            installmentNumber: row.parsed.data.recurrence!.installmentNumber,
-            installmentTotal: row.parsed.data.recurrence!.installmentTotal,
-            isPatrimonio: row.parsed.data.recurrence!.isPatrimonio,
-            isProjecao: row.parsed.data.recurrence!.isProjecao,
-            legacyRecurrenceLabel: row.parsed.data.recurrence!.legacyLabel,
-            note: row.parsed.data.note,
-            tags: row.parsed.data.tags,
-            autoReviewReason: row.parsed.data.reviewReason,
-            importedDescription: row.parsed.data.importedDescription,
-            importBatchId: created.id,
-            createdBy: profileId,
-            updatedBy: profileId,
-          })),
-        });
-      }
-
-      return created;
-    });
-
-    if (toImport.length > 0) {
-      after(async () => {
-        const imported = await prisma.entry.findMany({ where: { importBatchId: batch.id }, select: { id: true } });
-        await Promise.all(imported.map((entry) => syncEntryToGoogleCalendar(entry.id)));
-      });
-    }
-
-    return NextResponse.json({
-      batchId: batch.id,
-      imported: toImport.length,
-      skipped: resolvedRows.length - toImport.length,
-    });
+    return NextResponse.json(result);
   } catch (err) {
     return apiErrorResponse(err);
   }

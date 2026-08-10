@@ -14,14 +14,19 @@ import { vi } from "vitest";
 const DEV_PROJECT_REF = "fmxzooefvbvhmgczznsa";
 const PROD_PROJECT_REF = "zfugldawxhvzclooisqj";
 
+// Localmente, as credenciais vêm de .env.dev.local (nunca commitado). No CI
+// (GitHub Actions), não existe esse arquivo — as mesmas variáveis chegam
+// direto via `env:` do job, alimentadas pelos secrets DEV_* do repositório
+// (nunca os de produção, nomeados sem esse prefixo). Só exige o arquivo
+// quando NENHuma das duas fontes já deixou DATABASE_URL definido.
 const envPath = ".env.dev.local";
-if (!existsSync(envPath)) {
+if (existsSync(envPath)) {
+  loadEnv({ path: envPath });
+} else if (!process.env.DATABASE_URL) {
   throw new Error(
-    `Testes de integração exigem "${envPath}" na raiz do projeto (banco de dev/teste — ver PROJECT_STATE.md, Registro Nº 047). Arquivo não encontrado.`,
+    `Testes de integração exigem "${envPath}" na raiz do projeto (banco de dev/teste — ver PROJECT_STATE.md, Registro Nº 047) ou as variáveis já definidas no ambiente (CI). Nenhum dos dois encontrado.`,
   );
 }
-
-loadEnv({ path: envPath });
 
 const databaseUrl = process.env.DATABASE_URL ?? "";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";

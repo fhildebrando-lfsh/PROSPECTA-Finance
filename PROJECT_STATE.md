@@ -15,7 +15,26 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-10 (Suíte de testes de integração de verdade,
+> **Última atualização real: 2026-08-10 (Suíte de integração — segunda leva + CI rodando
+> contra o banco de dev — Registro Nº 049).** Continuação do Registro Nº 048. Usuário
+> cadastrou 4 secrets no GitHub (`DEV_SUPABASE_URL`/`DEV_SUPABASE_ANON_KEY`/
+> `DEV_SUPABASE_SERVICE_ROLE_KEY`/`DEV_DATABASE_URL`, prefixo `DEV_` de propósito) e
+> `.github/workflows/ci.yml` ganhou o job `integration-tests`, rodando `npm run
+> test:integration` de verdade no CI. `tests/integration/setup.ts` ficou flexível: exige
+> `.env.dev.local` só quando `DATABASE_URL` não já está no ambiente (permite o CI passar
+> as variáveis direto via secrets, sem precisar do arquivo). Suíte estendida com
+> `lib/entries/asset.ts` e `lib/workspace/advisor.ts` (mesmo padrão já estabelecido). Pro
+> commit de importação — que só existia solto dentro de `app/api/import/commit/route.ts`,
+> não numa função de `lib/` — fiz um **refactor comportamento-preservado**: extraído
+> `lib/import/commit.ts::commitImportBatch()`, mesmo espírito de `lib/import/revert.ts` já
+> extraído antes; a rota virou wrapper fino, resposta HTTP idêntica (confirmado por `npm
+> run build`, mesmas 61 rotas). Suíte total: 8 arquivos, 26 testes, todos contra o banco
+> de dev real.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-10), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 049).
+>
+> **Última atualização anterior: 2026-08-10 (Suíte de testes de integração de verdade,
 > primeira leva — Registro Nº 048).** Continuação do Registro Nº 047. `npm run
 > test:integration` (config separado, `vitest.integration.config.ts`) roda 5 arquivos/15
 > testes contra o banco de dev real: `lib/entries/transfer.ts`, `lib/entries/create.ts`
@@ -2063,12 +2082,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 
 ## 23. Débitos técnicos
 
-- ~~Sem testes de integração/e2e~~ **Primeira leva pronta 2026-08-10 (Registro Nº 048)** —
-  `npm run test:integration`, 5 arquivos/15 testes contra o banco de dev real
-  (`tests/integration/`). Ainda não cobre `lib/entries/asset.ts`,
-  `lib/workspace/advisor.ts`, nem o commit de importação — e não roda no CI (exigiria
-  cadastrar credenciais do banco de dev como secret do GitHub, decisão à parte). Nenhuma
-  página/Server Action/rota de API tem teste próprio ainda, só as funções de `lib/`.
+- ~~Sem testes de integração/e2e~~ **Estendida 2026-08-10 (Registro Nº 049)** — `npm run
+  test:integration`, 8 arquivos/26 testes contra o banco de dev real
+  (`tests/integration/`), rodando também no CI (job `integration-tests`, secrets `DEV_*`).
+  Cobre `lib/entries/{create,settle,transfer,asset,investment}.ts`,
+  `lib/workspace/{invite,advisor}.ts` e o núcleo do commit de importação
+  (`lib/import/commit.ts`). Ainda não cobre `lib/workspace/switch.ts` (depende de
+  `cookies()`/sessão real) nem nenhuma página/Server Action/rota de API diretamente — só
+  as funções de `lib/`.
 - ~~Sem CI configurado~~ **Resolvido 2026-08-10 (Registro Nº 046):**
   `.github/workflows/ci.yml` roda `tsc --noEmit`, `npm test` e `npm run build` em todo
   push/PR pra `master` (lint incluso mas `continue-on-error: true` — ver item novo abaixo).

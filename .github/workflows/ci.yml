@@ -47,3 +47,28 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    # Credenciais do banco de DEV/TESTE (nunca produção — nomeadas com
+    # prefixo DEV_ de propósito, cadastradas em Settings > Secrets and
+    # variables > Actions do repositório). O guard em
+    # tests/integration/setup.ts confere o ref do projeto antes de rodar
+    # qualquer query e aborta a suíte se não bater com o de dev.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.DEV_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}
+      DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Integration tests (banco de dev)
+        run: npm run test:integration

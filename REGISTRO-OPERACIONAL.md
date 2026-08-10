@@ -1319,7 +1319,58 @@
 
 ---
 
-## Próximo número de registro: **049**
+### Registro Nº 049
+- **Data:** 2026-08-10
+- **Etapa concluída:** Suíte de testes de integração — segunda leva + CI rodando contra o
+  banco de dev
+- **Descrição:** Continuação do Registro Nº 048. Usuário pediu para estender a suíte
+  (`lib/entries/asset.ts`, `lib/workspace/advisor.ts`, commit de importação — as 3 frentes
+  deixadas de fora explicitamente na rodada anterior) e para colocar as credenciais do
+  banco de dev como *secret* do GitHub, com CI rodando `test:integration` de verdade.
+- **O que foi feito:**
+  1. **`tests/integration/setup.ts`** ficou flexível: continua exigindo `.env.dev.local`
+     localmente, mas no CI (onde esse arquivo não existe, é gitignored) aceita as mesmas
+     variáveis já vindas do ambiente — o guard de segurança (ref de produção/dev) continua
+     rodando igual, só a fonte da variável muda.
+  2. **`.github/workflows/ci.yml`** ganhou o job `integration-tests`, com env vindo de 4
+     secrets novos do repositório (`DEV_SUPABASE_URL`, `DEV_SUPABASE_ANON_KEY`,
+     `DEV_SUPABASE_SERVICE_ROLE_KEY`, `DEV_DATABASE_URL` — prefixo `DEV_` de propósito,
+     nunca as credenciais de produção). Usuário cadastrou os secrets no GitHub (Settings >
+     Secrets and variables > Actions) copiando de `.env.dev.local`, sem colar em chat.
+  3. **`tests/integration/entries/asset.test.ts`** — `createAsset`/`registerAssetValuation`:
+     cria o bem + lançamento de aquisição na pseudo-conta "Patrimônio" (workspace de teste
+     precisou ganhar sua própria, `isPseudoWallet=true` — não vem do seed global),
+     valorização/desvalorização sem tocar o lançamento original, rejeita bem de outro
+     workspace.
+  4. **`tests/integration/workspace/advisor.test.ts`** — `assignAdvisor`: atribuir
+     consultor novo, trocar (revoga o anterior sem apagar, ativa o novo), remover
+     (`advisorProfileId=null`), reativar um consultor revogado anteriormente.
+  5. **Refactor comportamento-preservado**: extraído `lib/import/commit.ts::commitImportBatch()`
+     de dentro de `app/api/import/commit/route.ts` — mesmo espírito de
+     `lib/import/revert.ts`, já extraído antes. A rota virou um wrapper fino (decide
+     formato CSV/OFX/PDF, monta `records`/`mapping`, chama a função). Resposta HTTP
+     idêntica (`{batchId, imported, skipped}`), confirmado por `npm run build` (mesmas 61
+     rotas, nenhuma mudança de warning/erro).
+  6. **`tests/integration/import/commit.test.ts`** — cobre `commitImportBatch` isolado do
+     formato de entrada (mapeamento identidade, sem depender do parser de CSV real):
+     importa linha válida, ignora linha com erro (carteira inexistente) contando em
+     `skipped`, detecta duplicata dentro do mesmo lote, agrupa parcelas com `groupId`
+     quando os números batem.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm run test:integration` — 8 arquivos, 26 testes, todos passando contra
+  o banco de dev real. `npm test` (unitários) 288/288 intacto. `npx tsc --noEmit` limpo.
+  `npm run build` limpo, 61 rotas, sem diferença de warnings. Conferido direto no banco
+  que nenhum workspace/profile de teste ficou órfão depois da rodada completa. CI do
+  GitHub Actions ainda não confirmado rodando de verdade nesta entrada (depende do push).
+- **Documentos relacionados:** `lib/import/commit.ts`, `app/api/import/commit/route.ts`,
+  `tests/integration/entries/asset.test.ts`, `tests/integration/workspace/advisor.test.ts`,
+  `tests/integration/import/commit.test.ts`, `tests/integration/setup.ts`,
+  `.github/workflows/ci.yml`.
+
+---
+
+## Próximo número de registro: **050**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

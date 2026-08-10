@@ -33,6 +33,13 @@
 ### Corrigido (continuação, mesmo dia)
 - `npm test` (unitários) estava sem querer incluindo os novos testes de integração no `include` do Vitest — corrigido excluindo `tests/integration/**` do config de unitários.
 
+### Adicionado (continuação, mesmo dia — Registro Nº 049)
+- Suíte de integração estendida: `lib/entries/asset.ts`, `lib/workspace/advisor.ts`, e o núcleo do commit de importação (`lib/import/commit.ts`, extraído de `app/api/import/commit/route.ts`) — 8 arquivos/26 testes no total.
+- CI (GitHub Actions) passa a rodar `test:integration` de verdade contra o banco de dev, usando 4 secrets novos do repositório (`DEV_SUPABASE_URL`/`DEV_SUPABASE_ANON_KEY`/`DEV_SUPABASE_SERVICE_ROLE_KEY`/`DEV_DATABASE_URL`).
+
+### Alterado (continuação, mesmo dia)
+- `app/api/import/commit/route.ts` simplificado — lógica de gravação em lote movida para `lib/import/commit.ts` (mesma resposta HTTP, comportamento idêntico, agora testável).
+
 ---
 
 ## 2026-08-09
