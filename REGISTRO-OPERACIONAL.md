@@ -1253,7 +1253,73 @@
 
 ---
 
-## Próximo número de registro: **048**
+### Registro Nº 048
+- **Data:** 2026-08-10
+- **Etapa concluída:** Suíte de testes de integração de verdade (primeira leva)
+- **Descrição:** Continuação dos Registros Nº 046/047. Com o banco de dev/teste separado
+  e seguro para escrever/apagar dados, o usuário pediu para construir a suíte de
+  integração de verdade — diferente dos ~288 testes unitários existentes em `tests/`, que
+  só testam funções puras e nunca tocam banco.
+- **O que foi feito:**
+  1. **`tests/integration/setup.ts`** — guard de segurança: carrega `.env.dev.local`
+     explicitamente (nunca `.env.local`, que pode um dia voltar a apontar pra produção) e
+     **aborta a suíte inteira, antes de qualquer query**, se não conseguir confirmar que o
+     banco alvo é o projeto de dev/teste (checa o ref do projeto Supabase na
+     `DATABASE_URL`/`NEXT_PUBLIC_SUPABASE_URL` — nem o ref de dev nem o de produção são
+     segredo, já aparecem em texto puro no `PROJECT_STATE.md`). **Testado de propósito**:
+     apontei `.env.dev.local` temporariamente pro ref de produção (arquivo restaurado
+     depois) e confirmei que os 5 arquivos de teste falham imediatamente com "0 tests" —
+     nenhuma query chega a rodar.
+  2. Mesmo arquivo mocka `next/server` (`after()` executa o callback na hora em vez de
+     agendar) — `createEntryOrSeries`/`settleEntry` chamam `after()`, que lança exceção
+     síncrona fora de um request scope real do Next; o callback real
+     (`syncEntryToGoogleCalendar`) é melhor-esforço e não faz nada quando o workspace não
+     tem `GoogleCalendarConnection` (nenhum de teste tem), então é seguro executar.
+  3. **`vitest.integration.config.ts`** (novo, config separado) + script
+     `npm run test:integration`. **Bug real encontrado ao rodar `npm test` depois**: o
+     `include` do config de unitários (`tests/**/*.test.ts`) também casava com
+     `tests/integration/**`, então `npm test` tentou rodar os testes de integração sem o
+     guard/mock — 4 testes quebraram de verdade (o `after()` fora de request scope).
+     Corrigido adicionando `tests/integration/**` ao `exclude` de `vitest.config.ts`
+     (preservando os excludes padrão via `configDefaults.exclude`). Sem essa correção,
+     `npm test` rodando com `.env.local` apontado pra produção (o que já foi verdade antes
+     do Registro Nº 047 e pode voltar a ser um dia) escreveria dados de teste em produção
+     sem guard nenhum — bug encontrado e corrigido antes de virar risco real.
+  4. **`tests/integration/helpers/fixtures.ts`** — `createTestWorkspace()`/
+     `cleanupTestWorkspace()` criam/apagam `Profile`+`Workspace`+`Membership` direto via
+     Prisma (sem signup real no Supabase Auth — `Profile.id` não tem mais FK pra
+     `auth.users` desde a migration `002_drop_cross_schema_fk.sql`, só um trigger de
+     delete). Limpeza é um único `prisma.workspace.delete()` (`onDelete: Cascade` em
+     todas as 18 relações por workspace, confirmado por grep no schema antes de confiar
+     nisso) + `prisma.profile.delete()`.
+  5. Primeira leva de testes, um workspace de teste por arquivo (`beforeAll`/`afterAll`):
+     `entries/transfer.test.ts` (par saída/entrada, sinais, rejeita carteira de outro
+     workspace), `entries/create.test.ts` (lançamento único, série parcelada, série
+     recorrente mensal — 25 ocorrências), `entries/settle.test.ts` (liquidação, rejeita
+     lançamento de outro workspace, rejeita situação não liquidável), `entries/investment.test.ts`
+     (criar posição + registrar evento + registrar renda real, mesmo padrão de
+     `scripts/seed-investment-examples.ts` agora automatizado), `workspace/invite.test.ts`
+     (ciclo completo de convite: criar, aceitar, rejeitar e-mail errado, rejeitar convite
+     já aceito).
+- **Não incluído nesta rodada, deixado explícito (não é dívida esquecida):**
+  `lib/entries/asset.ts`, `lib/workspace/advisor.ts`, e o commit de importação (a lógica
+  está solta dentro de `app/api/import/commit/route.ts`, não numa função de `lib/`
+  exportada — testar isso pede outra abordagem). Rodar `test:integration` no CI do GitHub
+  Actions também ficou de fora — exigiria cadastrar as credenciais do banco de dev como
+  *secret* do repositório, decisão à parte.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm run test:integration` — 5 arquivos, 15 testes, todos passando contra
+  o banco de dev real. `npm test` (unitários) — 288/288, sem nenhuma mudança de
+  comportamento. `npx tsc --noEmit` limpo. Guard de segurança testado manualmente (aborta
+  com o ref de produção, sem rodar nenhuma query). Conferido direto no banco que nenhum
+  workspace/profile de teste ficou órfão depois de duas rodadas completas da suíte.
+- **Documentos relacionados:** `tests/integration/`, `vitest.integration.config.ts`,
+  `vitest.config.ts`, `package.json`.
+
+---
+
+## Próximo número de registro: **049**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

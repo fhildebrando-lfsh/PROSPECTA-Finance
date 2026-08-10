@@ -28,6 +28,10 @@
 
 ### Adicionado (continuação, mesmo dia)
 - Banco de desenvolvimento/teste separado do de produção — projeto Supabase novo (`prospecta-finance-dev`), com schema, RLS e taxonomia aplicados, e um workspace de teste seedado. `npm run dev` local agora aponta para ele; produção (Vercel) não muda.
+- Suíte de testes de integração de verdade (`npm run test:integration`) — 5 arquivos, 15 testes, batendo no banco de dev real: criar/liquidar/parcelar/recorrer lançamento, transferência entre carteiras, criar investimento e registrar evento/renda, ciclo de convite de workspace. Guard de segurança dedicado impede que rode contra produção por engano.
+
+### Corrigido (continuação, mesmo dia)
+- `npm test` (unitários) estava sem querer incluindo os novos testes de integração no `include` do Vitest — corrigido excluindo `tests/integration/**` do config de unitários.
 
 ---
 

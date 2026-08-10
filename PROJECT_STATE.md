@@ -15,7 +15,31 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-10 (Banco de dev/teste separado do de produção —
+> **Última atualização real: 2026-08-10 (Suíte de testes de integração de verdade,
+> primeira leva — Registro Nº 048).** Continuação do Registro Nº 047. `npm run
+> test:integration` (config separado, `vitest.integration.config.ts`) roda 5 arquivos/15
+> testes contra o banco de dev real: `lib/entries/transfer.ts`, `lib/entries/create.ts`
+> (único/parcelado/recorrente), `lib/entries/settle.ts`, `lib/entries/investment.ts`,
+> `lib/workspace/invite.ts`. `tests/integration/setup.ts` tem um **guard de segurança**
+> que aborta a suíte inteira, antes de qualquer query, se não confirmar que o banco alvo é
+> o projeto de dev (nunca depende de `.env.local`, que pode um dia voltar a apontar pra
+> produção) — testado de propósito apontando pro ref de produção e confirmando que aborta
+> sem rodar nada. **Bug real encontrado e corrigido no processo:** `npm test` (unitários)
+> tinha `include: ["tests/**/*.test.ts"]`, que também casava com `tests/integration/**` —
+> rodar `npm test` estava silenciosamente tentando rodar os testes de integração também,
+> sem o guard/mock de `after()` do Next, quebrando 4 testes. Corrigido excluindo
+> `tests/integration/**` do config de unitários. Fixtures (`tests/integration/helpers/fixtures.ts`)
+> criam `Profile`+`Workspace`+`Membership` de teste direto via Prisma (sem signup real —
+> `Profile.id` não tem mais FK pra `auth.users` desde a migration 002) e limpam com um
+> `prisma.workspace.delete()` só (cascade em todas as 18 relações por workspace).
+> **Não é a suíte completa** — `lib/entries/asset.ts`, `lib/workspace/advisor.ts` e o
+> commit de importação (lógica solta dentro de um `route.ts`) ficaram de fora desta
+> rodada, registrados como próxima extensão natural, mesmo padrão já estabelecido.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-10), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 048).
+>
+> **Última atualização anterior: 2026-08-10 (Banco de dev/teste separado do de produção —
 > Registro Nº 047).** Continuação do Registro Nº 046. Usuário criou um projeto Supabase
 > novo pelo dashboard (`prospecta-finance-dev`, `sa-east-1`) e passou as credenciais via
 > `.env.dev.local` (nunca em chat). Aplicado: as 24 migrations (manualmente via `pg`,
@@ -2039,10 +2063,12 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 
 ## 23. Débitos técnicos
 
-- Sem testes de integração/e2e (só unitários em `lib/`). Nenhuma página/Server Action/rota
-  de API tem cobertura de teste automatizado. **Desbloqueado 2026-08-10 (Registro Nº
-  047)** — banco de dev/teste separado já existe e está seedado (ver §22 item 7); construir
-  a suíte de verdade continua não feito, é o próximo passo natural.
+- ~~Sem testes de integração/e2e~~ **Primeira leva pronta 2026-08-10 (Registro Nº 048)** —
+  `npm run test:integration`, 5 arquivos/15 testes contra o banco de dev real
+  (`tests/integration/`). Ainda não cobre `lib/entries/asset.ts`,
+  `lib/workspace/advisor.ts`, nem o commit de importação — e não roda no CI (exigiria
+  cadastrar credenciais do banco de dev como secret do GitHub, decisão à parte). Nenhuma
+  página/Server Action/rota de API tem teste próprio ainda, só as funções de `lib/`.
 - ~~Sem CI configurado~~ **Resolvido 2026-08-10 (Registro Nº 046):**
   `.github/workflows/ci.yml` roda `tsc --noEmit`, `npm test` e `npm run build` em todo
   push/PR pra `master` (lint incluso mas `continue-on-error: true` — ver item novo abaixo).
