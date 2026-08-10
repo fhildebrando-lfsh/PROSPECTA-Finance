@@ -1096,7 +1096,50 @@
 
 ---
 
-## Próximo número de registro: **045**
+### Registro Nº 045
+- **Data:** 2026-08-09
+- **Etapa concluída:** Exemplos de investimento para validar o menu "Investimentos" —
+  script reutilizável guardado no repositório
+- **Descrição:** Depois do Registro Nº 044 (menu Investimentos construído), usuário pediu
+  10 exemplos de investimentos variados pra conferir como cada classe aparece no sistema.
+  Criados 10 investimentos reais (não fictícios num ambiente separado — no próprio
+  workspace de produção do usuário, "fhildebrando (pessoal)"), um por classe de mercado
+  (com Renda Fixa e Renda Variável em dobro, pra mostrar título de dívida vs. ação/FII):
+  Tesouro IPCA+ 2029, CDB Banco Inter 110% CDI, PETR4, HGLG11, Fundo Multimercado XP,
+  Bitcoin, Apartamento Rua das Flores, Honda Civic 2020, 15% Padaria do Zé e Ouro físico
+  (100g) — cada um com pelo menos um evento de rendimento/ganho/perda lançado, e os dois
+  que geram renda real (Apartamento e Padaria) com lançamentos de verdade de
+  aluguel/distribuição de lucro numa carteira real (NU Conta), pra Análise não ficar
+  zerada. Usuário conferiu ao vivo e aprovou ("Ficou muito bom"), depois pediu pra guardar
+  o exemplo nos registros do sistema pra reuso futuro.
+- **O que foi feito:** Todos os 10 investimentos foram criados chamando as mesmas funções
+  que o formulário usa (`createInvestment`/`registerInvestmentEvent`/
+  `registerInvestmentIncome` de `lib/entries/investment.ts`), não um atalho por fora do
+  sistema — passaram pelas mesmas validações. A lista foi guardada como script permanente
+  e reexecutável em `scripts/seed-investment-examples.ts` (molde de
+  `prisma/seed-workspace.ts`): idempotente (pula investimentos cujo nome já existe no
+  workspace, não duplica), cria as carteiras de investimento que faltarem, resolve
+  workspace/responsável/carteira de renda automaticamente (ou por `--workspace-id`) — pode
+  ser rodado de novo no futuro pra recriar o mesmo cenário numa demo ou workspace novo.
+  **Bug real encontrado e corrigido antes de guardar o script:** a primeira versão passava
+  o mesmo id (`Person`, o "responsável" do lançamento) tanto pro parâmetro `responsibleId`
+  quanto pro parâmetro `profileId` (quem "criou" o lançamento, `Entry.createdBy`/
+  `updatedBy`) — são tabelas diferentes (`Person` vs. `Profile`, via `Membership`). Não
+  quebrava a gravação (essas duas colunas não têm FK no banco), mas gravava o autor errado
+  em todo lançamento de exemplo. Corrigido resolvendo os dois ids separadamente
+  (`resolveResponsibleId` via `Person`, `resolveProfileId` via `Membership`, priorizando o
+  titular do workspace).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** Rodado ao vivo contra o workspace de produção (10 investimentos criados,
+  conferidos pelo usuário no navegador). Depois da correção do bug de `profileId`,
+  reexecutado em modo idempotente confirmando "0 criados, 10 já existiam, pulados" (nenhuma
+  duplicata). `npm test` (288/288), `npx tsc --noEmit` limpo.
+- **Documentos relacionados:** `scripts/seed-investment-examples.ts`.
+
+---
+
+## Próximo número de registro: **046**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
