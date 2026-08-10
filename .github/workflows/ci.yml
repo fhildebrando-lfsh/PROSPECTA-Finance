@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    # Env vars placeholder — nenhuma rota do app toca Prisma/Supabase em
+    # build-time (confirmado localmente: build idêntico com esses valores ou
+    # com credenciais reais). Não são segredos, só valores com formato válido
+    # para os construtores de client não lançarem erro de "URL inválida".
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+      SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-role-key"
+      DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder"
+      BREVO_API_KEY: "placeholder"
+      TOKEN_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      GOOGLE_CALENDAR_CLIENT_ID: "placeholder"
+      GOOGLE_CALENDAR_CLIENT_SECRET: "placeholder"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # Não-bloqueante por enquanto: há 11 erros de lint pré-existentes no
+      # código (não relacionados a este CI), registrados como débito técnico
+      # em PROJECT_STATE.md — corrigir e depois remover `continue-on-error`.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

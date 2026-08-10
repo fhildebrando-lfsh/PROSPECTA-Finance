@@ -14,6 +14,20 @@
 
 ---
 
+## 2026-08-10
+
+### Adicionado
+- CI no GitHub Actions (`.github/workflows/ci.yml`): `tsc --noEmit`, testes e build em todo push/PR para `master`.
+- RLS (Row Level Security) completa para as 14 tabelas do banco que não tinham nenhuma policy desde que foram criadas (`prisma/sql/008_rls_completeness.sql`) — ainda documental, não exercida pelo app hoje.
+
+### Corrigido
+- Gap de RLS: policies de escrita de `people`/`wallets`/`entry_groups`/`entries`/`import_batches` não incluíam o papel `ADVISOR`, mesmo a aplicação já permitindo escrita para consultores.
+
+### Observado
+- `npm run lint` tem 11 erros pré-existentes (não relacionados a esta etapa) — CI roda lint sem bloquear (`continue-on-error`) até serem corrigidos.
+
+---
+
 ## 2026-08-09
 
 ### Adicionado

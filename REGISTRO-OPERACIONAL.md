@@ -1139,7 +1139,56 @@
 
 ---
 
-## Próximo número de registro: **046**
+### Registro Nº 046
+- **Data:** 2026-08-10
+- **Etapa concluída:** Débitos técnicos — CI (GitHub Actions) e RLS completa (documental)
+- **Descrição:** Usuário pediu para verificar o estado do projeto e iniciar a próxima
+  etapa. Como todas as Fases 0-4 da especificação original já estavam concluídas (última
+  formalizada: Registro Nº 045), sem "próxima fase" de produto decidida, o usuário
+  escolheu atacar débito técnico (item já documentado em `PROJECT_STATE.md` seção 23).
+  Perguntado como separar o banco de dev/teste do de produção — não há Docker nem `gh`
+  CLI nesta máquina para automatizar isso sozinho —, o usuário escolheu criar o projeto
+  Supabase novo ele mesmo; essa etapa fica para uma sessão futura, quando ele passar a
+  URL/chaves. Esta etapa cobriu só o que dava para entregar sem depender disso.
+- **O que foi feito:**
+  1. **CI** — `.github/workflows/ci.yml`, roda `npx tsc --noEmit`, `npm run lint`
+     (`continue-on-error`), `npm test` e `npm run build` em todo push/PR para `master`.
+     Confirmado localmente (antes de escrever o workflow) que o build funciona
+     identicamente com valores placeholder de env var ou com as credenciais reais — nenhuma
+     rota toca Prisma/Supabase em build-time — então o workflow não depende de nenhum
+     segredo real cadastrado no GitHub.
+  2. **RLS completa** — `prisma/sql/008_rls_completeness.sql`, seguindo a mesma convenção
+     dos arquivos 001-007. Cobre as 14 tabelas criadas depois da Fase 0 que nunca tinham
+     nenhuma policy (`credit_cards`, `description_rules`, `budgets`, `assets`, `goals`,
+     `investment_classes`, `investments`, `google_calendar_connections`, `notifications`,
+     `plans`, `features`, `plan_features`, `subscriptions`, `entitlements`, `access_logs`).
+     **Bug real encontrado na investigação:** as policies de escrita mais antigas
+     (`people`/`wallets`/`entry_groups`/`entries`/`import_batches`) só liberavam
+     `TITULAR`/`MEMBRO`, mas `lib/auth/session.ts::can()` já libera qualquer papel
+     diferente de `LEITURA` (inclui `ADVISOR`) desde a Arquitetura de Identidade/Planos —
+     inconsistência nunca visível porque RLS não é exercida. Corrigido no mesmo arquivo.
+     **Confirmado antes de aplicar qualquer coisa:** nenhuma tabela do projeto tem `FORCE
+     ROW LEVEL SECURITY`, e a conexão do Prisma usa a role *owner*, que o Postgres sempre
+     deixa ignorar RLS nesse caso — ou seja, este arquivo é 100% aditivo/dormant, não muda
+     nenhum comportamento do app rodando hoje.
+  3. **Documentação** — `PROJECT_STATE.md` (topo + seções 22 e 23) e este registro.
+- **Achado fora do escopo, não corrigido:** `npm run lint` tem 11 erros pré-existentes
+  (4x `<a>` que deveriam ser `<Link/>`, 2x reatribuição de variável durante render,
+  regra `react-hooks/immutability`, 2 warnings de import não usado) — sem relação com CI
+  ou RLS, mexeria em código de tela. Deixado como débito técnico registrado, CI roda lint
+  sem bloquear até alguém pedir a correção.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (288/288), `npx tsc --noEmit` limpo, `npm run build` limpo
+  (local, com e sem `.env.local` real — confirmando que CI não precisa de segredo real).
+  SQL de RLS revisado mas **ainda não aplicado contra o banco real** — aplicação e
+  commit/push ficam para depois da confirmação explícita do usuário.
+- **Documentos relacionados:** `.github/workflows/ci.yml`,
+  `prisma/sql/008_rls_completeness.sql`, `PROJECT_STATE.md`.
+
+---
+
+## Próximo número de registro: **047**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

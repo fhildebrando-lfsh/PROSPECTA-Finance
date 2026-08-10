@@ -15,7 +15,31 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-09 (Menu "Investimentos" — Registro Nº 044).** Novo
+> **Última atualização real: 2026-08-10 (Débitos técnicos: CI + RLS completo (documental)
+> — Registro Nº 046).** Depois de fechar o menu Investimentos (Registro Nº 044/045), o
+> usuário pediu para verificar o estado do projeto e iniciar a próxima etapa; como todas
+> as Fases 0-4 já estavam concluídas, sem "próxima fase" de produto decidida, o usuário
+> escolheu atacar débito técnico. Duas entregas, ambas sem tocar nenhum comportamento do
+> app hoje: (1) **CI** — `.github/workflows/ci.yml`, roda `tsc --noEmit`/`npm test`/
+> `npm run build` em todo push/PR pra `master` (lint incluso, mas `continue-on-error`
+> porque achou 11 erros pré-existentes sem relação com esta etapa — ver seção 23); (2)
+> **RLS completo** — `prisma/sql/008_rls_completeness.sql` cobre as 14 tabelas criadas
+> depois da Fase 0 que nunca tinham nenhuma policy, e corrige um gap real encontrado na
+> investigação: as policies de escrita mais antigas (`people`/`wallets`/`entry_groups`/
+> `entries`/`import_batches`) só liberavam TITULAR/MEMBRO, mas `can()` já libera ADVISOR
+> desde a Arquitetura de Identidade/Planos — inconsistência nunca visível porque RLS não é
+> exercida (Prisma conecta como owner, que sempre ignora RLS). **Confirmado antes de medir
+> qualquer coisa:** como não há `FORCE ROW LEVEL SECURITY` em nenhuma tabela, esse arquivo
+> é 100% aditivo e não muda nada no app rodando hoje — só passa a valer se um dia a role de
+> conexão do Prisma for trocada (decisão maior, não tomada, deliberadamente fora desta
+> etapa). Separação de banco dev/teste e testes de integração de verdade ficaram como
+> próximo passo, esperando o usuário criar um projeto Supabase novo (decisão dele, não
+> automatizável 100% nesta máquina — ver seção 22, item 7).
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-10), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 046).
+>
+> **Última atualização anterior: 2026-08-09 (Menu "Investimentos" — Registro Nº 044).** Novo
 > menu de topo dedicado a investimentos, com dois eixos de classificação separados: (1)
 > `InvestmentClass` (tabela de referência nova, ~13 classes de mercado — Renda Fixa,
 > Renda Variável, Fundos, Criptoativos, Imóveis, Veículos, Metais Preciosos, Commodities,
@@ -1884,7 +1908,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 1. **RLS não é efetivamente exercida pelo Prisma** (ver seção 2) — a conexão usa uma role
    que contorna RLS por ser owner das tabelas. A isolação real hoje depende 100% da
    aplicação sempre filtrar por `workspace_id` da sessão (o que ela faz, mas é uma
-   camada só, não duas como o design pretendia).
+   camada só, não duas como o design pretendia). **Atualização 2026-08-10 (Registro
+   Nº 046):** as *policies* em si agora estão completas (`prisma/sql/008_rls_completeness.sql`
+   cobre as 14 tabelas criadas depois da Fase 0 que nunca tinham RLS, e corrige um gap
+   real — as policies de escrita antigas de `people`/`wallets`/`entry_groups`/`entries`/
+   `import_batches` só liberavam TITULAR/MEMBRO, mas `can()` já libera ADVISOR desde a
+   Arquitetura de Identidade/Planos). Isso é só defesa em profundidade **documental** —
+   como a conexão continua sendo owner, nada disso é *exercido* de verdade ainda.
+   Ativar enforcement de fato (trocar a role de conexão) continua não decidido.
 2. **Nenhum outro usuário testado ainda** além de Felipe (admin). O convite de membro
    (seção 11, §19.1) agora tem UI e lógica completas, mas **nunca foi testado
    ponta-a-ponta com uma segunda conta real** — só verificado via `tsc`/lint/testes
@@ -1930,7 +1961,14 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
    produção ainda) — rodar `npm run dev` local e testar coisas continua escrevendo nos
    mesmos dados que o site em produção usa. Tomar cuidado extra com testes/seeds locais
    depois que uso real começar; considerar um projeto Supabase separado pra produção se
-   isso virar um problema.
+   isso virar um problema. **Atualização 2026-08-10:** usuário decidiu resolver isso —
+   vai criar um projeto Supabase novo dedicado a dev/teste pelo próprio dashboard (não deu
+   pra automatizar 100% nesta máquina: sem Docker, sem `gh` CLI; `npx supabase` funciona
+   mas criar projeto exige login OAuth interativo). Quando o usuário passar a URL/chaves
+   do projeto novo: aplicar `prisma/migrations/*` + `prisma/sql/001-008` + `prisma/seed.ts`
+   + `prisma/seed-workspace.ts` (precisa de um signup real primeiro, pro trigger de auth
+   criar o workspace) nele, apontar `.env.local` pra lá (Vercel/produção não muda), e só
+   depois construir a suíte de testes de integração (item acima).
 8. **Um arquivo `recovery-codes.txt` apareceu na raiz do projeto em 2026-07-30** (parecem
    códigos de recuperação 2FA de GitHub/Vercel) — **nunca foi commitado** (excluído
    manualmente do `git add` de propósito) e o usuário foi avisado pra mover pra um lugar
@@ -1981,9 +2019,25 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 ## 23. Débitos técnicos
 
 - Sem testes de integração/e2e (só unitários em `lib/`). Nenhuma página/Server Action/rota
-  de API tem cobertura de teste automatizado.
-- Sem CI configurado (GitHub Actions, etc.) — testes rodam só manualmente.
-- Sem deploy feito ainda — Vercel mencionado no stack mas projeto nunca foi publicado.
+  de API tem cobertura de teste automatizado. **Bloqueado** por não haver banco de
+  dev/teste separado do de produção (ver item novo abaixo) — rodar teste de integração de
+  verdade hoje escreveria em dados reais. Usuário decidiu criar um projeto Supabase novo
+  ele mesmo; suíte de integração fica para quando isso existir.
+- ~~Sem CI configurado~~ **Resolvido 2026-08-10 (Registro Nº 046):**
+  `.github/workflows/ci.yml` roda `tsc --noEmit`, `npm test` e `npm run build` em todo
+  push/PR pra `master` (lint incluso mas `continue-on-error: true` — ver item novo abaixo).
+- **Novo (achado ao configurar o CI, 2026-08-10):** `npm run lint` tem 11 erros
+  pré-existentes, sem relação com o CI em si — 4x `<a>` que deveriam ser `<Link/>`
+  (`app/(app)/investimentos/page.tsx`, `ImportWizard.tsx`) e 2x reatribuição de variável
+  durante render (`app/(app)/investimentos/analise/page.tsx`,
+  `app/(app)/patrimonio/bens/[id]/page.tsx`, regra `react-hooks/immutability` — padrão de
+  soma acumulada com `let` + `.map()`), mais 2 warnings de import não usado
+  (`lib/entries/investment.ts`). Não corrigido nesta etapa (fora do escopo: mexeria em
+  código de tela, não em débito técnico de infraestrutura) — o step de lint no CI está
+  `continue-on-error: true` até alguém pedir a correção.
+- ~~Sem deploy feito ainda~~ **Desatualizado** — o projeto está em produção na Vercel desde
+  2026-07-30 (`prospecta-finance.vercel.app`); esta linha ficou parada de uma versão bem
+  anterior deste documento e não foi removida até agora.
 - `npm audit` reporta ~20 vulnerabilidades, quase todas em dependências de build/dev
   (eslint/postcss/minimatch transitivos via `exceljs`→`archiver`) — não são superfície de
   ataque em runtime, mas nunca foram formalmente triadas/aceitas por escrito.
