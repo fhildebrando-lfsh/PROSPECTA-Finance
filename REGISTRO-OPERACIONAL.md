@@ -1370,7 +1370,40 @@
 
 ---
 
-## Próximo número de registro: **050**
+### Registro Nº 050
+- **Data:** 2026-08-10
+- **Etapa concluída:** CI confirmado rodando de verdade contra o banco de dev (job `integration-tests`)
+- **Descrição:** Fechamento do Registro Nº 049 — a primeira execução do job novo no
+  GitHub Actions (run do commit `2d3fae2`) falhou. `build-and-test` passou normalmente;
+  `integration-tests` falhou no guard de segurança de `tests/integration/setup.ts`, com o
+  erro esperado do próprio guard ("não foi possível confirmar que o banco alvo é o
+  projeto de dev/teste") — ou seja, o guard funcionou exatamente como desenhado: abortou
+  antes de qualquer query em vez de deixar passar silenciosamente.
+- **Causa raiz (bug real, achado ao investigar o log do CI):** os secrets cadastrados pelo
+  usuário no GitHub têm nomes `DEV_NEXT_PUBLIC_SUPABASE_URL`/`DEV_NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  (nomes até mais claros — batem com o nome real da env var), mas `.github/workflows/ci.yml`
+  (Registro Nº 049) tinha sido escrito esperando `DEV_SUPABASE_URL`/`DEV_SUPABASE_ANON_KEY`.
+  Secret com nome não encontrado resolve pra string vazia no GitHub Actions (não é erro de
+  sintaxe), então `NEXT_PUBLIC_SUPABASE_URL` chegou vazia no job — o guard corretamente não
+  conseguiu confirmar o ref do projeto e abortou.
+- **Correção:** `ci.yml` ajustado pra usar os nomes reais dos secrets (`DEV_NEXT_PUBLIC_SUPABASE_URL`/
+  `DEV_NEXT_PUBLIC_SUPABASE_ANON_KEY`), em vez de pedir pro usuário recriar os secrets com
+  outro nome. `PROJECT_STATE.md`/`CHANGELOG.md` corrigidos para os nomes certos
+  (`REGISTRO-OPERACIONAL.md` não — é ledger, entradas fechadas não são reescritas).
+- **Verificado direto na API do GitHub Actions** (não só pela UI, que numa consulta
+  anterior resumiu errado o job `build-and-test` como falho quando na verdade tinha
+  passado — conferido via `api.github.com/.../actions/runs/{id}/jobs`, dado bruto, sem
+  intermediário resumindo): run do commit `f077c9a`, os dois jobs (`build-and-test` e
+  `integration-tests`) com `conclusion: "success"` em todos os steps.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** GitHub Actions run `31443189781` (commit `f077c9a`), ambos os jobs
+  verdes, confirmado via API (`/repos/.../actions/runs/31443189781/jobs`).
+- **Documentos relacionados:** `.github/workflows/ci.yml`.
+
+---
+
+## Próximo número de registro: **051**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

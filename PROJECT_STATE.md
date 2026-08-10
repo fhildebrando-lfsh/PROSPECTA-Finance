@@ -15,7 +15,25 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-10 (Suíte de integração — segunda leva + CI rodando
+> **Última atualização real: 2026-08-10 (CI confirmado verde contra o banco de dev —
+> Registro Nº 050).** Fecha o Registro Nº 049: a primeira execução do job
+> `integration-tests` no GitHub Actions falhou — não por bug de código, mas porque os
+> nomes dos secrets cadastrados pelo usuário (`DEV_NEXT_PUBLIC_SUPABASE_URL`/
+> `DEV_NEXT_PUBLIC_SUPABASE_ANON_KEY`) não batiam com os que `ci.yml` esperava
+> (`DEV_SUPABASE_URL`/`DEV_SUPABASE_ANON_KEY`) — secret com nome não encontrado vira
+> string vazia no GitHub Actions, e o guard de segurança de `tests/integration/setup.ts`
+> corretamente abortou por não conseguir confirmar o projeto de dev, em vez de rodar com
+> credencial vazia. Corrigido ajustando `ci.yml` pros nomes reais. **Lição prática:**
+> verificar status de CI pela API bruta (`api.github.com/.../actions/runs/{id}/jobs`), não
+> só pelo resumo em texto de uma página renderizada — numa consulta anterior a esse mesmo
+> fluxo, um resumo intermediário relatou `build-and-test` como falho quando na verdade
+> tinha passado (só `integration-tests` tinha falhado). Confirmado via API: run
+> `31443189781` (commit `f077c9a`), os dois jobs com sucesso em todos os steps.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-10), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 050).
+>
+> **Última atualização anterior: 2026-08-10 (Suíte de integração — segunda leva + CI rodando
 > contra o banco de dev — Registro Nº 049).** Continuação do Registro Nº 048. Usuário
 > cadastrou 4 secrets no GitHub (`DEV_NEXT_PUBLIC_SUPABASE_URL`/`DEV_NEXT_PUBLIC_SUPABASE_ANON_KEY`/
 > `DEV_SUPABASE_SERVICE_ROLE_KEY`/`DEV_DATABASE_URL`, prefixo `DEV_` de propósito) e

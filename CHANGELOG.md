@@ -40,6 +40,9 @@
 ### Alterado (continuação, mesmo dia)
 - `app/api/import/commit/route.ts` simplificado — lógica de gravação em lote movida para `lib/import/commit.ts` (mesma resposta HTTP, comportamento idêntico, agora testável).
 
+### Corrigido (continuação, mesmo dia — Registro Nº 050)
+- CI: o job `integration-tests` procurava secrets com nomes diferentes dos que foram cadastrados no GitHub (`DEV_SUPABASE_URL`/`DEV_SUPABASE_ANON_KEY` vs. os reais `DEV_NEXT_PUBLIC_SUPABASE_URL`/`DEV_NEXT_PUBLIC_SUPABASE_ANON_KEY`) — o guard de segurança abortou corretamente em vez de rodar com credencial vazia. `ci.yml` ajustado; CI confirmado verde nos dois jobs.
+
 ---
 
 ## 2026-08-09
