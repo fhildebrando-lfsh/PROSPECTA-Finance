@@ -15,7 +15,28 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-10 (Débitos técnicos: CI + RLS completo (documental)
+> **Última atualização real: 2026-08-10 (Banco de dev/teste separado do de produção —
+> Registro Nº 047).** Continuação do Registro Nº 046. Usuário criou um projeto Supabase
+> novo pelo dashboard (`prospecta-finance-dev`, `sa-east-1`) e passou as credenciais via
+> `.env.dev.local` (nunca em chat). Aplicado: as 24 migrations (manualmente via `pg`,
+> porque `prisma migrate deploy` travou nesta máquina de novo — débito técnico conhecido,
+> §23), `prisma/sql/001-008` (auth/RLS/triggers), `prisma/seed.ts` (taxonomia global).
+> **Dois bugs reais encontrados no processo, ambos de "tooling", não do schema:** (1) a
+> senha do banco tinha um `?` não escapado na `DATABASE_URL`, quebrando o parser de URL
+> (corrigido pra `%3F`); (2) o script de aplicação usava `String.replace(padrão, texto)`
+> pra contornar o bug conhecido do `setval` em banco vazio (migration
+> `20260808220000_workspace_client_code`, §23) — `"$$"` na STRING de substituição é
+> tratado como escape especial pelo `.replace()` (colapsa pra um `$` só), corrigido usando
+> a forma de função (`replace(padrão, () => texto)`). `.env.local` (o que `npm run dev`
+> usa) agora aponta pro projeto novo; o antigo (produção) virou `.env.prod.local`.
+> Workspace de teste criado via Admin API do Supabase (sem senha), seedado com
+> `prisma/seed-workspace.ts`. `/login` renderiza sem erro contra o banco novo — suíte de
+> testes de integração de verdade é o próximo passo, ainda não construída.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-10), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 047).
+>
+> **Última atualização anterior: 2026-08-10 (Débitos técnicos: CI + RLS completo (documental)
 > — Registro Nº 046).** Depois de fechar o menu Investimentos (Registro Nº 044/045), o
 > usuário pediu para verificar o estado do projeto e iniciar a próxima etapa; como todas
 > as Fases 0-4 já estavam concluídas, sem "próxima fase" de produto decidida, o usuário
@@ -1957,18 +1978,18 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
    manualmente por Felipe em produção com sucesso; falta só alguém aceitar um convite de
    fato pra fechar o ciclo completo (bloqueado agora pelo problema #9, e-mail de
    confirmação do Supabase não chegando pro convidado).
-7. **Desenvolvimento e produção usam o mesmo banco Supabase** (não há banco separado pra
-   produção ainda) — rodar `npm run dev` local e testar coisas continua escrevendo nos
-   mesmos dados que o site em produção usa. Tomar cuidado extra com testes/seeds locais
-   depois que uso real começar; considerar um projeto Supabase separado pra produção se
-   isso virar um problema. **Atualização 2026-08-10:** usuário decidiu resolver isso —
-   vai criar um projeto Supabase novo dedicado a dev/teste pelo próprio dashboard (não deu
-   pra automatizar 100% nesta máquina: sem Docker, sem `gh` CLI; `npx supabase` funciona
-   mas criar projeto exige login OAuth interativo). Quando o usuário passar a URL/chaves
-   do projeto novo: aplicar `prisma/migrations/*` + `prisma/sql/001-008` + `prisma/seed.ts`
-   + `prisma/seed-workspace.ts` (precisa de um signup real primeiro, pro trigger de auth
-   criar o workspace) nele, apontar `.env.local` pra lá (Vercel/produção não muda), e só
-   depois construir a suíte de testes de integração (item acima).
+7. ~~Desenvolvimento e produção usam o mesmo banco Supabase~~ **Resolvido 2026-08-10
+   (Registro Nº 047).** Projeto Supabase novo criado pelo usuário (`prospecta-finance-dev`,
+   `sa-east-1`) — schema completo (24 migrations), `prisma/sql/001-008` (auth/RLS/
+   triggers) e taxonomia global aplicados nele. `.env.local` (o que `npm run dev` usa)
+   agora aponta pra esse projeto; o `.env.local` antigo (produção) foi preservado como
+   `.env.prod.local`, pra um eventual script pontual contra produção. Vercel/produção
+   continuam intocados. Workspace de teste criado (`fhildebrando+dev@gmail.com`, via
+   Admin API — sem digitar senha) e seedado com 12 responsáveis/47 carteiras
+   (`prisma/seed-workspace.ts`). **Pendência menor:** Authentication → URL Configuration
+   (Site URL `localhost:3000`) do projeto novo ainda não configurada — não bloqueou nada
+   até agora, mas fica registrada pra quando algum fluxo de redirect (redefinir senha,
+   convite) precisar ser testado nesse ambiente.
 8. **Um arquivo `recovery-codes.txt` apareceu na raiz do projeto em 2026-07-30** (parecem
    códigos de recuperação 2FA de GitHub/Vercel) — **nunca foi commitado** (excluído
    manualmente do `git add` de propósito) e o usuário foi avisado pra mover pra um lugar
@@ -2019,10 +2040,9 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 ## 23. Débitos técnicos
 
 - Sem testes de integração/e2e (só unitários em `lib/`). Nenhuma página/Server Action/rota
-  de API tem cobertura de teste automatizado. **Bloqueado** por não haver banco de
-  dev/teste separado do de produção (ver item novo abaixo) — rodar teste de integração de
-  verdade hoje escreveria em dados reais. Usuário decidiu criar um projeto Supabase novo
-  ele mesmo; suíte de integração fica para quando isso existir.
+  de API tem cobertura de teste automatizado. **Desbloqueado 2026-08-10 (Registro Nº
+  047)** — banco de dev/teste separado já existe e está seedado (ver §22 item 7); construir
+  a suíte de verdade continua não feito, é o próximo passo natural.
 - ~~Sem CI configurado~~ **Resolvido 2026-08-10 (Registro Nº 046):**
   `.github/workflows/ci.yml` roda `tsc --noEmit`, `npm test` e `npm run build` em todo
   push/PR pra `master` (lint incluso mas `continue-on-error: true` — ver item novo abaixo).

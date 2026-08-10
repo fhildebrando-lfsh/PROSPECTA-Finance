@@ -26,6 +26,9 @@
 ### Observado
 - `npm run lint` tem 11 erros pré-existentes (não relacionados a esta etapa) — CI roda lint sem bloquear (`continue-on-error`) até serem corrigidos.
 
+### Adicionado (continuação, mesmo dia)
+- Banco de desenvolvimento/teste separado do de produção — projeto Supabase novo (`prospecta-finance-dev`), com schema, RLS e taxonomia aplicados, e um workspace de teste seedado. `npm run dev` local agora aponta para ele; produção (Vercel) não muda.
+
 ---
 
 ## 2026-08-09

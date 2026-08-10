@@ -1188,7 +1188,72 @@
 
 ---
 
-## Próximo número de registro: **047**
+### Registro Nº 047
+- **Data:** 2026-08-10
+- **Etapa concluída:** Banco de dev/teste separado do de produção
+- **Descrição:** Continuação do Registro Nº 046 (débitos técnicos). O usuário criou um
+  projeto Supabase novo pelo próprio dashboard (`prospecta-finance-dev`, região
+  `sa-east-1`, mesma região de produção) e passou as credenciais via `.env.dev.local`
+  (nunca coladas em chat). Com isso, o assistente aplicou o schema completo, ativou
+  auth/RLS, populou a taxonomia e criou um workspace de teste — fechando o débito técnico
+  "desenvolvimento e produção usam o mesmo banco" (`PROJECT_STATE.md` §22 item 7).
+- **O que foi feito:**
+  1. Corrigido um `?` não escapado na senha do banco dentro da `DATABASE_URL` (precisa
+     virar `%3F` — senão o parser de URL confunde tudo depois do `?` com query string,
+     erro "invalid port number").
+  2. `npx prisma migrate deploy` travou nesta máquina Windows, confirmando que o débito
+     técnico documentado (§23, `schema-engine-windows.exe`) continua ativo — aplicadas as
+     24 migrations manualmente via `pg` (mesmo contorno já usado no Registro Nº 035),
+     recriando a tabela `_prisma_migrations` com o schema exato do Prisma (conferido
+     contra a tabela real de produção antes de replicar) para que `prisma migrate
+     status` continue confiável no futuro.
+  3. **Bug real encontrado no processo:** a migration `20260808220000_workspace_client_code`
+     falha em banco vazio (`setval(seq, 0)`, já documentado em §23) — contornado
+     executando, só nesta aplicação manual, uma versão em memória da última linha
+     (`DO $body$ ... setval(seq, 1, false) quando não há linhas ... $body$`) sem tocar no
+     arquivo `.sql` original (evita quebrar o checksum já aplicado em produção). O
+     checksum gravado em `_prisma_migrations` é o do arquivo original, sem modificação.
+  4. **Segundo bug real, no próprio script de aplicação:** `String.prototype.replace()`
+     trata `"$$"` na string de substituição como sequência de escape (colapsa pra um `$`
+     só) quando o segundo argumento é string — corrigido usando a forma de função
+     (`replace(padrão, () => texto)`), que não tem esse efeito colateral.
+  5. Aplicados os 8 arquivos `prisma/sql/001-008` (auth, RLS, triggers de signup) na
+     ordem, e `prisma/seed.ts` (taxonomia global: 10 wallet_kinds, 8 statuses, 13
+     recurrence_kinds, 67 categories, 336 subcategories, 19 institutions, 4 nature_labels,
+     13 investment_classes).
+  6. `.env.local` (o que `npm run dev` usa) trocado para apontar pro projeto novo; o
+     `.env.local` antigo (produção) preservado como `.env.prod.local`, para o caso de
+     precisar rodar algum script pontual contra produção no futuro. Vercel/produção não
+     foram tocados.
+  7. Usuário de teste (`fhildebrando+dev@gmail.com`) criado via Admin API do Supabase
+     (`email_confirm: true`, sem precisar digitar senha nem depender de e-mail chegar) —
+     disparou o trigger `handle_new_auth_user`, criando profile + workspace ("Felipe (dev)
+     (pessoal)", código 0001) + membership TITULAR automaticamente, confirmado direto no
+     banco. `prisma/seed-workspace.ts` populou 12 responsáveis e 47 carteiras nesse
+     workspace.
+  8. Servidor local iniciado contra o banco novo — `/login` renderiza sem erro de
+     servidor, confirmando que o app conecta corretamente no projeto Supabase novo.
+     Verificação de página autenticada via magic link não completou (o formato de link
+     gerado pela Admin API não bateu com o fluxo de callback do app) — não bloqueia nada,
+     os dados foram confirmados corretos direto no banco.
+- **Ainda não feito, registrado como pendência:** configurar Authentication → URL
+  Configuration (Site URL `http://localhost:3000`) no projeto Supabase novo — recomendado
+  antes de testar fluxos que dependem de redirect (redefinir senha, aceitar convite), mas
+  não bloqueou nada desta etapa. Suíte de testes de integração de verdade (o motivo de
+  toda essa separação) ainda não construída — próximo passo.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** Consultas SQL diretas no banco novo confirmando: 24 migrations em
+  `_prisma_migrations`, RLS habilitada e 94 policies, taxonomia seedada, 1 workspace/1
+  profile/1 membership criados pelo trigger, 12 people/47 wallets no seed de workspace.
+  `npm run dev` local contra o banco novo, `/login` renderizado sem erro de servidor
+  (`preview_logs` sem erros).
+- **Documentos relacionados:** `.env.dev.local`, `.env.prod.local`, `.env.local`
+  (nenhum commitado — todos em `.gitignore`).
+
+---
+
+## Próximo número de registro: **048**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
