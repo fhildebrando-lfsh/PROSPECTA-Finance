@@ -338,7 +338,57 @@ aparecem.
 
 ---
 
-## 13. Cadastros
+## 13. Investimentos
+
+Grupo de menu dedicado a investimentos, com duas telas: **Carteira** e **Análise**.
+
+### 13.1 Carteira
+
+Lista de posições (renda fixa, renda variável, imóveis para aluguel, veículos para
+revenda, participação societária, criptoativos, metais preciosos, commodities, terras e
+produção rural, bens colecionáveis, previdência privada ou qualquer outra coisa),
+filtrável por classe. Cada cartão mostra a classe, a carteira/corretora, o valor investido,
+o valor atual e a rentabilidade (%), colorida em verde ou vermelho.
+
+**Cadastrar um investimento** pede: nome, classe (dirige quais campos específicos
+aparecem — ex.: indexador/taxa/vencimento para Renda Fixa, ticker/quantidade/preço médio
+para Renda Variável, endereço/aluguel esperado para Imóveis), tipo específico (texto livre,
+com sugestões de mercado — CDB, Ações, Apartamento etc. — mas você pode digitar qualquer
+coisa que não esteja na lista), carteira onde a posição mora (a corretora, ou o próprio
+imóvel/veículo/empresa se não houver corretora — pode criar uma nova na hora), responsável
+e o valor/data do aporte inicial. **Assim que você cadastra, o aporte inicial já aparece em
+Lançamentos automaticamente** — não precisa lançar duas vezes.
+
+### 13.2 Detalhe de cada investimento
+
+Ao abrir uma posição: valor investido, valor atual, ganho de capital, rentabilidade %,
+renda recebida e retorno total % (ganho de capital + renda recebida, sobre o que foi
+aportado), com um gráfico de evolução da posição e o histórico completo de lançamentos
+ligados a ela.
+
+- **Registrar evento da posição** — ganho/perda de capital, dividendo, juro, retirada,
+  imposto ou variação cambial: fica ligado à posição, na própria carteira/corretora.
+- **Registrar renda recebida** — aluguel de imóvel ou distribuição de lucro de sócio: é
+  dinheiro de verdade caindo numa conta, então você escolhe em qual carteira ele entrou
+  (diferente da carteira da posição).
+- **Gerar lançamentos recorrentes de aluguel** (só para a classe Imóveis) — cria a série
+  mensal de aluguel a receber de uma vez, a partir de uma data de início.
+- Metadados (nome, classe, campos específicos) ficam travados até você clicar em
+  **"Editar"**, mesmo padrão de Bens e Cartões.
+- **"Arquivar"** tira a posição da lista principal sem apagar o histórico (use quando
+  encerrar a aplicação, por exemplo depois de vender tudo). **"Excluir"** só é permitido
+  se não houver nenhum lançamento vinculado — do contrário, arquive.
+
+### 13.3 Análise
+
+Visão consolidada de toda a carteira: total investido, valor atual, rentabilidade
+consolidada, renda total recebida, alocação por classe (em barras, com percentual e valor),
+renda recebida ao longo do tempo (gráfico mensal) e um ranking de todas as posições por
+rentabilidade. Botão **"Baixar PDF"** para exportar o relatório.
+
+---
+
+## 14. Cadastros
 
 Telas de configuração, cada uma com regra própria de quem pode editar:
 
@@ -360,7 +410,7 @@ preservar o histórico.
 
 ---
 
-## 14. Minha conta
+## 15. Minha conta
 
 - **Dados pessoais:** nome, telefone, CPF, data de nascimento, endereço (com busca
   automática pelo CEP). Campos ficam bloqueados até clicar em "Editar"; deixar um campo em
@@ -376,7 +426,7 @@ preservar o histórico.
 
 ---
 
-## 15. Administração (só para administrador da plataforma)
+## 16. Administração (só para administrador da plataforma)
 
 - **`/admin/usuarios`** — todos os usuários cadastrados no sistema: **código do cliente**
   (número sequencial imutável, atribuído automaticamente ao workspace de cada pessoa ou
@@ -391,7 +441,7 @@ preservar o histórico.
 
 ---
 
-## 16. Segurança e privacidade
+## 17. Segurança e privacidade
 
 Toda a base do sistema segue a Lei Geral de Proteção de Dados (LGPD). Detalhes completos em
 `/politica-privacidade` (dentro do sistema) e no rascunho jurídico `TERMOS-DE-USO.md`. Em
@@ -400,7 +450,7 @@ momento, e todo acesso de um consultor ou administrador ao seu workspace fica re
 
 ---
 
-## 17. Dúvidas frequentes
+## 18. Dúvidas frequentes
 
 **Lancei um valor errado, como corrijo?**
 No desktop, edite direto na tabela de Lançamentos. No celular, abra o lançamento pela tela

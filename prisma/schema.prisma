@@ -99,6 +99,7 @@ model Workspace {
   goals            Goal[]
   googleCalendarConnection GoogleCalendarConnection?
   descriptionRules DescriptionRule[]
+  investments      Investment[]
 
   @@map("workspaces")
 }
@@ -450,6 +451,7 @@ model Wallet {
   entries      Entry[]
   goals        Goal[]
   creditCard   CreditCard?
+  investments  Investment[]
 
   @@unique([workspaceId, slug])
   @@map("wallets")
@@ -617,6 +619,16 @@ model Entry {
   /// padrão de `transferId`/`importBatchId`: FK direta, não `EntryGroup`.
   assetId String? @map("asset_id") @db.Uuid
 
+  /// Liga esta entry a uma posição de investimento (menu "Investimentos") —
+  /// aporte/ganho/perda/dividendo/juro/retirada (nature=INVESTIMENTO, na carteira
+  /// da posição) ou renda real (nature=RECEITA, numa carteira diferente, onde o
+  /// aluguel/distribuição de lucro realmente cai). Nulo pra qualquer lançamento
+  /// normal. Sem cascade de propósito — diferente de Bens, aqui pode haver renda
+  /// REAL numa carteira de verdade; excluir a posição nunca deve apagar dinheiro
+  /// que realmente entrou em algum lugar (por isso excluir só é permitido sem
+  /// nenhuma entry vinculada — ver `lib/entries/investment.ts::deleteInvestment`).
+  investmentId String? @map("investment_id") @db.Uuid
+
   /// ID do evento correspondente no Google Agenda do workspace (integração,
   /// ver GoogleCalendarConnection), preenchido só enquanto o compromisso está
   /// A_PAGAR/A_RECEBER e o workspace tem a integração conectada. Some (volta a
@@ -643,10 +655,12 @@ model Entry {
   /// significado independente. Excluir o bem por engano de cadastro deve
   /// desfazer tudo, não deixar entry órfã.
   asset       Asset?         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  investment  Investment?    @relation(fields: [investmentId], references: [id])
 
   @@index([workspaceId, dueDate])
   @@index([workspaceId, walletId])
   @@index([groupId])
+  @@index([investmentId])
   @@index([transferId])
   @@index([assetId])
   @@map("entries")
@@ -789,6 +803,57 @@ model Goal {
   wallet    Wallet    @relation(fields: [walletId], references: [id])
 
   @@map("goals")
+}
+
+/// Classe de investimento (renda fixa, renda variável, imóveis, veículos, participação
+/// societária...) — referência extensível, nunca enum (mesmo padrão de `WalletKind`/
+/// `RecurrenceKind`/`Status`), seedada de `seeds/seed_investment_classes.csv`. Dirige
+/// quais campos o formulário de "Novo investimento" mostra em `Investment.details`;
+/// não confundir com `Category` do `Entry`, que classifica o EVENTO (Aporte, Ganho de
+/// Capital, Dividendo...) — são duas dimensões independentes.
+model InvestmentClass {
+  code       String @id
+  labelPt    String
+  /// Agrupador de exibição: "Investimentos Financeiros" / "Ativos Reais" /
+  /// "Participações em Empresas" / "Previdência" / "Outros".
+  groupLabel String @map("group_label")
+  sortOrder  Int    @map("sort_order")
+
+  investments Investment[]
+
+  @@map("investment_classes")
+}
+
+/// Uma posição individual de investimento (§ menu "Investimentos", pedido do
+/// usuário 2026-08-10) — mesmo espírito de `Asset` pra Bens: um lançamento de
+/// aporte/ganho/perda/renda em `Entry` já aparece em Lançamentos de forma
+/// sintética; esta ficha é o "analítico" (posição, rentabilidade, alocação).
+/// Diferente de Bens, mora numa carteira DE VERDADE (kindCode=CONTA_INVESTIMENTO —
+/// a corretora, ou o próprio imóvel/veículo/empresa quando não há corretora), não
+/// numa pseudo-conta — o dinheiro aportado é real, só o "quanto vale hoje" é
+/// documentado por atualização manual (mesmo mecanismo de Bens).
+model Investment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  walletId    String   @map("wallet_id") @db.Uuid
+  classCode   String   @map("class_code")
+  name        String
+  /// {instrumentType, + campos específicos da classe: ticker/quantidade/preço médio,
+  /// indexador/taxa/vencimento, endereço/aluguel esperado, placa/km, percentual/razão
+  /// social...} — ver union type `InvestmentDetails` em `lib/finance/investment.ts`.
+  details     Json
+  /// Arquivar é o caminho normal pra "aposentar" uma posição com histórico —
+  /// excluir de verdade só é permitido sem nenhum `Entry` vinculado (mesma regra
+  /// de `Wallet`/`CreditCard`/`Subcategory`).
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  wallet    Wallet          @relation(fields: [walletId], references: [id])
+  class     InvestmentClass @relation(fields: [classCode], references: [code])
+  entries   Entry[]
+
+  @@map("investments")
 }
 
 /// §13/§18 — vínculo de um workspace com o Google Agenda do titular (um sentido

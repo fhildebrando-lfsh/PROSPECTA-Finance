@@ -59,6 +59,33 @@ async function seedWalletKinds() {
   console.log(`wallet_kinds: ${rows.length}`);
 }
 
+async function seedInvestmentClasses() {
+  const rows = readCsv<{
+    code: string;
+    label_pt: string;
+    group_label: string;
+    sort_order: string;
+  }>("seed_investment_classes.csv");
+
+  for (const row of rows) {
+    await prisma.investmentClass.upsert({
+      where: { code: row.code },
+      create: {
+        code: row.code,
+        labelPt: row.label_pt,
+        groupLabel: row.group_label,
+        sortOrder: Number.parseInt(row.sort_order, 10),
+      },
+      update: {
+        labelPt: row.label_pt,
+        groupLabel: row.group_label,
+        sortOrder: Number.parseInt(row.sort_order, 10),
+      },
+    });
+  }
+  console.log(`investment_classes: ${rows.length}`);
+}
+
 async function seedStatuses() {
   const rows = readCsv<{ code: string; label_pt: string; counts_as_settled: string }>(
     "seed_situacoes.csv",
@@ -213,6 +240,7 @@ async function main() {
   await seedTaxonomia();
   await seedInstitutions();
   await seedNatureLabels();
+  await seedInvestmentClasses();
 }
 
 main()

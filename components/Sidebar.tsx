@@ -38,6 +38,8 @@ import {
   AlertTriangle,
   CreditCard,
   LineChart,
+  CandlestickChart,
+  PieChart,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -100,6 +102,11 @@ const PATRIMONIO_ITEMS: NavLeaf[] = [
   { href: "/patrimonio/dividas", label: "Dívidas", icon: TrendingDown },
 ];
 
+const INVESTIMENTOS_ITEMS: NavLeaf[] = [
+  { href: "/investimentos", label: "Carteira", icon: Wallet },
+  { href: "/investimentos/analise", label: "Análise", icon: PieChart },
+];
+
 const CADASTROS_ITEMS: NavLeaf[] = [
   { href: "/cadastros/carteiras", label: "Carteiras", icon: Wallet },
   { href: "/cadastros/responsaveis", label: "Responsáveis", icon: Users },
@@ -133,6 +140,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { label: "Cartões de Crédito", icon: CreditCard, items: CARTOES_ITEMS },
     { label: "Relatórios", icon: BarChart3, items: RELATORIOS_ITEMS },
     { label: "Patrimônio", icon: Landmark, items: PATRIMONIO_ITEMS },
+    { label: "Investimentos", icon: CandlestickChart, items: INVESTIMENTOS_ITEMS },
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },
   ];
   if (isPlatformAdmin) {

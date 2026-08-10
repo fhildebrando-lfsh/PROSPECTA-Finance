@@ -1023,7 +1023,80 @@
 
 ---
 
-## Próximo número de registro: **044**
+### Registro Nº 044
+- **Data:** 2026-08-09
+- **Etapa concluída:** Menu "Investimentos" — carteira analítica, integração automática
+  com Lançamentos, tela de Análise consolidada e PDF
+- **Descrição:** Usuário pediu um menu de topo exclusivo para investimentos, cobrindo
+  renda variável, renda fixa, imóveis para aluguel (gera receita), veículos para revenda,
+  participação societária como sócio investidor, e "qualquer outra coisa" — com dois
+  requisitos centrais: (1) cadastrar um investimento deve aparecer, de forma sintética,
+  em Lançamentos; (2) dentro do menu Investimentos, a informação deve ser analítica
+  (posição, rentabilidade, alocação, rendimentos), com termos reais de mercado. Planejado
+  em modo de planejamento — a primeira versão do plano foi devolvida pelo usuário com uma
+  classificação de mercado bem mais rica e detalhada, incorporada na revisão aprovada.
+  Descoberta decisiva durante o planejamento: a funcionalidade já estava projetada em
+  `ESPECIFICACAO-SISTEMA-FINANCEIRO.md` §7.3 (carteira `CONTA_INVESTIMENTO` + 13
+  categorias `INVESTIMENTO` já seedadas, nunca usadas) — o requisito nº 1 já estava
+  resolvido pelo desenho original, sem precisar de nenhum mecanismo novo de
+  sincronização.
+- **O que foi feito:**
+  - **Schema (migration aditiva, `20260810100000_investments`):** `InvestmentClass`
+    (tabela de referência, `code/labelPt/groupLabel/sortOrder`, 13 linhas, mesmo padrão
+    de `WalletKind`) e `Investment` (posição individual: nome, classe, carteira
+    `CONTA_INVESTIMENTO`, `details` Json livre por classe). `Entry.investmentId` novo
+    (nullable, SEM cascade — decisão deliberada: pode haver renda real recebida numa
+    carteira de verdade ligada à posição, que nunca pode ser apagada em cascata).
+  - **Seed:** `seeds/seed_investment_classes.csv` (13 classes) +
+    `seedInvestmentClasses()` em `prisma/seed.ts`; uma categoria nova em
+    `seed_taxonomia.csv` (`INVESTIMENTO > Juros`) — o resto das 13 categorias
+    `INVESTIMENTO` e as categorias `RECEITA > Aluguel`/`Participação nos Lucros` já
+    existiam, sem uso, reaproveitadas como estão.
+  - **`lib/finance/investment.ts`** (puro, testado): valor investido/atual, ganho de
+    capital, rentabilidade %, renda recebida, retorno total % (ganho de capital + renda,
+    termo real de mercado), alocação da carteira por classe. Split deliberado em
+    `lib/finance/investment-instruments.ts` (sem import de `Decimal`) pros tipos/listas de
+    sugestão de instrumento por classe, pra formulário Client Component poder importar sem
+    quebrar o bundle do navegador (mesmo cuidado já tomado com PDF de fatura).
+  - **`lib/entries/investment.ts`:** `createInvestment` (posição + primeiro aporte, numa
+    transação), `registerInvestmentEvent` (ganho/perda/dividendo/juro/retirada/
+    imposto/câmbio — sempre na carteira da posição), `registerInvestmentIncome` (renda
+    real — aluguel/participação nos lucros — numa carteira de verdade escolhida pelo
+    cliente), `generateRentIncome` (série mensal de aluguel, reaproveitando
+    `generateRecurrenceOccurrences` já testada), `updateInvestment`, `archiveInvestment`,
+    `deleteInvestment` (só permite excluir sem nenhum lançamento vinculado — mesma regra
+    de Carteira/Cartão/Subcategoria).
+  - **Telas:** `app/(app)/investimentos/` — layout com abas "Carteira"/"Análise"; lista
+    filtrável por classe; cadastro (classe dirige os campos específicos, tipo de
+    instrumento com sugestões, atalho pra criar carteira nova inline); detalhe analítico
+    (posição, ganho de capital, rentabilidade %, retorno total %, gráfico de evolução,
+    histórico completo, formulários de registrar evento/renda, geração de aluguel
+    recorrente pra Imóveis, edição travada até "Editar", arquivar/excluir); Análise
+    (consolidado da carteira inteira, alocação por classe em barras, renda mensal
+    recebida — reaproveita `MonthlyChart` —, ranking por rentabilidade, "Baixar PDF").
+  - **PDF:** `lib/reports/pdf/investimentos.ts` + `app/api/investimentos/pdf/route.ts`,
+    mesmo par `startReportPdf`/`finishReportPdf` dos outros 8 relatórios.
+  - **Sidebar:** novo grupo "Investimentos" (ícone `CandlestickChart`), logo depois de
+    "Patrimônio", com os itens Carteira e Análise.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (288/288, incluindo 11 testes novos de
+  `tests/finance/investment.test.ts`), `npx tsc --noEmit` limpo, `npm run build` de
+  produção concluído (rotas `/investimentos`, `/investimentos/novo`, `/investimentos/[id]`,
+  `/investimentos/analise` e `/api/investimentos/pdf` registradas). Verificação visual ao
+  vivo não foi possível (mesma limitação de sessão sem senha de login já documentada) —
+  usuário confirma no navegador depois do deploy.
+- **Documentos relacionados:** `prisma/schema.prisma` (`InvestmentClass`, `Investment`,
+  `Entry.investmentId`), `prisma/migrations/20260810100000_investments/`,
+  `seeds/seed_investment_classes.csv`, `seeds/seed_taxonomia.csv`, `prisma/seed.ts`,
+  `lib/finance/investment.ts`, `lib/finance/investment-instruments.ts`,
+  `lib/entries/investment.ts`, `app/(app)/investimentos/`, `lib/reports/pdf/investimentos.ts`,
+  `app/api/investimentos/pdf/route.ts`, `components/Sidebar.tsx`,
+  `components/charts/InvestmentEvolutionChart.tsx`, `tests/finance/investment.test.ts`.
+
+---
+
+## Próximo número de registro: **045**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

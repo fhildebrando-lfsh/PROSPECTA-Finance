@@ -323,10 +323,11 @@ INVESTIMENTO,Ganho de Capital,,6,ganho_de_capital,
 INVESTIMENTO,Impostos,,7,impostos,
 INVESTIMENTO,Investimentos (empresa),,8,investimentos_empresa,
 INVESTIMENTO,Investimentos (outros),,9,investimentos_outros,
-INVESTIMENTO,Perdas,,10,perdas,
-INVESTIMENTO,Renda Fixa,,11,renda_fixa,
-INVESTIMENTO,Renda Variável,,12,renda_variavel,
-INVESTIMENTO,Retiradas,,13,retiradas,
+INVESTIMENTO,Juros,,10,juros,
+INVESTIMENTO,Perdas,,11,perdas,
+INVESTIMENTO,Renda Fixa,,12,renda_fixa,
+INVESTIMENTO,Renda Variável,,13,renda_variavel,
+INVESTIMENTO,Retiradas,,14,retiradas,
 OUTRO,Bens Numerários,dinheiro em caixa,1,bens_numerarios,dinheiro_em_caixa
 OUTRO,Bens Numerários,dinheiro em banco,1,bens_numerarios,dinheiro_em_banco
 OUTRO,Bens Numerários,valorização,1,bens_numerarios,valorizacao

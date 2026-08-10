@@ -17,6 +17,9 @@
 ## 2026-08-09
 
 ### Adicionado
+- **Menu "Investimentos"**: novo grupo de menu, exclusivo para investimentos, com integração automática com Lançamentos — cadastrar uma posição (renda fixa, renda variável, imóveis para aluguel, veículos para revenda, participação societária, criptoativos, metais preciosos, commodities, terras e produção rural, bens colecionáveis, previdência privada ou qualquer outra coisa) já cria um lançamento correspondente, visível em Lançamentos, sem passo extra. Dentro do menu Investimentos, cada posição tem uma tela analítica própria: valor investido, valor atual, ganho de capital, rentabilidade %, retorno total % (ganho de capital + renda recebida), gráfico de evolução e histórico completo de lançamentos ligados. Botões para registrar eventos da posição (ganho/perda de capital, dividendo, juro, retirada, imposto, variação cambial) e renda real recebida (aluguel, participação nos lucros) — para imóveis, ainda é possível gerar a série mensal de aluguel automaticamente. A aba "Análise" traz a visão consolidada de toda a carteira: total investido, valor atual, rentabilidade consolidada, alocação por classe, renda recebida ao longo do tempo, ranking por rentabilidade e exportação em PDF.
+
+### Adicionado
 - **Integração com o Google Agenda**: em Compromissos → Calendário, é possível conectar o Google Agenda do cliente (autorização própria, separada do login com Google) — o sistema cria um calendário dedicado "PROSPECTA Finance" na conta dele e passa a enviar, em tempo real, todo compromisso a pagar/a receber. Ao liquidar (pagar/receber) um lançamento, o evento correspondente some da agenda em vez de ficar marcado como concluído. Botão "Desconectar" apaga o calendário dedicado e revoga o acesso.
 
 ### Corrigido

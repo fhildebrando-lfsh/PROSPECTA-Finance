@@ -15,7 +15,31 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-09 (5 melhorias na tela de Cartão de Crédito —
+> **Última atualização real: 2026-08-09 (Menu "Investimentos" — Registro Nº 044).** Novo
+> menu de topo dedicado a investimentos, com dois eixos de classificação separados: (1)
+> `InvestmentClass` (tabela de referência nova, ~13 classes de mercado — Renda Fixa,
+> Renda Variável, Fundos, Criptoativos, Imóveis, Veículos, Metais Preciosos, Commodities,
+> Terras e Produção Rural, Bens Colecionáveis, Participação Societária, Previdência
+> Privada, Outros), que dirige quais campos o formulário mostra; (2) o instrumento
+> específico (CDB, Ações, Apartamento etc.) fica como texto livre com sugestões por
+> classe (`lib/finance/investment-instruments.ts`), sem virar linha de banco. Cada posição
+> vira um `Investment` novo, ligado a uma `Wallet` real (`kindCode=CONTA_INVESTIMENTO`) —
+> todo lançamento da posição É um `Entry` comum (`nature=INVESTIMENTO`), então já aparece
+> em Lançamentos automaticamente, sem nenhum mecanismo novo de sincronização (o desenho
+> original já estava em `ESPECIFICACAO-SISTEMA-FINANCEIRO.md` §7.3, nunca implementado).
+> Renda real recebida (aluguel de imóvel, distribuição de lucro de sócio) é um `Entry`
+> separado, `nature=RECEITA`, numa carteira de verdade — reaproveita as categorias
+> `RECEITA > Aluguel`/`Participação nos Lucros`, já seedadas e nunca usadas. Telas:
+> Carteira (lista + filtro por classe), Novo investimento, detalhe analítico (posição,
+> ganho de capital, rentabilidade %, retorno total %, gráfico de evolução, histórico,
+> registrar evento/renda, gerar aluguel recorrente para Imóveis), Análise (consolidado da
+> carteira, alocação por classe, renda ao longo do tempo, ranking, PDF). Sidebar ganhou o
+> grupo "Investimentos" (ícone `CandlestickChart`), logo depois de "Patrimônio".
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-09), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 044).
+>
+> **Última atualização anterior: 2026-08-09 (5 melhorias na tela de Cartão de Crédito —
 > vencimento corrigido + backfill, lançamento da fatura editável com regra de descrição,
 > "Editar cartão" travado, Registro Nº 043).** Bug real: `cardStatementWindow`
 > (`lib/finance/card.ts`) calculava o vencimento sempre no mês seguinte ao fechamento —

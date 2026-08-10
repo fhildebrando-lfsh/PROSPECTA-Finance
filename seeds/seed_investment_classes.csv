@@ -1,0 +1,14 @@
+code,label_pt,group_label,sort_order
+RENDA_FIXA,Renda Fixa,Investimentos Financeiros,1
+RENDA_VARIAVEL,Renda Variável,Investimentos Financeiros,2
+FUNDOS_INVESTIMENTO,Fundos de Investimento,Investimentos Financeiros,3
+CRIPTOATIVOS,Criptoativos e Ativos Digitais,Investimentos Financeiros,4
+IMOVEIS,Imóveis,Ativos Reais,5
+VEICULOS,Veículos,Ativos Reais,6
+METAIS_PRECIOSOS,Metais Preciosos,Ativos Reais,7
+COMMODITIES,Commodities,Ativos Reais,8
+TERRAS_PRODUCAO_RURAL,Terras e Produção Rural,Ativos Reais,9
+BENS_COLECIONAVEIS,Bens Colecionáveis,Ativos Reais,10
+PARTICIPACAO_SOCIETARIA,Participação Societária,Participações em Empresas,11
+PREVIDENCIA_PRIVADA,Previdência Privada,Previdência,12
+OUTROS,Outros Investimentos,Outros,13
