@@ -17,7 +17,7 @@
 >
 > **Última atualização real: 2026-08-10 (Suíte de integração — segunda leva + CI rodando
 > contra o banco de dev — Registro Nº 049).** Continuação do Registro Nº 048. Usuário
-> cadastrou 4 secrets no GitHub (`DEV_SUPABASE_URL`/`DEV_SUPABASE_ANON_KEY`/
+> cadastrou 4 secrets no GitHub (`DEV_NEXT_PUBLIC_SUPABASE_URL`/`DEV_NEXT_PUBLIC_SUPABASE_ANON_KEY`/
 > `DEV_SUPABASE_SERVICE_ROLE_KEY`/`DEV_DATABASE_URL`, prefixo `DEV_` de propósito) e
 > `.github/workflows/ci.yml` ganhou o job `integration-tests`, rodando `npm run
 > test:integration` de verdade no CI. `tests/integration/setup.ts` ficou flexível: exige
