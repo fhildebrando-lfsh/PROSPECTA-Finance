@@ -1506,7 +1506,76 @@
 
 ---
 
-## Próximo número de registro: **053**
+### Registro Nº 053
+- **Data:** 2026-08-11
+- **Etapa concluída:** Correção de regra de negócio — totais por situação (liquidado ×
+  pendente)
+- **Descrição:** Usuário reportou, na versão real/original do sistema (não em teste): os
+  totais de Receita/Despesa/Investimento mostrados no Painel somavam todos os lançamentos
+  do período, misturando o que já foi liquidado (PAGO/RECEBIDO) com o que ainda está
+  pendente (A_PAGAR/A_RECEBER/ESTIMATIVA). Pedido: todo total "realizado" deve refletir
+  só o que foi efetivamente recebido/pago; toda apresentação de "provisão"/expectativa
+  deve calcular só em cima do pendente.
+- **Achado na investigação:** era comportamento **intencional por design atual**, não um
+  bug de implementação isolado — `lib/finance/period.ts::periodTotals` tinha um
+  comentário explícito ("§11.3 — a fórmula da planilha não filtra por situação") e um
+  teste que afirmava esse comportamento como correto, "fiel à fórmula da planilha
+  original". O usuário pediu pra mudar essa regra de propósito.
+- **O que foi feito:**
+  1. `lib/finance/derived.ts` — `OK_STATUSES` (privado) renomeado e exportado como
+     `SETTLED_STATUSES`; `PENDING_STATUSES` novo (complemento exato, batendo com
+     `Status.countsAsSettled = false`). Fonte única reusada por `period.ts`,
+     `rankings.ts` e `reserve.ts` — sem duplicar mais um `Set` (já existiam dois
+     hard-coded, um em `balance.ts` outro em `derived.ts`, nenhum lendo a coluna do
+     banco).
+  2. `periodTotals`/`monthlySeries` (`lib/finance/period.ts`) ganharam parâmetro
+     `settlement: "settled" | "pending"` **obrigatório** (de propósito, sem default) —
+     força cada chamador a declarar a intenção; o compilador TS pegou automaticamente
+     todos os 8 call sites que precisavam de atualização (nenhum esquecido). `projectedBalance`
+     não ganhou parâmetro novo — só tem um uso legítimo (fluxo projetado é sempre sobre o
+     pendente), ficou hard-coded `"pending"` internamente.
+  3. `topEntries`/`categoryDistribution`/`categoryMonthlyBreakdown` (`rankings.ts`) e
+     `averageMonthlyExpense` (`reserve.ts`) — cada uma só tinha um call site real, sempre
+     "realizado"; filtro por `SETTLED_STATUSES` ficou fixo internamente, sem mudar
+     assinatura.
+  4. Call sites atualizados: Painel (KPIs e "Últimos 6 meses" = settled; "Provisão" =
+     pending), Balanço anual tela + PDF (settled). Fluxo projetado, Orçamento e Dívidas
+     não precisaram de mudança externa (filtro interno das funções que usam).
+  5. Testes: `period.test.ts` reescrito nos call sites + o teste "inclui não liquidado —
+     fiel à planilha" virou dois testes novos (`settled` exclui pendente, `pending`
+     inclui só pendente); teste de `projectedBalance` ganhou um caso a mais (RECEBIDO
+     antecipado no mês projetado não deveria contar — só reforça o que já era esperado).
+     `rankings.test.ts` e `reserve.test.ts` ganharam um teste novo cada, confirmando
+     exclusão de pendente (não tinham cobertura nenhuma de status antes).
+  6. `MANUAL-DE-USO.md` — seções "Painel" e "Relatórios" atualizadas pra deixar explícito
+     que os cards/gráficos "realizados" são só liquidado, e "Provisão"/"Fluxo projetado"
+     são só pendente.
+- **Verificado ao vivo, contra o banco de dev, servidor `next dev` real** (login sem
+  senha via magic link, mesma técnica dos testes E2E): criados 2 lançamentos de teste no
+  workspace "Felipe (dev)" — uma despesa liquidada (PAGO, -R$1.000) e uma pendente
+  (A_PAGAR, -R$5.000), mesmo mês. Painel mostrou **Despesa: -R$1.000,00** (bate exato,
+  pendente excluído) e "Top 5 despesas" listou só o lançamento liquidado. Fluxo Projetado
+  mostrou "Saldo hoje: -R$1.000,00" (bate); meses futuros não mudaram porque o
+  lançamento pendente de teste vencia no mês corrente, que a projeção
+  intencionalmente ignora (evita contar duas vezes o que já está no saldo de hoje —
+  mesma regra já coberta por teste unitário). Os 2 lançamentos de teste foram apagados
+  depois da verificação.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (294/294, +6 testes novos), `npx tsc --noEmit` limpo (pegou
+  automaticamente todos os call sites do parâmetro novo), `npm run test:integration`
+  (26/26, intacto). Verificação manual descrita acima, contra dados reais no banco de
+  dev.
+- **Documentos relacionados:** `lib/finance/derived.ts`, `lib/finance/period.ts`,
+  `lib/finance/rankings.ts`, `lib/finance/reserve.ts`, `app/(app)/painel/page.tsx`,
+  `app/(app)/relatorios/balanco-anual/page.tsx`,
+  `app/api/relatorios/balanco-anual/pdf/route.ts`, `tests/finance/period.test.ts`,
+  `tests/finance/rankings.test.ts`, `tests/finance/reserve.test.ts`,
+  `MANUAL-DE-USO.md`.
+
+---
+
+## Próximo número de registro: **054**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

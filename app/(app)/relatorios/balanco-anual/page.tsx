@@ -31,9 +31,9 @@ export default async function BalancoAnualPage({ searchParams }: { searchParams:
   const entries = dbEntries.map(toFinanceEntry);
   const categoryNameById = new Map(dbEntries.map((e) => [e.categoryId, e.category.name]));
 
-  const series = monthlySeries(entries, year, 0, 12, regime);
+  const series = monthlySeries(entries, year, 0, 12, "settled", regime);
   const yearPeriod = { start: new Date(Date.UTC(year, 0, 1)), end: new Date(Date.UTC(year, 11, 31)) };
-  const yearTotals = periodTotals(entries, yearPeriod, regime);
+  const yearTotals = periodTotals(entries, yearPeriod, "settled", regime);
 
   const syntheticRows: MonthlyTotalsRow[] = [
     { label: "Receita", tone: "emerald", values: series.map((m) => m.totals.receita), total: yearTotals.receita },

@@ -19,6 +19,9 @@
 ### Adicionado
 - Suíte E2E: troca de workspace (Playwright seleciona o segundo workspace pelo seletor da sidebar, confirma pela badge de consultor) e importação de OFX (mini-formulário + confirmação das transações).
 
+### Corrigido
+- **Painel, Balanço anual, Fluxo projetado, Orçamento, Reserva de emergência e Dívidas**: os totais de Receita/Despesa/Investimento agora representam só o que foi efetivamente recebido/pago (liquidado) — antes misturavam com o que ainda estava a pagar/a receber/estimado. O gráfico "Provisão" do Painel e o relatório "Fluxo projetado" continuam olhando pra frente, mas agora calculam só em cima do pendente, sem misturar com o que já aconteceu.
+
 ---
 
 ## 2026-08-10

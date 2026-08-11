@@ -12,7 +12,7 @@ describe("periodTotals (§11.3)", () => {
       makeEntry({ nature: "INVESTIMENTO", amount: d(-500), dueDate: new Date(Date.UTC(2026, 5, 15)) }),
     ];
 
-    const totals = periodTotals(entries, junho2026);
+    const totals = periodTotals(entries, junho2026, "settled");
     expect(totals.receita.toNumber()).toBe(5000);
     expect(totals.despesa.toNumber()).toBe(-2000);
     expect(totals.investimento.toNumber()).toBe(-500);
@@ -21,23 +21,42 @@ describe("periodTotals (§11.3)", () => {
 
   it("nature = OUTRO (transferências) fica fora por construção", () => {
     const entries = [makeEntry({ nature: "OUTRO", amount: d(1000), dueDate: new Date(Date.UTC(2026, 5, 5)) })];
-    const totals = periodTotals(entries, junho2026);
+    const totals = periodTotals(entries, junho2026, "settled");
     expect(totals.balanco.toNumber()).toBe(0);
   });
 
-  it("inclui lançamentos não liquidados (A_PAGAR/A_RECEBER/ESTIMATIVA) — fiel à fórmula da planilha", () => {
+  it("settlement='settled' inclui só o liquidado (PAGO/RECEBIDO/ISENTO/AQUISICAO/ATUALIZACAO)", () => {
     const entries = [
-      makeEntry({ nature: "DESPESA", status: "A_PAGAR", amount: d(-300), dueDate: new Date(Date.UTC(2026, 5, 20)) }),
+      makeEntry({ nature: "DESPESA", status: "PAGO", amount: d(-300), dueDate: new Date(Date.UTC(2026, 5, 10)) }),
+      makeEntry({ nature: "DESPESA", status: "A_PAGAR", amount: d(-999), dueDate: new Date(Date.UTC(2026, 5, 20)) }),
+      makeEntry({ nature: "RECEITA", status: "RECEBIDO", amount: d(1000), dueDate: new Date(Date.UTC(2026, 5, 12)) }),
       makeEntry({
         nature: "RECEITA",
         status: "ESTIMATIVA",
-        amount: d(1000),
+        amount: d(9999),
         dueDate: new Date(Date.UTC(2026, 5, 25)),
       }),
     ];
-    const totals = periodTotals(entries, junho2026);
+    const totals = periodTotals(entries, junho2026, "settled");
     expect(totals.despesa.toNumber()).toBe(-300);
     expect(totals.receita.toNumber()).toBe(1000);
+  });
+
+  it("settlement='pending' inclui só o pendente (A_PAGAR/A_RECEBER/ESTIMATIVA) — provisão/expectativa", () => {
+    const entries = [
+      makeEntry({ nature: "DESPESA", status: "PAGO", amount: d(-300), dueDate: new Date(Date.UTC(2026, 5, 10)) }),
+      makeEntry({ nature: "DESPESA", status: "A_PAGAR", amount: d(-999), dueDate: new Date(Date.UTC(2026, 5, 20)) }),
+      makeEntry({ nature: "RECEITA", status: "RECEBIDO", amount: d(1000), dueDate: new Date(Date.UTC(2026, 5, 12)) }),
+      makeEntry({
+        nature: "RECEITA",
+        status: "ESTIMATIVA",
+        amount: d(9999),
+        dueDate: new Date(Date.UTC(2026, 5, 25)),
+      }),
+    ];
+    const totals = periodTotals(entries, junho2026, "pending");
+    expect(totals.despesa.toNumber()).toBe(-999);
+    expect(totals.receita.toNumber()).toBe(9999);
   });
 
   it("exclui lançamentos fora do período", () => {
@@ -45,7 +64,7 @@ describe("periodTotals (§11.3)", () => {
       makeEntry({ nature: "DESPESA", amount: d(-100), dueDate: new Date(Date.UTC(2026, 4, 30)) }),
       makeEntry({ nature: "DESPESA", amount: d(-200), dueDate: new Date(Date.UTC(2026, 6, 1)) }),
     ];
-    const totals = periodTotals(entries, junho2026);
+    const totals = periodTotals(entries, junho2026, "settled");
     expect(totals.despesa.toNumber()).toBe(0);
   });
 
@@ -58,15 +77,15 @@ describe("periodTotals (§11.3)", () => {
     });
 
     it("regime caixa (default) usa due_date", () => {
-      expect(periodTotals([entry], junho2026, "caixa").despesa.toNumber()).toBe(-800);
+      expect(periodTotals([entry], junho2026, "settled", "caixa").despesa.toNumber()).toBe(-800);
       const maio2026 = { start: new Date(Date.UTC(2026, 4, 1)), end: new Date(Date.UTC(2026, 4, 31)) };
-      expect(periodTotals([entry], maio2026, "caixa").despesa.toNumber()).toBe(0);
+      expect(periodTotals([entry], maio2026, "settled", "caixa").despesa.toNumber()).toBe(0);
     });
 
     it("regime competência usa transaction_date", () => {
       const maio2026 = { start: new Date(Date.UTC(2026, 4, 1)), end: new Date(Date.UTC(2026, 4, 31)) };
-      expect(periodTotals([entry], maio2026, "competencia").despesa.toNumber()).toBe(-800);
-      expect(periodTotals([entry], junho2026, "competencia").despesa.toNumber()).toBe(0);
+      expect(periodTotals([entry], maio2026, "settled", "competencia").despesa.toNumber()).toBe(-800);
+      expect(periodTotals([entry], junho2026, "settled", "competencia").despesa.toNumber()).toBe(0);
     });
   });
 });
@@ -79,7 +98,7 @@ describe("monthlySeries", () => {
       makeEntry({ nature: "RECEITA", amount: d(2000), dueDate: new Date(Date.UTC(2026, 6, 10)) }), // julho
     ];
 
-    const series = monthlySeries(entries, 2026, 4, 3); // maio, junho, julho
+    const series = monthlySeries(entries, 2026, 4, 3, "settled"); // maio, junho, julho
 
     expect(series).toHaveLength(3);
     expect(series[0].totals.receita.toNumber()).toBe(1000);
@@ -93,7 +112,7 @@ describe("monthlySeries", () => {
   it("aceita startMonthIndex0 negativo/estourado, igual monthRange", () => {
     // dezembro/2025, janeiro/2026 — atravessando virada de ano
     const entries = [makeEntry({ nature: "RECEITA", amount: d(500), dueDate: new Date(Date.UTC(2025, 11, 20)) })];
-    const series = monthlySeries(entries, 2026, -1, 2); // mês -1 = dezembro/2025, mês 0 = janeiro/2026
+    const series = monthlySeries(entries, 2026, -1, 2, "settled"); // mês -1 = dezembro/2025, mês 0 = janeiro/2026
 
     expect(series[0].period.start.getUTCFullYear()).toBe(2025);
     expect(series[0].period.start.getUTCMonth()).toBe(11);
@@ -101,13 +120,22 @@ describe("monthlySeries", () => {
     expect(series[1].period.start.getUTCFullYear()).toBe(2026);
     expect(series[1].period.start.getUTCMonth()).toBe(0);
   });
+
+  it("settlement='pending' filtra por pendente, igual periodTotals", () => {
+    const entries = [
+      makeEntry({ nature: "DESPESA", status: "A_PAGAR", amount: d(-300), dueDate: new Date(Date.UTC(2026, 5, 10)) }),
+      makeEntry({ nature: "DESPESA", status: "PAGO", amount: d(-999), dueDate: new Date(Date.UTC(2026, 5, 11)) }),
+    ];
+    const series = monthlySeries(entries, 2026, 5, 1, "pending");
+    expect(series[0].totals.despesa.toNumber()).toBe(-300);
+  });
 });
 
 describe("projectedBalance (§13 — Fluxo projetado)", () => {
   const wallets = [{ id: "conta-1", kindCode: "CONTA_BANCARIA" }];
   const fromDate = new Date(Date.UTC(2026, 5, 15)); // 15/jun/2026
 
-  it("parte do saldo real de hoje e acumula os meses seguintes, sem contar o mês corrente duas vezes", () => {
+  it("parte do saldo real de hoje e acumula os meses seguintes (só pendente), sem contar o mês corrente duas vezes", () => {
     const entries = [
       // já liquidado antes de hoje — entra no saldo atual via dashboardBalanceBlocks
       makeEntry({ walletId: "conta-1", nature: "RECEITA", status: "PAGO", amount: d(1000), dueDate: new Date(Date.UTC(2026, 5, 10)) }),
@@ -115,6 +143,8 @@ describe("projectedBalance (§13 — Fluxo projetado)", () => {
       makeEntry({ walletId: "conta-1", nature: "DESPESA", status: "A_PAGAR", amount: d(-9999), dueDate: new Date(Date.UTC(2026, 5, 20)) }),
       // julho — primeiro mês projetado
       makeEntry({ nature: "RECEITA", status: "A_RECEBER", amount: d(300), dueDate: new Date(Date.UTC(2026, 6, 5)) }),
+      // julho — já liquidado antecipadamente (não deveria acontecer na prática, mas não pode contar: projeção é só pendente)
+      makeEntry({ nature: "RECEITA", status: "RECEBIDO", amount: d(777), dueDate: new Date(Date.UTC(2026, 6, 6)) }),
       // agosto — segundo mês projetado
       makeEntry({ nature: "DESPESA", status: "A_PAGAR", amount: d(-100), dueDate: new Date(Date.UTC(2026, 7, 5)) }),
     ];
@@ -124,7 +154,7 @@ describe("projectedBalance (§13 — Fluxo projetado)", () => {
     expect(result.current.toNumber()).toBe(1000);
     expect(result.points).toHaveLength(2);
     expect(result.points[0].period.start.getUTCMonth()).toBe(6); // julho
-    expect(result.points[0].balance.toNumber()).toBe(1300); // 1000 + 300
+    expect(result.points[0].balance.toNumber()).toBe(1300); // 1000 + 300 (RECEBIDO antecipado de 777 não entra)
     expect(result.points[1].period.start.getUTCMonth()).toBe(7); // agosto
     expect(result.points[1].balance.toNumber()).toBe(1200); // 1300 - 100
   });

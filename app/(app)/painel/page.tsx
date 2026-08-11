@@ -63,13 +63,13 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
 
   const yearPeriod = { start: new Date(Date.UTC(year, 0, 1)), end: new Date(Date.UTC(year, 11, 31)) };
   const period = view === "anual" ? yearPeriod : view === "geral" ? ALL_TIME_PERIOD : monthRange(year, monthIndex0);
-  const totals = periodTotals(entries, period, regime);
+  const totals = periodTotals(entries, period, "settled", regime);
   const balanceBlocks = dashboardBalanceBlocks(entries, financeWallets, today);
 
   const monthlyChartData: MonthlyChartPoint[] = Array.from({ length: 6 }, (_, i) => {
     const offset = -5 + i; // 5 meses atrás até o mês selecionado
     const targetPeriod = monthRange(year, monthIndex0 + offset);
-    const t = periodTotals(entries, targetPeriod, regime);
+    const t = periodTotals(entries, targetPeriod, "settled", regime);
     return {
       label: `${MONTH_LABELS[targetPeriod.start.getUTCMonth()]}/${String(targetPeriod.start.getUTCFullYear()).slice(2)}`,
       receita: t.receita.toNumber(),
@@ -80,10 +80,11 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
 
   // Provisão futura — sempre a partir de hoje (não do mês/view selecionado no filtro),
   // pega o que já está lançado com data futura (parcelas, recorrências materializadas,
-  // compromissos A_PAGAR/A_RECEBER agendados).
+  // compromissos A_PAGAR/A_RECEBER agendados). Só pendente (2026-08-11) — liquidado
+  // antecipado não é "provisão", já é fato consumado.
   const forecastChartData: MonthlyChartPoint[] = Array.from({ length: 6 }, (_, i) => {
     const targetPeriod = monthRange(today.getUTCFullYear(), today.getUTCMonth() + i);
-    const t = periodTotals(entries, targetPeriod, regime);
+    const t = periodTotals(entries, targetPeriod, "pending", regime);
     return {
       label: `${MONTH_LABELS[targetPeriod.start.getUTCMonth()]}/${String(targetPeriod.start.getUTCFullYear()).slice(2)}`,
       receita: t.receita.toNumber(),

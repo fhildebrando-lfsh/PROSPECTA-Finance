@@ -15,7 +15,37 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-11 (E2E — troca de workspace e importação OFX,
+> **Última atualização real: 2026-08-11 (Correção de regra de negócio — totais por
+> situação, liquidado × pendente — Registro Nº 053).** O usuário reportou, na versão
+> real do sistema (não em teste), que o Painel misturava lançamentos liquidados
+> (PAGO/RECEBIDO) com pendentes (A_PAGAR/A_RECEBER/ESTIMATIVA) nos totais de
+> Receita/Despesa/Investimento. Investigação confirmou que isso era **intencional por
+> design** — `lib/finance/period.ts::periodTotals` tinha comentário e teste explícitos
+> afirmando "fiel à fórmula da planilha original" (§11.3), não filtrar por situação. O
+> usuário pediu pra mudar essa regra de propósito: todo total "realizado" deve refletir
+> só o liquidado; toda "provisão"/expectativa deve calcular só o pendente.
+>
+> **Mudança:** `periodTotals`/`monthlySeries` ganharam parâmetro `settlement: "settled" |
+> "pending"` **obrigatório** (sem default, de propósito — o compilador TS pegou
+> automaticamente os 8 call sites que precisavam de atualização). `topEntries`/
+> `categoryDistribution`/`categoryMonthlyBreakdown`/`averageMonthlyExpense` e
+> `projectedBalance` não ganharam parâmetro novo — cada uma só tinha um uso real, ficou
+> hard-coded (`SETTLED_STATUSES` ou `"pending"`, conforme o caso) internamente.
+> `lib/finance/derived.ts` virou a fonte única do particionamento
+> (`SETTLED_STATUSES`/`PENDING_STATUSES`, exportado, reusado em vez de duplicar mais um
+> `Set`). Afeta: Painel (KPIs/6 meses = settled, Provisão = pending), Balanço anual
+> (settled), Fluxo projetado (pending, sem mudança de assinatura), Orçamento realizado
+> (settled, sem mudança de assinatura), Dívidas/Reserva (settled, sem mudança de
+> assinatura).
+>
+> **Verificado ao vivo** contra o banco de dev com dados de teste controlados (uma
+> despesa liquidada de R$1.000 + uma pendente de R$5.000, mesmo mês): Painel mostrou
+> Despesa -R$1.000,00 exato, pendente corretamente excluído dos KPIs e do Top 5.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-11), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 053).
+>
+> **Última atualização anterior: 2026-08-11 (E2E — troca de workspace e importação OFX,
 > Registro Nº 052).** Continuação do Registro Nº 051. `tests/e2e/switch-workspace.spec.ts`
 > — spec isolado (login/sessão próprios, `storageState` vazio de propósito, nunca
 > reaproveita o usuário compartilhado dos outros specs) com um segundo workspace/Membership

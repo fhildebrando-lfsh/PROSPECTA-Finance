@@ -1,6 +1,15 @@
 import { Decimal, type EntryNature, type FinanceEntry, type FinanceWallet, type Period, type Regime } from "./types";
 import { dashboardBalanceBlocks } from "./balance";
 import { isWithin, monthRange } from "./dates";
+import { PENDING_STATUSES, SETTLED_STATUSES } from "./derived";
+
+/**
+ * "settled" = só o liquidado (PAGO/RECEBIDO/ISENTO/AQUISICAO/ATUALIZACAO) —
+ * uso em todo total "realizado" (KPIs, relatórios). "pending" = só o que
+ * ainda não liquidou (A_PAGAR/A_RECEBER/ESTIMATIVA) — uso em toda
+ * apresentação voltada pro futuro ("provisão", fluxo projetado).
+ */
+export type Settlement = "settled" | "pending";
 
 /** §10 R2 — Caixa usa `Vence` (default de todo relatório), Competência usa `Compra`. */
 export function dateForRegime(entry: Pick<FinanceEntry, "transactionDate" | "dueDate">, regime: Regime): Date {
@@ -19,14 +28,26 @@ export interface PeriodTotals {
 }
 
 /**
- * §11.3 — a fórmula da planilha não filtra por situação (inclui A_PAGAR,
- * A_RECEBER, ESTIMATIVA junto com o liquidado). É a visão "quanto era
- * esperado no período", diferente do saldo realizado de walletBalance
- * (§11.1). `nature = OUTRO` (transferências, §10 R5) já fica fora por
- * construção — nenhum filtro adicional necessário.
+ * Soma Receita/Despesa/Investimento por natureza dentro do período,
+ * sempre restrita a UM lado da situação — `settlement` é obrigatório de
+ * propósito (força cada chamador a declarar a intenção; o compilador pega
+ * qualquer call site esquecido). "settled" = totais realizados (o que foi
+ * efetivamente pago/recebido); "pending" = provisão/expectativa (o que
+ * ainda está a pagar/a receber/estimado). Antes desta função somava tudo
+ * misturado ("fiel à fórmula da planilha original") — corrigido a pedido
+ * do usuário, 2026-08-11: apresentar total realizado junto com pendente
+ * confundia "quanto já entrou/saiu" com "quanto era esperado".
+ * `nature = OUTRO` (transferências, §10 R5) já fica fora por construção —
+ * nenhum filtro adicional necessário.
  */
-export function periodTotals(entries: FinanceEntry[], period: Period, regime: Regime = "caixa"): PeriodTotals {
-  const inScope = entries.filter((e) => inPeriod(e, period, regime));
+export function periodTotals(
+  entries: FinanceEntry[],
+  period: Period,
+  settlement: Settlement,
+  regime: Regime = "caixa",
+): PeriodTotals {
+  const statusSet = settlement === "settled" ? SETTLED_STATUSES : PENDING_STATUSES;
+  const inScope = entries.filter((e) => inPeriod(e, period, regime) && statusSet.has(e.status));
 
   const sumNature = (nature: EntryNature) =>
     inScope.filter((e) => e.nature === nature).reduce((sum, e) => sum.plus(e.amount), new Decimal(0));
@@ -55,11 +76,12 @@ export function monthlySeries(
   startYear: number,
   startMonthIndex0: number,
   count: number,
+  settlement: Settlement,
   regime: Regime = "caixa",
 ): MonthlyPeriodTotals[] {
   return Array.from({ length: count }, (_, i) => {
     const period = monthRange(startYear, startMonthIndex0 + i);
-    return { period, totals: periodTotals(entries, period, regime) };
+    return { period, totals: periodTotals(entries, period, settlement, regime) };
   });
 }
 
@@ -82,7 +104,9 @@ export interface ProjectedBalanceResult {
  * começando do saldo líquido real de hoje (`dashboardBalanceBlocks`). A
  * projeção começa no mês *seguinte* a `fromDate` (nunca no mês corrente) —
  * somar o mês corrente contaria duas vezes qualquer lançamento já liquidado
- * nele, que já está dentro do saldo de hoje.
+ * nele, que já está dentro do saldo de hoje. Cada mês projetado soma só o
+ * PENDENTE (`settlement: "pending"`, fixo — projeção é sempre sobre o que
+ * ainda vai acontecer, nunca tem sentido "projetar" com liquidado).
  */
 export function projectedBalance(
   entries: FinanceEntry[],
@@ -97,7 +121,7 @@ export function projectedBalance(
   const points: ProjectedBalancePoint[] = [];
   for (let i = 1; i <= monthsAhead; i++) {
     const period = monthRange(fromDate.getUTCFullYear(), fromDate.getUTCMonth() + i);
-    running = running.plus(periodTotals(entries, period, regime).balanco);
+    running = running.plus(periodTotals(entries, period, "pending", regime).balanco);
     points.push({ period, balance: running });
   }
 

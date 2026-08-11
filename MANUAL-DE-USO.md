@@ -72,15 +72,19 @@ consultor, um selo indica isso claramente, para evitar lançar algo no lugar err
 
 Tela inicial depois do login. Mostra, para o período selecionado:
 
-- **Cards de Receita, Despesa e Saldo** do período.
+- **Cards de Receita, Despesa e Saldo** do período — só o que já foi efetivamente
+  recebido/pago (situação Pago/Recebido/Isento/Aquisição/Atualização); lançamento a pagar
+  ou a receber não entra nesses totais.
 - **Saldos por carteira**, agrupados em Contas, Investimentos e Vouchers, mais o saldo
   líquido total.
-- **Gráfico "Últimos 6 meses"** — receita × despesa × saldo, sempre fixo em 6 meses.
-- **Gráfico "Provisão"** — a mesma visualização, mas projetando os próximos 6 meses a
-  partir de hoje (parcelas futuras, recorrências e compromissos agendados).
-- **Top 5 receitas e Top 5 despesas** do período.
+- **Gráfico "Últimos 6 meses"** — receita × despesa × saldo já liquidados, sempre fixo em
+  6 meses.
+- **Gráfico "Provisão"** — projeta os próximos 6 meses a partir de hoje, mas ao contrário
+  do gráfico acima só soma o que ainda está **pendente** (a pagar/a receber/estimativa) —
+  é sempre uma expectativa, nunca mistura com o que já aconteceu.
+- **Top 5 receitas e Top 5 despesas** do período — só liquidado, mesmo critério dos cards.
 - **Distribuição por categoria** — anéis de progresso mostrando o peso de cada categoria
-  de despesa.
+  de despesa já liquidada.
 - **Cobertura de fatura** — quanto você tem guardado nas caixinhas vinculadas ao cartão
   versus o que está a pagar nele.
 - **Metas** — um velocímetro para cada meta marcada como "Mostrar no Painel" (em
@@ -275,10 +279,11 @@ navegação de ano/mês e alternância entre regime Caixa e Competência (igual 
 
 - **Balanço anual:** Receita, Despesa, Investimento e Saldo lado a lado, um mês em cada
   coluna, com o total do ano ("sintético"), mais uma tabela "descritivo por categoria" —
-  quanto você gastou em cada categoria, mês a mês, ao longo do ano.
+  quanto você gastou em cada categoria, mês a mês, ao longo do ano. Só o que já foi
+  liquidado — é um relatório do que realmente aconteceu, não do que estava previsto.
 - **Fluxo projetado:** o saldo líquido de hoje, projetado para os próximos meses (escolha
-  6, 12 ou 24), considerando parcelas, recorrências e compromissos já lançados — ajuda a
-  responder "daqui a 6 meses, quanto sobra?".
+  6, 12 ou 24), somando só o que ainda está pendente (a pagar/a receber/estimativa) —
+  ajuda a responder "daqui a 6 meses, quanto sobra?".
 - **Despesas parceladas:** todo financiamento ou compra parcelada que ainda não terminou de
   pagar — quantas parcelas já foram pagas, quantas faltam, quanto ainda falta pagar e a
   data da última parcela. Parcelamentos já quitados não aparecem aqui.

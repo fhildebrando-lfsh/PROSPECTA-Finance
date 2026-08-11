@@ -27,6 +27,17 @@ describe("topEntries (§11.8)", () => {
     expect(top).toHaveLength(1);
     expect(top[0].amount.toNumber()).toBe(1000);
   });
+
+  it("exclui lançamento pendente (A_PAGAR/A_RECEBER) — só o liquidado entra no ranking", () => {
+    const entries = [
+      makeEntry({ nature: "DESPESA", status: "PAGO", amount: d(-100), dueDate: new Date(Date.UTC(2026, 5, 5)) }),
+      makeEntry({ nature: "DESPESA", status: "A_PAGAR", amount: d(-9999), dueDate: new Date(Date.UTC(2026, 5, 6)) }),
+    ];
+
+    const top = topEntries(entries, "DESPESA", junho2026);
+    expect(top).toHaveLength(1);
+    expect(top[0].amount.toNumber()).toBe(-100);
+  });
 });
 
 describe("categoryDistribution (§11.8)", () => {
@@ -48,6 +59,17 @@ describe("categoryDistribution (§11.8)", () => {
 
   it("retorna lista vazia e não quebra quando não há despesas no período", () => {
     expect(categoryDistribution([], junho2026)).toEqual([]);
+  });
+
+  it("exclui despesa pendente (A_PAGAR) — só o liquidado entra na distribuição", () => {
+    const entries = [
+      makeEntry({ nature: "DESPESA", status: "PAGO", categoryId: "alimentacao", amount: d(-300), dueDate: new Date(Date.UTC(2026, 5, 5)) }),
+      makeEntry({ nature: "DESPESA", status: "A_PAGAR", categoryId: "alimentacao", amount: d(-9999), dueDate: new Date(Date.UTC(2026, 5, 6)) }),
+    ];
+
+    const distribution = categoryDistribution(entries, junho2026);
+    expect(distribution).toHaveLength(1);
+    expect(distribution[0].total.toNumber()).toBe(300);
   });
 });
 
@@ -77,5 +99,16 @@ describe("categoryMonthlyBreakdown (§13 — Balanço anual, descritivo por cate
 
   it("retorna lista vazia quando não há despesas no ano", () => {
     expect(categoryMonthlyBreakdown([], 2026)).toEqual([]);
+  });
+
+  it("exclui despesa pendente (A_PAGAR) — só o liquidado entra no descritivo", () => {
+    const entries = [
+      makeEntry({ nature: "DESPESA", status: "PAGO", categoryId: "alimentacao", amount: d(-300), dueDate: new Date(Date.UTC(2026, 0, 5)) }),
+      makeEntry({ nature: "DESPESA", status: "A_PAGAR", categoryId: "alimentacao", amount: d(-9999), dueDate: new Date(Date.UTC(2026, 0, 6)) }),
+    ];
+
+    const rows = categoryMonthlyBreakdown(entries, 2026);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].total.toNumber()).toBe(300);
   });
 });
