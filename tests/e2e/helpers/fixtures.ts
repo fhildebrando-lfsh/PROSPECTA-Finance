@@ -120,6 +120,42 @@ export async function createE2EUser(): Promise<E2ETestUser> {
   });
 }
 
+export interface E2ETestUserWithSecondWorkspace extends E2ETestUser {
+  secondWorkspaceId: string;
+  secondWorkspaceName: string;
+}
+
+/**
+ * Adiciona uma segunda Membership `ADVISOR` (workspace novo) pro mesmo
+ * Profile — cenário que exercita o `WorkspaceSwitcher` de verdade (só vira
+ * `<select>` com 2+ memberships; ver components/WorkspaceSwitcher.tsx).
+ * De propósito **não** é usado no usuário padrão de `createE2EUser()`: com
+ * duas memberships, `resolveActiveMembership()` (lib/auth/session.ts) não
+ * garante qual é `memberships[0]` sem cookie — usar isto no usuário
+ * compartilhado por todos os specs arriscaria os outros testes operarem no
+ * workspace errado de vez em quando. Só o spec de troca de workspace usa,
+ * com login/sessão próprios.
+ */
+export async function addSecondWorkspaceMembership(user: E2ETestUser): Promise<E2ETestUserWithSecondWorkspace> {
+  return withClient(async (client) => {
+    const secondWorkspaceName = `[e2e] segundo workspace ${randomUUID().slice(0, 8)}`;
+    const { rows } = await client.query(`insert into workspaces (name) values ($1) returning id`, [
+      secondWorkspaceName,
+    ]);
+    const secondWorkspaceId = rows[0].id;
+    await client.query(`insert into memberships (workspace_id, profile_id, role) values ($1, $2, 'ADVISOR')`, [
+      secondWorkspaceId,
+      user.profileId,
+    ]);
+    return { ...user, secondWorkspaceId, secondWorkspaceName };
+  });
+}
+
+/** Workspace não é filho de Membership — precisa ser apagado à parte (mesma razão de cleanupE2EUser). */
+export async function cleanupSecondWorkspace(workspaceId: string) {
+  await withClient((client) => client.query(`delete from workspaces where id = $1`, [workspaceId])).catch(() => {});
+}
+
 /**
  * `admin.auth.admin.deleteUser` dispara o trigger on_auth_user_deleted
  * (prisma/sql/002), que apaga o Profile (cascade apaga a Membership) — mas

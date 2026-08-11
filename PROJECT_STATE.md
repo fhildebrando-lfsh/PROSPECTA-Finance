@@ -15,7 +15,22 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-10 (Primeira leva de testes E2E com Playwright —
+> **Última atualização real: 2026-08-11 (E2E — troca de workspace e importação OFX,
+> Registro Nº 052).** Continuação do Registro Nº 051. `tests/e2e/switch-workspace.spec.ts`
+> — spec isolado (login/sessão próprios, `storageState` vazio de propósito, nunca
+> reaproveita o usuário compartilhado dos outros specs) com um segundo workspace/Membership
+> `ADVISOR` (`tests/e2e/helpers/fixtures.ts::addSecondWorkspaceMembership`) — com 2
+> memberships, `resolveActiveMembership()` sem cookie não garante qual é
+> `memberships[0]`, arriscaria os outros specs operarem no workspace errado às vezes, daí
+> ficar isolado. `tests/e2e/import-ofx.spec.ts` reaproveita a amostra de SGML solto já
+> usada nos testes unitários (`tests/import/parse-ofx.test.ts`). PDF de fatura ficou de
+> fora, decisão explícita — nenhum PDF de exemplo (binário ou sintético) existe no
+> repositório, construir um do zero era mais esforço/risco que os outros dois fluxos.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-11), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 052).
+>
+> **Última atualização anterior: 2026-08-10 (Primeira leva de testes E2E com Playwright —
 > Registro Nº 051).** Continuação do Registro Nº 050. Cobre o que a suíte de integração
 > não alcança: `lib/workspace/switch.ts` (mecânica pura de `cookies()`/`redirect()`) e
 > qualquer fluxo "pela tela" de verdade, com navegador real + servidor Next real + sessão
@@ -2124,10 +2139,12 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
   (`tests/integration/`), rodando também no CI (job `integration-tests`, secrets `DEV_*`).
   Cobre `lib/entries/{create,settle,transfer,asset,investment}.ts`,
   `lib/workspace/{invite,advisor}.ts` e o núcleo do commit de importação
-  (`lib/import/commit.ts`). **E2E: primeira leva 2026-08-10 (Registro Nº 051)** — `npm run
-  test:e2e` (Playwright), 3 specs: login sem senha, criar lançamento, importar CSV. Ainda
-  não cobre: troca de workspace, importação OFX/PDF, qualquer outra página, e não roda no
-  CI (Playwright+browsers no GitHub Actions é decisão separada, não tomada ainda).
+  (`lib/import/commit.ts`). **E2E 2026-08-10/11 (Registros Nº 051/052)** — `npm run
+  test:e2e` (Playwright), 5 specs: login sem senha, criar lançamento, importar CSV,
+  importar OFX, trocar de workspace. Ainda não cobre: importação de PDF de fatura (sem
+  fixture disponível — decisão explícita, ver Registro Nº 052), qualquer outra página, e
+  não roda no CI (Playwright+browsers no GitHub Actions é decisão separada, não tomada
+  ainda).
 - ~~Sem CI configurado~~ **Resolvido 2026-08-10 (Registro Nº 046):**
   `.github/workflows/ci.yml` roda `tsc --noEmit`, `npm test` e `npm run build` em todo
   push/PR pra `master` (lint incluso mas `continue-on-error: true` — ver item novo abaixo).

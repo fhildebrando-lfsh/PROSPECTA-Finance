@@ -14,6 +14,13 @@
 
 ---
 
+## 2026-08-11
+
+### Adicionado
+- Suíte E2E: troca de workspace (Playwright seleciona o segundo workspace pelo seletor da sidebar, confirma pela badge de consultor) e importação de OFX (mini-formulário + confirmação das transações).
+
+---
+
 ## 2026-08-10
 
 ### Adicionado

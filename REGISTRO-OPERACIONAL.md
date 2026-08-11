@@ -1466,7 +1466,47 @@
 
 ---
 
-## Próximo número de registro: **052**
+### Registro Nº 052
+- **Data:** 2026-08-11
+- **Etapa concluída:** E2E — segunda leva (troca de workspace, importação OFX)
+- **Descrição:** Continuação do Registro Nº 051. Usuário pediu para estender a suíte E2E
+  cobrindo troca de workspace e importação de OFX (PDF ficou de fora, decisão explícita —
+  não existe nenhum PDF de exemplo, binário ou sintético, no repositório; construir um do
+  zero pra bater com o layout de um parser de banco era mais esforço/risco do que os
+  outros dois fluxos, então foi adiado).
+- **O que foi feito:**
+  1. **`tests/e2e/helpers/fixtures.ts`** — `addSecondWorkspaceMembership()` (cria um
+     segundo workspace + Membership `ADVISOR` pro mesmo Profile) e
+     `cleanupSecondWorkspace()`. De propósito **não** entra no usuário compartilhado por
+     todos os specs — com 2 memberships, `resolveActiveMembership()` sem cookie não
+     garante qual é `memberships[0]` (Prisma não ordena por padrão), arriscaria os outros
+     specs operarem no workspace errado às vezes.
+  2. **`tests/e2e/switch-workspace.spec.ts`** — spec isolado, login e sessão próprios
+     (`test.use({ storageState: { cookies: [], origins: [] } })`, nunca reaproveita o
+     storageState compartilhado). Seleciona o segundo workspace pelo `<select
+     aria-label="Trocar de workspace">` (escopado no `<aside>` — o componente é montado 2x
+     no DOM, sidebar desktop + header mobile) e confirma pela badge "você está em
+     workspace de cliente" (só aparece quando a Membership ativa é `ADVISOR`).
+  3. **`tests/e2e/import-ofx.spec.ts`** — reaproveita a amostra `LOOSE_SGML_SAMPLE` já
+     usada em `tests/import/parse-ofx.test.ts` (SGML solto real de banco, 2 transações),
+     preenche o mini-formulário de 4 campos que o OFX pede antes do preview (Carteira,
+     Responsável, Categoria padrão despesas/receitas), confirma as 2 transações
+     importadas.
+- **Nenhum bug novo encontrado** nesta rodada — os dois fluxos funcionaram na primeira
+  tentativa, reaproveitando os padrões já validados no Registro Nº 051 (guard de
+  segurança, `storageState`, timeout de 15s pro cold-compile do Turbopack).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npx playwright test` — 5 specs, 5 testes, todos passando. `npm test`
+  (288/288) e `npm run test:integration` (26/26) intactos. `npx tsc --noEmit` limpo.
+  Conferido direto no banco que nenhum workspace/profile E2E (incluindo o segundo
+  workspace do teste de troca) ficou órfão.
+- **Documentos relacionados:** `tests/e2e/helpers/fixtures.ts`,
+  `tests/e2e/switch-workspace.spec.ts`, `tests/e2e/import-ofx.spec.ts`.
+
+---
+
+## Próximo número de registro: **053**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
