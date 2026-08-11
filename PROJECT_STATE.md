@@ -15,7 +15,26 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-10 (CI confirmado verde contra o banco de dev —
+> **Última atualização real: 2026-08-10 (Primeira leva de testes E2E com Playwright —
+> Registro Nº 051).** Continuação do Registro Nº 050. Cobre o que a suíte de integração
+> não alcança: `lib/workspace/switch.ts` (mecânica pura de `cookies()`/`redirect()`) e
+> qualquer fluxo "pela tela" de verdade, com navegador real + servidor Next real + sessão
+> autenticada de verdade. `npm run test:e2e` (Playwright, só Chromium por enquanto): 3
+> specs — login sem senha (magic link + cookie jar em memória via `@supabase/ssr`,
+> técnica já documentada, implementada de verdade pela primeira vez), criar lançamento
+> pelo formulário, importar CSV. Guard de segurança dedicado
+> (`scripts/assert-dev-database.ts`), encadeado no comando `webServer` do Playwright
+> (roda antes do `next dev` existir), confere `.env.local` — não `.env.dev.local`, que é
+> o que os testes de integração usam — porque é o arquivo que o servidor real usa.
+> **Achado real no processo:** `import()` dinâmico sai do transform do Playwright que
+> resolve o alias `"@/"`, e o Prisma Client gerado usa `import.meta` (incompatível com o
+> transform CommonJS do Playwright de qualquer forma) — fixtures E2E usam `pg` puro em
+> vez do Prisma Client, mesmo padrão de vários scripts avulsos já usados nesta sessão.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-10), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 051).
+>
+> **Última atualização anterior: 2026-08-10 (CI confirmado verde contra o banco de dev —
 > Registro Nº 050).** Fecha o Registro Nº 049: a primeira execução do job
 > `integration-tests` no GitHub Actions falhou — não por bug de código, mas porque os
 > nomes dos secrets cadastrados pelo usuário (`DEV_NEXT_PUBLIC_SUPABASE_URL`/
@@ -2100,14 +2119,15 @@ confirmação de e-mail do signup funcionar; sem isso ele apontaria pro `localho
 
 ## 23. Débitos técnicos
 
-- ~~Sem testes de integração/e2e~~ **Estendida 2026-08-10 (Registro Nº 049)** — `npm run
-  test:integration`, 8 arquivos/26 testes contra o banco de dev real
+- ~~Sem testes de integração/e2e~~ **Integração estendida 2026-08-10 (Registro Nº 049)** —
+  `npm run test:integration`, 8 arquivos/26 testes contra o banco de dev real
   (`tests/integration/`), rodando também no CI (job `integration-tests`, secrets `DEV_*`).
   Cobre `lib/entries/{create,settle,transfer,asset,investment}.ts`,
   `lib/workspace/{invite,advisor}.ts` e o núcleo do commit de importação
-  (`lib/import/commit.ts`). Ainda não cobre `lib/workspace/switch.ts` (depende de
-  `cookies()`/sessão real) nem nenhuma página/Server Action/rota de API diretamente — só
-  as funções de `lib/`.
+  (`lib/import/commit.ts`). **E2E: primeira leva 2026-08-10 (Registro Nº 051)** — `npm run
+  test:e2e` (Playwright), 3 specs: login sem senha, criar lançamento, importar CSV. Ainda
+  não cobre: troca de workspace, importação OFX/PDF, qualquer outra página, e não roda no
+  CI (Playwright+browsers no GitHub Actions é decisão separada, não tomada ainda).
 - ~~Sem CI configurado~~ **Resolvido 2026-08-10 (Registro Nº 046):**
   `.github/workflows/ci.yml` roda `tsc --noEmit`, `npm test` e `npm run build` em todo
   push/PR pra `master` (lint incluso mas `continue-on-error: true` — ver item novo abaixo).

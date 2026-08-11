@@ -1403,7 +1403,70 @@
 
 ---
 
-## Próximo número de registro: **051**
+### Registro Nº 051
+- **Data:** 2026-08-10
+- **Etapa concluída:** Primeira leva de testes E2E com Playwright
+- **Descrição:** Continuação dos Registros Nº 048-050 (suíte de integração). O que ficou de
+  fora da suíte de integração — `lib/workspace/switch.ts` (mecânica pura de
+  `cookies()`/`redirect()`, baixo valor mockar) e qualquer página/Server Action/rota
+  testada "pela tela" — exige navegador real + servidor Next real + sessão autenticada de
+  verdade. Usuário pediu para continuar com E2E via Playwright.
+- **O que foi feito:**
+  1. `@playwright/test` instalado + browser Chromium baixado (só um projeto, suficiente
+     pra uma primeira leva pessoal).
+  2. **`scripts/assert-dev-database.ts`** — mesmo guard de segurança da suíte de
+     integração, mas verificando `.env.local` (o arquivo que o `next dev` real usa) em vez
+     de `.env.dev.local`. Encadeado no próprio comando do `webServer` do Playwright
+     (`npx tsx scripts/assert-dev-database.ts && npm run dev`), então roda **antes** do
+     processo do Next existir — não depende de nenhuma garantia de ordem entre
+     `globalSetup` e `webServer` do Playwright.
+  3. **Login sem senha via magic link** (`tests/e2e/helpers/auth.ts`) — técnica já
+     documentada (topo deste arquivo, seção 21 do `PROJECT_STATE.md`) implementada de
+     verdade pela primeira vez: gera magic link via Admin API, troca por sessão chamando
+     `verifyOtp()` **direto pela API** (nunca navegando o browser pro link — isso usa hash
+     fragment/implicit flow, que a rota de callback do app não trata), com
+     `createServerClient` do `@supabase/ssr` e um cookie jar em memória como adapter — a
+     própria lib gera os cookies no formato exato que espera ler depois. `globalSetup.ts`
+     usa isso pra gerar um `storageState` do Playwright (login uma vez, todo teste já
+     nasce autenticado).
+  4. **`tests/e2e/helpers/fixtures.ts`** — cria um usuário REAL no Supabase Auth (Admin
+     API, diferente das fixtures de integração que só criam `Profile` via Prisma) — o
+     trigger de signup cria Profile+Workspace+Membership automaticamente. Também marca
+     `privacy_policy_accepted_at` (senão cai em `/aceitar-politica` em vez de `/painel` —
+     achado ao rodar o primeiro teste) e cria uma carteira/responsável mínimos.
+     `globalTeardown.ts` apaga tudo depois (Admin API + `workspace` órfão).
+  5. **3 specs**: `login.spec.ts` (smoke test, validado sozinho antes dos outros dois —
+     prova a técnica de cookie jar de verdade, não só na teoria), `create-entry.spec.ts`
+     (formulário de lançamento rápido, confirma que aparece em `/lancamentos`),
+     `import-csv.spec.ts` (upload de CSV pequeno, preview automático, confirma
+     importação).
+- **3 bugs/obstáculos reais encontrados e corrigidos no processo, nenhum deles previsto no
+  plano original:**
+  1. Cache do Turbopack corrompido nesta máquina (mesmo problema já documentado em sessão
+     anterior) — `.next` limpo antes de rodar.
+  2. **`import()` dinâmico sai do transform do Playwright que resolve o alias `"@/"`** —
+     tentar `await import("@/lib/db/prisma")` dentro de uma função (pra controlar a ordem
+     de carga do `.env.dev.local` antes do singleton capturar `.env.local`) falhava com
+     "Cannot find module". Corrigido usando caminho relativo — mas o Prisma Client gerado
+     usa `import.meta` internamente, incompatível com o transform CommonJS do Playwright
+     de qualquer forma. Solução final: fixtures E2E usam `pg` puro (mesmo padrão de vários
+     scripts avulsos já usados nesta sessão), não o Prisma Client gerado.
+  3. Timeout padrão de 5s do Playwright estourava no primeiro `Server Action` de cada
+     rota nova (Turbopack compila sob demanda em `next dev` — primeira visita de cada rota
+     é mais lenta). Corrigido com `expect.timeout: 15_000` no `playwright.config.ts`.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npx playwright test` — 3 specs, 3 testes, todos passando contra o
+  banco de dev real e o servidor `next dev` local. `npm test` (288/288) e `npm run
+  test:integration` (26/26) continuam intactos — Playwright é um runner totalmente
+  separado do Vitest. `npx tsc --noEmit` limpo. Conferido direto no banco que nenhum
+  usuário/workspace E2E ficou órfão depois de duas rodadas completas da suíte.
+- **Documentos relacionados:** `playwright.config.ts`, `scripts/assert-dev-database.ts`,
+  `tests/e2e/`.
+
+---
+
+## Próximo número de registro: **052**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

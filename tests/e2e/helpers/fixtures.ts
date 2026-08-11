@@ -1,0 +1,139 @@
+import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { config as loadEnv } from "dotenv";
+import { Client } from "pg";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+
+// Mesmo padrão de tests/integration/setup.ts: carrega .env.dev.local
+// explicitamente e aborta se não confirmar o banco de dev/teste. Usa `pg`
+// puro (não o Prisma Client gerado) de propósito — o client gerado usa
+// `import.meta`, incompatível com o transform CommonJS que o Playwright
+// aplica nos arquivos que ele carrega (confirmado tentando antes; mesmo
+// padrão de vários scripts avulsos já usados nesta sessão).
+const DEV_PROJECT_REF = "fmxzooefvbvhmgczznsa";
+const PROD_PROJECT_REF = "zfugldawxhvzclooisqj";
+
+if (existsSync(".env.dev.local")) {
+  loadEnv({ path: ".env.dev.local" });
+} else if (!process.env.DATABASE_URL) {
+  throw new Error("Testes E2E exigem .env.dev.local (banco de dev/teste) ou as variáveis já no ambiente.");
+}
+
+const databaseUrl = process.env.DATABASE_URL ?? "";
+if (databaseUrl.includes(PROD_PROJECT_REF)) {
+  throw new Error("ABORTADO: credenciais de PRODUÇÃO detectadas — testes E2E nunca podem rodar contra produção.");
+}
+if (!databaseUrl.includes(DEV_PROJECT_REF)) {
+  throw new Error(`ABORTADO: não confirmei o ref de dev/teste ("${DEV_PROJECT_REF}") em DATABASE_URL.`);
+}
+
+async function withClient<T>(fn: (client: Client) => Promise<T>): Promise<T> {
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    return await fn(client);
+  } finally {
+    await client.end();
+  }
+}
+
+export interface E2ETestUser {
+  userId: string;
+  profileId: string;
+  workspaceId: string;
+  email: string;
+  walletId: string;
+  walletName: string;
+  personId: string;
+  personName: string;
+}
+
+/**
+ * Cria um usuário REAL no Supabase Auth (Admin API) — diferente das
+ * fixtures de integração (Profile direto via Prisma, sem Auth), aqui
+ * precisamos de login de verdade. O trigger de signup
+ * (handle_new_auth_user, prisma/sql/001) cria Profile+Workspace+Membership
+ * automaticamente. Depois, popula uma carteira e um responsável mínimos
+ * pro workspace não ficar vazio nos testes de formulário.
+ */
+export async function createE2EUser(): Promise<E2ETestUser> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const admin = createAdminClient(supabaseUrl, serviceRoleKey);
+
+  const email = `e2e+${randomUUID()}@example.com`;
+  const { data, error } = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { full_name: "[e2e] usuário de teste" },
+  });
+  if (error || !data.user) {
+    throw new Error(`Falha ao criar usuário E2E: ${error?.message ?? "sem data.user"}`);
+  }
+  const userId = data.user.id;
+
+  return withClient(async (client) => {
+    // Trigger de signup roda de forma assíncrona em relação à resposta da
+    // Admin API — espera curto e confirma antes de seguir, em vez de assumir.
+    let workspaceId: string | null = null;
+    for (let attempt = 0; !workspaceId && attempt < 20; attempt++) {
+      const { rows } = await client.query(`select workspace_id from memberships where profile_id = $1 limit 1`, [
+        userId,
+      ]);
+      workspaceId = rows[0]?.workspace_id ?? null;
+      if (!workspaceId) await new Promise((r) => setTimeout(r, 250));
+    }
+    if (!workspaceId) {
+      throw new Error(`Trigger de signup não criou workspace/membership pro usuário E2E ${userId} a tempo.`);
+    }
+
+    // requireActiveMembership() redireciona pra /aceitar-politica sem isso
+    // (LGPD, §requireActiveMembership em lib/auth/session.ts) — contas
+    // criadas pela Admin API não passam pelo checkbox de cadastro normal.
+    await client.query(`update profiles set privacy_policy_accepted_at = now() where id = $1`, [userId]);
+
+    const suffix = randomUUID().slice(0, 8);
+    const walletName = `[e2e] carteira ${suffix}`;
+    const personName = `[e2e] responsável ${suffix}`;
+    const [walletResult, personResult] = await Promise.all([
+      client.query(
+        `insert into wallets (workspace_id, name, kind_code, slug) values ($1, $2, $3, $4) returning id`,
+        [workspaceId, walletName, "CONTA_BANCARIA", `e2e-carteira-${suffix}`],
+      ),
+      client.query(`insert into people (workspace_id, name, slug) values ($1, $2, $3) returning id`, [
+        workspaceId,
+        personName,
+        `e2e-responsavel-${suffix}`,
+      ]),
+    ]);
+
+    return {
+      userId,
+      profileId: userId,
+      workspaceId,
+      email,
+      walletId: walletResult.rows[0].id,
+      walletName,
+      personId: personResult.rows[0].id,
+      personName,
+    };
+  });
+}
+
+/**
+ * `admin.auth.admin.deleteUser` dispara o trigger on_auth_user_deleted
+ * (prisma/sql/002), que apaga o Profile (cascade apaga a Membership) — mas
+ * o Workspace em si não é filho de Profile, fica órfão e precisa ser
+ * apagado à parte (mesmo espírito de cleanupTestWorkspace da suíte de
+ * integração — onDelete: Cascade cuida de todo o resto por baixo dele).
+ */
+export async function cleanupE2EUser(user: E2ETestUser) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const admin = createAdminClient(supabaseUrl, serviceRoleKey);
+
+  await admin.auth.admin.deleteUser(user.userId);
+  await withClient((client) => client.query(`delete from workspaces where id = $1`, [user.workspaceId])).catch(
+    () => {},
+  );
+}

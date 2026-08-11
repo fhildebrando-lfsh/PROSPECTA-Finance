@@ -43,6 +43,9 @@
 ### Corrigido (continuação, mesmo dia — Registro Nº 050)
 - CI: o job `integration-tests` procurava secrets com nomes diferentes dos que foram cadastrados no GitHub (`DEV_SUPABASE_URL`/`DEV_SUPABASE_ANON_KEY` vs. os reais `DEV_NEXT_PUBLIC_SUPABASE_URL`/`DEV_NEXT_PUBLIC_SUPABASE_ANON_KEY`) — o guard de segurança abortou corretamente em vez de rodar com credencial vazia. `ci.yml` ajustado; CI confirmado verde nos dois jobs.
 
+### Adicionado (continuação, mesmo dia — Registro Nº 051)
+- Primeira leva de testes E2E com Playwright (`npm run test:e2e`): login sem senha via magic link, criar lançamento pelo formulário, importar CSV — os 3 rodando contra o `next dev` local e o banco de dev real. Guard de segurança dedicado (`scripts/assert-dev-database.ts`) impede rodar contra produção.
+
 ---
 
 ## 2026-08-09
