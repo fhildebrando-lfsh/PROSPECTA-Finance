@@ -1,12 +1,32 @@
 import { describe, expect, it } from "vitest";
 import {
+  classifyDebtTerm,
   debtDeclineTimeline,
   monthlyDebtCommitment,
   openInstallmentGroups,
   totalRemainingDebt,
   type InstallmentEntry,
+  type OpenInstallmentGroup,
 } from "@/lib/finance/open-installments";
 import { d } from "./helpers";
+
+function makeGroup(overrides: Partial<OpenInstallmentGroup> = {}): OpenInstallmentGroup {
+  return {
+    groupId: "group-1",
+    description: "APTO FINANC. CEF",
+    walletId: "wallet-1",
+    categoryId: "category-1",
+    installmentTotal: 12,
+    paidCount: 0,
+    remainingCount: 12,
+    remainingAmount: d(-6000),
+    totalAmount: d(-6000),
+    nextInstallmentAmount: d(-500),
+    nextDueDate: new Date(Date.UTC(2026, 0, 10)),
+    lastDueDate: new Date(Date.UTC(2026, 11, 10)),
+    ...overrides,
+  };
+}
 
 function makeInstallment(overrides: Partial<InstallmentEntry> = {}): InstallmentEntry {
   return {
@@ -129,5 +149,30 @@ describe("debtDeclineTimeline (§13 — Dívidas, gráfico de diminuição)", ()
 
   it("retorna lista vazia sem nenhum grupo em aberto", () => {
     expect(debtDeclineTimeline([], new Set())).toEqual([]);
+  });
+});
+
+describe("classifyDebtTerm", () => {
+  const today = new Date(Date.UTC(2026, 0, 15)); // 15/jan/2026
+
+  it("classifica como curto prazo quando a última parcela vence em até 12 meses", () => {
+    const group = makeGroup({ lastDueDate: new Date(Date.UTC(2026, 6, 10)) }); // 6 meses depois
+    expect(classifyDebtTerm(group, today)).toBe("curto");
+  });
+
+  it("inclui o limite exato de 12 meses como curto prazo", () => {
+    const group = makeGroup({ lastDueDate: new Date(Date.UTC(2027, 0, 15)) }); // exatamente 12 meses
+    expect(classifyDebtTerm(group, today)).toBe("curto");
+  });
+
+  it("classifica como longo prazo quando passa de 12 meses", () => {
+    const group = makeGroup({ lastDueDate: new Date(Date.UTC(2027, 1, 15)) }); // 13 meses depois
+    expect(classifyDebtTerm(group, today)).toBe("longo");
+  });
+
+  it("aceita um limiar diferente de 12 meses", () => {
+    const group = makeGroup({ lastDueDate: new Date(Date.UTC(2026, 3, 15)) }); // 3 meses depois
+    expect(classifyDebtTerm(group, today, 2)).toBe("longo");
+    expect(classifyDebtTerm(group, today, 3)).toBe("curto");
   });
 });

@@ -22,6 +22,10 @@
 ### Corrigido
 - **Painel, Balanço anual, Fluxo projetado, Orçamento, Reserva de emergência e Dívidas**: os totais de Receita/Despesa/Investimento agora representam só o que foi efetivamente recebido/pago (liquidado) — antes misturavam com o que ainda estava a pagar/a receber/estimado. O gráfico "Provisão" do Painel e o relatório "Fluxo projetado" continuam olhando pra frente, mas agora calculam só em cima do pendente, sem misturar com o que já aconteceu.
 
+### Adicionado (continuação, mesmo dia — Registro Nº 054)
+- Investimentos: a tabela "histórico de movimentações" ganhou Editar/Salvar por linha — corrige categoria, responsável, valor ou data de um lançamento já registrado, e os totais do topo da página (ganho de capital, rentabilidade etc.) recalculam na hora.
+- Patrimônio → Dívidas: filtro de curto prazo (até 12 meses) e longo prazo (acima de 12 meses), incluindo no PDF baixado.
+
 ---
 
 ## 2026-08-10

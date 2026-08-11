@@ -13,6 +13,7 @@ import {
 } from "@/lib/finance/investment";
 import { Decimal } from "@/lib/finance/types";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
+import { EVENT_CATEGORY_OPTIONS, INCOME_CATEGORY_OPTIONS } from "@/lib/finance/investment-instruments";
 import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY } from "@/components/ui/buttonStyles";
 import { InvestmentEvolutionChart, type InvestmentEvolutionPoint } from "@/components/charts/InvestmentEvolutionChart";
 import {
@@ -23,21 +24,7 @@ import {
   registerInvestmentIncomeAction,
 } from "../actions";
 import { InvestmentEditForm } from "../InvestmentEditForm";
-
-const EVENT_CATEGORY_OPTIONS = [
-  { slug: "ganho_de_capital", label: "Ganho de Capital" },
-  { slug: "perdas", label: "Perda" },
-  { slug: "dividendos", label: "Dividendo" },
-  { slug: "juros", label: "Juro" },
-  { slug: "retiradas", label: "Retirada" },
-  { slug: "impostos", label: "Imposto" },
-  { slug: "cambio", label: "Variação Cambial" },
-] as const;
-
-const INCOME_CATEGORY_OPTIONS = [
-  { slug: "aluguel", label: "Aluguel" },
-  { slug: "participacao_nos_lucros", label: "Participação nos Lucros" },
-] as const;
+import { InvestmentHistoryRow } from "./InvestmentHistoryRow";
 
 export default async function InvestmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -154,23 +141,30 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
               <th className="px-3 py-2 font-medium">Categoria</th>
               <th className="px-3 py-2 font-medium">Responsável</th>
               <th className="px-3 py-2 text-right font-medium">Valor</th>
+              <th className="px-3 py-2 text-right font-medium">Ações</th>
             </tr>
           </thead>
           <tbody>
             {history.map((h) => (
-              <tr key={h.id} className="border-b border-indigo-900/30 text-indigo-100 last:border-0">
-                <td className="px-3 py-2">{formatDateBR(h.transactionDate)}</td>
-                <td className="px-3 py-2 text-xs text-zinc-400">{h.nature === "RECEITA" ? "Renda" : "Posição"}</td>
-                <td className="px-3 py-2 text-xs text-zinc-400">{h.category.name}</td>
-                <td className="px-3 py-2 text-xs text-zinc-400">{h.responsible.name}</td>
-                <td className={`px-3 py-2 text-right font-mono tabular-nums ${h.amount.isNegative() ? "text-red-400" : "text-emerald-400"}`}>
-                  {formatCurrencyBRL(h.amount)}
-                </td>
-              </tr>
+              <InvestmentHistoryRow
+                key={h.id}
+                people={people}
+                row={{
+                  id: h.id,
+                  investmentId: investment.id,
+                  transactionDate: h.transactionDate.toISOString().slice(0, 10),
+                  nature: h.nature === "RECEITA" ? "RECEITA" : "INVESTIMENTO",
+                  categorySlug: h.category.slug,
+                  categoryName: h.category.name,
+                  amount: h.amount.toString(),
+                  responsibleId: h.responsibleId,
+                  responsibleName: h.responsible.name,
+                }}
+              />
             ))}
             {history.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-xs text-zinc-500">
+                <td colSpan={6} className="px-3 py-6 text-center text-xs text-zinc-500">
                   Nenhum lançamento ainda.
                 </td>
               </tr>

@@ -229,6 +229,57 @@ export async function generateRentIncome(workspaceId: string, profileId: string,
   });
 }
 
+export interface UpdateInvestmentEventEntryInput {
+  entryId: string;
+  investmentId: string;
+  /** Slug de `EVENT_CATEGORY_SLUGS` ou `INCOME_CATEGORY_SLUGS`, conforme a natureza do
+   * Entry existente (nunca trocada por este update — ver comentário abaixo). */
+  categorySlug: string;
+  date: string;
+  /** String decimal, já com sinal — igual `RegisterInvestmentEventInput.amount`. */
+  amount: string;
+  responsibleId: string;
+}
+
+/**
+ * Edita um lançamento já existente do histórico de um investimento (evento de posição ou
+ * renda recebida) — pedido do usuário, 2026-08-11: a tabela "histórico de movimentações"
+ * precisa de Editar/Salvar, impactando o `Entry` de verdade. Diferente de
+ * `registerInvestmentEvent`/`registerInvestmentIncome` (que só criam), este só existe pra
+ * corrigir um lançamento já lançado — mesmo espírito de `updateIncidentEntry`.
+ *
+ * `nature`/`walletId` nunca mudam aqui (vêm do Entry existente, não do input) — evita
+ * "converter" sem querer uma Renda numa Posição, ou mover um evento de posição pra fora
+ * da carteira do investimento. `categorySlug` é resolvido pela MESMA natureza do Entry
+ * existente (`requireCategory` já rejeita um slug que não existir pra essa natureza).
+ */
+export async function updateInvestmentEventEntry(
+  workspaceId: string,
+  profileId: string,
+  input: UpdateInvestmentEventEntryInput,
+) {
+  const existing = await prisma.entry.findFirst({
+    where: { id: input.entryId, workspaceId, investmentId: input.investmentId },
+  });
+  if (!existing) throw new ApiError(404, "Lançamento não encontrado.");
+
+  const nature = existing.nature === "RECEITA" ? "RECEITA" : "INVESTIMENTO";
+  const category = await requireCategory(nature, input.categorySlug);
+  const date = parseIsoDate(input.date);
+
+  return prisma.entry.update({
+    where: { id: input.entryId },
+    data: {
+      categoryId: category.id,
+      responsibleId: input.responsibleId,
+      amount: input.amount,
+      transactionDate: date,
+      dueDate: date,
+      updatedBy: profileId,
+    },
+  });
+}
+
 export interface UpdateInvestmentInput {
   id: string;
   name: string;

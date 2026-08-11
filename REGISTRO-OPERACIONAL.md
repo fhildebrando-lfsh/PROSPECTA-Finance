@@ -1575,7 +1575,62 @@
 
 ---
 
-## Próximo número de registro: **054**
+### Registro Nº 054
+- **Data:** 2026-08-11
+- **Etapa concluída:** Editar histórico de investimento + filtro de prazo em Dívidas
+- **Descrição:** Usuário pediu, direto na versão real do sistema, duas features
+  independentes: (1) na tela de detalhe de um investimento, a tabela "histórico de
+  movimentações" precisa de Editar/Salvar, impactando o `Entry` de verdade por trás; (2)
+  em Patrimônio → Dívidas, filtro de curto prazo (até 12 meses) × longo prazo (acima de
+  12 meses).
+- **O que foi feito:**
+  1. **`lib/entries/investment.ts::updateInvestmentEventEntry`** — nova função (não
+     existia nenhum update de evento/entry de investimento, só create). Carrega o `Entry`
+     existente validando `workspaceId`+`investmentId` (escopo duplo), resolve a categoria
+     nova pela MESMA natureza do `Entry` original (nunca deixa trocar Renda↔Posição),
+     atualiza categoria/responsável/valor/data. `updateInvestmentEventEntryAction`
+     (`app/(app)/investimentos/actions.ts`) + `InvestmentHistoryRow.tsx` (novo, Client
+     Component por linha da tabela, mesmo padrão de `InvestmentEditForm.tsx`/`AssetCard.tsx`
+     — campos sempre renderizados, `disabled` até "Editar", estado controlado em vez de
+     `<form>`+`FormData` do DOM porque `<form>` não é filho válido de `<tr>`). Os totais do
+     topo da página (Investido, Valor atual, Ganho de capital, Rentabilidade, Renda
+     recebida, Retorno total) já eram recalculados em tempo real a partir das entries —
+     editar uma linha já propaga sozinho, só precisou de `revalidatePath`.
+     `EVENT_CATEGORY_OPTIONS`/`INCOME_CATEGORY_OPTIONS` movidos de `page.tsx` pra
+     `lib/finance/investment-instruments.ts` (evita duplicar entre a tela e o componente
+     novo).
+  2. **`lib/finance/open-installments.ts::classifyDebtTerm`** — função pura nova,
+     `"curto"` se `lastDueDate` (já exibido como "Prazo") vence em até 12 meses a partir de
+     hoje, `"longo"` depois disso (usa `addMonths`, já existente). `dividas/page.tsx`
+     ganhou 3 abas (Todas/Curto/Longo) via `searchParams` + `<Link>`, mesmo padrão já
+     usado em Fluxo Projetado (6/12/24 meses) — nenhum `"use client"` novo nessa tela. Os
+     cards de resumo, o gráfico e a tabela recalculam sobre os grupos já filtrados (mostra
+     o total do que está sendo visto). `app/api/patrimonio/dividas/pdf/route.ts` lê o
+     mesmo `?prazo=` e aplica o mesmo filtro; `buildDividasPdf` ganhou um `title` opcional
+     pra refletir o filtro no PDF baixado.
+- **Verificado ao vivo, contra o banco de dev, servidor `next dev` real** (login sem
+  senha via magic link): criado um investimento de teste com aporte (R$2.000) + evento de
+  Ganho de Capital (R$150) — editei o evento pra R$300 e confirmei que "Ganho de capital"
+  no topo da página foi de R$150,00 pra R$300,00, exato. Criadas duas dívidas parceladas
+  de teste (uma vencendo em 3 meses, outra em ~21 meses) — filtro "Todas" mostrou as duas
+  (R$900,00 total), "Curto prazo" só a de 3 meses (R$300,00), "Longo prazo" só a de 21
+  meses (R$600,00). Dados de teste apagados depois.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (298/298, +4 testes novos de `classifyDebtTerm`),
+  `npx tsc --noEmit` limpo, `npm run build` limpo (61 rotas, incluindo as duas telas
+  mexidas). Verificação manual descrita acima, contra dados reais no banco de dev.
+- **Documentos relacionados:** `lib/entries/investment.ts`,
+  `app/(app)/investimentos/actions.ts`,
+  `app/(app)/investimentos/[id]/InvestmentHistoryRow.tsx`,
+  `app/(app)/investimentos/[id]/page.tsx`, `lib/finance/investment-instruments.ts`,
+  `lib/finance/open-installments.ts`, `app/(app)/patrimonio/dividas/page.tsx`,
+  `app/api/patrimonio/dividas/pdf/route.ts`, `lib/reports/pdf/dividas.ts`,
+  `tests/finance/open-installments.test.ts`.
+
+---
+
+## Próximo número de registro: **055**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

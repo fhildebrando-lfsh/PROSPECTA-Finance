@@ -334,6 +334,10 @@ dívidas em aberto. Considera **despesas parceladas com duas ou mais parcelas** 
 compras parceladas) que ainda não terminaram de pagar; parcelamentos já quitados não
 aparecem.
 
+- **Filtro de prazo** — Todas, Curto prazo (termina em até 12 meses) ou Longo prazo
+  (acima de 12 meses), com base no vencimento da última parcela. Os cards de resumo, o
+  gráfico e a tabela abaixo mudam junto com o filtro escolhido; "Baixar PDF" respeita o
+  filtro atual.
 - **Dívida total em aberto**, **compromisso mensal** (soma das próximas parcelas de cada
   dívida) e **percentual da despesa mensal média** comprometido com dívidas, no topo.
 - **Gráfico de diminuição** — o saldo devedor combinado de todas as dívidas em aberto,
@@ -371,6 +375,9 @@ renda recebida e retorno total % (ganho de capital + renda recebida, sobre o que
 aportado), com um gráfico de evolução da posição e o histórico completo de lançamentos
 ligados a ela.
 
+- **Histórico de movimentações** — cada linha tem um botão **"Editar"** (data, categoria,
+  responsável e valor); "Salvar" corrige o lançamento de verdade, e os números do topo da
+  página (ganho de capital, rentabilidade etc.) já aparecem atualizados na mesma hora.
 - **Registrar evento da posição** — ganho/perda de capital, dividendo, juro, retirada,
   imposto ou variação cambial: fica ligado à posição, na própria carteira/corretora.
 - **Registrar renda recebida** — aluguel de imóvel ou distribuição de lucro de sócio: é

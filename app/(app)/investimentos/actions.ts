@@ -13,6 +13,7 @@ import {
   registerInvestmentEvent,
   registerInvestmentIncome,
   updateInvestment,
+  updateInvestmentEventEntry,
   type InvestmentEventCategorySlug,
   type InvestmentIncomeCategorySlug,
 } from "@/lib/entries/investment";
@@ -162,6 +163,34 @@ export async function registerInvestmentIncomeAction(formData: FormData) {
     categorySlug,
     date,
     amount: absAmount.toFixed(2),
+    responsibleId,
+  });
+
+  revalidatePath(`/investimentos/${investmentId}`);
+}
+
+export async function updateInvestmentEventEntryAction(formData: FormData) {
+  const workspaceId = await requireWorkspaceId();
+  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
+
+  const entryId = String(formData.get("entryId") ?? "");
+  const investmentId = String(formData.get("investmentId") ?? "");
+  const categorySlug = String(formData.get("categorySlug") ?? "");
+  const date = String(formData.get("date") ?? "");
+  const responsibleId = String(formData.get("responsibleId") ?? "");
+  const amount = Number(formData.get("amount") ?? "0");
+
+  if (!entryId || !investmentId || !categorySlug || !date || !responsibleId || !amount) {
+    throw new Error("Preencha categoria, data, valor e responsável.");
+  }
+
+  await updateInvestmentEventEntry(workspaceId, profileId, {
+    entryId,
+    investmentId,
+    categorySlug,
+    date,
+    amount: amount.toFixed(2),
     responsibleId,
   });
 

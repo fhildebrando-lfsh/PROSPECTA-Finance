@@ -1,5 +1,6 @@
 import { Decimal, type EntryStatus } from "./types";
 import { SETTLED_FOR_BALANCE } from "./balance";
+import { addMonths } from "./dates";
 
 /**
  * Subconjunto de `Entry` (não `FinanceEntry` — que é deliberadamente enxuto e
@@ -87,6 +88,18 @@ export function openInstallmentGroups(entries: InstallmentEntry[]): OpenInstallm
   }
 
   return groups.sort((a, b) => (a.nextDueDate?.getTime() ?? 0) - (b.nextDueDate?.getTime() ?? 0));
+}
+
+export type DebtTerm = "curto" | "longo";
+
+/**
+ * Classifica uma dívida em aberto por prazo — pedido do usuário, 2026-08-11: curto prazo
+ * = termina em até `thresholdMonths` (padrão 12) a partir de hoje; longo = depois disso.
+ * Usa `lastDueDate` ("Prazo (até quando)", já exibido na tela de Dívidas) — a data em
+ * que a última parcela do grupo vence, não a próxima.
+ */
+export function classifyDebtTerm(group: OpenInstallmentGroup, today: Date, thresholdMonths = 12): DebtTerm {
+  return group.lastDueDate.getTime() <= addMonths(today, thresholdMonths).getTime() ? "curto" : "longo";
 }
 
 /** Dívida total em aberto (§13, "Dívidas") — soma de `remainingAmount` de todos os grupos. */

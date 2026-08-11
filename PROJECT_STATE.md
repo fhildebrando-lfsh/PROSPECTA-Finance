@@ -15,7 +15,39 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-11 (Correção de regra de negócio — totais por
+> **Última atualização real: 2026-08-11 (Editar histórico de investimento + filtro de
+> prazo em Dívidas — Registro Nº 054).** Duas features pedidas direto na versão real do
+> sistema. `lib/entries/investment.ts::updateInvestmentEventEntry` — primeira função de
+> UPDATE de um `Entry` de investimento (antes só havia create; `registerInvestmentEvent`/
+> `registerInvestmentIncome` documentavam explicitamente "nunca edita lançamentos
+> antigos"). Nature/wallet do Entry nunca mudam por este update (vêm do registro
+> existente, não do input) — evita converter Renda↔Posição ou mover evento pra fora da
+> carteira do investimento. `InvestmentHistoryRow.tsx` (novo Client Component, uma linha
+> de tabela) usa estado controlado em vez de `<form>`+`FormData` do DOM porque `<form>`
+> não é filho válido de `<tr>` — mesmo padrão visual de `InvestmentEditForm.tsx`/
+> `AssetCard.tsx` (campos sempre renderizados, `disabled` até "Editar"), evitando importar
+> `lib/format.ts` no componente cliente (ele importa `Decimal` de
+> `@/lib/finance/types`, gotcha já documentado nesta sessão) — formatação de
+> moeda/data feita local ali dentro. Totais do topo da página de investimento já eram
+> recalculados em tempo real a partir das entries, então editar uma linha propaga sozinho.
+>
+> `lib/finance/open-installments.ts::classifyDebtTerm` — nova função pura (curto ≤ 12
+> meses, longo > 12, baseado em `lastDueDate`/"Prazo"). `dividas/page.tsx` ganhou 3 abas
+> via `searchParams`, mesmo padrão de `<Link>` já usado no Fluxo Projetado — nenhum
+> `"use client"` novo. A rota de PDF de Dívidas duplicava (já duplicava antes) a mesma
+> query da tela — precisou do mesmo filtro aplicado duas vezes, sem nenhum dado
+> compartilhado entre tela e PDF (confirmado na investigação: padrão já existente pros 3
+> relatórios de Fase 2 também).
+>
+> **Verificado ao vivo** contra o banco de dev com dados de teste controlados: editar um
+> evento de R$150→R$300 fez "Ganho de capital" no topo da página acompanhar exato; duas
+> dívidas de teste (uma vencendo em 3 meses, outra em ~21) separaram certo nos 3 filtros
+> (Todas R$900, Curto R$300, Longo R$600).
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-11), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 054).
+>
+> **Última atualização anterior: 2026-08-11 (Correção de regra de negócio — totais por
 > situação, liquidado × pendente — Registro Nº 053).** O usuário reportou, na versão
 > real do sistema (não em teste), que o Painel misturava lançamentos liquidados
 > (PAGO/RECEBIDO) com pendentes (A_PAGAR/A_RECEBER/ESTIMATIVA) nos totais de

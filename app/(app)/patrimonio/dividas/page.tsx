@@ -1,11 +1,14 @@
+import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { toFinanceEntry } from "@/lib/finance/from-db";
 import {
+  classifyDebtTerm,
   debtDeclineTimeline,
   monthlyDebtCommitment,
   openInstallmentGroups,
   totalRemainingDebt,
+  type DebtTerm,
   type InstallmentEntry,
 } from "@/lib/finance/open-installments";
 import { averageMonthlyExpense } from "@/lib/finance/reserve";
@@ -13,9 +16,21 @@ import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
 import { MonthlyChart, type MonthlyChartPoint } from "@/components/charts/MonthlyChart";
 
-export default async function DividasPage() {
+interface SearchParams {
+  prazo?: string;
+}
+
+const PRAZO_OPTIONS: { value: "todas" | DebtTerm; label: string }[] = [
+  { value: "todas", label: "Todas" },
+  { value: "curto", label: "Curto prazo (até 12 meses)" },
+  { value: "longo", label: "Longo prazo (acima de 12 meses)" },
+];
+
+export default async function DividasPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const workspaceId = await requireWorkspaceId();
   const today = new Date();
+  const params = await searchParams;
+  const prazo: "todas" | DebtTerm = params.prazo === "curto" || params.prazo === "longo" ? params.prazo : "todas";
 
   const [installmentEntries, allEntries] = await Promise.all([
     prisma.entry.findMany({
@@ -41,7 +56,8 @@ export default async function DividasPage() {
   const walletNameById = new Map(installmentEntries.map((e) => [e.walletId, e.wallet.name]));
   const categoryNameById = new Map(installmentEntries.map((e) => [e.categoryId, e.category.name]));
 
-  const groups = openInstallmentGroups(entries).sort((a, b) => a.remainingAmount.comparedTo(b.remainingAmount));
+  const allGroups = openInstallmentGroups(entries).sort((a, b) => a.remainingAmount.comparedTo(b.remainingAmount));
+  const groups = prazo === "todas" ? allGroups : allGroups.filter((g) => classifyDebtTerm(g, today) === prazo);
 
   const totalDebt = totalRemainingDebt(groups);
   const monthlyCommitment = monthlyDebtCommitment(groups);
@@ -64,9 +80,24 @@ export default async function DividasPage() {
           Financiamentos e compras parceladas ainda em aberto — o que já foi quitado não aparece aqui. Pensado para
           mostrar a magnitude das suas dívidas, até quando elas vão e quanto pesam no orçamento mensal.
         </p>
-        <a href="/api/patrimonio/dividas/pdf" className={BTN_PRIMARY}>
-          Baixar PDF
-        </a>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <div className="flex overflow-hidden rounded-lg border border-zinc-700">
+            {PRAZO_OPTIONS.map((o) => (
+              <Link
+                key={o.value}
+                href={o.value === "todas" ? "?" : `?prazo=${o.value}`}
+                className={`px-3 py-1 ${
+                  prazo === o.value ? "bg-amber-500 text-zinc-950" : "bg-transparent text-zinc-300 hover:bg-zinc-800"
+                }`}
+              >
+                {o.label}
+              </Link>
+            ))}
+          </div>
+          <a href={`/api/patrimonio/dividas/pdf?prazo=${prazo}`} className={BTN_PRIMARY}>
+            Baixar PDF
+          </a>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -133,7 +164,7 @@ export default async function DividasPage() {
             {groups.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-3 py-4 text-center text-indigo-300">
-                  Nenhuma dívida em aberto.
+                  {prazo === "todas" ? "Nenhuma dívida em aberto." : "Nenhuma dívida nesse prazo."}
                 </td>
               </tr>
             )}

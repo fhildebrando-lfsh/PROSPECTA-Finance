@@ -10,8 +10,9 @@ export async function buildDividasPdf(
   groups: OpenInstallmentGroup[],
   walletNameById: Map<string, string>,
   categoryNameById: Map<string, string>,
+  title = "Dívidas",
 ): Promise<Buffer> {
-  const { doc, done } = startReportPdf({ title: "Dívidas" });
+  const { doc, done } = startReportPdf({ title });
 
   doc
     .fontSize(9)

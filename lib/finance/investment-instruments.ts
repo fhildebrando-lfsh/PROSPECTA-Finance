@@ -139,3 +139,24 @@ export const INSTRUMENT_SUGGESTIONS_BY_CLASS: Record<string, string[]> = {
   PREVIDENCIA_PRIVADA: ["PGBL", "VGBL"],
   OUTROS: ["Peer-to-peer lending", "Crowdfunding", "Recebíveis", "Direitos creditórios", "Royalties", "Franquia", "Negócio próprio"],
 };
+
+/** Opções (código + rótulo) de categoria pra evento de posição (ganho/perda de capital,
+ * dividendo, juro, retirada, imposto, câmbio) — mesmos slugs de
+ * `lib/entries/investment.ts::EVENT_CATEGORY_SLUGS`. Reusado pela tela de detalhe do
+ * investimento (formulário "Registrar evento" e a edição de linha do histórico). */
+export const EVENT_CATEGORY_OPTIONS = [
+  { slug: "ganho_de_capital", label: "Ganho de Capital" },
+  { slug: "perdas", label: "Perda" },
+  { slug: "dividendos", label: "Dividendo" },
+  { slug: "juros", label: "Juro" },
+  { slug: "retiradas", label: "Retirada" },
+  { slug: "impostos", label: "Imposto" },
+  { slug: "cambio", label: "Variação Cambial" },
+] as const;
+
+/** Opções (código + rótulo) de categoria pra renda real recebida (aluguel, distribuição
+ * de lucro) — mesmos slugs de `lib/entries/investment.ts::INCOME_CATEGORY_SLUGS`. */
+export const INCOME_CATEGORY_OPTIONS = [
+  { slug: "aluguel", label: "Aluguel" },
+  { slug: "participacao_nos_lucros", label: "Participação nos Lucros" },
+] as const;
