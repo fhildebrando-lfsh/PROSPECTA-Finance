@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { EVENT_CATEGORY_OPTIONS, INCOME_CATEGORY_OPTIONS } from "@/lib/finance/investment-instruments";
-import { BTN_GHOST, BTN_PRIMARY } from "@/components/ui/buttonStyles";
-import { updateInvestmentEventEntryAction } from "../actions";
+import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY } from "@/components/ui/buttonStyles";
+import { deleteInvestmentEventEntryAction, updateInvestmentEventEntryAction } from "../actions";
 
 // Formatação local (não importa lib/format.ts) de propósito — esse módulo importa
 // `Decimal` de "@/lib/finance/types", que reexporta de "@prisma/client/runtime/client"
@@ -48,6 +48,7 @@ const inputClass =
 export function InvestmentHistoryRow({ row, people }: { row: HistoryRowData; people: { id: string; name: string }[] }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [date, setDate] = useState(row.transactionDate);
@@ -75,6 +76,21 @@ export function InvestmentHistoryRow({ row, people }: { row: HistoryRowData; peo
       setError((err as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm("Excluir este lançamento? Isso remove o registro de verdade e não pode ser desfeito.")) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.set("entryId", row.id);
+      fd.set("investmentId", row.investmentId);
+      await deleteInvestmentEventEntryAction(fd);
+    } catch (err) {
+      setError((err as Error).message);
+      setDeleting(false);
     }
   }
 
@@ -151,9 +167,14 @@ export function InvestmentHistoryRow({ row, people }: { row: HistoryRowData; peo
               </button>
             </div>
           ) : (
-            <button type="button" onClick={() => setEditing(true)} className={BTN_GHOST}>
-              Editar
-            </button>
+            <div className="flex justify-end gap-1">
+              <button type="button" onClick={() => setEditing(true)} disabled={deleting} className={BTN_GHOST}>
+                Editar
+              </button>
+              <button type="button" onClick={handleDelete} disabled={deleting} className={BTN_DANGER}>
+                {deleting ? "Excluindo…" : "Excluir"}
+              </button>
+            </div>
           )}
         </td>
       </tr>

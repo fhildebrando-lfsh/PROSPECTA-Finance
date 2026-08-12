@@ -280,6 +280,23 @@ export async function updateInvestmentEventEntry(
   });
 }
 
+/**
+ * Exclui um lançamento do histórico de um investimento (evento de posição ou renda
+ * recebida) — pedido do usuário, 2026-08-11: botão "Excluir" nas linhas do histórico,
+ * obrigatoriamente removendo o `Entry` de verdade (mesmo espírito de `updateInvestmentEventEntry`,
+ * escopo duplo por `workspaceId` + `investmentId`). Não impede excluir o único lançamento
+ * de um investimento (ficaria com posição zerada) — mesma decisão de não bloquear edição
+ * de valor a zero, o cliente que decide o que faz sentido no histórico dele.
+ */
+export async function deleteInvestmentEventEntry(workspaceId: string, investmentId: string, entryId: string) {
+  const existing = await prisma.entry.findFirst({
+    where: { id: entryId, workspaceId, investmentId },
+  });
+  if (!existing) throw new ApiError(404, "Lançamento não encontrado.");
+
+  await prisma.entry.delete({ where: { id: entryId } });
+}
+
 export interface UpdateInvestmentInput {
   id: string;
   name: string;

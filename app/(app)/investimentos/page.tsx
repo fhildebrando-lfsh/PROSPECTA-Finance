@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { investmentAcquisitionValue, investmentPositionValue, investmentReturnPct } from "@/lib/finance/investment";
+import { Decimal } from "@/lib/finance/types";
 import { formatCurrencyBRL } from "@/lib/format";
 
 export default async function InvestimentosPage({
@@ -14,7 +15,7 @@ export default async function InvestimentosPage({
 
   const [investments, classes, positionEntries] = await Promise.all([
     prisma.investment.findMany({
-      where: { workspaceId, isActive: true, ...(classe ? { classCode: classe } : {}) },
+      where: { workspaceId, ...(classe ? { classCode: classe } : {}) },
       include: { class: true, wallet: true },
       orderBy: { name: "asc" },
     }),
@@ -47,8 +48,12 @@ export default async function InvestimentosPage({
       currentValueFormatted: formatCurrencyBRL(currentValue),
       returnPct,
       isPositive: returnPct.gte(0),
+      isActive: inv.isActive,
     };
   });
+
+  const activeRows = rows.filter((r) => r.isActive);
+  const archivedRows = rows.filter((r) => !r.isActive);
 
   return (
     <div className="flex flex-col gap-6">
@@ -99,38 +104,77 @@ export default async function InvestimentosPage({
           .
         </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {rows.map((r) => (
-            <Link
-              key={r.id}
-              href={`/investimentos/${r.id}`}
-              className="flex flex-col gap-2 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4 hover:border-indigo-600"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-zinc-100">{r.name}</p>
-                  <p className="text-xs text-indigo-300">{r.classLabel}</p>
-                </div>
-                <span className="shrink-0 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[10px] text-indigo-200">{r.walletName}</span>
+        <>
+          {activeRows.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {activeRows.map((r) => (
+                <InvestmentCard key={r.id} row={r} />
+              ))}
+            </div>
+          )}
+
+          {archivedRows.length > 0 && (
+            <div>
+              <h2 className="mb-2 text-sm font-medium text-zinc-400">Arquivados</h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {archivedRows.map((r) => (
+                  <InvestmentCard key={r.id} row={r} dimmed />
+                ))}
               </div>
-              <div className="mt-1 flex items-end justify-between">
-                <div>
-                  <p className="text-[11px] text-zinc-500">Investido</p>
-                  <p className="font-mono text-sm tabular-nums text-zinc-300">{r.acquisitionValueFormatted}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[11px] text-zinc-500">Valor atual</p>
-                  <p className="font-mono text-base tabular-nums text-zinc-100">{r.currentValueFormatted}</p>
-                </div>
-              </div>
-              <p className={`text-right font-mono text-sm tabular-nums ${r.isPositive ? "text-emerald-400" : "text-red-400"}`}>
-                {r.isPositive ? "+" : ""}
-                {r.returnPct.toFixed(1)}%
-              </p>
-            </Link>
-          ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+interface InvestmentCardRow {
+  id: string;
+  name: string;
+  classLabel: string;
+  walletName: string;
+  acquisitionValueFormatted: string;
+  currentValueFormatted: string;
+  returnPct: Decimal;
+  isPositive: boolean;
+}
+
+/** Cartão de uma posição na Carteira — `dimmed` é usado pros arquivados (§ pedido do
+ * usuário, 2026-08-11: "não deve sumir da carteira, só deve estar destacado de forma
+ * separada sempre em 'esmaecido'"). Continua clicável — é assim que o cliente reativa. */
+function InvestmentCard({ row: r, dimmed = false }: { row: InvestmentCardRow; dimmed?: boolean }) {
+  return (
+    <Link
+      href={`/investimentos/${r.id}`}
+      className={`flex flex-col gap-2 rounded-xl border border-indigo-900/50 bg-[#131A47] p-4 hover:border-indigo-600 ${
+        dimmed ? "opacity-50 hover:opacity-80" : ""
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-zinc-100">
+            {r.name}
+            {dimmed && <span className="ml-2 text-xs font-normal text-zinc-500">(arquivado)</span>}
+          </p>
+          <p className="text-xs text-indigo-300">{r.classLabel}</p>
+        </div>
+        <span className="shrink-0 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[10px] text-indigo-200">{r.walletName}</span>
+      </div>
+      <div className="mt-1 flex items-end justify-between">
+        <div>
+          <p className="text-[11px] text-zinc-500">Investido</p>
+          <p className="font-mono text-sm tabular-nums text-zinc-300">{r.acquisitionValueFormatted}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[11px] text-zinc-500">Valor atual</p>
+          <p className="font-mono text-base tabular-nums text-zinc-100">{r.currentValueFormatted}</p>
+        </div>
+      </div>
+      <p className={`text-right font-mono text-sm tabular-nums ${r.isPositive ? "text-emerald-400" : "text-red-400"}`}>
+        {r.isPositive ? "+" : ""}
+        {r.returnPct.toFixed(1)}%
+      </p>
+    </Link>
   );
 }

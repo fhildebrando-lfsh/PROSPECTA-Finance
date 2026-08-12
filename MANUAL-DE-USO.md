@@ -334,10 +334,9 @@ dívidas em aberto. Considera **despesas parceladas com duas ou mais parcelas** 
 compras parceladas) que ainda não terminaram de pagar; parcelamentos já quitados não
 aparecem.
 
-- **Filtro de prazo** — Todas, Curto prazo (termina em até 12 meses) ou Longo prazo
-  (acima de 12 meses), com base no vencimento da última parcela. Os cards de resumo, o
-  gráfico e a tabela abaixo mudam junto com o filtro escolhido; "Baixar PDF" respeita o
-  filtro atual.
+- **Filtro de prazo** — Todas, Curto prazo (até 12 parcelas restantes) ou Longo prazo
+  (mais de 12 parcelas restantes). Os cards de resumo, o gráfico e a tabela abaixo mudam
+  junto com o filtro escolhido; "Baixar PDF" respeita o filtro atual.
 - **Dívida total em aberto**, **compromisso mensal** (soma das próximas parcelas de cada
   dívida) e **percentual da despesa mensal média** comprometido com dívidas, no topo.
 - **Gráfico de diminuição** — o saldo devedor combinado de todas as dívidas em aberto,
@@ -357,7 +356,8 @@ Lista de posições (renda fixa, renda variável, imóveis para aluguel, veícul
 revenda, participação societária, criptoativos, metais preciosos, commodities, terras e
 produção rural, bens colecionáveis, previdência privada ou qualquer outra coisa),
 filtrável por classe. Cada cartão mostra a classe, a carteira/corretora, o valor investido,
-o valor atual e a rentabilidade (%), colorida em verde ou vermelho.
+o valor atual e a rentabilidade (%), colorida em verde ou vermelho. Posições arquivadas
+continuam aparecendo, numa seção "Arquivados" separada logo abaixo, esmaecidas.
 
 **Cadastrar um investimento** pede: nome, classe (dirige quais campos específicos
 aparecem — ex.: indexador/taxa/vencimento para Renda Fixa, ticker/quantidade/preço médio
@@ -378,6 +378,8 @@ ligados a ela.
 - **Histórico de movimentações** — cada linha tem um botão **"Editar"** (data, categoria,
   responsável e valor); "Salvar" corrige o lançamento de verdade, e os números do topo da
   página (ganho de capital, rentabilidade etc.) já aparecem atualizados na mesma hora.
+  Também tem um botão **"Excluir"** (pede confirmação antes) — remove o lançamento de
+  verdade, e os números do topo recalculam a partir do que sobrou.
 - **Registrar evento da posição** — ganho/perda de capital, dividendo, juro, retirada,
   imposto ou variação cambial: fica ligado à posição, na própria carteira/corretora.
 - **Registrar renda recebida** — aluguel de imóvel ou distribuição de lucro de sócio: é
@@ -387,9 +389,11 @@ ligados a ela.
   mensal de aluguel a receber de uma vez, a partir de uma data de início.
 - Metadados (nome, classe, campos específicos) ficam travados até você clicar em
   **"Editar"**, mesmo padrão de Bens e Cartões.
-- **"Arquivar"** tira a posição da lista principal sem apagar o histórico (use quando
-  encerrar a aplicação, por exemplo depois de vender tudo). **"Excluir"** só é permitido
-  se não houver nenhum lançamento vinculado — do contrário, arquive.
+- **"Arquivar"** marca a posição como encerrada (use quando vender tudo, por exemplo) —
+  ela continua aparecendo na Carteira, só que numa seção separada "Arquivados", esmaecida;
+  o histórico não é apagado, e "Reativar" volta ela pra lista principal. **"Excluir"**
+  (do próprio investimento, não das linhas do histórico) só é permitido se não houver
+  nenhum lançamento vinculado — do contrário, arquive.
 
 ### 13.3 Análise
 

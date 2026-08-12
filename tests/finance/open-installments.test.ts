@@ -153,26 +153,34 @@ describe("debtDeclineTimeline (§13 — Dívidas, gráfico de diminuição)", ()
 });
 
 describe("classifyDebtTerm", () => {
-  const today = new Date(Date.UTC(2026, 0, 15)); // 15/jan/2026
-
-  it("classifica como curto prazo quando a última parcela vence em até 12 meses", () => {
-    const group = makeGroup({ lastDueDate: new Date(Date.UTC(2026, 6, 10)) }); // 6 meses depois
-    expect(classifyDebtTerm(group, today)).toBe("curto");
+  it("classifica como curto prazo quando restam até 12 parcelas", () => {
+    const group = makeGroup({ remainingCount: 6 });
+    expect(classifyDebtTerm(group)).toBe("curto");
   });
 
-  it("inclui o limite exato de 12 meses como curto prazo", () => {
-    const group = makeGroup({ lastDueDate: new Date(Date.UTC(2027, 0, 15)) }); // exatamente 12 meses
-    expect(classifyDebtTerm(group, today)).toBe("curto");
+  it("inclui o limite exato de 12 parcelas restantes como curto prazo", () => {
+    const group = makeGroup({ remainingCount: 12 });
+    expect(classifyDebtTerm(group)).toBe("curto");
   });
 
-  it("classifica como longo prazo quando passa de 12 meses", () => {
-    const group = makeGroup({ lastDueDate: new Date(Date.UTC(2027, 1, 15)) }); // 13 meses depois
-    expect(classifyDebtTerm(group, today)).toBe("longo");
+  it("classifica como longo prazo quando passa de 12 parcelas restantes", () => {
+    const group = makeGroup({ remainingCount: 13 });
+    expect(classifyDebtTerm(group)).toBe("longo");
   });
 
-  it("aceita um limiar diferente de 12 meses", () => {
-    const group = makeGroup({ lastDueDate: new Date(Date.UTC(2026, 3, 15)) }); // 3 meses depois
-    expect(classifyDebtTerm(group, today, 2)).toBe("longo");
-    expect(classifyDebtTerm(group, today, 3)).toBe("curto");
+  it("aceita um limiar diferente de 12 parcelas", () => {
+    const group = makeGroup({ remainingCount: 3 });
+    expect(classifyDebtTerm(group, 2)).toBe("longo");
+    expect(classifyDebtTerm(group, 3)).toBe("curto");
+  });
+
+  it("caso real reportado: 24x com 23 restantes é longo prazo, não curto — mesmo com lastDueDate distorcida por parcela atrasada", () => {
+    const group = makeGroup({ installmentTotal: 24, paidCount: 1, remainingCount: 23, lastDueDate: new Date(Date.UTC(2027, 7, 10)) });
+    expect(classifyDebtTerm(group)).toBe("longo");
+  });
+
+  it("caso real reportado: 12x com 11 restantes é curto prazo, não longo", () => {
+    const group = makeGroup({ installmentTotal: 12, paidCount: 1, remainingCount: 11, lastDueDate: new Date(Date.UTC(2027, 11, 10)) });
+    expect(classifyDebtTerm(group)).toBe("curto");
   });
 });

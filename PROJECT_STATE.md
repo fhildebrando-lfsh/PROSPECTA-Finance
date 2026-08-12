@@ -15,7 +15,39 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-11 (Editar histórico de investimento + filtro de
+> **Última atualização real: 2026-08-12 (Correção do filtro de prazo em Dívidas +
+> excluir/arquivar em Investimentos — Registro Nº 055).** Usuário reportou, na versão
+> real, que o filtro de curto/longo prazo do Registro Nº 054 classificava errado: um
+> financiamento 1/24 (23 parcelas restantes) aparecia em "Curto prazo"; um 1/12 (11
+> restantes) aparecia em "Longo prazo". Causa: `classifyDebtTerm` comparava `lastDueDate`
+> (vencimento da última parcela) contra `hoje + 12 meses` — parcela atrasada empurra essa
+> data sem refletir quanto realmente falta. Trocado pro critério `remainingCount <= 12`
+> (parcelas restantes) — como todo parcelamento aqui é mensal, "12 parcelas restantes" e
+> "12 meses restantes" são a mesma coisa, sem depender de estar em dia. Função não recebe
+> mais `today`.
+>
+> Mais dois pedidos sobre o histórico de investimento (mesma tela do Registro Nº 054):
+> **excluir lançamento** — `lib/entries/investment.ts::deleteInvestmentEventEntry` (mesmo
+> escopo duplo `workspaceId`+`investmentId` do update), botão "Excluir" em
+> `InvestmentHistoryRow.tsx` com `confirm()` antes. **Arquivar não deve sumir da
+> Carteira** — usuário achou estranho o valor "ainda contar em algum lugar" depois de
+> arquivar. Investigação: os totais de Investimento no Painel (`totals.investimento`,
+> "Saldos por carteira") vêm direto de `Entry`/`Wallet`, nunca checam
+> `Investment.isActive` — **isso é correto por design**, arquivar não é vender, o
+> dinheiro continua de verdade na carteira; a tela de Análise já filtrava `isActive`
+> certo. O bug de verdade era só a Carteira (`/investimentos`) escondendo o investimento
+> inteiro ao arquivar — corrigido pra mostrar numa seção "Arquivados" separada, esmaecida
+> (`opacity-50`), continuando clicável.
+>
+> **Verificado ao vivo** contra o banco de dev: dívida 12x (11 restantes) só apareceu em
+> "Curto", dívida 24x (23 restantes) só em "Longo" — os dois casos exatos do bug relatado.
+> Excluir uma linha do histórico removeu o `Entry` de verdade no banco e os totais da
+> página recalcularam. Investimento arquivado continuou visível em `/investimentos`.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-12), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 055).
+>
+> **Última atualização anterior: 2026-08-11 (Editar histórico de investimento + filtro de
 > prazo em Dívidas — Registro Nº 054).** Duas features pedidas direto na versão real do
 > sistema. `lib/entries/investment.ts::updateInvestmentEventEntry` — primeira função de
 > UPDATE de um `Entry` de investimento (antes só havia create; `registerInvestmentEvent`/

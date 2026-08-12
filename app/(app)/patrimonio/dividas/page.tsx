@@ -57,7 +57,7 @@ export default async function DividasPage({ searchParams }: { searchParams: Prom
   const categoryNameById = new Map(installmentEntries.map((e) => [e.categoryId, e.category.name]));
 
   const allGroups = openInstallmentGroups(entries).sort((a, b) => a.remainingAmount.comparedTo(b.remainingAmount));
-  const groups = prazo === "todas" ? allGroups : allGroups.filter((g) => classifyDebtTerm(g, today) === prazo);
+  const groups = prazo === "todas" ? allGroups : allGroups.filter((g) => classifyDebtTerm(g) === prazo);
 
   const totalDebt = totalRemainingDebt(groups);
   const monthlyCommitment = monthlyDebtCommitment(groups);

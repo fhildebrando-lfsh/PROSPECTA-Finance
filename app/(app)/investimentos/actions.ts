@@ -9,6 +9,7 @@ import {
   archiveInvestment,
   createInvestment,
   deleteInvestment,
+  deleteInvestmentEventEntry,
   generateRentIncome,
   registerInvestmentEvent,
   registerInvestmentIncome,
@@ -193,6 +194,20 @@ export async function updateInvestmentEventEntryAction(formData: FormData) {
     amount: amount.toFixed(2),
     responsibleId,
   });
+
+  revalidatePath(`/investimentos/${investmentId}`);
+}
+
+export async function deleteInvestmentEventEntryAction(formData: FormData) {
+  const workspaceId = await requireWorkspaceId();
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
+
+  const entryId = String(formData.get("entryId") ?? "");
+  const investmentId = String(formData.get("investmentId") ?? "");
+  if (!entryId || !investmentId) throw new Error("Lançamento não identificado.");
+
+  await deleteInvestmentEventEntry(workspaceId, investmentId, entryId);
 
   revalidatePath(`/investimentos/${investmentId}`);
 }

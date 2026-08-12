@@ -1,6 +1,5 @@
 import { Decimal, type EntryStatus } from "./types";
 import { SETTLED_FOR_BALANCE } from "./balance";
-import { addMonths } from "./dates";
 
 /**
  * Subconjunto de `Entry` (não `FinanceEntry` — que é deliberadamente enxuto e
@@ -93,13 +92,18 @@ export function openInstallmentGroups(entries: InstallmentEntry[]): OpenInstallm
 export type DebtTerm = "curto" | "longo";
 
 /**
- * Classifica uma dívida em aberto por prazo — pedido do usuário, 2026-08-11: curto prazo
- * = termina em até `thresholdMonths` (padrão 12) a partir de hoje; longo = depois disso.
- * Usa `lastDueDate` ("Prazo (até quando)", já exibido na tela de Dívidas) — a data em
- * que a última parcela do grupo vence, não a próxima.
+ * Classifica uma dívida em aberto por prazo — pedido do usuário, 2026-08-11. Primeira
+ * versão comparava `lastDueDate` (vencimento da última parcela) contra `hoje + 12 meses`,
+ * mas isso deu resultado errado em produção: parcelas atrasadas empurram `lastDueDate`
+ * de um jeito que não reflete quanto falta de verdade (ex.: um financiamento de 24x com
+ * 23 parcelas restantes apareceu como "curto prazo", e um de 12x com 11 restantes
+ * apareceu como "longo prazo" — o oposto do esperado). `remainingCount` (parcelas que
+ * ainda faltam pagar, já contado por `openInstallmentGroups`) é a métrica robusta —
+ * como todo parcelamento deste sistema é mensal, "12 parcelas restantes" e "12 meses
+ * restantes" são a mesma coisa, sem depender de quão em dia o cliente está.
  */
-export function classifyDebtTerm(group: OpenInstallmentGroup, today: Date, thresholdMonths = 12): DebtTerm {
-  return group.lastDueDate.getTime() <= addMonths(today, thresholdMonths).getTime() ? "curto" : "longo";
+export function classifyDebtTerm(group: OpenInstallmentGroup, thresholdInstallments = 12): DebtTerm {
+  return group.remainingCount <= thresholdInstallments ? "curto" : "longo";
 }
 
 /** Dívida total em aberto (§13, "Dívidas") — soma de `remainingAmount` de todos os grupos. */

@@ -14,6 +14,17 @@
 
 ---
 
+## 2026-08-12
+
+### Corrigido
+- **Patrimônio → Dívidas, filtro de curto/longo prazo**: critério trocado de "vencimento da última parcela" para "quantidade de parcelas restantes" — o critério anterior classificava errado quando havia parcela atrasada (ex.: um financiamento 1/24 com 23 parcelas restantes aparecia em "Curto prazo"; um 1/12 com 11 restantes aparecia em "Longo prazo", o oposto do esperado).
+- **Investimentos, Carteira**: arquivar um investimento não faz mais ele sumir da lista — continua visível, numa seção "Arquivados" separada e esmaecida (podia dar a impressão de que o valor tinha desaparecido do sistema, quando na verdade só ficava sem aparecer na Carteira).
+
+### Adicionado
+- Investimentos: a tabela "histórico de movimentações" ganhou botão "Excluir" por linha, ao lado de "Editar" — remove o lançamento de verdade (com confirmação antes, por ser irreversível).
+
+---
+
 ## 2026-08-11
 
 ### Adicionado

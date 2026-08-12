@@ -1630,7 +1630,68 @@
 
 ---
 
-## Próximo número de registro: **055**
+### Registro Nº 055
+- **Data:** 2026-08-12
+- **Etapa concluída:** Correção de bug real em produção (filtro de prazo em Dívidas) +
+  duas extensões do histórico de investimento (excluir lançamento; arquivar sem sumir da
+  Carteira)
+- **Descrição:** Usuário reportou, direto na versão real, que o filtro de curto/longo
+  prazo de Dívidas (Registro Nº 054) estava classificando errado: um financiamento 1/24
+  (23 parcelas restantes) apareceu em "Curto prazo", e um 1/12 (11 restantes) apareceu em
+  "Longo prazo" — o oposto do esperado. Junto, dois pedidos novos sobre o histórico de
+  investimento (Registro Nº 054): botão de excluir lançamento (precisa remover o `Entry`
+  de verdade); e o botão "Arquivar" fazendo o investimento sumir inteiro da Carteira, com
+  o cliente sem entender por que o valor dele ainda aparecia em outros lugares do sistema.
+- **O que foi feito:**
+  1. **`lib/finance/open-installments.ts::classifyDebtTerm`** — trocado o critério.
+     Versão anterior comparava `lastDueDate` (vencimento da última parcela) contra
+     `hoje + 12 meses`; isso dá resultado errado quando há parcela atrasada (empurra
+     `lastDueDate` sem refletir quanto realmente falta pagar). Novo critério: compara
+     `remainingCount` (parcelas que ainda faltam, já calculado por `openInstallmentGroups`)
+     contra o limiar (padrão 12) — como todo parcelamento deste sistema é mensal,
+     "12 parcelas restantes" e "12 meses restantes" são equivalentes, sem depender de
+     estar em dia. Função não recebe mais `today` (não precisa). Call sites atualizados em
+     `dividas/page.tsx` e `app/api/patrimonio/dividas/pdf/route.ts`.
+  2. **`lib/entries/investment.ts::deleteInvestmentEventEntry`** — nova função, mesmo
+     escopo duplo (`workspaceId`+`investmentId`) de `updateInvestmentEventEntry`, exclui o
+     `Entry` de verdade. `deleteInvestmentEventEntryAction` (`actions.ts`) +
+     botão "Excluir" em `InvestmentHistoryRow.tsx` (com `window.confirm()` antes, já que é
+     irreversível) ao lado de "Editar". Os totais do topo da página recalculam sozinhos no
+     próximo render (mesma razão do Registro Nº 054 — são sempre derivados das entries).
+  3. **`app/(app)/investimentos/page.tsx`** (Carteira) — investigado o relato do "cálculo
+     ainda aparecendo no painel": os totais de Investimento no Painel (`totals.investimento`
+     e "Saldos por carteira → Investimentos") vêm direto de `Entry`/`Wallet`, nunca de
+     `Investment.isActive` — **por design correto**: arquivar não é vender, o dinheiro
+     continua de verdade na carteira. A tela de Análise de Investimentos já filtra
+     `isActive: true` corretamente (não mudou). O bug de verdade era só a Carteira escondendo
+     o investimento inteiro ao arquivar, o que dava a impressão de "sumiu mas ainda conta em
+     algum lugar". Corrigido: query não filtra mais `isActive`, os investimentos são
+     separados em duas seções — ativos normais, e "Arquivados" abaixo com opacidade
+     reduzida (`opacity-50`) e rótulo "(arquivado)" — continuam clicáveis (é como o cliente
+     reativa).
+- **Verificado ao vivo, contra o banco de dev, servidor `next dev` real** (login sem
+  senha via magic link): criada dívida parcelada 12x (1 paga, 11 restantes) e outra 24x (1
+  paga, 23 restantes) — `?prazo=curto` mostrou só a 12x, `?prazo=longo` só a 24x, confirmando
+  a correção exata dos dois casos reportados. Criado investimento com 2 lançamentos,
+  clicado "Excluir" numa linha do histórico — confirmado no banco que o `Entry` foi
+  removido de verdade e que os totais da página recalcularam a partir do que sobrou.
+  Arquivado um investimento de teste e confirmado que ele continua aparecendo em
+  `/investimentos`, na seção "Arquivados".
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (300/300, testes de `classifyDebtTerm` reescritos pro novo
+  critério + 2 casos cobrindo os bugs reais reportados), `npx tsc --noEmit` limpo,
+  `npm run build` limpo. Verificação manual descrita acima, contra dados reais no banco de
+  dev.
+- **Documentos relacionados:** `lib/finance/open-installments.ts`,
+  `app/(app)/patrimonio/dividas/page.tsx`, `app/api/patrimonio/dividas/pdf/route.ts`,
+  `lib/entries/investment.ts`, `app/(app)/investimentos/actions.ts`,
+  `app/(app)/investimentos/[id]/InvestmentHistoryRow.tsx`,
+  `app/(app)/investimentos/page.tsx`, `tests/finance/open-installments.test.ts`.
+
+---
+
+## Próximo número de registro: **056**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
