@@ -15,7 +15,40 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Deploy do bloqueio de acesso + confirmação do
+> **Última atualização real: 2026-08-12 (Correção dos achados do Supabase Security
+> Advisor — Registro Nº 058).** Usuário recebeu o e-mail automático do Supabase (11/08)
+> reportando vulnerabilidades em produção + 3 capturas do Security Advisor ao vivo (1
+> erro, 11 avisos). Investigação (só leitura, antes de mudar nada): o 2º problema crítico
+> do e-mail (`sensitive_columns_exposed`) já estava resolvido — só `_prisma_migrations`
+> (entre as 33 tabelas de `public`) estava sem RLS. As 5 funções `SECURITY DEFINER`
+> (`handle_new_auth_user`, `handle_deleted_auth_user`, `is_platform_admin`,
+> `is_workspace_member`, `workspace_role`) nunca tiveram `GRANT`/`REVOKE` explícito —
+> ficaram com `EXECUTE` liberado até pra `anon` (visitante sem login) via
+> `/rest/v1/rpc/...`. Confirmado que as 3 últimas são usadas DENTRO de praticamente toda
+> policy de RLS do banco (não dá pra revogar de `authenticated`, só de `anon`); as 2
+> primeiras só disparam via trigger (não precisam de `EXECUTE` de ninguém).
+>
+> `prisma/sql/009_security_advisor_fixes.sql` (novo, mesmo padrão numerado 001-008):
+> RLS habilitada em `_prisma_migrations` (sem policy — só a ferramenta de migration toca
+> essa tabela, e ela conecta como owner, que ignora RLS); `REVOKE EXECUTE` das 2 funções
+> de trigger de todo mundo; das 3 auxiliares de RLS só de `public`+`anon` (mantém
+> `authenticated`, que as policies exigem). App não usa PostgREST hoje (acessa via
+> `pg`/Prisma com role privilegiada) — defesa em profundidade, zero efeito funcional.
+>
+> **Verificado no banco de dev antes de produção:** criado e excluído um usuário de teste
+> real via Admin API — os dois triggers continuaram funcionando normalmente;
+> `is_workspace_member()` continuou executável; `npm test` (301/301) +
+> `npm run test:integration` (26/26) verdes. Só depois, com autorização explícita,
+> aplicado em produção — confirmado lá também (RLS em 100% das tabelas, grants exatos).
+>
+> **Fora do alcance de SQL — precisa de ação manual do usuário:** "Leaked Password
+> Protection" é configuração de Auth no painel do Supabase (Authentication → Policies/Auth
+> Settings → Password Security), sem acesso de credencial pra fazer por aqui. Passo a
+> passo entregue ao usuário.
+>
+> **Registrado formalmente:** `REGISTRO-OPERACIONAL.md` (Registro Nº 058).
+>
+> **Última atualização anterior: 2026-08-12 (Deploy do bloqueio de acesso + confirmação do
 > usuário — Registro Nº 057).** Fechamento do Registro Nº 056 (bloqueio de acesso,
 > admin-only — ver bloco "anterior" logo abaixo pro detalhe completo da implementação):
 > commit `fcf1734` pushado, CI verde nos dois jobs, e a migration

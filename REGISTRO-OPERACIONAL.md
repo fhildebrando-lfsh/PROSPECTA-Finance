@@ -1804,7 +1804,79 @@
 
 ---
 
-## Próximo número de registro: **058**
+### Registro Nº 058
+- **Data:** 2026-08-12
+- **Etapa concluída:** Correção dos achados do Supabase Security Advisor (RLS + funções +
+  senha vazada)
+- **Descrição:** Usuário recebeu o e-mail automático do Supabase ("Action required:
+  security vulnerabilities detected", 11/08/2026) reportando 2 problemas críticos no
+  projeto de produção, e trouxe também 3 capturas de tela do Security Advisor ao vivo (1
+  erro, 11 avisos, 0 sugestões). Pediu correção completa, com o padrão explícito de "o
+  sistema tem que ser 100% seguro" — e passo a passo pra qualquer coisa que só ele consiga
+  fazer.
+- **Investigação (só leitura, contra produção, antes de qualquer mudança):**
+  - O 2º problema crítico do e-mail (`sensitive_columns_exposed`) **já estava resolvido**
+    — confirmado que as 33 tabelas do schema `public`, exceto uma, já tinham RLS habilitada
+    (trabalho de RLS completa de sessões anteriores). Só `_prisma_migrations` estava sem
+    RLS — bate exatamente com o único erro ainda listado no Advisor ao vivo.
+  - As 5 funções `SECURITY DEFINER` (`handle_new_auth_user`, `handle_deleted_auth_user`,
+    `is_platform_admin`, `is_workspace_member`, `workspace_role`) nunca tiveram
+    `GRANT`/`REVOKE` explícito desde que foram criadas (`prisma/sql/001`/`002`) — ficaram
+    com o padrão do Postgres + do Supabase: `EXECUTE` liberado pra `anon` (visitante sem
+    login) e `authenticated` via API (`/rest/v1/rpc/...`). Confirmado via
+    `information_schema.routine_privileges`.
+  - Confirmado que `is_platform_admin`/`is_workspace_member`/`workspace_role` são usadas
+    DENTRO de praticamente toda policy de RLS do banco (`prisma/sql/001`, `003`, `004`,
+    `005`, `006`, `008`) — não dá pra revogar de `authenticated`, só de `anon`.
+    `handle_new_auth_user`/`handle_deleted_auth_user` só disparam via trigger — não
+    precisam de `EXECUTE` de ninguém pra funcionar (o motor de triggers do Postgres
+    invoca, não depende do privilégio de quem fez o INSERT/DELETE em `auth.users`).
+  - Consultada a documentação oficial do Supabase sobre o lint "Function Executable by
+    Anon/Authenticated" — confere o padrão de correção usado (`revoke ... from anon,
+    public`, mantendo `authenticated` quando a função é usada em policy).
+- **O que foi feito:** `prisma/sql/009_security_advisor_fixes.sql` (novo, mesmo padrão
+  numerado dos arquivos 001-008) — `alter table public._prisma_migrations enable row
+  level security` (sem nenhuma policy — ninguém além da própria ferramenta de migration,
+  que conecta como owner e ignora RLS, precisa tocar essa tabela); `revoke execute` das 2
+  funções de trigger de `public, anon, authenticated` (ninguém precisa); `revoke execute`
+  das 3 funções auxiliares de RLS só de `public, anon` (mantém `authenticated`, que as
+  policies exigem). O app não usa PostgREST hoje (acessa o banco via `pg`/Prisma com uma
+  role privilegiada, que ignora esses `GRANT`/`REVOKE`) — é defesa em profundidade, sem
+  efeito no funcionamento atual.
+- **Verificado no banco de dev antes de tocar em produção:** criado um usuário de teste
+  real via Admin API — trigger `handle_new_auth_user()` continuou criando
+  profile+workspace+membership normalmente; excluído o usuário — trigger
+  `handle_deleted_auth_user()` continuou removendo tudo normalmente; `is_workspace_member()`
+  continuou executável. `npm test` (301/301) e `npm run test:integration` (26/26) verdes.
+  Só depois disso, com autorização explícita do usuário, aplicado em produção.
+- **Aplicado em produção e confirmado:** `_prisma_migrations` com RLS habilitada; as 33
+  tabelas do schema `public` (nenhuma exceção) agora com RLS; grants das 5 funções
+  exatamente como projetado (`anon` removido de todas, `authenticated` mantido só nas 3
+  usadas por policy).
+- **Fora do alcance de SQL/código — precisa de ação manual do usuário no painel do
+  Supabase:** "Leaked Password Protection Disabled" (1 aviso restante) — é uma
+  configuração de Auth, não uma tabela/função do banco; sem acesso de administrador ao
+  projeto Supabase (fora do escopo de credenciais desta sessão), não dá pra ligar por
+  aqui. Passo a passo entregue ao usuário: Dashboard do Supabase → projeto
+  `financas-pessoais` → **Authentication** → **Policies** (ou **Auth Settings**, conforme
+  a versão do painel) → seção **Password Security** → ativar **"Leaked password
+  protection"** (verifica contra o HaveIBeenPwned a cada cadastro/troca de senha) → Save.
+- **Resultado esperado no Advisor após o recarregar:** Errors 1 → 0. Warnings 11 → 4 (3
+  "Signed-In Users Can Execute" nas funções auxiliares de RLS — **esperado por design**,
+  documentação do próprio Supabase confirma que isso é intencional quando a função é usada
+  em policy — + 1 "Leaked Password Protection", até o usuário aplicar o passo manual
+  acima).
+- **Solicitado por:** Felipe Hildebrando (autorizou a aplicação em produção depois de ver
+  a explicação do que mudaria)
+- **Executado por:** Claude Code
+- **Evidência:** consultas diretas ao `pg_class`/`information_schema.routine_privileges`
+  de dev e produção, antes/depois; teste real de criação/exclusão de usuário contra dev;
+  `npm test` + `npm run test:integration` verdes.
+- **Documentos relacionados:** `prisma/sql/009_security_advisor_fixes.sql`.
+
+---
+
+## Próximo número de registro: **059**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

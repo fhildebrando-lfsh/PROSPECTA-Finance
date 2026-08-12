@@ -24,6 +24,9 @@
 - Investimentos: a tabela "histórico de movimentações" ganhou botão "Excluir" por linha, ao lado de "Editar" — remove o lançamento de verdade (com confirmação antes, por ser irreversível).
 - **Bloqueio de acesso ao sistema (admin-only)**: em Admin → Usuários, o administrador pode pausar o acesso de um cliente (fatura em aberto, solicitação do próprio cliente, verificação de segurança, orientação do consultor ou outro motivo, escrito por ele) sem excluir a conta. O cliente bloqueado, ao tentar acessar, vê uma mensagem explicando o motivo — reversível a qualquer momento pelo mesmo admin.
 
+### Segurança
+- Corrigidos os achados do Supabase Security Advisor em produção: `_prisma_migrations` (única tabela sem proteção de acesso por linha) agora protegida; as 5 funções internas do sistema deixaram de ser executáveis por visitantes sem login via API — só quem está logado (e só quando de fato preciso) continua com acesso. Nenhum efeito no funcionamento do sistema (a correção fecha uma porta que o próprio app nunca usava). Falta uma configuração manual do administrador no painel do Supabase ("Leaked password protection") — passo a passo entregue separadamente.
+
 ---
 
 ## 2026-08-11
