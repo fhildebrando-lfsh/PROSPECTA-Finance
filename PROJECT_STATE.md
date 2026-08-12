@@ -15,7 +15,21 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Bloqueio de acesso ao sistema, admin-only —
+> **Última atualização real: 2026-08-12 (Deploy do bloqueio de acesso + confirmação do
+> usuário — Registro Nº 057).** Fechamento do Registro Nº 056 (bloqueio de acesso,
+> admin-only — ver bloco "anterior" logo abaixo pro detalhe completo da implementação):
+> commit `fcf1734` pushado, CI verde nos dois jobs, e a migration
+> `20260812080000_workspace_block_access` aplicada em **produção** (só tinha ido pro banco
+> de dev durante o desenvolvimento — sem isso o deploy da Vercel quebraria toda consulta
+> que toca `Workspace`, já que o `Prisma Client` novo pede as 4 colunas novas). Aplicada
+> com o mesmo contorno de `prisma migrate dev`/`deploy` travando nesta máquina (seção 23)
+> — `.sql` via `pg` cru + registro em `_prisma_migrations`, guarda dupla no script (aborta
+> se detectar o ref de dev). 4 colunas confirmadas, todas nulas, nenhum dos 8 workspaces
+> reais afetado. **Usuário testou na versão real e confirmou: "testei, funcionou tudo."**
+>
+> **Registrado formalmente:** `REGISTRO-OPERACIONAL.md` (Registro Nº 057).
+>
+> **Última atualização anterior: 2026-08-12 (Bloqueio de acesso ao sistema, admin-only —
 > Registro Nº 056).** Usuário pediu uma alternativa a excluir a conta de um cliente
 > inadimplente: um bloqueio reversível, com motivo escolhido num menu suspenso, que
 > mostra uma mensagem específica pro cliente na próxima vez que ele tentar acessar.

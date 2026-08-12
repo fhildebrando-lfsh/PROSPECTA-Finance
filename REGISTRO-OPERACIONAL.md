@@ -1764,7 +1764,47 @@
 
 ---
 
-## Próximo número de registro: **057**
+### Registro Nº 057
+- **Data:** 2026-08-12
+- **Etapa concluída:** Deploy do bloqueio de acesso (Registro Nº 056) — commit, produção e
+  confirmação do usuário
+- **Descrição:** Fechamento do Registro Nº 056: commit/push autorizados pelo usuário,
+  CI verde, migration aplicada em produção (faltava — só tinha ido pro banco de dev
+  durante o desenvolvimento) e teste ao vivo do próprio usuário na versão real,
+  confirmando que a feature funciona de ponta a ponta.
+- **O que foi feito:**
+  1. Commit `fcf1734` ("Adiciona bloqueio de acesso ao sistema (admin-only)"), push pro
+     `master`. CI (`.github/workflows/ci.yml`) rodou verde nos dois jobs —
+     `build-and-test` e `integration-tests` — run
+     [31587968561](https://github.com/fhildebrando-lfsh/PROSPECTA-Finance/actions/runs/31587968561).
+  2. **Migration `20260812080000_workspace_block_access` aplicada em produção.** Só tinha
+     sido aplicada no banco de dev durante o desenvolvimento (Registro Nº 056) — sem
+     aplicar em produção também, o deploy automático da Vercel quebraria toda consulta
+     que toca `Workspace` (o `Prisma Client` novo pede as 4 colunas novas, que não
+     existiam ainda lá). Confirmado antes de aplicar: última migration registrada em
+     produção era a mesma que em dev antes desta (`20260810100000_investments`), e as
+     colunas `blocked_*` realmente não existiam ainda. Aplicado com o mesmo contorno já
+     documentado (seção 23 do PROJECT_STATE.md — `prisma migrate deploy`/`dev` travam
+     nesta máquina): `.sql` aplicado via `pg` cru dentro de uma transação + registro em
+     `_prisma_migrations`, usando `.env.prod.local` (guarda dupla no script: aborta se
+     detectar o ref de dev, exige o ref de produção). Confirmado depois: 4 colunas novas
+     presentes, todas nulas, nenhum dos 8 workspaces reais afetados (ninguém ficou
+     bloqueado por engano).
+  3. **Usuário testou na versão real e confirmou que funcionou tudo** ("testei, funcionou
+     tudo") — validação final, em cima do teste ao vivo já feito contra o banco de dev no
+     Registro Nº 056.
+- **Solicitado por:** Felipe Hildebrando (autorizou commit/push e aplicação em produção
+  em mensagens separadas, cada uma com confirmação explícita antes de agir)
+- **Executado por:** Claude Code
+- **Evidência:** CI verde (link acima); consulta direta ao `information_schema.columns`
+  de produção confirmando as 4 colunas novas antes/depois; confirmação verbal do usuário
+  após teste na versão real.
+- **Documentos relacionados:** mesmos do Registro Nº 056 — nenhum arquivo de código novo
+  nesta etapa, só operação (deploy) e verificação.
+
+---
+
+## Próximo número de registro: **058**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
