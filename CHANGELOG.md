@@ -16,6 +16,9 @@
 
 ## 2026-08-12
 
+### Alterado (continuação, mesmo dia — Registro Nº 063)
+- **Importação de planilha/extrato/fatura**: erros durante a importação agora aparecem num popup centralizado na tela, em vez de um texto pequeno em vermelho acima do formulário — mais difícil de passar despercebido.
+
 ### Corrigido (continuação, mesmo dia — Registro Nº 062)
 - **Importação de planilha (CSV)**: importações grandes (centenas de linhas, típico de uma planilha histórica completa) podiam falhar com "Erro interno." depois da prévia carregar normalmente. Causa: a transação do banco que grava os lançamentos tinha um limite de tempo curto demais para lotes grandes. Nenhum dado chegava a ser gravado quando isso acontecia (a operação inteira era desfeita), mas confirmamos e aumentamos esse limite para evitar o erro.
 

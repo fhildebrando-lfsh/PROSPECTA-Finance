@@ -2108,7 +2108,32 @@
 
 ---
 
-## Próximo número de registro: **063**
+### Registro Nº 063
+- **Data:** 2026-08-12
+- **Etapa concluída:** Erro de importação passa a aparecer em popup no centro da tela
+- **Descrição:** Usuário pediu, depois de esbarrar no erro corrigido no Registro Nº 062,
+  que qualquer erro de importação (não só aquele) fosse mostrado de forma mais visível —
+  um popup no meio da tela, em vez do texto pequeno em vermelho que hoje aparece logo
+  acima do formulário e pode passar despercebido.
+- **O que foi feito:** `app/(app)/lancamentos/importar/ImportWizard.tsx` — novo componente
+  `ImportErrorModal` (mesmo padrão visual já usado em `LgpdSavedModal`: overlay escuro,
+  card centralizado, botão "Fechar"), substitui o `<p className="text-red-400">{error}</p>`
+  inline. Cobre os três formatos de importação (CSV/OFX/PDF) e as duas fases (prévia e
+  confirmação), já que todos usam o mesmo estado `error` do wizard — nenhuma mudança na
+  lógica de quando/por que um erro acontece, só em como ele é mostrado.
+- **Verificado:** contra o banco de dev (login sem senha), upload de um CSV vazio pra
+  forçar o erro "Arquivo vazio." de propósito — popup renderizou centralizado, com título,
+  mensagem e botão "Fechar" funcionando (confirmado que o popup some ao clicar).
+  `npm test` (302/302), `tsc --noEmit` e `build` limpos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** captura de tela do popup ao vivo contra o banco de dev; `npm test`,
+  `tsc`, `build` limpos.
+- **Documentos relacionados:** `app/(app)/lancamentos/importar/ImportWizard.tsx`.
+
+---
+
+## Próximo número de registro: **064**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

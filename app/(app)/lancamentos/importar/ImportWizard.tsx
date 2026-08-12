@@ -363,7 +363,7 @@ export function ImportWizard({ wallets, people, categories, preselectedWalletId,
             className="text-sm text-zinc-300 file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-4 file:py-2 file:text-zinc-100"
           />
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <ImportErrorModal message={error} onClose={() => setError(null)} />}
           {loading && <p className="text-sm text-zinc-500">Processando…</p>}
 
           {format === "ofx" && !preview && (
@@ -709,6 +709,24 @@ export function ImportWizard({ wallets, people, categories, preselectedWalletId,
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function ImportErrorModal({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="alertdialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-2xl border border-red-900/50 bg-zinc-900 p-6">
+        <h2 className="mb-2 text-base font-semibold text-red-400">Não foi possível importar</h2>
+        <p className="mb-4 text-sm text-zinc-300">{message}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 hover:bg-amber-400"
+        >
+          Fechar
+        </button>
+      </div>
     </div>
   );
 }

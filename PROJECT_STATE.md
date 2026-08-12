@@ -15,7 +15,21 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Corrige "Erro interno." na importação de
+> **Última atualização real: 2026-08-12 (Erro de importação em popup centralizado —
+> Registro Nº 063).** Depois de esbarrar no bug do Registro Nº 062, usuário pediu que
+> qualquer erro de importação apareça num popup no meio da tela — o texto pequeno em
+> vermelho acima do formulário podia passar despercebido. `ImportErrorModal` (novo,
+> `app/(app)/lancamentos/importar/ImportWizard.tsx`) segue o mesmo padrão visual do
+> `LgpdSavedModal` já existente (overlay escuro, card centralizado, botão "Fechar"),
+> substitui o `<p>` inline — cobre CSV/OFX/PDF e prévia/confirmação, já que todos usam
+> o mesmo estado `error` do wizard. Verificado ao vivo contra o banco de dev forçando
+> "Arquivo vazio." com um CSV vazio de propósito. `npm test` (302/302), `tsc --noEmit`
+> e `build` limpos.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-12), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 063).
+>
+> **Última atualização anterior: 2026-08-12 (Corrige "Erro interno." na importação de
 > planilhas grandes — timeout de transação do Prisma — Registro Nº 062).** Usuário
 > tentou importar sua planilha histórica completa (1737 linhas) em produção — a prévia
 > carregou normal (2 erros reais, resto avisos/duplicatas), mas confirmar a importação
