@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { translateAuthError } from "@/lib/auth/error-messages";
 
 export type SetPasswordState = { error: string | null };
 
@@ -19,7 +20,7 @@ export async function setInvitePassword(
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
-  if (error) return { error: error.message };
+  if (error) return { error: translateAuthError(error) };
 
   redirect("/painel");
 }

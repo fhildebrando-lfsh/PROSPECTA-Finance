@@ -15,7 +15,38 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Restringe autocadastro aberto — exige aprovação
+> **Última atualização real: 2026-08-12 (Traduz erros do Supabase Auth + centraliza
+> cabeçalho do login — Registro Nº 060).** Usuário testou o cadastro em produção logo
+> depois do deploy do Registro Nº 059 e achou um bug real: senha fora da política
+> (Registro Nº 058) mostrava o erro cru do Supabase **em inglês** na tela — viola a
+> exigência de português formal em todo o sistema. Causa: `signup()`/`login()`/etc.
+> devolviam `error.message` do SDK direto pro usuário, e esse texto nunca é traduzido
+> pelo Supabase.
+>
+> `lib/auth/error-messages.ts::translateAuthError(error)` (novo) — mapeia por
+> `error.code` (estável, ao contrário do texto livre de `error.message`) pros erros mais
+> comuns (`weak_password`, `user_already_exists`, `invalid_credentials`,
+> `email_not_confirmed`, `over_email_send_rate_limit`, `same_password`, `user_not_found`,
+> `email_address_invalid`, `signup_disabled`) — código não mapeado cai num texto
+> genérico seguro, nunca vaza inglês. Aplicado nos 5 lugares que mostram erro de Auth pro
+> usuário final (confirmado por grep — não sobrou nenhum): `login`/`signup`/
+> `requestPasswordReset` em `app/(auth)/login/actions.ts`,
+> `app/(auth)/definir-senha/actions.ts`, `app/(auth)/redefinir-senha/page.tsx`,
+> `components/GoogleSignInButton.tsx`. Confirmado o `error.code` real (`weak_password`)
+> contra o SDK antes de mapear, não chutado.
+>
+> Logo/título/subtítulo do card de `/login` (login+cadastro e "esqueci senha") ganharam
+> `flex flex-col items-center text-center` — antes alinhados à esquerda.
+>
+> **Verificado:** `translateAuthError` chamada direto com os `error.code` reais — cada
+> um cai na mensagem certa; desconhecido cai no genérico. Centralização confirmada via
+> `getComputedStyle` contra o servidor de dev. `npm test` (301/301), `tsc`, `build`
+> limpos.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-12), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 060).
+>
+> **Última atualização anterior: 2026-08-12 (Restringe autocadastro aberto — exige aprovação
 > do admin — Registro Nº 059).** Usuário reportou que qualquer pessoa com o link
 > `/login` conseguia criar conta e ganhar acesso imediato — pediu pra fechar isso. Pediu
 > dois mecanismos: autocadastro livre vira pendente (com e-mail avisando o admin); convite

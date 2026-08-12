@@ -1955,7 +1955,56 @@
 
 ---
 
-## Próximo número de registro: **060**
+### Registro Nº 060
+- **Data:** 2026-08-12
+- **Etapa concluída:** Traduz erros do Supabase Auth (bug real achado em produção) +
+  centraliza cabeçalho do card de login
+- **Descrição:** Usuário testou o cadastro em produção logo após o deploy do Registro
+  Nº 059 e achou um bug real: ao digitar uma senha que não atende à política reforçada
+  (Registro Nº 058), a tela mostrava o erro cru do Supabase, em inglês —
+  `"Password should contain at least one character of each: ..."` — direto na tela,
+  violando a exigência do usuário de que todo texto do sistema seja português formal,
+  sem erro. Pediu também pra centralizar o logo/título/subtítulo do card de login (hoje
+  alinhados à esquerda).
+- **O que foi feito:**
+  1. **`lib/auth/error-messages.ts`** (novo) — `translateAuthError(error)` traduz pelo
+     `error.code` (estável entre versões do SDK, ao contrário do texto livre de
+     `error.message`, sempre em inglês) — mapeia os códigos mais comuns
+     (`weak_password`, `user_already_exists`, `invalid_credentials`,
+     `email_not_confirmed`, `over_email_send_rate_limit`, `same_password`,
+     `user_not_found`, `email_address_invalid`, `signup_disabled`) pra mensagens em
+     português que fazem sentido pro usuário final. Código não mapeado cai num texto
+     genérico seguro ("Não foi possível concluir…") — nunca vaza o inglês original.
+     Confirmado o `error.code` real contra o banco de dev antes de mapear (não chutado).
+  2. Aplicado em **todo lugar que hoje mostra erro do Supabase Auth pro usuário final**
+     (grep confirmou que eram só esses 5, nenhum a mais): `app/(auth)/login/actions.ts`
+     (`login`, `signup`, `requestPasswordReset`), `app/(auth)/definir-senha/actions.ts`,
+     `app/(auth)/redefinir-senha/page.tsx`, `components/GoogleSignInButton.tsx`. Páginas
+     admin-only que mostram `error.message` de outras APIs (ex.: listagem de usuários)
+     não foram mexidas — erro técnico visível só pro admin é aceitável, diferente de
+     erro de autenticação visível pro cliente final.
+  3. **`app/(auth)/login/page.tsx`** — logo, título e subtítulo dos dois cards (login/
+     cadastro e "esqueci minha senha") envolvidos num `<div className="flex flex-col
+     items-center text-center">` — antes alinhados à esquerda por padrão do bloco,
+     agora centralizados.
+- **Verificado:** `translateAuthError` chamada diretamente com os códigos reais
+  (confirmado contra o SDK: `weak_password` de verdade tem `code: "weak_password"`) —
+  cada um cai na mensagem certa em português; código desconhecido cai no genérico, nunca
+  no texto em inglês. Centralização confirmada via inspeção de `getComputedStyle`
+  (`display: flex`, `align-items: center`, `text-align: center`) contra o servidor de
+  dev. `npm test` (301/301), `npx tsc --noEmit` e `npm run build` limpos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** teste direto de `translateAuthError` com os `error.code` reais;
+  `npm test`, `tsc`, `build` limpos; inspeção de layout ao vivo contra dev.
+- **Documentos relacionados:** `lib/auth/error-messages.ts`,
+  `app/(auth)/login/actions.ts`, `app/(auth)/login/page.tsx`,
+  `app/(auth)/definir-senha/actions.ts`, `app/(auth)/redefinir-senha/page.tsx`,
+  `components/GoogleSignInButton.tsx`.
+
+---
+
+## Próximo número de registro: **061**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

@@ -32,9 +32,11 @@ function LoginForm() {
     return (
       <div className="flex flex-1 items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-          <Image src="/logo-sidebar.png" alt="" width={48} height={48} className="mb-3" priority />
-          <h1 className="mb-1 text-xl font-semibold text-zinc-50">Redefinir senha</h1>
-          <p className="mb-6 text-sm text-zinc-400">Informe seu e-mail para receber o link de redefinição.</p>
+          <div className="flex flex-col items-center text-center">
+            <Image src="/logo-sidebar.png" alt="" width={48} height={48} className="mb-3" priority />
+            <h1 className="mb-1 text-xl font-semibold text-zinc-50">Redefinir senha</h1>
+            <p className="mb-6 text-sm text-zinc-400">Informe seu e-mail para receber o link de redefinição.</p>
+          </div>
 
           <form action={recoverAction} className="flex flex-col gap-4">
             <label className="flex flex-col gap-1 text-sm text-zinc-300">
@@ -80,11 +82,13 @@ function LoginForm() {
     <div className="flex flex-1 flex-col items-center justify-center px-4">
       <InstallPrompt />
       <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-        <Image src="/logo-sidebar.png" alt="" width={48} height={48} className="mb-3" priority />
-        <h1 className="mb-1 text-xl font-semibold text-zinc-50">PROSPECTA Finance</h1>
-        <p className="mb-6 text-sm text-zinc-400">
-          {mode === "login" ? "Entre com sua conta." : "Crie sua conta."}
-        </p>
+        <div className="flex flex-col items-center text-center">
+          <Image src="/logo-sidebar.png" alt="" width={48} height={48} className="mb-3" priority />
+          <h1 className="mb-1 text-xl font-semibold text-zinc-50">PROSPECTA Finance</h1>
+          <p className="mb-6 text-sm text-zinc-400">
+            {mode === "login" ? "Entre com sua conta." : "Crie sua conta."}
+          </p>
+        </div>
 
         <GoogleSignInButton />
 

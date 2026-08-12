@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { translateAuthError } from "@/lib/auth/error-messages";
 
 export function GoogleSignInButton() {
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ export function GoogleSignInButton() {
       options: { redirectTo: `${window.location.origin}/auth/confirm` },
     });
     if (error) {
-      setError(error.message);
+      setError(translateAuthError(error));
       setLoading(false);
     }
     // Em caso de sucesso o navegador é redirecionado para o Google — não há

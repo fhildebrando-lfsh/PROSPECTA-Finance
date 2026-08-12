@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
 import { notifyAdminsOfPendingApproval } from "@/lib/workspace/pending-approval";
+import { translateAuthError } from "@/lib/auth/error-messages";
 
 async function currentOrigin() {
   const headerList = await headers();
@@ -35,7 +36,7 @@ export async function login(
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message, info: null };
+  if (error) return { error: translateAuthError(error), info: null };
 
   redirect(safeRedirectTo(formData));
 }
@@ -62,7 +63,7 @@ export async function signup(
     password,
     options: { data: { full_name: fullName } },
   });
-  if (error) return { error: error.message, info: null };
+  if (error) return { error: translateAuthError(error), info: null };
 
   // O trigger de signup já criou a Profile na mesma transação do INSERT em
   // auth.users — se isso falhar (ex.: race condition improvável), a conta já
@@ -114,7 +115,7 @@ export async function requestPasswordReset(
     redirectTo: `${origin}/redefinir-senha`,
   });
   // Nunca revela se o e-mail existe ou não (evita enumeração de contas).
-  if (error) return { error: error.message, info: null };
+  if (error) return { error: translateAuthError(error), info: null };
 
   return {
     error: null,

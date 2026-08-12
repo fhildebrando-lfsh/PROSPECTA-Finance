@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { translateAuthError } from "@/lib/auth/error-messages";
 
 type Status = "checking" | "ready" | "invalid";
 
@@ -61,7 +62,7 @@ export default function RedefinirSenhaPage() {
     setSaving(false);
 
     if (updateError) {
-      setError(updateError.message);
+      setError(translateAuthError(updateError));
       return;
     }
     router.push("/painel");
