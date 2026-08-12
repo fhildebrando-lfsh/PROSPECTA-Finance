@@ -2061,7 +2061,54 @@
 
 ---
 
-## Próximo número de registro: **062**
+### Registro Nº 062
+- **Data:** 2026-08-12
+- **Etapa concluída:** Corrige "Erro interno." na importação de planilhas grandes
+  (timeout de transação do Prisma)
+- **Descrição:** Usuário tentou importar sua planilha histórica completa (`DADOS
+  (finanças pessoais) - 2025.csv`, 1737 linhas, anos de lançamentos) em produção e
+  recebeu "Erro interno." depois da prévia carregar normalmente (2 erros reais, 717
+  avisos majoritariamente duplicatas contra o histórico já existente). Antes de
+  qualquer correção, confirmado via log real do Vercel (`vercel logs`) que a causa era
+  `PrismaClientKnownRequestError` código `P2028`: "A commit cannot be executed on an
+  expired transaction. The timeout for this transaction was 5000 ms, however 5486 ms
+  [e, numa segunda tentativa, 6202 ms] passed since the start of the transaction."
+  Também confirmado (consulta direta e somente leitura no banco de produção) que
+  **nenhum dado foi gravado** — a transação expirada faz o Prisma abortar tudo, sem
+  gravação parcial; o usuário só via o erro sem perder nem duplicar nada.
+- **Causa raiz:** `lib/import/commit.ts::commitImportBatch` roda tudo dentro de um
+  único `prisma.$transaction`: criação do lote, um `tx.entryGroup.create()`
+  **sequencial** por grupo de parcelas/recorrência detectado (61 grupos nesta
+  planilha) e depois um `tx.entry.createMany()` com todas as linhas importáveis. Para
+  uma importação histórica grande, a soma dos passos sequenciais passa dos 5000ms
+  padrão do Prisma pra transações interativas — a rota nunca definia um valor próprio.
+- **O que foi feito:**
+  1. **`lib/import/commit.ts`** — `prisma.$transaction(fn, { timeout: 30_000 })`
+     (era o default de 5000ms). 30s dá folga confortável mesmo pra lotes bem maiores
+     que os 1682 lançamentos importados nesta planilha.
+  2. **`app/api/import/commit/route.ts`** — `export const maxDuration = 60` (novo),
+     pra a função da Vercel não matar a requisição antes da transação atingir seu
+     próprio limite mais alto.
+- **Verificado:** reproduzido o problema de ponta a ponta rodando a lógica real de
+  commit contra o banco de dev com a planilha real do usuário antes da correção
+  (sucesso isolado, sem o `after()` de sincronização de Agenda, que só funciona dentro
+  de uma requisição Next.js de verdade — não é o bug relatado). Depois da correção,
+  reproduzida a importação completa pela UI real (login sem senha, upload do arquivo,
+  clique em "Confirmar importação") contra o banco de dev: **"Importação concluída:
+  1682 lançamentos importados, 55 ignorados (erro ou duplicata)"** em 3,3 segundos, sem
+  erro. Dados de teste removidos do banco de dev ao final (dois lotes, no total, das
+  duas rodadas de teste). `npm test` (302/302), `tsc --noEmit` e `build` limpos.
+- **Solicitado por:** Felipe Hildebrando (relatado ao vivo em produção)
+- **Executado por:** Claude Code
+- **Evidência:** log real do Vercel confirmando a causa (`P2028`, timeout de 5000ms);
+  consulta somente-leitura em produção confirmando zero gravação parcial; reprodução
+  completa do fluxo de importação contra o banco de dev, antes (falha) e depois
+  (sucesso, 1682 lançamentos) da correção; `npm test`, `tsc`, `build` limpos.
+- **Documentos relacionados:** `lib/import/commit.ts`, `app/api/import/commit/route.ts`.
+
+---
+
+## Próximo número de registro: **063**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

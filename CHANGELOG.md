@@ -16,6 +16,9 @@
 
 ## 2026-08-12
 
+### Corrigido (continuação, mesmo dia — Registro Nº 062)
+- **Importação de planilha (CSV)**: importações grandes (centenas de linhas, típico de uma planilha histórica completa) podiam falhar com "Erro interno." depois da prévia carregar normalmente. Causa: a transação do banco que grava os lançamentos tinha um limite de tempo curto demais para lotes grandes. Nenhum dado chegava a ser gravado quando isso acontecia (a operação inteira era desfeita), mas confirmamos e aumentamos esse limite para evitar o erro.
+
 ### Corrigido (continuação, mesmo dia — Registro Nº 061)
 - **Painel, Balanço**: um aporte de investimento não é mais somado como se fosse receita — agora é descontado, porque tira dinheiro da carteira disponível (só volta a ficar líquido se resgatado). Uma retirada, ao contrário, aumenta o Balanço, porque devolve liquidez. Dividendo/aluguel recebido de verdade não muda (já era tratado como Receita). A correção também alcança o Balanço Anual e o Fluxo Projetado, que usam a mesma fórmula.
 

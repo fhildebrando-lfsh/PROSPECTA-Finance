@@ -9,6 +9,10 @@ import { buildOfxImportRows, type OfxImportParams } from "@/lib/import/ofx-impor
 import { buildPdfImportRows, type PdfImportParams } from "@/lib/import/pdf-statement/pdf-import";
 import type { PdfStatementTransaction } from "@/lib/import/pdf-statement/types";
 
+// Folga acima do timeout de 30s da transação em lib/import/commit.ts — sem isso a
+// Vercel mataria a função antes da transação sequer atingir seu próprio limite.
+export const maxDuration = 60;
+
 function deserializePdfTransactions(raw: unknown): PdfStatementTransaction[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((t) => {

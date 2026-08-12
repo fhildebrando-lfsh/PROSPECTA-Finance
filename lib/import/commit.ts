@@ -53,58 +53,67 @@ export async function commitImportBatch(input: CommitImportInput): Promise<Commi
     })),
   );
 
-  const batch = await prisma.$transaction(async (tx) => {
-    const created = await tx.importBatch.create({
-      data: {
-        workspaceId,
-        originalFilename: filename,
-        importedCount: toImport.length,
-        errorCount: resolvedRows.length - toImport.length,
-        createdBy: profileId,
-      },
-    });
-
-    const groupIdByRow = new Map<(typeof toImport)[number], string>();
-    for (const cluster of safeClusters) {
-      if (cluster.length < 2) continue; // parcela avulsa sozinha não precisa de grupo
-      const group = await tx.entryGroup.create({ data: { workspaceId } });
-      for (const item of cluster) groupIdByRow.set(item.row, group.id);
-    }
-
-    if (toImport.length > 0) {
-      await tx.entry.createMany({
-        data: toImport.map((row) => ({
+  const batch = await prisma.$transaction(
+    async (tx) => {
+      const created = await tx.importBatch.create({
+        data: {
           workspaceId,
-          walletId: row.walletId!,
-          categoryId: row.categoryId!,
-          subcategoryId: row.subcategoryId,
-          responsibleId: row.responsibleId!,
-          nature: row.parsed.data.nature!,
-          amount: row.parsed.data.amount!,
-          description: row.parsed.data.description!,
-          transactionDate: row.parsed.data.transactionDate!,
-          dueDate: row.parsed.data.dueDate!,
-          statusCode: row.parsed.data.statusCode!,
-          recurrenceCode: row.parsed.data.recurrence!.recurrenceKind,
-          groupId: groupIdByRow.get(row) ?? null,
-          installmentNumber: row.parsed.data.recurrence!.installmentNumber,
-          installmentTotal: row.parsed.data.recurrence!.installmentTotal,
-          isPatrimonio: row.parsed.data.recurrence!.isPatrimonio,
-          isProjecao: row.parsed.data.recurrence!.isProjecao,
-          legacyRecurrenceLabel: row.parsed.data.recurrence!.legacyLabel,
-          note: row.parsed.data.note,
-          tags: row.parsed.data.tags,
-          autoReviewReason: row.parsed.data.reviewReason,
-          importedDescription: row.parsed.data.importedDescription,
-          importBatchId: created.id,
+          originalFilename: filename,
+          importedCount: toImport.length,
+          errorCount: resolvedRows.length - toImport.length,
           createdBy: profileId,
-          updatedBy: profileId,
-        })),
+        },
       });
-    }
 
-    return created;
-  });
+      const groupIdByRow = new Map<(typeof toImport)[number], string>();
+      for (const cluster of safeClusters) {
+        if (cluster.length < 2) continue; // parcela avulsa sozinha não precisa de grupo
+        const group = await tx.entryGroup.create({ data: { workspaceId } });
+        for (const item of cluster) groupIdByRow.set(item.row, group.id);
+      }
+
+      if (toImport.length > 0) {
+        await tx.entry.createMany({
+          data: toImport.map((row) => ({
+            workspaceId,
+            walletId: row.walletId!,
+            categoryId: row.categoryId!,
+            subcategoryId: row.subcategoryId,
+            responsibleId: row.responsibleId!,
+            nature: row.parsed.data.nature!,
+            amount: row.parsed.data.amount!,
+            description: row.parsed.data.description!,
+            transactionDate: row.parsed.data.transactionDate!,
+            dueDate: row.parsed.data.dueDate!,
+            statusCode: row.parsed.data.statusCode!,
+            recurrenceCode: row.parsed.data.recurrence!.recurrenceKind,
+            groupId: groupIdByRow.get(row) ?? null,
+            installmentNumber: row.parsed.data.recurrence!.installmentNumber,
+            installmentTotal: row.parsed.data.recurrence!.installmentTotal,
+            isPatrimonio: row.parsed.data.recurrence!.isPatrimonio,
+            isProjecao: row.parsed.data.recurrence!.isProjecao,
+            legacyRecurrenceLabel: row.parsed.data.recurrence!.legacyLabel,
+            note: row.parsed.data.note,
+            tags: row.parsed.data.tags,
+            autoReviewReason: row.parsed.data.reviewReason,
+            importedDescription: row.parsed.data.importedDescription,
+            importBatchId: created.id,
+            createdBy: profileId,
+            updatedBy: profileId,
+          })),
+        });
+      }
+
+      return created;
+    },
+    // Default de 5s (Prisma) estourava em importações históricas grandes — um
+    // lote real de ~1700 linhas/61 grupos de parcelas levou 5,5s em produção
+    // (confirmado no log do Vercel: P2028, "transaction expired"), abortando
+    // a transação inteira sem gravar nada. 30s dá folga confortável mesmo
+    // pra lotes bem maiores; `maxDuration` da rota (route.ts) foi ajustado
+    // junto pra não matar a função antes da transação.
+    { timeout: 30_000 },
+  );
 
   if (toImport.length > 0) {
     after(async () => {

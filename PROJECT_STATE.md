@@ -15,7 +15,38 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Balanço do Painel desconta Investimento +
+> **Última atualização real: 2026-08-12 (Corrige "Erro interno." na importação de
+> planilhas grandes — timeout de transação do Prisma — Registro Nº 062).** Usuário
+> tentou importar sua planilha histórica completa (1737 linhas) em produção — a prévia
+> carregou normal (2 erros reais, resto avisos/duplicatas), mas confirmar a importação
+> devolvia "Erro interno.". `vercel logs` confirmou a causa real:
+> `PrismaClientKnownRequestError` `P2028` — "A commit cannot be executed on an expired
+> transaction. The timeout for this transaction was 5000 ms, however 5486 ms passed".
+> Consulta somente-leitura direto em produção confirmou que **nada foi gravado** — a
+> transação expirada aborta tudo, sem gravação parcial.
+>
+> Causa: `lib/import/commit.ts::commitImportBatch` roda a criação do lote, um
+> `tx.entryGroup.create()` **sequencial** por grupo de parcelas/recorrência (61 grupos
+> nesta planilha) e o `tx.entry.createMany()` final tudo dentro de um único
+> `prisma.$transaction` sem timeout customizado — a soma dos passos sequenciais passa
+> do default de 5000ms do Prisma em importações históricas grandes.
+>
+> `prisma.$transaction(fn, { timeout: 30_000 })` (era o default) +
+> `app/api/import/commit/route.ts` ganhou `export const maxDuration = 60` (pra a
+> função da Vercel não matar a requisição antes da transação atingir seu novo limite).
+>
+> **Verificado:** reprodução completa contra o banco de dev com a planilha real do
+> usuário — falha confirmada antes da correção (mesmo padrão do log de produção,
+> descontado o `after()` de sincronização de Agenda, que só funciona dentro de uma
+> requisição Next.js real); depois da correção, importação completa pela UI real
+> (upload → "Confirmar importação"): **1682 lançamentos importados, 55 ignorados**, em
+> 3,3 segundos, sem erro. Dados de teste removidos do banco de dev ao final. `npm test`
+> (302/302), `tsc --noEmit` e `build` limpos.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-12), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 062).
+>
+> **Última atualização anterior: 2026-08-12 (Balanço do Painel desconta Investimento +
 > gráficos com linha de Investimento e despesa como barra positiva — Registro Nº 061).**
 > Usuário revisou o Painel em produção e apontou um problema conceitual: o "Balanço"
 > (KPI e linha "Saldo" dos gráficos) somava "Investimento" como se fosse receita, quando
