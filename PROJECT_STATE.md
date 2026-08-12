@@ -15,7 +15,45 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Traduz erros do Supabase Auth + centraliza
+> **Última atualização real: 2026-08-12 (Balanço do Painel desconta Investimento +
+> gráficos com linha de Investimento e despesa como barra positiva — Registro Nº 061).**
+> Usuário revisou o Painel em produção e apontou um problema conceitual: o "Balanço"
+> (KPI e linha "Saldo" dos gráficos) somava "Investimento" como se fosse receita, quando
+> na verdade um aporte tira dinheiro da carteira disponível (só volta a ficar líquido se
+> resgatado). Pediu também duas melhorias visuais nos gráficos "Últimos 6 meses"/
+> "Provisão": linha branca nova pra "Investimento" (pode ir abaixo de zero) e despesa
+> passando a desenhar como barra positiva (acima do zero, igual receita, diferenciada só
+> pela cor) — só visual, sem mexer em lançamentos.
+>
+> `lib/finance/period.ts::periodTotals()` — `balanco` vira `receita.plus(despesa).minus(investimento)`
+> (antes somava). Como `investimento` já carrega o sinal certo (positivo em aporte,
+> negativo em retirada), inverter a soma sozinho cobre os três casos que o usuário
+> descreveu: aporte reduz o Balanço, retirada aumenta o Balanço, e dividendo/aluguel
+> recebido de verdade (lançado como Receita numa carteira real via
+> `registerInvestmentIncome`, nunca passa por `investimento`) continua somando certo sem
+> mudança nenhuma. Card "Investimento" continua com o mesmo valor/sinal — só a fórmula do
+> Balanço mudou. Como `periodTotals`/`monthlySeries`/`projectedBalance` são
+> compartilhadas, a correção se propaga sozinha pro Painel, Balanço Anual (tela+PDF) e
+> Fluxo Projetado (tela+PDF).
+>
+> `components/charts/MonthlyChart.tsx` — `MonthlyChartPoint.investimento` (novo, opcional
+> — os outros 4 usos do componente não têm essa dimensão). Despesa passa a desenhar com
+> `Math.abs()` só na barra (dado original com sinal intacto fora do componente). Nova
+> `<Line dataKey="investimento" stroke="#ffffff">`, só aparece quando algum ponto tem o
+> campo definido, com sinal real (pode ir abaixo de zero). `app/(app)/painel/page.tsx`
+> passou a incluir `investimento` nos dois loops de gráfico.
+>
+> **Verificado ao vivo** contra o banco de dev (login sem senha): criados receita
+> (R$5.000, recebida), despesa (R$2.000, paga) e um investimento novo com aporte de
+> R$800, tudo no mesmo mês — Balanço mostrou R$2.200,00 (`5000 - 2000 - 800`, confirmado
+> na mão), gráfico desenhou a barra de despesa em vermelho acima do zero ao lado da
+> receita em verde. Dados de teste removidos do banco de dev ao final. `npm test`
+> (302/302), `tsc --noEmit` e `build` limpos.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-12), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 061).
+>
+> **Última atualização anterior: 2026-08-12 (Traduz erros do Supabase Auth + centraliza
 > cabeçalho do login — Registro Nº 060).** Usuário testou o cadastro em produção logo
 > depois do deploy do Registro Nº 059 e achou um bug real: senha fora da política
 > (Registro Nº 058) mostrava o erro cru do Supabase **em inglês** na tela — viola a
@@ -1981,7 +2019,7 @@ Todas testadas em `tests/finance/` (113 testes no total, incluindo `lib/import`)
 | §10 R3 | Resultado derivado (Ok/vencido/a pagar/a receber), nunca digitado | `lib/finance/derived.ts` |
 | §10 R5 | Transferência: par de linhas, soma zero, tela própria (origem/destino/valor/data) | `lib/finance/transfer.ts`, `lib/entries/transfer.ts`, `app/(app)/lancamentos/transferir/*` |
 | §11.1/11.2 | Saldo de carteira, blocos do dashboard | `lib/finance/balance.ts` |
-| §11.3 | Receita/Despesa/Investimento/Balanço do período (fiel à fórmula — **não filtra por situação**, inclui A_PAGAR/A_RECEBER/ESTIMATIVA) | `lib/finance/period.ts` |
+| §11.3 | Receita/Despesa/Investimento/Balanço do período, filtrado por `settlement: "settled" \| "pending"` (obrigatório — Registro Nº 053); `Balanço = Receita + Despesa − Investimento` (Investimento desconta, não soma — um aporte tira dinheiro da carteira disponível; Registro Nº 061) | `lib/finance/period.ts` |
 | — | Painel com 3 visões de período — Mensal (padrão), Anual (ano inteiro, nav ano anterior/seguinte), Geral (todo o histórico, sem nav) — via `?view=`. Afeta KPIs, Top 5, distribuição por categoria; o gráfico "Últimos 6 meses" não muda (sempre 6 meses fixos, é sobre tendência recente, não o período selecionado) | `app/(app)/painel/page.tsx` |
 | — | Gráfico "Provisão (próximos 6 meses)" no Painel, abaixo de "Últimos 6 meses" — mesmo estilo/componente (`MonthlyChart`), mas sempre ancorado em hoje (não no mês/view do filtro) e projetando 6 meses à frente. Usa os mesmos `entries` já carregados (sem query nova) — parcelas futuras, ocorrências de recorrência já materializadas (§8.5, 24 meses à frente) e compromissos A_PAGAR/A_RECEBER agendados já aparecem porque `periodTotals` não filtra por data passada/futura, só pelo período pedido | `app/(app)/painel/page.tsx` |
 | §11.4/11.5 | Janela de fatura, fatura vigente, cobertura | `lib/finance/card.ts` |

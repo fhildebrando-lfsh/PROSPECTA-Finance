@@ -16,7 +16,7 @@ describe("periodTotals (§11.3)", () => {
     expect(totals.receita.toNumber()).toBe(5000);
     expect(totals.despesa.toNumber()).toBe(-2000);
     expect(totals.investimento.toNumber()).toBe(-500);
-    expect(totals.balanco.toNumber()).toBe(2500);
+    expect(totals.balanco.toNumber()).toBe(3500);
   });
 
   it("nature = OUTRO (transferências) fica fora por construção", () => {
@@ -157,5 +157,18 @@ describe("projectedBalance (§13 — Fluxo projetado)", () => {
     expect(result.points[0].balance.toNumber()).toBe(1300); // 1000 + 300 (RECEBIDO antecipado de 777 não entra)
     expect(result.points[1].period.start.getUTCMonth()).toBe(7); // agosto
     expect(result.points[1].balance.toNumber()).toBe(1200); // 1300 - 100
+  });
+
+  it("investimento pendente reduz o balanço projetado (aporte tira dinheiro da carteira)", () => {
+    const entries = [
+      makeEntry({ walletId: "conta-1", nature: "RECEITA", status: "PAGO", amount: d(1000), dueDate: new Date(Date.UTC(2026, 5, 10)) }),
+      // julho — aporte pendente (ESTIMATIVA é o único status "pending" válido pra INVESTIMENTO)
+      makeEntry({ nature: "INVESTIMENTO", status: "ESTIMATIVA", amount: d(400), dueDate: new Date(Date.UTC(2026, 6, 5)) }),
+    ];
+
+    const result = projectedBalance(entries, wallets, fromDate, 1);
+
+    expect(result.current.toNumber()).toBe(1000);
+    expect(result.points[0].balance.toNumber()).toBe(600); // 1000 - 400
   });
 });

@@ -16,6 +16,12 @@
 
 ## 2026-08-12
 
+### Corrigido (continuação, mesmo dia — Registro Nº 061)
+- **Painel, Balanço**: um aporte de investimento não é mais somado como se fosse receita — agora é descontado, porque tira dinheiro da carteira disponível (só volta a ficar líquido se resgatado). Uma retirada, ao contrário, aumenta o Balanço, porque devolve liquidez. Dividendo/aluguel recebido de verdade não muda (já era tratado como Receita). A correção também alcança o Balanço Anual e o Fluxo Projetado, que usam a mesma fórmula.
+
+### Alterado (continuação, mesmo dia — Registro Nº 061)
+- **Painel, gráficos "Últimos 6 meses" e "Provisão"**: a barra de Despesa agora desenha acima do zero, igual a Receita (diferenciada só pela cor vermelha) — antes ficava abaixo, dificultando a comparação visual entre as duas. Nova linha branca de "Investimento" no gráfico, podendo aparecer abaixo de zero num mês de retirada.
+
 ### Corrigido
 - **Patrimônio → Dívidas, filtro de curto/longo prazo**: critério trocado de "vencimento da última parcela" para "quantidade de parcelas restantes" — o critério anterior classificava errado quando havia parcela atrasada (ex.: um financiamento 1/24 com 23 parcelas restantes aparecia em "Curto prazo"; um 1/12 com 11 restantes aparecia em "Longo prazo", o oposto do esperado).
 - **Investimentos, Carteira**: arquivar um investimento não faz mais ele sumir da lista — continua visível, numa seção "Arquivados" separada e esmaecida (podia dar a impressão de que o valor tinha desaparecido do sistema, quando na verdade só ficava sem aparecer na Carteira).

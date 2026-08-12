@@ -2004,7 +2004,64 @@
 
 ---
 
-## Próximo número de registro: **061**
+### Registro Nº 061
+- **Data:** 2026-08-12
+- **Etapa concluída:** Balanço do Painel passa a descontar Investimento + gráficos
+  ganham linha de Investimento e despesa como barra positiva
+- **Descrição:** Usuário revisou o Painel em produção e identificou um problema
+  conceitual: o "Balanço" (KPI e linha "Saldo" dos gráficos) somava "Investimento" como
+  se fosse receita, quando na verdade um aporte tira dinheiro da carteira disponível (só
+  volta a ficar líquido se resgatado). Pediu também duas melhorias visuais nos gráficos
+  de barra (Últimos 6 meses / Provisão): linha branca nova pra "Investimento" (pode ir
+  abaixo de zero) e despesa passando a desenhar como barra positiva (acima do zero, igual
+  receita, diferenciada só pela cor vermelha) — só visual, sem mexer em lançamentos.
+- **O que foi feito:**
+  1. **`lib/finance/period.ts`** — `periodTotals()`: `balanco` passa de
+     `receita.plus(despesa).plus(investimento)` para `receita.plus(despesa).minus(investimento)`.
+     Como `investimento` já vem com o sinal certo (positivo em aporte, negativo em
+     retirada), inverter a soma sozinho cobre os três casos: aporte reduz o Balanço,
+     retirada aumenta o Balanço, e dividendo/aluguel recebido de verdade (já lançado como
+     Receita numa carteira real, nunca passa por `investimento`) continua somando certo,
+     sem mudança. Card "Investimento" continua exatamente como está — só a fórmula do
+     Balanço mudou. Como `periodTotals`/`monthlySeries`/`projectedBalance` são
+     compartilhadas, a correção se propaga automaticamente pro Painel (KPI + 2 gráficos),
+     Balanço Anual (tela+PDF) e Fluxo Projetado (tela+PDF).
+  2. **`components/charts/MonthlyChart.tsx`** — `MonthlyChartPoint` ganha
+     `investimento?: number` (opcional, pra não quebrar os outros 4 reaproveitamentos do
+     componente: Fluxo Projetado, Dívidas, Análise de Investimentos, Bens). Despesa passa
+     a desenhar com `Math.abs()` na barra (só na barra — o dado original com sinal
+     continua intacto fora do componente). Nova `<Line dataKey="investimento" stroke="#ffffff">`
+     branca, só renderiza quando pelo menos um ponto de `data` tem `investimento`
+     definido — com sinal real (sem `Math.abs()`), pode desenhar abaixo de zero.
+  3. **`app/(app)/painel/page.tsx`** — os dois loops que montam `monthlyChartData` e
+     `forecastChartData` passam `investimento: t.investimento.toNumber()` ao objeto
+     retornado.
+  4. **`tests/finance/period.test.ts`** — fixture existente de `periodTotals` (receita
+     5000, despesa -2000, investimento -500) atualizada de `balanco = 2500` pra
+     `balanco = 3500` (`5000 - 2000 - (-500)`). Novo caso em `projectedBalance` com um
+     aporte pendente (`nature: "INVESTIMENTO"`, `status: "ESTIMATIVA"`) confirmando que
+     reduz o saldo projetado — a fixture original não cobria esse sinal.
+- **Verificado:** `npm test` (302/302), `npx tsc --noEmit` e `npm run build` limpos.
+  Verificação ao vivo contra o banco de dev (login sem senha, técnica da seção 21): criado
+  workspace de teste temporário com receita (R$5.000, recebida), despesa (R$2.000, paga) e
+  um investimento novo com aporte inicial de R$800 no mesmo mês — Balanço do Painel
+  mostrou R$2.200,00 (`5000 - 2000 - 800`, confirmado na mão), o KPI "Investimento" mostrou
+  R$800,00 separado, e o gráfico "Últimos 6 meses" desenhou a barra de despesa em vermelho
+  acima do zero, ao lado da barra de receita em verde. Fluxo Projetado ("Saldo hoje")
+  também refletiu o novo cálculo (R$3.000,00, batendo com `dashboardBalanceBlocks`, que não
+  foi alterado). Dados de teste removidos do banco de dev ao final.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test`, `tsc`, `build` limpos; verificação ao vivo com lançamentos
+  reais no banco de dev (Balanço = R$2.200,00 confirmado na mão) e captura de tela do
+  gráfico mostrando a barra de despesa positiva.
+- **Documentos relacionados:** `lib/finance/period.ts`,
+  `components/charts/MonthlyChart.tsx`, `app/(app)/painel/page.tsx`,
+  `tests/finance/period.test.ts`.
+
+---
+
+## Próximo número de registro: **062**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

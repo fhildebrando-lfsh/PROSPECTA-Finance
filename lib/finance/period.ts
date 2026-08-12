@@ -39,6 +39,18 @@ export interface PeriodTotals {
  * confundia "quanto já entrou/saiu" com "quanto era esperado".
  * `nature = OUTRO` (transferências, §10 R5) já fica fora por construção —
  * nenhum filtro adicional necessário.
+ *
+ * `balanco` SUBTRAI `investimento` (não soma) — pedido do usuário,
+ * 2026-08-12: o Painel responde "quanto tenho disponível pra usar", não
+ * "quanto movimentei no total". Um aporte tira dinheiro de caixa (só volta
+ * a ficar líquido se resgatado) — por isso, quando `investimento` é
+ * positivo (aporte líquido no período), reduz o balanço; quando é negativo
+ * (retirada/perda/imposto líquidos, categorias em `NEGATIVE_EVENT_SLUGS`
+ * de `lib/entries/investment.ts`), aumenta o balanço, porque a posição
+ * encolheu e esse valor volta a ser dinheiro disponível. Dividendo/aluguel
+ * recebido de verdade nunca passa por aqui — é lançado como `RECEITA` numa
+ * carteira real (`registerInvestmentIncome`), já soma certo sem precisar
+ * de nenhum tratamento especial.
  */
 export function periodTotals(
   entries: FinanceEntry[],
@@ -56,7 +68,7 @@ export function periodTotals(
   const despesa = sumNature("DESPESA");
   const investimento = sumNature("INVESTIMENTO");
 
-  return { receita, despesa, investimento, balanco: receita.plus(despesa).plus(investimento) };
+  return { receita, despesa, investimento, balanco: receita.plus(despesa).minus(investimento) };
 }
 
 export interface MonthlyPeriodTotals {

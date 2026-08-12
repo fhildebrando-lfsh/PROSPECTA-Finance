@@ -76,16 +76,21 @@ consultor, um selo indica isso claramente, para evitar lançar algo no lugar err
 
 Tela inicial depois do login. Mostra, para o período selecionado:
 
-- **Cards de Receita, Despesa e Saldo** do período — só o que já foi efetivamente
-  recebido/pago (situação Pago/Recebido/Isento/Aquisição/Atualização); lançamento a pagar
-  ou a receber não entra nesses totais.
+- **Cards de Receita, Despesa, Investimento e Balanço** do período — só o que já foi
+  efetivamente recebido/pago (situação Pago/Recebido/Isento/Aquisição/Atualização);
+  lançamento a pagar ou a receber não entra nesses totais. O **Balanço desconta o
+  Investimento** (`Receita + Despesa − Investimento`) — um aporte tira dinheiro da
+  carteira disponível, só volta a contar como líquido se for resgatado; uma retirada, ao
+  contrário, aumenta o Balanço.
 - **Saldos por carteira**, agrupados em Contas, Investimentos e Vouchers, mais o saldo
   líquido total.
-- **Gráfico "Últimos 6 meses"** — receita × despesa × saldo já liquidados, sempre fixo em
-  6 meses.
-- **Gráfico "Provisão"** — projeta os próximos 6 meses a partir de hoje, mas ao contrário
-  do gráfico acima só soma o que ainda está **pendente** (a pagar/a receber/estimativa) —
-  é sempre uma expectativa, nunca mistura com o que já aconteceu.
+- **Gráfico "Últimos 6 meses"** — barras de receita (verde) e despesa (vermelha, sempre
+  acima do zero, pra facilitar a comparação visual), linha de saldo (dourada) e linha de
+  investimento (branca, pode aparecer abaixo de zero num mês de retirada) — tudo já
+  liquidado, sempre fixo em 6 meses.
+- **Gráfico "Provisão"** — mesmo formato do gráfico acima, mas projeta os próximos 6
+  meses a partir de hoje somando só o que ainda está **pendente** (a pagar/a receber/
+  estimativa) — é sempre uma expectativa, nunca mistura com o que já aconteceu.
 - **Top 5 receitas e Top 5 despesas** do período — só liquidado, mesmo critério dos cards.
 - **Distribuição por categoria** — anéis de progresso mostrando o peso de cada categoria
   de despesa já liquidada.

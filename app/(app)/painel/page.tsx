@@ -75,6 +75,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
       receita: t.receita.toNumber(),
       despesa: t.despesa.toNumber(),
       saldo: t.balanco.toNumber(),
+      investimento: t.investimento.toNumber(),
     };
   });
 
@@ -90,6 +91,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
       receita: t.receita.toNumber(),
       despesa: t.despesa.toNumber(),
       saldo: t.balanco.toNumber(),
+      investimento: t.investimento.toNumber(),
     };
   });
 
