@@ -59,6 +59,8 @@ export default async function AdminUsuariosPage() {
     label: `${p.fullName ?? "(sem nome)"} — ${emailByProfileId.get(p.id) ?? "?"}`,
   }));
 
+  const pendingApprovalCount = workspaces.filter((w) => w.blockedReason === "AGUARDANDO_APROVACAO").length;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -77,6 +79,13 @@ export default async function AdminUsuariosPage() {
           </Link>
         </div>
       </div>
+
+      {pendingApprovalCount > 0 && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-300">
+          {pendingApprovalCount} {pendingApprovalCount === 1 ? "cadastro" : "cadastros"} aguardando aprovação — procure
+          por &ldquo;Aguardando aprovação&rdquo; na coluna Workspaces.
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border border-zinc-800">
         <table className="w-full text-sm">

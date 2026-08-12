@@ -1876,7 +1876,86 @@
 
 ---
 
-## Próximo número de registro: **059**
+### Registro Nº 059
+- **Data:** 2026-08-12
+- **Etapa concluída:** Restringe autocadastro aberto — exige aprovação do admin
+- **Descrição:** Usuário reportou que qualquer pessoa com o link `/login` conseguia criar
+  conta sozinha e ganhar acesso imediato, com workspace próprio criado na hora — e pediu
+  pra fechar isso, pelo menos por enquanto. Descreveu dois mecanismos: (1) autocadastro
+  livre vira pendente, com e-mail avisando o admin pra liberar; (2) admin convida um
+  e-mail específico, a pessoa recebe convite e já fica apta a criar conta com acesso.
+  Investigação (agente Explore) achou que o mecanismo (2) **já existia e funcionava**,
+  via `/admin/clientes` → `createClientPreRegistration` — nenhum código novo precisou
+  pra isso. Só o (1) precisou ser construído.
+- **O que foi feito:**
+  1. **Schema** — `WorkspaceBlockReason` ganhou o valor `AGUARDANDO_APROVACAO` (só o
+     próprio trigger de signup grava, nunca uma escolha manual do admin — excluído do
+     `<select>` de bloqueio manual). `Workspace` ganhou `adminNotifiedAt` (idempotência do
+     e-mail de aviso). Migration `20260812120000_pending_approval` — `ALTER TYPE ... ADD
+     VALUE` + `ADD COLUMN`, aplicada à mão (mesmo contorno da seção 23) em dev e depois
+     produção.
+  2. **Trigger** — `prisma/sql/010_self_signup_requires_approval.sql` reescreve
+     `handle_new_auth_user()` (definida em 001, invite-aware desde 007): o branch "sem
+     convite pendente" agora grava `blocked_at`/`blocked_reason = 'AGUARDANDO_APROVACAO'`
+     no mesmo INSERT do workspace novo — reaproveita o mecanismo de bloqueio de acesso do
+     Registro Nº 056 em vez de criar um conceito de "pendente" do zero. O branch com
+     convite (fluxo de `/admin/clientes`) não muda em nada — continua dando acesso
+     imediato. O workspace pessoal continua sendo criado mesmo bloqueado (evita o `throw`
+     duro de `requireActiveMembership()` pra quem fica com zero membership — a pessoa
+     sempre tem exatamente 1).
+  3. **Notificação** — `lib/workspace/pending-approval.ts::notifyAdminsOfPendingApproval`
+     busca todo `profile.isPlatformAdmin=true`, resolve e-mail via Admin API, manda
+     e-mail (novo template `pendingApprovalNotificationEmail`) linkando pra
+     `/admin/usuarios` — idempotente via `adminNotifiedAt`. Chamado de dois pontos (os
+     únicos onde uma pessoa nova pode terminar de se cadastrar):
+     `app/(auth)/login/actions.ts::signup()` (cadastro por e-mail/senha) e
+     `app/auth/confirm/route.ts` (primeiro login via Google).
+  4. **Admin aprova pela mesma tela do Registro Nº 056** — `BlockAccessControl.tsx` mostra
+     "Aguardando aprovação" (âmbar, não vermelho) + botão "aprovar acesso" em vez de
+     "desbloquear" quando o motivo é este — mesma action `unblockWorkspaceAccess`, zero
+     lógica nova. `/admin/usuarios` ganhou um banner de contagem no topo.
+  5. `tests/e2e/helpers/fixtures.ts::createE2EUser()` ajustado pra desbloquear o
+     workspace logo após criar (cai no mesmo fallback sem convite) — sem isso, os specs
+     E2E existentes quebrariam.
+  6. Dica de senha adicionada em `/login` (modo cadastro) — "Mínimo de 10 caracteres, com
+     letra maiúscula, minúscula, número e símbolo" — depois que o usuário reforçou a
+     política de senha no painel do Supabase (Registro Nº 058, item pendente do Leaked
+     Password Protection).
+- **Verificado no banco de dev antes de produção:** cadastro sem convite (via Admin API,
+  mesmo trigger que `signUp()` dispara) → workspace nasceu bloqueado
+  `AGUARDANDO_APROVACAO`, `adminNotifiedAt` ainda vazio (só a chamada da aplicação seta).
+  `notifyAdminsOfPendingApproval()` chamada direto → `adminNotifiedAt` gravado; chamada de
+  novo → não reenvia (idempotência confirmada). Pessoa bloqueada caiu em
+  `/acesso-bloqueado` com a mensagem certa. Banner apareceu em `/admin/usuarios`; clique em
+  "aprovar acesso" → `blocked_at` voltou a `null` → acesso a `/painel` liberado na hora.
+  Cadastro COM convite pendente → entrou direto no workspace certo, sem bloqueio, acesso
+  imediato confirmado. Suíte E2E completa (5 specs) rodou verde depois do ajuste da
+  fixture. **Nota:** não foi possível exercitar o formulário público de `/login` de
+  verdade nesta rodada — o projeto de dev (sem SMTP próprio, só o remetente padrão
+  limitadíssimo do Supabase) bateu o rate limit de e-mail depois de poucas tentativas;
+  contornado testando a mesma lógica via Admin API (dispara o mesmo trigger, sem mandar
+  e-mail) + chamada direta de `notifyAdminsOfPendingApproval`. Produção já usa SMTP
+  próprio (Brevo, Registro Nº 034/035-ish), não deve ter esse teto.
+- **Fora de escopo (de propósito):** o fluxo de convite por e-mail específico
+  (`/admin/clientes`) — já existia, só confirmado ao vivo; checkbox de LGPD no primeiro
+  login via Google — gap já conhecido, não fazia parte deste pedido; feature flag pra
+  reabrir autocadastro livre — não pedido, reversível bastando reverter o arquivo `010`.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (301/301), `npx tsc --noEmit` limpo, `npm run build` limpo,
+  `npm run test:e2e` (5/5) verde. Verificação manual completa descrita acima, contra
+  dados reais no banco de dev.
+- **Documentos relacionados:** `prisma/schema.prisma`,
+  `prisma/migrations/20260812120000_pending_approval/migration.sql`,
+  `prisma/sql/010_self_signup_requires_approval.sql`, `lib/workspace/block-reasons.ts`,
+  `lib/workspace/pending-approval.ts`, `lib/email/templates.ts`,
+  `app/(auth)/login/actions.ts`, `app/(auth)/login/page.tsx`, `app/auth/confirm/route.ts`,
+  `app/(app)/admin/usuarios/BlockAccessControl.tsx`, `app/(app)/admin/usuarios/page.tsx`,
+  `tests/e2e/helpers/fixtures.ts`.
+
+---
+
+## Próximo número de registro: **060**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

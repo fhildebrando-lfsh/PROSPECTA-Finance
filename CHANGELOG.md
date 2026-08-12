@@ -26,6 +26,7 @@
 
 ### Segurança
 - Corrigidos os achados do Supabase Security Advisor em produção: `_prisma_migrations` (única tabela sem proteção de acesso por linha) agora protegida; as 5 funções internas do sistema deixaram de ser executáveis por visitantes sem login via API — só quem está logado (e só quando de fato preciso) continua com acesso. Nenhum efeito no funcionamento do sistema (a correção fecha uma porta que o próprio app nunca usava). Falta uma configuração manual do administrador no painel do Supabase ("Leaked password protection") — passo a passo entregue separadamente.
+- **Autocadastro passa a exigir aprovação do administrador**: quem cria conta sozinho (e-mail/senha ou primeiro login via Google), sem ter sido convidado, fica com acesso pausado até um admin aprovar em Admin → Usuários — o admin recebe um e-mail avisando na hora. Convite por e-mail específico (Admin → Clientes) continua dando acesso imediato, sem mudança. Dica de senha (mínimo de 10 caracteres, com maiúscula, minúscula, número e símbolo) adicionada na tela de cadastro.
 
 ---
 

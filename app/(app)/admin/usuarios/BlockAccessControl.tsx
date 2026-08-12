@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { blockWorkspaceAccess, unblockWorkspaceAccess } from "./actions";
-import { BLOCK_REASON_LABELS } from "@/lib/workspace/block-reasons";
+import { BLOCK_REASON_LABELS, MANUAL_BLOCK_REASONS } from "@/lib/workspace/block-reasons";
 import { BTN_DANGER } from "@/components/ui/buttonStyles";
 import type { WorkspaceBlockReason } from "@/app/generated/prisma/enums";
-
-const REASONS = Object.keys(BLOCK_REASON_LABELS) as WorkspaceBlockReason[];
 
 /**
  * Bloquear/desbloquear o acesso de todo mundo que usa este workspace — alternativa a
@@ -28,18 +26,24 @@ export function BlockAccessControl({
   const [reason, setReason] = useState<WorkspaceBlockReason>("FATURA_EM_ABERTO");
 
   if (blockedReason) {
+    const isPendingApproval = blockedReason === "AGUARDANDO_APROVACAO";
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="text-red-400">Bloqueado — {BLOCK_REASON_LABELS[blockedReason]}</span>
+        <span className={isPendingApproval ? "text-amber-400" : "text-red-400"}>
+          {isPendingApproval ? "Aguardando aprovação" : `Bloqueado — ${BLOCK_REASON_LABELS[blockedReason]}`}
+        </span>
         <form
           action={unblockWorkspaceAccess}
           onSubmit={(e) => {
-            if (!confirm(`Desbloquear o acesso de ${workspaceLabel}?`)) e.preventDefault();
+            const msg = isPendingApproval
+              ? `Aprovar o acesso de ${workspaceLabel}?`
+              : `Desbloquear o acesso de ${workspaceLabel}?`;
+            if (!confirm(msg)) e.preventDefault();
           }}
         >
           <input type="hidden" name="workspaceId" value={workspaceId} />
           <button type="submit" className="text-indigo-300 hover:text-white">
-            desbloquear
+            {isPendingApproval ? "aprovar acesso" : "desbloquear"}
           </button>
         </form>
       </span>
@@ -63,7 +67,7 @@ export function BlockAccessControl({
         onChange={(e) => setReason(e.target.value as WorkspaceBlockReason)}
         className="rounded border border-zinc-700 bg-zinc-950 px-1.5 py-0.5 text-xs text-zinc-100"
       >
-        {REASONS.map((r) => (
+        {MANUAL_BLOCK_REASONS.map((r) => (
           <option key={r} value={r}>
             {BLOCK_REASON_LABELS[r]}
           </option>

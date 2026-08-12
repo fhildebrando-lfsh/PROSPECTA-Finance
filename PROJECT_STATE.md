@@ -15,7 +15,42 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Correção dos achados do Supabase Security
+> **Última atualização real: 2026-08-12 (Restringe autocadastro aberto — exige aprovação
+> do admin — Registro Nº 059).** Usuário reportou que qualquer pessoa com o link
+> `/login` conseguia criar conta e ganhar acesso imediato — pediu pra fechar isso. Pediu
+> dois mecanismos: autocadastro livre vira pendente (com e-mail avisando o admin); convite
+> por e-mail específico dá acesso direto. Achado importante: **o segundo mecanismo já
+> existia** (`/admin/clientes` → `createClientPreRegistration`) — só o primeiro precisou
+> ser construído.
+>
+> `WorkspaceBlockReason` ganhou `AGUARDANDO_APROVACAO` (só o trigger de signup grava,
+> nunca escolha manual do admin) + `Workspace.adminNotifiedAt` (idempotência do e-mail).
+> `prisma/sql/010_self_signup_requires_approval.sql` reescreve `handle_new_auth_user()`
+> mais uma vez: o branch "sem convite pendente" (001/007) agora grava
+> `blocked_at`/`blocked_reason` no mesmo INSERT do workspace — **reaproveita o mecanismo
+> de bloqueio de acesso do Registro Nº 056** em vez de um conceito novo do zero. Branch
+> do convite não muda — continua com acesso imediato.
+>
+> `lib/workspace/pending-approval.ts::notifyAdminsOfPendingApproval` avisa todo
+> `isPlatformAdmin=true` por e-mail (idempotente), chamado de
+> `app/(auth)/login/actions.ts::signup()` e `app/auth/confirm/route.ts` (Google) — os
+> dois únicos pontos onde alguém novo termina de se cadastrar. Admin aprova pela mesma
+> tela do Registro Nº 056 (`BlockAccessControl.tsx`, botão vira "aprovar acesso" pro
+> motivo `AGUARDANDO_APROVACAO`, mesma action `unblockWorkspaceAccess`).
+>
+> **Verificado no banco de dev**: cadastro sem convite nasce bloqueado + e-mail
+> disparado (idempotente); pessoa bloqueada cai em `/acesso-bloqueado` com a mensagem
+> certa; admin aprova e o acesso libera na hora; cadastro COM convite continua com acesso
+> imediato, sem bloqueio. Suíte E2E completa (5/5) verde após ajustar
+> `createE2EUser()`. **Não deu pra exercitar o formulário público de `/login` de
+> verdade** — projeto de dev bateu o rate limit de e-mail do Supabase (sem SMTP próprio);
+> contornado testando a mesma lógica via Admin API (mesmo trigger, sem e-mail) + chamada
+> direta da função de notificação. Produção já usa Brevo, não deve ter esse teto.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-12), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 059).
+>
+> **Última atualização anterior: 2026-08-12 (Correção dos achados do Supabase Security
 > Advisor — Registro Nº 058).** Usuário recebeu o e-mail automático do Supabase (11/08)
 > reportando vulnerabilidades em produção + 3 capturas do Security Advisor ao vivo (1
 > erro, 11 avisos). Investigação (só leitura, antes de mudar nada): o 2º problema crítico

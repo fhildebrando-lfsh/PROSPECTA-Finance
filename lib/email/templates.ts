@@ -23,6 +23,18 @@ export function clientInviteEmail(params: { clientName: string; inviteUrl: strin
   `);
 }
 
+export function pendingApprovalNotificationEmail(params: { personName: string; personEmail: string; adminUrl: string }): string {
+  return emailShell(`
+    <p style="margin:0 0 16px; font-size:15px; line-height:1.5;">Novo cadastro aguardando aprovação</p>
+    <p style="margin:0 0 24px; font-size:15px; line-height:1.5; color:#d4d4d8;">
+      <strong>${params.personName}</strong> (${params.personEmail}) acabou de se cadastrar no PROSPECTA Finance por conta própria, sem convite. O acesso está pausado até você aprovar.
+    </p>
+    <a href="${params.adminUrl}" style="display:inline-block; background:#f59e0b; color:#09090b; font-weight:600; padding:12px 24px; border-radius:8px; text-decoration:none;">
+      Ver em Admin → Usuários
+    </a>
+  `);
+}
+
 export function accountDeletedByAdminEmail(): string {
   return emailShell(`
     <p style="margin:0 0 16px; font-size:15px; line-height:1.5;">

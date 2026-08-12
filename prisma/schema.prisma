@@ -91,6 +91,10 @@ model Workspace {
   /// cliente bloqueado, escrita pelo próprio admin em `/admin/usuarios`.
   blockedDetail String?               @map("blocked_detail")
   blockedBy     String?               @map("blocked_by") @db.Uuid
+  /// Autocadastro sem convite (2026-08-12) — quando preenchido, já disparou o e-mail de
+  /// aviso pra todo admin da plataforma; evita reenviar a cada tentativa de login de quem
+  /// ainda está `blockedReason = AGUARDANDO_APROVACAO`. Ver `lib/workspace/pending-approval.ts`.
+  adminNotifiedAt DateTime? @map("admin_notified_at")
 
   memberships      Membership[]
   people           Person[]
@@ -115,14 +119,19 @@ model Workspace {
   @@map("workspaces")
 }
 
-/// Motivo do bloqueio de acesso (ver `Workspace.blockedReason`) — fecha com 5 valores de
-/// propósito (4 motivos pré-definidos + OUTRO com texto livre em `blockedDetail`); cada
-/// um tem uma mensagem correspondente mostrada ao cliente bloqueado, ver `lib/workspace/block.ts`.
+/// Motivo do bloqueio de acesso (ver `Workspace.blockedReason`) — 4 motivos escolhidos
+/// pelo admin (+ OUTRO com texto livre em `blockedDetail`) e um automático
+/// (AGUARDANDO_APROVACAO, gravado pelo próprio trigger `handle_new_auth_user()` — ver
+/// `prisma/sql/010_self_signup_requires_approval.sql` — quando alguém se cadastra sem
+/// convite, 2026-08-12). Cada um tem uma mensagem correspondente mostrada ao cliente
+/// bloqueado, ver `lib/workspace/block-reasons.ts`.
 enum WorkspaceBlockReason {
   FATURA_EM_ABERTO
   SOLICITACAO_DO_CLIENTE
   VERIFICACAO_DE_SEGURANCA
   ORIENTACAO_DO_CONSULTOR
+  /// Autocadastro sem convite — só o próprio trigger de signup grava este valor.
+  AGUARDANDO_APROVACAO
   OUTRO
 }
 

@@ -122,6 +122,11 @@ function LoginForm() {
           <label className="flex flex-col gap-1 text-sm text-zinc-300">
             Senha
             <PasswordInput name="password" required autoComplete={mode === "login" ? "current-password" : "new-password"} />
+            {mode === "signup" && (
+              <span className="text-xs text-zinc-500">
+                Mínimo de 10 caracteres, com letra maiúscula, minúscula, número e símbolo.
+              </span>
+            )}
           </label>
 
           {mode === "signup" && (

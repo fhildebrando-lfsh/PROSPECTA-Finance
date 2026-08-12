@@ -92,6 +92,14 @@ export async function createE2EUser(): Promise<E2ETestUser> {
     // criadas pela Admin API não passam pelo checkbox de cadastro normal.
     await client.query(`update profiles set privacy_policy_accepted_at = now() where id = $1`, [userId]);
 
+    // Cadastro sem convite (2026-08-12) nasce bloqueado (AGUARDANDO_APROVACAO, ver
+    // prisma/sql/010_self_signup_requires_approval.sql) — desbloqueia aqui porque os
+    // specs E2E existentes assumem acesso imediato; um spec específico sobre o fluxo de
+    // aprovação deve testar o bloqueio direto, não via esta fixture compartilhada.
+    await client.query(`update workspaces set blocked_at = null, blocked_reason = null where id = $1`, [
+      workspaceId,
+    ]);
+
     const suffix = randomUUID().slice(0, 8);
     const walletName = `[e2e] carteira ${suffix}`;
     const personName = `[e2e] responsável ${suffix}`;

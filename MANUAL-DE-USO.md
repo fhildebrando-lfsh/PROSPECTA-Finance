@@ -37,7 +37,11 @@ Também é possível entrar direto com **Google** ("Entrar com Google"), sem pre
 senha.
 
 Ao criar sua conta pela primeira vez (fora de um convite), o sistema cria automaticamente
-um workspace pessoal seu, onde você é o **titular**.
+um workspace pessoal seu, onde você é o **titular** — mas, desde 2026-08-12, o acesso
+fica pausado até um administrador aprovar (o administrador recebe um e-mail avisando na
+hora do cadastro). Enquanto isso, ao tentar entrar, você vê uma tela explicando que o
+acesso está aguardando aprovação. Quem entra por um **convite** (veja 2.3 abaixo) não
+passa por essa espera — já fica com acesso liberado assim que cria a senha.
 
 ### 2.2 Entrar
 E-mail e senha, ou Google. Esqueceu a senha? Link "Esqueci minha senha" na tela de login —
@@ -458,6 +462,10 @@ preservar o histórico.
     libera o acesso de novo a qualquer momento. Quem tem acesso a outros workspaces não
     bloqueados (ex.: um consultor com vários clientes) consegue trocar para eles direto
     dessa mesma tela, em vez de ficar sem alternativa.
+  - **Aprovar acesso** — quando alguém se cadastra sozinho (sem convite, veja 2.1), o
+    acesso já nasce pausado automaticamente ("Aguardando aprovação", destacado em âmbar)
+    e você recebe um e-mail avisando. O botão "aprovar acesso" nessa linha libera —
+    mesmo mecanismo do bloqueio manual acima, só que automático na hora do cadastro.
 - **`/admin/clientes`** — cria o pré-cadastro de um novo cliente de consultoria: workspace
   novo, plano escolhido, consultor responsável opcional, e um link/WhatsApp de convite para
   o cliente.

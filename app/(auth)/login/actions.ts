@@ -4,6 +4,13 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
+import { notifyAdminsOfPendingApproval } from "@/lib/workspace/pending-approval";
+
+async function currentOrigin() {
+  const headerList = await headers();
+  const protocol = headerList.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "development" ? "http" : "https");
+  return `${protocol}://${headerList.get("host")}`;
+}
 
 export type AuthActionState = { error: string | null; info: string | null };
 
@@ -65,6 +72,26 @@ export async function signup(
     await prisma.profile
       .update({ where: { id: data.user.id }, data: { privacyPolicyAcceptedAt: new Date() } })
       .catch((err) => console.error("[signup] falha ao gravar aceite da política de privacidade:", err));
+
+    // O trigger on_auth_user_created já rodou (mesma transação do INSERT em auth.users)
+    // — se não tinha convite pendente pra este e-mail, o workspace já nasceu bloqueado
+    // (AGUARDANDO_APROVACAO, ver prisma/sql/010). Avisa os admins por e-mail.
+    let membership = await prisma.membership.findFirst({
+      where: { profileId: data.user.id },
+      include: { workspace: true },
+    });
+    for (let attempt = 0; !membership && attempt < 5; attempt++) {
+      await new Promise((r) => setTimeout(r, 200));
+      membership = await prisma.membership.findFirst({
+        where: { profileId: data.user.id },
+        include: { workspace: true },
+      });
+    }
+    if (membership?.workspace.blockedReason === "AGUARDANDO_APROVACAO") {
+      await notifyAdminsOfPendingApproval(membership.workspaceId, await currentOrigin()).catch((err) =>
+        console.error("[signup] falha ao notificar admins:", err),
+      );
+    }
   }
 
   return {
@@ -80,9 +107,7 @@ export async function requestPasswordReset(
   const email = String(formData.get("email") ?? "").trim();
   if (!email) return { error: "Informe seu e-mail.", info: null };
 
-  const headerList = await headers();
-  const protocol = headerList.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "development" ? "http" : "https");
-  const origin = `${protocol}://${headerList.get("host")}`;
+  const origin = await currentOrigin();
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
