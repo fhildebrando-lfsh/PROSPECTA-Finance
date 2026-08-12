@@ -1691,7 +1691,80 @@
 
 ---
 
-## Próximo número de registro: **056**
+### Registro Nº 056
+- **Data:** 2026-08-12
+- **Etapa concluída:** Bloqueio de acesso ao sistema (admin-only)
+- **Descrição:** Usuário pediu uma alternativa a excluir a conta de um cliente
+  inadimplente: um bloqueio reversível, com motivo escolhido num menu suspenso, que
+  mostra uma mensagem específica pro cliente na próxima vez que ele tentar acessar o
+  sistema — incluindo um botão "Atualizar pagamento" sem destino ainda (usuário disse
+  explicitamente que não sabe pra onde apontar). Decisão confirmada com o usuário antes
+  de implementar: o bloqueio é **por workspace** (a "conta do cliente" inteira — todo
+  mundo que acessa aquele workspace fica bloqueado), não por pessoa/profile, porque
+  inadimplência é um conceito de workspace neste sistema (é onde já mora `Subscription`).
+- **O que foi feito:**
+  1. **Schema** — `Workspace` ganhou `blockedAt`/`blockedReason` (novo enum
+     `WorkspaceBlockReason`: FATURA_EM_ABERTO, SOLICITACAO_DO_CLIENTE,
+     VERIFICACAO_DE_SEGURANCA, ORIENTACAO_DO_CONSULTOR, OUTRO)/`blockedDetail` (texto
+     livre, só usado com OUTRO)/`blockedBy`. Sem tabela de histórico separada — mesmo
+     espírito leve de `Entitlement.reason`/`grantedBy`; desbloquear zera os 4 campos.
+     Migration aplicada à mão (`prisma migrate dev` trava nesta máquina/banco — problema
+     conhecido, ver seção 23 do PROJECT_STATE.md — `.sql` escrito manualmente e aplicado
+     via `pg` cru + registro em `_prisma_migrations`, mesmo contorno já documentado).
+  2. **Gate de acesso** — `lib/auth/session.ts::requireActiveMembership()` ganhou o
+     mesmo mecanismo do gate de LGPD: `if (membership.workspace.blockedAt) redirect("/acesso-bloqueado")`,
+     logo após resolver a membership ativa. Como `app/(app)/layout.tsx` chama essa função
+     uma vez no topo da árvore, cobre toda a `(app)` de graça. `requireApiWorkspaceMembership()`
+     (rotas de API, não passam pelo layout) e `requireMembershipForWorkspace()` (não usada
+     ainda, mas existe pronta) ganharam o mesmo check, virando `ApiError(403)`.
+  3. **Tela `/acesso-bloqueado`** — mesmo esqueleto de `/aceitar-politica`: resolve a
+     membership bloqueada, mostra a mensagem do motivo (`lib/workspace/block-reasons.ts`),
+     botão "Atualizar pagamento" desabilitado (só no motivo Fatura em aberto, com aviso
+     "em breve"), contato por e-mail (reusa `admin@prospectafinance.com.br`, já usado em
+     Política de Privacidade — nenhum contato novo inventado). Escape hatch: se a pessoa
+     tiver outro workspace ACTIVE e não bloqueado (ex.: consultor com vários clientes, só
+     um bloqueado), mostra links reusando a Server Action já existente
+     `lib/workspace/switch.ts::setActiveWorkspace` — sem isso, ficaria preso na tela.
+  4. **Admin** — `app/(app)/admin/usuarios` ganhou `BlockAccessControl.tsx` (mesmo
+     esqueleto de `AdvisorControl.tsx`), na linha do titular de cada workspace: fechado
+     mostra o status + botão bloquear/desbloquear; aberto (bloquear) vira um `<select>`
+     de motivo + `<textarea>` condicional pro motivo "Outro". Nunca aparece na própria
+     linha do admin logado (mesma auto-proteção de `DeleteUserButton`/`PlatformAdminToggle`
+     — evita se trancar fora sem ninguém pra desbloquear). `blockWorkspaceAccess`/
+     `unblockWorkspaceAccess` em `actions.ts`, mesmo padrão de auth das outras actions do
+     arquivo.
+  5. `lib/workspace/block-reasons.ts` (rótulos + mensagens, sem import de `prisma` — usado
+     por um Client Component) separado de `lib/workspace/block.ts` (`blockWorkspace`/
+     `unblockWorkspace`, com `prisma`) — mesmo cuidado de bundle já documentado nesta
+     sessão pra `lib/finance/investment-instruments.ts`.
+- **Fora de escopo (de propósito):** banir no Supabase Auth (bloqueio é só em nível de
+  aplicação — precisa logar pra VER a mensagem, igual ao gate de LGPD); link real do
+  botão "Atualizar pagamento"; tabela de histórico/auditoria separada de bloqueios.
+- **Verificado ao vivo, contra o banco de dev, servidor `next dev` real** (login sem
+  senha via magic link, dois usuários de teste — um platform admin, um cliente comum):
+  bloqueado pelo admin com motivo "Fatura em aberto" → confirmado no banco → cliente
+  redirecionado pra `/acesso-bloqueado` com a mensagem certa e o botão desabilitado →
+  rota de API (`/api/patrimonio/dividas/pdf`) retornou 403 → desbloqueado → cliente voltou
+  a acessar `/painel` normalmente → motivo "Outro" com texto customizado apareceu exato →
+  dado ao cliente uma segunda membership ADVISOR num workspace não bloqueado → escape
+  hatch apareceu na tela de bloqueio e o link levou pro `/painel` do outro workspace.
+  Dados de teste apagados depois.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** `npm test` (301/301, +1 teste de regressão em `tests/auth/session.test.ts`
+  documentando que `resolveActiveMembership` não considera bloqueio de propósito),
+  `npx tsc --noEmit` limpo, `npm run build` limpo (rota `/acesso-bloqueado` nova
+  confirmada na lista). Verificação manual completa descrita acima.
+- **Documentos relacionados:** `prisma/schema.prisma`,
+  `prisma/migrations/20260812080000_workspace_block_access/migration.sql`,
+  `lib/auth/session.ts`, `lib/workspace/block.ts`, `lib/workspace/block-reasons.ts`,
+  `app/(auth)/acesso-bloqueado/page.tsx`, `app/(app)/admin/usuarios/actions.ts`,
+  `app/(app)/admin/usuarios/BlockAccessControl.tsx`, `app/(app)/admin/usuarios/page.tsx`,
+  `tests/auth/session.test.ts`.
+
+---
+
+## Próximo número de registro: **057**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

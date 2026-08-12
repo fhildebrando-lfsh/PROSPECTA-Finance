@@ -449,6 +449,15 @@ preservar o histórico.
   família), nome, e-mail, se é admin, workspaces e papel em cada um, e-mail confirmado,
   data de cadastro, último login. Permite editar dados pessoais de qualquer pessoa,
   promover/remover admin, atribuir consultor, excluir conta.
+  - **Bloquear acesso** — alternativa a excluir a conta de um cliente (por exemplo,
+    inadimplência): pausa o acesso de todo mundo que usa aquele workspace (titular,
+    membros, consultor), sem apagar nada, escolhendo um motivo num menu suspenso —
+    Fatura em aberto, Solicitação do próprio cliente, Verificação de segurança,
+    Orientação do consultor, ou Outro (com uma mensagem digitada na hora). Na próxima
+    tentativa de acesso, a pessoa vê essa mensagem em vez do sistema; "desbloquear"
+    libera o acesso de novo a qualquer momento. Quem tem acesso a outros workspaces não
+    bloqueados (ex.: um consultor com vários clientes) consegue trocar para eles direto
+    dessa mesma tela, em vez de ficar sem alternativa.
 - **`/admin/clientes`** — cria o pré-cadastro de um novo cliente de consultoria: workspace
   novo, plano escolhido, consultor responsável opcional, e um link/WhatsApp de convite para
   o cliente.

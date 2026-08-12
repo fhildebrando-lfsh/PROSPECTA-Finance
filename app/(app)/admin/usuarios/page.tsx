@@ -6,6 +6,7 @@ import { formatClientCode, formatDateBR } from "@/lib/format";
 import { DeleteUserButton } from "./DeleteUserButton";
 import { AdvisorControl } from "@/components/AdvisorControl";
 import { PlatformAdminToggle } from "./PlatformAdminToggle";
+import { BlockAccessControl } from "./BlockAccessControl";
 
 const ROLE_LABELS: Record<string, string> = {
   TITULAR: "Titular",
@@ -145,6 +146,13 @@ export default async function AdminUsuariosPage() {
                                 currentAdvisorLabel={currentAdvisorLabel}
                                 options={options}
                               />
+                              {u.id !== admin.id && (
+                                <BlockAccessControl
+                                  workspaceId={m.workspaceId}
+                                  blockedReason={workspace?.blockedReason ?? null}
+                                  workspaceLabel={m.workspace.name}
+                                />
+                              )}
                             </li>
                           );
                         })}

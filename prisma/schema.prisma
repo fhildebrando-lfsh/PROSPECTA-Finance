@@ -81,6 +81,17 @@ model Workspace {
   clientCode Int      @unique @default(autoincrement()) @map("client_code")
   createdAt  DateTime @default(now()) @map("created_at")
 
+  /// Bloqueio de acesso (admin-only, 2026-08-12) — alternativa a excluir a conta de um
+  /// cliente (ex.: inadimplência): pausa reversível de TODO mundo que acessa este
+  /// workspace (titular, membros, consultor), sem apagar nada. Desbloquear zera os 4
+  /// campos — sem tabela de histórico separada, mesmo espírito leve de `Entitlement`.
+  blockedAt     DateTime?             @map("blocked_at")
+  blockedReason WorkspaceBlockReason? @map("blocked_reason")
+  /// Só usado (e obrigatório) quando blockedReason = OUTRO — mensagem exata mostrada ao
+  /// cliente bloqueado, escrita pelo próprio admin em `/admin/usuarios`.
+  blockedDetail String?               @map("blocked_detail")
+  blockedBy     String?               @map("blocked_by") @db.Uuid
+
   memberships      Membership[]
   people           Person[]
   wallets          Wallet[]
@@ -102,6 +113,17 @@ model Workspace {
   investments      Investment[]
 
   @@map("workspaces")
+}
+
+/// Motivo do bloqueio de acesso (ver `Workspace.blockedReason`) — fecha com 5 valores de
+/// propósito (4 motivos pré-definidos + OUTRO com texto livre em `blockedDetail`); cada
+/// um tem uma mensagem correspondente mostrada ao cliente bloqueado, ver `lib/workspace/block.ts`.
+enum WorkspaceBlockReason {
+  FATURA_EM_ABERTO
+  SOLICITACAO_DO_CLIENTE
+  VERIFICACAO_DE_SEGURANCA
+  ORIENTACAO_DO_CONSULTOR
+  OUTRO
 }
 
 enum MembershipRole {

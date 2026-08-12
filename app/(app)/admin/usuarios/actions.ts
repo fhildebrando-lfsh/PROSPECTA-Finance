@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { requireAdminProfile } from "@/lib/auth/session";
 import { deleteAccountAsAdmin } from "@/lib/account/delete";
 import { assignAdvisor } from "@/lib/workspace/advisor";
+import { blockWorkspace, unblockWorkspace } from "@/lib/workspace/block";
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
 import { updatePersonalData, personalDataFromFormData } from "@/lib/profile/update";
+import type { WorkspaceBlockReason } from "@/app/generated/prisma/enums";
 
 export async function updateUserPersonalData(formData: FormData) {
   await requireAdminProfile();
@@ -39,6 +41,28 @@ export async function setAdvisor(formData: FormData) {
   const advisorProfileId = String(formData.get("advisorProfileId") ?? "").trim() || null;
 
   await assignAdvisor(workspaceId, advisorProfileId);
+  revalidatePath("/admin/usuarios");
+}
+
+export async function blockWorkspaceAccess(formData: FormData) {
+  const admin = await requireAdminProfile();
+
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const reason = String(formData.get("reason") ?? "") as WorkspaceBlockReason;
+  const detail = String(formData.get("detail") ?? "").trim() || null;
+  if (!workspaceId || !reason) throw new ApiError(400, "Selecione o motivo do bloqueio.");
+
+  await blockWorkspace({ workspaceId, reason, detail, blockedBy: admin.id });
+  revalidatePath("/admin/usuarios");
+}
+
+export async function unblockWorkspaceAccess(formData: FormData) {
+  await requireAdminProfile();
+
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  if (!workspaceId) throw new ApiError(400, "Workspace inválido.");
+
+  await unblockWorkspace(workspaceId);
   revalidatePath("/admin/usuarios");
 }
 

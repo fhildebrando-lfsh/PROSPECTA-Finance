@@ -15,7 +15,50 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Correção do filtro de prazo em Dívidas +
+> **Última atualização real: 2026-08-12 (Bloqueio de acesso ao sistema, admin-only —
+> Registro Nº 056).** Usuário pediu uma alternativa a excluir a conta de um cliente
+> inadimplente: um bloqueio reversível, com motivo escolhido num menu suspenso, que
+> mostra uma mensagem específica pro cliente na próxima vez que ele tentar acessar.
+> Decisão confirmada com o usuário: **bloqueio é por workspace** (a conta do cliente
+> inteira), não por pessoa/profile — inadimplência é conceito de workspace neste sistema
+> (é onde mora `Subscription`).
+>
+> `Workspace` ganhou `blockedAt`/`blockedReason` (enum `WorkspaceBlockReason`:
+> FATURA_EM_ABERTO/SOLICITACAO_DO_CLIENTE/VERIFICACAO_DE_SEGURANCA/ORIENTACAO_DO_CONSULTOR/OUTRO)/
+> `blockedDetail`/`blockedBy` — sem tabela de histórico separada, mesmo espírito leve de
+> `Entitlement`. Migration aplicada à mão (`prisma migrate dev` trava nesta máquina contra
+> este banco — mesmo problema documentado na seção 23, "Débitos técnicos"; `.sql` escrito
+> manualmente + aplicado via `pg` cru + registro em `_prisma_migrations`).
+>
+> `lib/auth/session.ts::requireActiveMembership()` ganhou o mesmo mecanismo do gate de
+> LGPD: `if (membership.workspace.blockedAt) redirect("/acesso-bloqueado")`, cobrindo toda
+> a `(app)` de graça via `app/(app)/layout.tsx`. `requireApiWorkspaceMembership()` (rotas
+> de API, fora do layout) e `requireMembershipForWorkspace()` ganharam o mesmo check,
+> como `ApiError(403)`. Nova tela `/acesso-bloqueado` (mesmo esqueleto de
+> `/aceitar-politica`) mostra a mensagem do motivo, botão "Atualizar pagamento" desabilitado
+> (só no motivo Fatura em aberto — sem link ainda, usuário disse que não sabe pra onde
+> apontar) e um escape hatch: se a pessoa tiver outro workspace ACTIVE não bloqueado (ex.:
+> consultor com vários clientes), mostra links reusando `setActiveWorkspace` já existente
+> — sem isso, ficaria presa na tela mesmo tendo outros workspaces acessíveis.
+>
+> Botão em `/admin/usuarios` (`BlockAccessControl.tsx`, mesmo esqueleto de
+> `AdvisorControl.tsx`), na linha do titular de cada workspace — nunca na própria linha do
+> admin logado (mesma auto-proteção de `DeleteUserButton`/`PlatformAdminToggle`).
+> `lib/workspace/block-reasons.ts` (rótulos/mensagens, sem import de `prisma`) separado de
+> `lib/workspace/block.ts` (`blockWorkspace`/`unblockWorkspace`, com `prisma`) — mesmo
+> cuidado de bundle de Client Component já documentado nesta sessão.
+>
+> **Verificado ao vivo** contra o banco de dev (dois usuários de teste — admin + cliente):
+> bloqueado com "Fatura em aberto" → cliente caiu em `/acesso-bloqueado` com a mensagem e
+> o botão desabilitado certos → API retornou 403 → desbloqueado → acesso normal voltou →
+> motivo "Outro" com texto customizado apareceu exato → escape hatch testado dando ao
+> cliente uma segunda membership ADVISOR num workspace não bloqueado, confirmado que
+> aparece e funciona.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-12), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 056).
+>
+> **Última atualização anterior: 2026-08-12 (Correção do filtro de prazo em Dívidas +
 > excluir/arquivar em Investimentos — Registro Nº 055).** Usuário reportou, na versão
 > real, que o filtro de curto/longo prazo do Registro Nº 054 classificava errado: um
 > financiamento 1/24 (23 parcelas restantes) aparecia em "Curto prazo"; um 1/12 (11

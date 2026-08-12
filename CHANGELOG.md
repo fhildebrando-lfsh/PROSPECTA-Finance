@@ -22,6 +22,7 @@
 
 ### Adicionado
 - Investimentos: a tabela "histórico de movimentações" ganhou botão "Excluir" por linha, ao lado de "Editar" — remove o lançamento de verdade (com confirmação antes, por ser irreversível).
+- **Bloqueio de acesso ao sistema (admin-only)**: em Admin → Usuários, o administrador pode pausar o acesso de um cliente (fatura em aberto, solicitação do próprio cliente, verificação de segurança, orientação do consultor ou outro motivo, escrito por ele) sem excluir a conta. O cliente bloqueado, ao tentar acessar, vê uma mensagem explicando o motivo — reversível a qualquer momento pelo mesmo admin.
 
 ---
 

@@ -97,6 +97,12 @@ export async function requireActiveMembership() {
     );
   }
 
+  // Bloqueio de acesso (admin-only, ver lib/workspace/block.ts) — pausa reversível de
+  // TODO mundo que acessa este workspace, alternativa a excluir a conta do cliente.
+  // Mesmo mecanismo do gate de LGPD acima: cobre a `(app)` inteira de graça, porque
+  // `app/(app)/layout.tsx` chama esta função uma vez no topo da árvore.
+  if (membership.workspace.blockedAt) redirect("/acesso-bloqueado");
+
   if (membership.role === "ADVISOR") {
     await logAccess({
       actorProfileId: profile.id,
@@ -134,6 +140,11 @@ export async function requireApiWorkspaceMembership(): Promise<{
   const requested = cookieStore.get(ACTIVE_WORKSPACE_COOKIE)?.value;
   const membership = resolveActiveMembership(profile.memberships, requested);
   if (!membership) throw new ApiError(403, "Usuário sem workspace.");
+
+  // Mesmo bloqueio de `requireActiveMembership()` — aqui não dá pra `redirect()` (rota de
+  // API), então vira 403. Sem isso, PDFs/exports de um workspace bloqueado continuariam
+  // funcionando mesmo com a tela principal barrada.
+  if (membership.workspace.blockedAt) throw new ApiError(403, "O acesso a este workspace está pausado.");
 
   if (membership.role === "ADVISOR") {
     await logAccess({
@@ -179,6 +190,10 @@ export async function requireMembershipForWorkspace(workspaceId: string) {
   if (!membership) {
     throw new ApiError(403, "Sem acesso a este workspace.");
   }
+
+  // Mesmo bloqueio de `requireActiveMembership()`/`requireApiWorkspaceMembership()` — por
+  // completude, já que esta função existe pronta pra um seletor de workspace futuro.
+  if (membership.workspace.blockedAt) throw new ApiError(403, "O acesso a este workspace está pausado.");
 
   if (membership.role === "ADVISOR") {
     await logAccess({

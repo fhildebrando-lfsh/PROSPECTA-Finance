@@ -61,4 +61,14 @@ describe("resolveActiveMembership (seletor de workspace — Fase 2 Etapa 3)", ()
   it("única membership revogada, retorna undefined (não trata revogada como ativa)", () => {
     expect(resolveActiveMembership([revoked])).toBeUndefined();
   });
+
+  it("não considera workspace bloqueado — resolução de membership e bloqueio de acesso são checados em lugares diferentes de propósito", () => {
+    const blocked = {
+      workspaceId: "blocked",
+      status: "ACTIVE" as const,
+      role: "TITULAR" as const,
+      workspace: { blockedAt: new Date() },
+    };
+    expect(resolveActiveMembership([blocked])).toBe(blocked);
+  });
 });
