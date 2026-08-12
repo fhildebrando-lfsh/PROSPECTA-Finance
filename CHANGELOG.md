@@ -16,6 +16,10 @@
 
 ## 2026-08-12
 
+### Adicionado (continuação, mesmo dia — Registro Nº 064)
+- **Compromissos → Lista e Incidentes**: caixa de seleção por linha + "Selecionar todos", com ação em lote ("Marcar como pago/recebido" na Lista, "Confirmar selecionados" em Incidentes). As duas telas ganharam filtro de datas por vencimento (De/Até).
+- **Compromissos → Incidentes, editar**: novo botão "Salvar e Confirmar" ao lado de "Salvar"/"Cancelar" — grava as correções e já tira a linha da lista de incidentes. "Salvar" sozinho grava as correções mas mantém a linha pendente, pra conferir depois.
+
 ### Alterado (continuação, mesmo dia — Registro Nº 063)
 - **Importação de planilha/extrato/fatura**: erros durante a importação agora aparecem num popup centralizado na tela, em vez de um texto pequeno em vermelho acima do formulário — mais difícil de passar despercebido.
 

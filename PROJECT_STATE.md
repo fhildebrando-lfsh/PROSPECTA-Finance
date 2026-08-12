@@ -15,7 +15,36 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Erro de importação em popup centralizado —
+> **Última atualização real: 2026-08-12 (Compromissos — seleção em lote, filtro de
+> datas e "Salvar e Confirmar" em Incidentes — Registro Nº 064).** Três pedidos: (1)
+> checkbox de seleção em lote nas abas "Lista" e "Incidentes"; (2) filtro de datas nas
+> duas; (3) em Incidentes, "Editar" ganha um terceiro botão "Salvar e Confirmar" (grava
+> e já tira a linha da lista) ao lado de "Salvar" (grava, mantém pendente) e "Cancelar".
+>
+> `bulkMarkSettled`/`acknowledgeIncidentsBulk` (novos, `Promise.allSettled` — tolerante
+> a falha individual, mesmo padrão de `EntriesTable.tsx`) fazem o trabalho em lote;
+> botões individuais de cada linha passaram a chamar a mesma função com lista de 1 id,
+> sem duplicar lógica com as ações originais `markSettled`/`acknowledgeIncident`
+> (mantidas — `calendario/page.tsx` ainda usa `markSettled` via form action, fora do
+> escopo deste pedido). `CompromissosList.tsx`/`IncidentsList.tsx` (novos, client)
+> extraem a renderização das listas com estado de seleção (`Set<string>`). Filtro de
+> data (`?from=&to=`, por vencimento) segue o mesmo padrão de
+> `app/(app)/lancamentos/page.tsx` (form GET com dois `<input type="date">`).
+> `updateIncidentEntry` ganhou campo `acknowledge` no `FormData` — quando `"1"`, grava
+> `incidentAcknowledgedAt` junto com o resto; é o que diferencia os dois botões de
+> salvar.
+>
+> **Verificado ao vivo** contra o banco de dev: seedadas 4 pendências + 2 incidentes de
+> teste via SQL direto; seleção em lote na Lista marcou 2 como pago/recebido de uma vez
+> (mensagem "2 lançamento(s) marcados.", saíram dos buckets); filtro de data restringiu
+> corretamente; em Incidentes, "Salvar e Confirmar" reduziu a contagem de 2 para 1
+> pendente. Dados de teste removidos ao final. `npm test` (302/302), `tsc --noEmit` e
+> `build` limpos.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-12), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 064).
+>
+> **Última atualização anterior: 2026-08-12 (Erro de importação em popup centralizado —
 > Registro Nº 063).** Depois de esbarrar no bug do Registro Nº 062, usuário pediu que
 > qualquer erro de importação apareça num popup no meio da tela — o texto pequeno em
 > vermelho acima do formulário podia passar despercebido. `ImportErrorModal` (novo,

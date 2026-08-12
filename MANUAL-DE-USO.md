@@ -217,7 +217,10 @@ sido editado depois.
 ## 9. Compromissos
 
 Mostra o que está vencendo: **vencidos, hoje, próximos 7 e próximos 30 dias**. Um toque em
-"Marcar como pago/recebido" resolve o compromisso sem precisar abrir o lançamento.
+"Marcar como pago/recebido" resolve o compromisso sem precisar abrir o lançamento. Um
+filtro de datas (De/Até, por vencimento) restringe a lista a um período específico. Cada
+linha tem uma caixa de seleção — marque várias e use "Marcar como pago/recebido" no topo
+para resolver todas de uma vez ("Selecionar todos" marca a lista inteira).
 
 **Aba Calendário:** a mesma informação em uma grade mensal — navegue entre meses, clique em
 um dia para ver a lista completa daquele dia (com destaque em vermelho para os vencidos).
@@ -225,13 +228,18 @@ um dia para ver a lista completa daquele dia (com destaque em vermelho para os v
 **Aba Incidentes:** lançamentos que precisam de revisão manual — parcelas sem par
 encontrado (por exemplo, uma parcela sem nenhuma outra correspondente — mesma carteira,
 categoria, descrição e valor) ou lançamentos importados de OFX/PDF que caíram na categoria
-padrão por falta de histórico (§8). Cada linha
-mostra o motivo e dois botões: **"Confirmar que está correto"** (se a linha realmente está
-assim mesmo, some da lista sem alterar nada) ou **"Editar"** (formulário completo da
-linha — carteira, categoria, subcategoria, responsável, descrição, valor, datas, situação
-e o número/total de parcelas, que não é editável na tela normal de Lançamentos). Ao
-corrigir uma linha, o sistema tenta combiná-la de novo com a parcela irmã automaticamente
-— se a correção resolveu o problema, as duas saem da lista sozinhas.
+padrão por falta de histórico (§8). Também tem filtro de datas (De/Até, por vencimento) e
+caixa de seleção por linha para confirmar várias de uma vez ("Confirmar selecionados").
+Cada linha mostra o motivo e dois botões: **"Confirmar que está correto"** (se a linha
+realmente está assim mesmo, some da lista sem alterar nada) ou **"Editar"** (formulário
+completo da linha — carteira, categoria, subcategoria, responsável, descrição, valor,
+datas, situação e o número/total de parcelas, que não é editável na tela normal de
+Lançamentos). No formulário de edição, **"Salvar"** grava as correções mas mantém a linha
+pendente (para você conferir de novo depois); **"Salvar e Confirmar"** grava as correções
+e já tira a linha da lista, como se tivesse clicado em "Confirmar que está correto" depois
+de editar. Ao corrigir uma linha (por qualquer um dos dois botões), o sistema tenta
+combiná-la de novo com a parcela irmã automaticamente — se a correção resolveu o problema,
+as duas saem da lista sozinhas.
 
 **Integração com o Google Agenda:** no topo da aba Calendário, clique em "Conectar Google
 Agenda" e autorize o acesso na sua conta Google (autorização própria, separada do

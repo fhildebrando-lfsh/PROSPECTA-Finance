@@ -2133,7 +2133,73 @@
 
 ---
 
-## Próximo número de registro: **064**
+### Registro Nº 064
+- **Data:** 2026-08-12
+- **Etapa concluída:** Compromissos — seleção em lote, filtro de datas e "Salvar e
+  Confirmar" em Incidentes
+- **Descrição:** Usuário pediu três melhorias em Compromissos: (1) caixa de seleção
+  (checkbox) pra marcar pendências em lote nas abas "Lista" e "Incidentes"; (2) filtro
+  de datas nas duas abas; (3) em Incidentes, ao clicar "Editar", um terceiro botão
+  "Salvar e Confirmar" ao lado de "Salvar"/"Cancelar" — "Salvar" grava as correções e
+  mantém a linha pendente (pra conferir depois), "Salvar e Confirmar" grava e já tira a
+  linha da lista (equivalente a "Confirmar que está correto", mas depois de editar).
+- **O que foi feito:**
+  1. **`app/(app)/compromissos/actions.ts`** — nova `bulkMarkSettled(ids: string[])`,
+     mesma regra de `markSettled` em lote (`Promise.allSettled`, tolerante a falha
+     individual — ex.: duas abas marcando o mesmo lançamento ao mesmo tempo).
+  2. **`app/(app)/compromissos/CompromissosList.tsx`** (novo, client) — extrai a
+     renderização da lista de `page.tsx` pra um componente com estado de seleção
+     (`Set<string>`, mesmo padrão de `EntriesTable.tsx`): checkbox por linha,
+     "Selecionar todos", barra de ação em lote quando há seleção. O botão individual
+     "Marcar como pago/recebido" de cada linha passou a chamar a mesma
+     `bulkMarkSettled` (lista de 1 id) — não duplica lógica com `markSettled` /
+     `settleEntry`.
+  3. **`app/(app)/compromissos/page.tsx`** — ganhou filtro de data por vencimento
+     (`?from=&to=`, mesmo padrão de `app/(app)/lancamentos/page.tsx`: `<form>` GET com
+     dois `<input type="date">` + botão "Filtrar", link "Limpar" quando ativo) e passou
+     a delegar a renderização pro novo `CompromissosList`.
+  4. **`app/(app)/compromissos/incidentes/actions.ts`** — nova
+     `acknowledgeIncidentsBulk(ids: string[])` (mesmo padrão de `bulkMarkSettled`).
+     `updateIncidentEntry` ganhou um campo `acknowledge` no `FormData`: quando `"1"`,
+     grava `incidentAcknowledgedAt: new Date()` junto com o resto da atualização — é o
+     que faz "Salvar e Confirmar" tirar a linha da lista, enquanto "Salvar" sozinho
+     (`acknowledge` ausente/`"0"`) não mexe nesse campo, mantendo a linha pendente.
+  5. **`app/(app)/compromissos/incidentes/IncidentCard.tsx`** — `handleSave` ganhou
+     parâmetro `acknowledge: boolean`, setado por dois botões distintos. Checkbox de
+     seleção (props `selected`/`onToggleSelect`, opcionais — card continua utilizável
+     sozinho sem seleção, ex. se reaproveitado em outro contexto no futuro), desabilitada
+     durante edição pra não confundir "selecionado pra ação em lote" com "em edição".
+  6. **`app/(app)/compromissos/incidentes/IncidentsList.tsx`** (novo, client) — mesmo
+     padrão de `CompromissosList`: seleção + barra de ação em lote ("Confirmar
+     selecionados", chama `acknowledgeIncidentsBulk`).
+  7. **`app/(app)/compromissos/incidentes/page.tsx`** — mesmo filtro de data por
+     vencimento da Lista, delega a renderização pro novo `IncidentsList`.
+- **Fora do escopo:** `app/(app)/compromissos/calendario/page.tsx` não foi tocado —
+  continua usando `markSettled` (form action simples) por lançamento; o pedido foi só
+  sobre "Lista" e "Incidentes".
+- **Verificado:** contra o banco de dev (login sem senha), seedadas 4 pendências (Lista)
+  e 2 incidentes de teste via SQL direto. Lista: selecionadas 2 pendências por checkbox,
+  "Marcar como pago/recebido" em lote confirmou "2 lançamento(s) marcados." e as duas
+  saíram dos buckets; filtro `?from=&to=` restringiu corretamente aos vencimentos dentro
+  do intervalo. Incidentes: "Editar" abriu os 3 botões na ordem certa (Salvar / Salvar e
+  Confirmar / Cancelar); "Salvar e Confirmar" gravou as correções e reduziu a contagem de
+  2 para 1 incidente pendente. Dados de teste removidos do banco de dev ao final.
+  `npm test` (302/302), `tsc --noEmit` e `build` limpos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** capturas de tela ao vivo (seleção em lote na Lista, formulário de
+  edição de Incidente com os 3 botões); mensagens de confirmação em lote conferidas no
+  texto da página; `npm test`, `tsc`, `build` limpos.
+- **Documentos relacionados:** `app/(app)/compromissos/actions.ts`,
+  `app/(app)/compromissos/CompromissosList.tsx`, `app/(app)/compromissos/page.tsx`,
+  `app/(app)/compromissos/incidentes/actions.ts`,
+  `app/(app)/compromissos/incidentes/IncidentCard.tsx`,
+  `app/(app)/compromissos/incidentes/IncidentsList.tsx`,
+  `app/(app)/compromissos/incidentes/page.tsx`.
+
+---
+
+## Próximo número de registro: **065**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

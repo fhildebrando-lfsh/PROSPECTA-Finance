@@ -57,11 +57,22 @@ interface IncidentCardProps {
   subcategories: SubcategoryOption[];
   people: PersonOption[];
   statuses: StatusOption[];
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 const FREE_SIGN_NATURES = new Set(["INVESTIMENTO", "OUTRO"]);
 
-export function IncidentCard({ data, wallets, categories, subcategories, people, statuses }: IncidentCardProps) {
+export function IncidentCard({
+  data,
+  wallets,
+  categories,
+  subcategories,
+  people,
+  statuses,
+  selected = false,
+  onToggleSelect,
+}: IncidentCardProps) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +128,7 @@ export function IncidentCard({ data, wallets, categories, subcategories, people,
     }
   }
 
-  async function handleSave() {
+  async function handleSave(acknowledge: boolean) {
     setBusy(true);
     setError(null);
     try {
@@ -137,6 +148,7 @@ export function IncidentCard({ data, wallets, categories, subcategories, people,
       fd.set("amount", signed.toFixed(2));
       fd.set("installmentNumber", installmentNumber);
       fd.set("installmentTotal", installmentTotal);
+      fd.set("acknowledge", acknowledge ? "1" : "0");
       await updateIncidentEntry(fd);
       setEditing(false);
     } catch (err) {
@@ -149,9 +161,20 @@ export function IncidentCard({ data, wallets, categories, subcategories, people,
   return (
     <div className="rounded-xl border border-amber-800 bg-amber-950/20 p-4">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-zinc-100">{data.description}</p>
-          <p className="mt-0.5 text-xs text-amber-300">{data.motivo}</p>
+        <div className="flex min-w-0 items-start gap-2">
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={onToggleSelect}
+              disabled={editing}
+              className="mt-1 shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-zinc-100">{data.description}</p>
+            <p className="mt-0.5 text-xs text-amber-300">{data.motivo}</p>
+          </div>
         </div>
         {!editing && (
           <div className="flex shrink-0 gap-2">
@@ -344,14 +367,26 @@ export function IncidentCard({ data, wallets, categories, subcategories, people,
               <span className="text-[11px] text-zinc-600">Menos de 2 = deixa de ser tratado como parcelamento.</span>
             </label>
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={handleSave} disabled={busy} className={BTN_PRIMARY}>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => handleSave(false)} disabled={busy} className={BTN_GHOST}>
               {busy ? "Salvando…" : "Salvar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSave(true)}
+              disabled={busy}
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-zinc-950 hover:bg-emerald-500 disabled:opacity-50"
+            >
+              {busy ? "Salvando…" : "Salvar e Confirmar"}
             </button>
             <button type="button" onClick={resetToView} disabled={busy} className={BTN_GHOST}>
               Cancelar
             </button>
           </div>
+          <p className="text-[11px] text-zinc-500">
+            &ldquo;Salvar&rdquo; grava as correções e mantém a linha pendente pra você conferir depois. &ldquo;Salvar
+            e Confirmar&rdquo; grava e já tira a linha desta lista.
+          </p>
         </div>
       )}
     </div>

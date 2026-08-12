@@ -1,9 +1,10 @@
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import type { Prisma } from "@/app/generated/prisma/client";
 import { daysBetween } from "@/lib/finance/dates";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
-import { markSettled } from "./actions";
 import { CompromissosTabs } from "./CompromissosTabs";
+import { CompromissosList, type CompromissoGroup } from "./CompromissosList";
 
 type Bucket = "vencidos" | "hoje" | "proximos7" | "proximos30";
 
@@ -25,14 +26,28 @@ function bucketFor(days: number): Bucket | null {
   return null;
 }
 
-export default async function CompromissosPage() {
+interface SearchParams {
+  from?: string;
+  to?: string;
+}
+
+export default async function CompromissosPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const workspaceId = await requireWorkspaceId();
+  const params = await searchParams;
 
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
+  const where: Prisma.EntryWhereInput = { workspaceId, statusCode: { in: ["A_PAGAR", "A_RECEBER"] } };
+  if (params.from || params.to) {
+    where.dueDate = {
+      ...(params.from ? { gte: new Date(`${params.from}T00:00:00Z`) } : {}),
+      ...(params.to ? { lte: new Date(`${params.to}T00:00:00Z`) } : {}),
+    };
+  }
+
   const entries = await prisma.entry.findMany({
-    where: { workspaceId, statusCode: { in: ["A_PAGAR", "A_RECEBER"] } },
+    where,
     include: { wallet: true, category: true, responsible: true },
     orderBy: { dueDate: "asc" },
   });
@@ -49,6 +64,23 @@ export default async function CompromissosPage() {
     if (bucket) grouped[bucket].push(entry);
   }
 
+  const groups: CompromissoGroup[] = BUCKET_ORDER.map((bucket) => ({
+    bucket,
+    label: BUCKET_LABELS[bucket],
+    highlight: bucket === "vencidos",
+    entries: grouped[bucket].map((entry) => ({
+      id: entry.id,
+      description: entry.description,
+      walletName: entry.wallet.name,
+      categoryName: entry.category.name,
+      responsibleName: entry.responsible.name,
+      dueDateFormatted: formatDateBR(entry.dueDate),
+      amountFormatted: formatCurrencyBRL(entry.amount),
+      isNegative: entry.amount.isNegative(),
+      statusCode: entry.statusCode,
+    })),
+  }));
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -58,55 +90,36 @@ export default async function CompromissosPage() {
 
       <CompromissosTabs active="lista" />
 
-      {BUCKET_ORDER.map((bucket) => (
-        <div key={bucket}>
-          <h2
-            className={`mb-2 text-sm font-medium ${bucket === "vencidos" ? "text-rose-400" : "text-zinc-300"}`}
-          >
-            {BUCKET_LABELS[bucket]} ({grouped[bucket].length})
-          </h2>
-          {grouped[bucket].length === 0 ? (
-            <p className="text-sm text-zinc-600">Nada aqui.</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {grouped[bucket].map((entry) => (
-                <div
-                  key={entry.id}
-                  className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 ${
-                    bucket === "vencidos" ? "border-rose-900 bg-rose-950/30" : "border-zinc-800 bg-zinc-900"
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-zinc-100">{entry.description}</p>
-                    <p className="text-xs text-zinc-500">
-                      {entry.wallet.name} · {entry.category.name} · {entry.responsible.name} · vence{" "}
-                      {formatDateBR(entry.dueDate)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`font-mono text-sm tabular-nums ${
-                        entry.amount.isNegative() ? "text-red-400" : "text-emerald-400"
-                      }`}
-                    >
-                      {formatCurrencyBRL(entry.amount)}
-                    </span>
-                    <form action={markSettled}>
-                      <input type="hidden" name="id" value={entry.id} />
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-zinc-950 hover:bg-amber-400"
-                      >
-                        {entry.statusCode === "A_RECEBER" ? "Marcar como recebido" : "Marcar como pago"}
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+      <form className="flex flex-wrap items-end gap-3 text-sm">
+        <label className="flex flex-col gap-1 text-xs text-zinc-400">
+          De (vencimento)
+          <input
+            type="date"
+            name="from"
+            defaultValue={params.from}
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-zinc-100"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-zinc-400">
+          Até (vencimento)
+          <input
+            type="date"
+            name="to"
+            defaultValue={params.to}
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-zinc-100"
+          />
+        </label>
+        <button type="submit" className="rounded-lg border border-zinc-700 px-3 py-1.5 text-zinc-300 hover:bg-zinc-800">
+          Filtrar
+        </button>
+        {(params.from || params.to) && (
+          <a href="/compromissos" className="rounded-lg px-3 py-1.5 text-zinc-500 hover:text-zinc-300">
+            Limpar
+          </a>
+        )}
+      </form>
+
+      <CompromissosList groups={groups} />
     </div>
   );
 }

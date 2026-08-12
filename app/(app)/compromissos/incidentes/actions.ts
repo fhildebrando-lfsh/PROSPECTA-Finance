@@ -77,6 +77,28 @@ export async function acknowledgeIncident(formData: FormData) {
   revalidateIncidentPaths();
 }
 
+/** Mesma confirmação de cima, em lote — usada pela seleção por checkbox da lista de
+ * Incidentes. Tolerante a falha individual (ex.: linha já confirmada por outra aba). */
+export async function acknowledgeIncidentsBulk(ids: string[]) {
+  const workspaceId = await requireWorkspaceId();
+  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
+
+  const results = await Promise.allSettled(
+    ids.map(async (id) => {
+      await loadOwnedIncident(id, workspaceId);
+      await prisma.entry.update({
+        where: { id },
+        data: { incidentAcknowledgedAt: new Date(), updatedBy: profileId },
+      });
+    }),
+  );
+  const confirmed = results.filter((r) => r.status === "fulfilled").length;
+
+  revalidateIncidentPaths();
+  return { confirmed, total: ids.length };
+}
+
 /**
  * Edita a linha completa do incidente — os mesmos campos de um lançamento
  * normal (§17, `updateEntrySchema`), mais `installmentNumber`/`installmentTotal`
@@ -108,8 +130,13 @@ export async function updateIncidentEntry(formData: FormData) {
   const installmentTotalRaw = Number(formData.get("installmentTotal") ?? 0);
   const installmentTotal = installmentTotalRaw >= 2 ? installmentTotalRaw : null;
   const installmentNumber = installmentTotal ? Number(formData.get("installmentNumber") ?? 1) || 1 : null;
+  // "Salvar e Confirmar" (vs. só "Salvar") — grava os campos e já marca a linha como
+  // revisada, tirando-a da lista de Incidentes. Sem isso, ela continua pendente mesmo
+  // com os dados corrigidos, pra dar chance de conferir antes de confirmar de vez.
+  const acknowledge = formData.get("acknowledge") === "1";
 
   const data: Prisma.EntryUpdateInput = { updatedBy: profileId, installmentTotal, installmentNumber };
+  if (acknowledge) data.incidentAcknowledgedAt = new Date();
   if (input.walletId !== undefined) data.wallet = { connect: { id: input.walletId } };
   if (input.categoryId !== undefined) data.category = { connect: { id: input.categoryId } };
   if (input.subcategoryId !== undefined) {
