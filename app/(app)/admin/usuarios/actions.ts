@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminProfile } from "@/lib/auth/session";
 import { deleteAccountAsAdmin } from "@/lib/account/delete";
-import { assignAdvisor } from "@/lib/workspace/advisor";
+import { assignAdvisor, setAdvisorWriteAccess } from "@/lib/workspace/advisor";
 import { blockWorkspace, unblockWorkspace } from "@/lib/workspace/block";
+import { grantPlan, revokePlanGrant } from "@/lib/billing/plan-grant";
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
 import { updatePersonalData, personalDataFromFormData } from "@/lib/profile/update";
@@ -41,6 +42,18 @@ export async function setAdvisor(formData: FormData) {
   const advisorProfileId = String(formData.get("advisorProfileId") ?? "").trim() || null;
 
   await assignAdvisor(workspaceId, advisorProfileId);
+  revalidatePath("/admin/usuarios");
+}
+
+/** Etapa 0 (2026-08-15) — concede ou revoga a escrita do consultor ativo. */
+export async function setAdvisorWrite(formData: FormData) {
+  const admin = await requireAdminProfile();
+
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const canWrite = formData.get("canWrite") === "true";
+  if (!workspaceId) throw new ApiError(400, "Workspace inválido.");
+
+  await setAdvisorWriteAccess({ workspaceId, canWrite, actorProfileId: admin.id });
   revalidatePath("/admin/usuarios");
 }
 
@@ -82,5 +95,36 @@ export async function setPlatformAdmin(formData: FormData) {
     where: { id: profileId },
     data: { isPlatformAdmin: makeAdmin, platformRole: makeAdmin ? "PLATFORM_ADMIN" : "NONE" },
   });
+  revalidatePath("/admin/usuarios");
+}
+
+/**
+ * Etapa 4 do Método (2026-08-15) — concessão manual de PlanGrant (camada 2
+ * do modelo de direitos, §4.6). Sem ConsultingEngagement ainda (Etapa 8),
+ * toda concessão nasce daqui — ex.: cortesia, teste, acesso antecipado.
+ * Nunca toca na Subscription do workspace.
+ */
+export async function grantWorkspacePlan(formData: FormData) {
+  const admin = await requireAdminProfile();
+
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const planId = String(formData.get("planId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  const endsAtRaw = String(formData.get("endsAt") ?? "");
+  if (!workspaceId || !planId || !reason || !endsAtRaw) {
+    throw new ApiError(400, "Plano, motivo e data de término são obrigatórios.");
+  }
+
+  await grantPlan({ workspaceId, planId, reason, endsAt: new Date(endsAtRaw), createdBy: admin.id });
+  revalidatePath("/admin/usuarios");
+}
+
+export async function revokeWorkspacePlanGrant(formData: FormData) {
+  await requireAdminProfile();
+
+  const grantId = String(formData.get("grantId") ?? "");
+  if (!grantId) throw new ApiError(400, "Concessão inválida.");
+
+  await revokePlanGrant(grantId);
   revalidatePath("/admin/usuarios");
 }

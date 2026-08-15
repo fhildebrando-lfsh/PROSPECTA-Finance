@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BTN_DANGER, BTN_GHOST, BTN_PRIMARY, BTN_SECONDARY } from "@/components/ui/buttonStyles";
 import { useSavedToast } from "@/components/ui/SavedToast";
 import { updateWallet, toggleWalletActive, deleteWallet } from "./actions";
+import { WalletReconcileControl, type ReconciliationSummary } from "./WalletReconcileControl";
 
 export interface WalletRow {
   id: string;
@@ -14,6 +15,7 @@ export interface WalletRow {
   dueDay: string;
   creditLimit: string;
   isActive: boolean;
+  reconciliation: ReconciliationSummary | null;
 }
 
 interface InstitutionOption {
@@ -93,6 +95,7 @@ export function WalletsTable({ wallets, institutions }: { wallets: WalletRow[]; 
               <th className="px-3 py-2 font-medium">Fecha dia</th>
               <th className="px-3 py-2 font-medium">Vence dia</th>
               <th className="px-3 py-2 font-medium">Limite</th>
+              <th className="px-3 py-2 font-medium">Conciliação</th>
               <th className="px-3 py-2 font-medium"></th>
             </tr>
           </thead>
@@ -126,6 +129,9 @@ export function WalletsTable({ wallets, institutions }: { wallets: WalletRow[]; 
                   <td className="px-3 py-2 text-xs text-zinc-400">{w.closingDay || "—"}</td>
                   <td className="px-3 py-2 text-xs text-zinc-400">{w.dueDay || "—"}</td>
                   <td className="px-3 py-2 text-xs text-zinc-400">{w.creditLimit || "—"}</td>
+                  <td className="px-3 py-2">
+                    <WalletReconcileControl walletId={w.id} latest={w.reconciliation} />
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2">
                     <div className="flex gap-1.5">
                       <button type="button" onClick={() => setEditingId(w.id)} className={BTN_SECONDARY}>
@@ -243,6 +249,7 @@ function WalletEditRow({
           className="w-24 rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1 text-zinc-100"
         />
       </td>
+      <td className="px-3 py-2"></td>
       <td className="whitespace-nowrap px-3 py-2">
         <div className="flex gap-1.5">
           <button type="button" disabled={saving} onClick={save} className={BTN_PRIMARY}>

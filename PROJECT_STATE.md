@@ -15,7 +15,503 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-12 (Compromissos — seleção em lote, filtro de
+> **Última atualização real: 2026-08-15 (Etapa 6 do Método — Assistente de IA +
+> Automações, fecha o Bloco I — Registro Nº 072).** Sexta e última entrega do
+> Bloco I (Etapas 1-6).
+>
+> Duas peças novas do Max, as duas desenhadas como **alerta/resposta, nunca
+> execução** — automação sempre vira `Notification`, jamais toca um `Entry`
+> (§5.9); o assistente nunca recomenda produto ou ativo específico, recusa
+> explicitamente qualquer pergunta desse tipo (§3.1/P2).
+>
+> **Benchmark feito antes de codar, a pedido do usuário:** sistema Pierre
+> (CloudWalk) — assistente financeiro conversacional brasileiro com
+> arquitetura de múltiplos agentes por cadência (Albert/diário, Marie/
+> quinzenal, Galileu/mensal) e import automático via Open Finance. O achado
+> mais relevante pra este projeto: **mesmo com acesso transacional completo,
+> o Pierre só alerta, nunca executa uma ação financeira sozinho** — validou o
+> desenho que já estava planejado antes da pesquisa, em vez de mudar rumo.
+> Adotado do Pierre só o princípio (proatividade via notificação, cadência
+> conceitual), não a personificação de agente com nome próprio — decisão
+> consciente de manter mais simples nesta etapa.
+>
+> **Correção de premissa encontrada ao investigar antes de codar:** a versão
+> anterior do documento de arquitetura dizia que o motor de automação
+> reaproveitaria "o job mensal de recorrência já existente" — conferido em
+> `lib/finance/installments.ts::generateInstallments()`, isso não existe (a
+> materialização de 24 meses acontece inteira na criação, sem job periódico
+> nenhum). Não havia `vercel.json` nem rota de cron no projeto — infra criada
+> do zero (1ª rota de cron do projeto).
+>
+> `lib/method/automation-engine.ts` (novo, puro) — 5 gatilhos
+> (`LIMIAR_CATEGORIA`, `VENCIMENTO_PROXIMO`, `VARIACAO_RECORRENCIA`,
+> `META_FORA_DA_TRAJETORIA`, `INCIDENTE_ACUMULADO`), cada um uma função
+> isolada testável sozinha, mais `evaluateAutomationRule()` que despacha por
+> `trigger`. `lib/method/ai-assistant.ts` (novo, puro) — Q&A por casamento de
+> padrão sobre um catálogo pequeno e fixo (saldo, receita/gasto do mês — geral
+> ou por categoria —, quanto falta pra reserva, incidentes pendentes); a
+> pergunta em linguagem natural nunca "calcula" nada sozinha, só traduz pra uma
+> chamada estruturada às mesmas funções puras de `lib/finance/` que já
+> alimentam Painel/Relatórios (`dashboardBalanceBlocks`, `periodTotals`) —
+> cada resposta é auditável via `AiInteraction.answerQuery`, nunca só o texto
+> solto. Reserva "pra que meta serve a resposta de reserva" resolvida por
+> convenção de nome (`Goal.name` contendo "reserva") — sem um campo dedicado
+> no modelo `Goal` pra isso; sem correspondência, responde "não configurada"
+> em vez de adivinhar uma meta qualquer.
+>
+> `AutomationRule`/`AiInteraction` (novos models, schema já vinha desenhado
+> desde a passagem de arquitetura). `lib/method/run-automations.ts` (novo,
+> impuro) — busca `Entry`/`Goal`/incidentes reais por workspace, monta o
+> contexto, chama o motor puro, grava `Notification` em lote. Deliberadamente
+> separado da rota de cron: a rota de API só autentica e chama essa função,
+> que fica testável direto contra o banco de dev sem precisar simular um
+> `NextRequest` (rota exercitada indiretamente; ver "Verificado" abaixo).
+> `vercel.json` + `app/api/cron/automations/route.ts` — protegida por
+> `Authorization: Bearer ${CRON_SECRET}` (mesmo header que a própria Vercel
+> envia em execução real de cron), roda 1x/dia.
+>
+> Nova tela `/painel/assistente` (Sidebar, item novo "Assistente" logo abaixo
+> de "Saúde Financeira") — chat simples (`useActionState`) pro Assistente, e
+> um catálogo fixo de 5 "templates" de alerta com liga/pausa/exclusão (não um
+> construtor de regra livre — mesmo espírito do próprio Assistente: superfície
+> pequena e previsível, não um formulário genérico que aceitaria qualquer
+> coisa). Gates independentes por feature (`ia_assistente`/`automacoes`,
+> ambas já existiam no catálogo Max desde a Etapa 3) — um workspace pode ter
+> uma sem a outra via `PlanGrant` pontual.
+>
+> **Verificado:** `tsc --noEmit` limpo; `npm test` 404/404 (20 testes novos de
+> `automation-engine.ts`, 13 de `ai-assistant.ts`); `npm run build` limpo, 64
+> rotas de página + API (`/painel/assistente` e `/api/cron/automations`
+> novas). Migration `20260815180000_automation_ai` aplicada e confirmada no
+> banco de dev. Teste de integração novo
+> (`tests/integration/method/automations-cron.test.ts`, 4 testes) chama
+> `runDueAutomations()` direto contra dado real: não dispara abaixo do
+> limite, dispara e grava `Notification` com o texto certo quando o limite de
+> categoria é ultrapassado, ignora regra pausada, dispara
+> `META_FORA_DA_TRAJETORIA` calculando o saldo real da carteira vinculada à
+> meta. Suíte de integração completa: 15 arquivos, 62 testes, tudo verde.
+> **Não verificado por navegação real logada** — a técnica de login sem senha
+> (seção 21) foi tentada (magic link + `verifyOtp()`, sem digitar nenhuma
+> senha), mas o passo de injetar o cookie de sessão no Browser pane foi
+> bloqueado pelo classificador de permissão do ambiente, que tratou a ação
+> como injeção de credencial; não houve tentativa de contornar o bloqueio —
+> mesma ressalva já registrada para outras telas administrativas/Max desta
+> sessão.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 072).
+>
+> **Última atualização anterior: 2026-08-15 (Etapa 5 do Método — Painel de Saúde
+> Financeira níveis 1 e 2 — Registro Nº 071).** Quinta entrega do Bloco I.
+>
+> `HealthSnapshot` (novo) + `lib/method/psf.ts` (novo) — 5 dos 7 indicadores do
+> PSF (§8): Organização (reaproveita o Índice de Consistência da Etapa 2 direto,
+> sem transformação), Endividamento (`100 − min(100, (compromisso mensal ÷ renda
+> líquida média) × 200)` — `averageMonthlyIncome`, novo em `lib/finance/
+> reserve.ts`, espelha `averageMonthlyExpense`), Liquidez (fôlego: saldo líquido
+> ÷ despesa média, alvo 6 meses), Proteção e Construção Patrimonial (Max,
+> reaproveitam a Régua da Etapa 1 pra piso de banda de renda).
+>
+> **Decisão de desenho documentada explicitamente no código, pra não virar bug
+> "corrigido" de volta por engano:** Liquidez usa fôlego geral (saldo ÷ despesa
+> média), não `goalProgress()`/a `Goal` de reserva do usuário. Isso não é
+> descuido — o Painel já teve um bug real corrigido antes desta sessão por
+> calcular sua própria meta de reserva em paralelo à `Goal` real do cliente
+> (comentário em `app/(app)/painel/page.tsx`: "nunca um número paralelo"). Esse
+> bug era sobre *inventar um alvo* onde já existia um real; o indicador de
+> Liquidez do PSF não inventa alvo nenhum — mede fôlego geral (§7.2: "capacidade
+> de enfrentar compromissos e imprevistos"), uma pergunta diferente de "quanto
+> falta pra bater minha meta de reserva". Os dois convivem sem conflito. Deixei
+> o raciocínio completo comentado em `lib/method/psf.ts::liquidez()` porque a
+> distinção é sutil o suficiente pra alguém (inclusive eu, numa sessão futura)
+> tentar "simplificar" de volta pro padrão errado sem entender o porquê.
+>
+> Proteção usa 100% do peso na reserva por enquanto (mesmo valor de Liquidez,
+> capado em 100) — a metade de cobertura de seguros da fórmula completa
+> (§5.3.1: "(reserva × 50%) + (coberturas × 50%)") depende de `InsurancePolicy`,
+> que só chega na Etapa 12 (Bloco III). Comentário no código já aponta isso como
+> pendência de revisão quando aquela etapa landar.
+>
+> Nova tela `/painel/saude-financeira` (Sidebar, item novo "Saúde Financeira"
+> logo abaixo de "Painel" — decisão de manter os dois como itens de topo
+> separados, não transformar "Painel" num grupo com submenu, pra não alterar a
+> estrutura de navegação existente). Gateada por `psf_nivel_1`
+> (Pro)/`psf_nivel_2` (Max) — ambas as features já existiam no catálogo desde a
+> Etapa 3, `LEGACY_INTERNAL` já as cobre, nenhum backfill novo necessário.
+> Distingue visualmente "não avaliado" (sem dado) de "disponível no Max"
+> (bloqueio comercial) — exigência explícita de §8.3. Botão "Salvar no
+> histórico" grava um `HealthSnapshot` (Server Action separada da renderização
+> da página — sem escrita silenciosa no simples ato de ver a tela).
+>
+> **Verificado:** `tsc --noEmit` limpo; `npm test` 371/371 (18 testes novos de
+> `psf.ts`, 3 de `averageMonthlyIncome`); `npm run build` limpo, 70 rotas. Teste
+> de integração novo (`tests/integration/method/psf.test.ts`, 3 testes) confirma
+> contra o banco de dev real: Organização/Endividamento/Liquidez calculados a
+> partir de `Entry` verdadeiro batem com o esperado (endividamento perfeito sem
+> dívida = 100; 24 meses de fôlego trava em 100/consolidado), o Índice de
+> Consistência integra direto no indicador de Organização, e `HealthSnapshot`
+> grava/lê de volta corretamente. Suíte de integração completa: 14 arquivos, 58
+> testes, tudo verde. Não verificado por navegação real na tela — mesma
+> ressalva de sempre (sem senha real do admin).
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 071).
+>
+> **Última atualização anterior: 2026-08-15 (Etapa 4 do Método — PlanGrant e teto de
+> assento — Registro Nº 070).** Quarta e última entrega do Bloco I — fecha o bloco
+> comercial (Etapas 1-4), que já paga a conta sozinho sem depender de nenhum
+> cliente de consultoria fechado.
+>
+> `PlanGrant` (novo model, §4.6) — camada 2 do modelo de direitos em três
+> camadas: elevação temporária de nível que nunca escreve na `Subscription` do
+> cliente. `engagementId` fica solto (sem FK) até `ConsultingEngagement` existir
+> (Etapa 8) — mesmo padrão já usado em `Notification.relatedEntryId` pra
+> referência a um conceito que ainda não tem tabela própria.
+> `lib/billing/effective-level.ts::activePlanGrants()` (novo) +
+> `hasFeature()` estendido: agora três fontes somam (Entitlement, Subscription,
+> PlanGrant ativo), qualquer uma libera.
+>
+> **Segundo achado crítico da sessão (depois do de Etapa 3) — pego pelos próprios
+> testes, não por inspeção manual.** A primeira versão do teto de assento
+> (§4.3/§9.5: Individual = 1 pessoa, Família = até 5, em
+> `lib/workspace/invite.ts`) aplicava `cap=1` por padrão pra qualquer workspace
+> sem Subscription nenhuma — que é o caso de **toda produção hoje** (o backfill
+> de `LEGACY_INTERNAL` da Etapa 3 só rodou contra o banco de dev, nunca contra
+> produção, de propósito, por ser fora do escopo autorizado desta sessão). Rodar
+> a suíte de integração existente (`tests/integration/workspace/invite.test.ts`)
+> imediatamente expôs isso: os 3 testes que criavam convite começaram a falhar
+> com "Este plano permite só 1 pessoa" — um workspace de teste comum, sem
+> Subscription, tentando convidar pela primeira vez. **Se essa versão tivesse
+> ido para produção sem esse teste rodar, qualquer cliente real convidando um
+> familiar pela primeira vez desde este deploy teria sido bloqueado, sem
+> nenhuma mudança de plano ter de fato acontecido** — uma regressão clássica de
+> "aplicar uma regra nova a dado que nunca foi migrado pra ela".
+>
+> Corrigido: `hasSeatAvailable()` agora só aplica o teto quando o workspace
+> **já tem** algum plano conhecido (Subscription ativa OU PlanGrant ativo) —
+> sem isso, sem restrição, exatamente o comportamento de antes desta etapa.
+> Regra geral reforçada nesta sessão: ausência de dado nunca vira restrição
+> nova, só falta de dado. `acceptPendingInviteForEmail()` (chamada em silêncio
+> depois de qualquer login) nunca lança — se o assento não estiver livre, o
+> convite fica pendente sem aceitar, em vez de quebrar o login de alguém por
+> causa de um convite alheio.
+>
+> Concessão manual de `PlanGrant` integrada a `/admin/usuarios`
+> (`PlanGrantControl.tsx`, mesmo esqueleto de `AdvisorControl`/
+> `BlockAccessControl`) — sem `ConsultingEngagement` ainda, toda concessão hoje
+> é manual (cortesia, teste, acesso antecipado).
+>
+> **Verificado:** `tsc --noEmit` limpo; `npm test` 350/350; `npm run build`
+> limpo, 69 rotas (nenhuma nova). Suíte de integração ganhou
+> `tests/integration/billing/plan-grant.test.ts` (4 testes) e
+> `tests/integration/workspace/seat-cap.test.ts` (5 testes, incluindo o caso
+> "sem plano não restringe" que documenta a regressão evitada). Suíte
+> completa: 13 arquivos, 55 testes, tudo verde — incluindo os testes de
+> convite pré-existentes, que voltaram a passar depois da correção.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 070).
+>
+> **Última atualização anterior: 2026-08-15 (Etapa 3 do Método — catálogo comercial real,
+> `/admin/planos` e primeira tela gateada — Registro Nº 069).** Terceira entrega do
+> Bloco I — a mais arriscada até agora, porque é a primeira que liga `hasFeature()`
+> a uma tela de verdade.
+>
+> **Achado crítico, checado antes de tocar em qualquer tela:** consultei o banco de
+> dev direto e confirmei que **0 dos 3 workspaces existentes (incluindo o pessoal
+> real) tinham qualquer `Subscription`**. Gatear qualquer tela sem resolver isso
+> primeiro travaria todo mundo, inclusive o próprio usuário — exatamente o tipo de
+> regressão que a regra "não altere o que já funciona" existe para evitar. Antes de
+> escrever qualquer gate, investiguei se já existia alguma solução — e existia:
+> `ARQUITETURA-IDENTIDADE-PLANOS.md` já previa um plano `LEGACY_INTERNAL` (todas as
+> features liberadas, sem cobrança) exatamente para este cenário, implementado na
+> migration `20260801205917_identity_plans_backfill` — só que essa migration nunca
+> rodou contra o banco de dev **atual** (é um projeto Supabase novo, criado no
+> Registro Nº 047, depois daquela migration ter sido escrita contra o antigo).
+>
+> `Feature.gateKind` (novo, enum `PLANO`/`METODO`) — admin decide, por feature, se
+> ela é liberada por nível de plano ou por camada de método (`ConsultingEngagement`,
+> ainda não existe — toda feature `METODO` retorna `false` pra todo mundo até a
+> Etapa 8, de propósito, fail-safe). `prisma/seed-plans.ts` (novo, `npm run
+> db:seed:plans`) — os 51 códigos de feature de §13.8 (com rótulo em português) e os
+> 6 SKUs reais (Start/Pro/Max × Individual/Família, preços de §5.1), cada um
+> incluindo integralmente o nível anterior (§4.2). **Descoberta no meio do
+> trabalho:** dois códigos novos (`ia_assistente`, `open_finance`) já existiam num
+> catálogo de roadmap comercial anterior (12 features, planos `START`/`PLUS`/
+> `PREMIUM`/`PREMIUM_NEGOCIOS`, todos com preço R$ 0,00 placeholder) — sem
+> sobreposição de nome com o resto, então o `upsert` (que nunca sobrescreve
+> nome/gateKind já existente) simplesmente reaproveitou as duas linhas, sem
+> duplicar. Catálogo final: 61 features únicas (49 genuinamente novas + 12 antigas).
+>
+> O seed reforça `LEGACY_INTERNAL` com as 61 (`skipDuplicates`, nunca remove o que
+> já tinha) e reaplica o mesmo backfill idempotente da migration original — os 3
+> workspaces reais do banco de dev ganharam `Subscription` em `LEGACY_INTERNAL`.
+> Confirmado por query direta antes de prosseguir. Os 4 planos superados
+> (`START`/`PLUS`/`PREMIUM`/`PREMIUM_NEGOCIOS`) marcados `isActive=false` — usando o
+> campo que já existe pra isso (§20: nunca exclui, só arquiva) — pra não aparecerem
+> misturados com os 6 SKUs reais na tela nova.
+>
+> Só depois de tudo isso confirmado seguro, `app/(app)/relatorios/regua/page.tsx`
+> (Etapa 1) passou a checar `hasFeature(workspaceId, "regua_posicao")` — primeiro
+> uso real de `hasFeature()` desde que foi criada (comentário original: "nenhum
+> call site usa isto ainda"). Sem entitlement, a tela mostra uma mensagem
+> explicando que a Régua é Pro em diante, em vez do relatório.
+>
+> Nova tela `/admin/planos` (`app/(app)/admin/planos/`) — matriz feature × plano
+> com checkbox (`FeatureToggleCell.tsx`, auto-submete no clique via
+> `requestSubmit()`), seletor de `gateKind` por feature (`GateKindSelect.tsx`),
+> ativar/desativar plano inteiro. Tudo sem deploy, mesmo espírito de `NatureLabel`/
+> `Subcategory.macroBloco`: seed dá o estado inicial, tela edita depois, sem nunca
+> se sobrescreverem mutuamente (`PlanFeature` só recebe o seed inicial se o plano
+> ainda não tiver nenhuma linha — bootstrap uma vez só, depois é 100% do admin).
+>
+> **Verificado:** `tsc --noEmit` limpo; `npm test` 350/350 (nenhum teste novo aqui —
+> `hasFeature()` é impura, foi testada via integração); `npm run build` limpo, 69
+> rotas. Seed rodado duas vezes contra o banco de dev real: primeira populou tudo
+> (confirmado por query direta — 61 features, `LEGACY_INTERNAL` com as 61,
+> `start_individual` com exatamente as 12 features certas do nível Start, os 3
+> workspaces reais com `Subscription`), segunda confirmou idempotência ("nenhum
+> workspace pendente", "4 planos superados desativados" — só na segunda rodada
+> porque a primeira já tinha feito o resto). Suíte de integração ganhou
+> `tests/integration/billing/entitlements.test.ts` (9 testes: feature inexistente,
+> sem Subscription, ACTIVE/TRIALING/CANCELED, Plan sem a feature, Entitlement
+> pontual válido/expirado, feature `METODO` sempre `false` mesmo com Subscription
+> que a incluiria). Suíte completa: 11 arquivos, 46 testes, tudo verde. Não
+> verificado por navegação real na tela — mesma ressalva de sempre (sem senha real
+> do admin).
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 069).
+>
+> **Última atualização anterior: 2026-08-15 (Etapa 2 do Método — Índice de Consistência e
+> conciliação de saldo — Registro Nº 068).** Segunda entrega do Bloco I.
+>
+> **`lib/method/consistency.ts`** (novo) — os 5 componentes de §13.6, cada um 0–1,
+> pesos confirmados na revisão (25% cobertura temporal, 25% qualidade de
+> categorização, 20% fila de incidentes, 15% cobertura de carteiras, 15%
+> conciliação). `filaDeIncidentes` reaproveita `lib/finance/incidents.ts::
+> isEntryIncident` — não duplica a definição de incidente que já existe pra
+> Compromissos → Incidentes; degrada proporcionalmente conforme incidentes passam
+> de 30 dias em aberto (`overdue/total`), sem corte abrupto no dia 31.
+> `computeConsistencyIndex()` exclui componentes `null` ("não avaliado") e
+> redistribui o peso proporcionalmente entre os que têm dado — mesmo espírito do
+> "não avaliado" já usado no desenho do PSF (§8.3): falta de dado nunca vira nota
+> ruim.
+>
+> **`BalanceReconciliation`** (novo model) + **`lib/method/reconciliation.ts`**
+> (novo, impuro) — `reconcileWalletBalance()` recalcula o saldo do sistema na hora
+> (`lib/finance/balance.ts::walletBalance`, nunca confia em nenhum valor vindo do
+> formulário além do declarado) e grava os dois números lado a lado;
+> `latestReconciliationByWallet()` traz só a checagem mais recente de cada
+> carteira. UI nova: coluna "Conciliação" em Cadastros → Carteiras
+> (`WalletReconcileControl.tsx`) — mesmo padrão visual de `AdvisorControl.tsx`.
+> Formatação de moeda/data feita local dentro do componente, não importada de
+> `lib/format.ts` — esse módulo importa `Decimal` de `lib/finance/types`, que não
+> pode ir pro bundle de um Client Component (gotcha já documentado nesta sessão,
+> mesma solução já usada em `InvestmentHistoryRow.tsx`/`AssetCard.tsx`).
+>
+> Migration `20260815140000_balance_reconciliation` aplicada no banco de dev com o
+> mesmo contorno de sempre (`prisma migrate dev` trava nesta máquina, §23).
+>
+> **Verificado:** `tsc --noEmit` limpo; `npm test` 350/350 (27 testes novos de
+> `consistency.ts` — cada componente isolado, pesos somando 100, redistribuição
+> quando componente é `null`, limite exato de 30 dias não conta como vencido);
+> `npm run build` limpo, 62 rotas (nenhuma nova — a conciliação vive dentro de
+> `/cadastros/carteiras`). Teste de integração novo
+> (`tests/integration/method/reconciliation.test.ts`, 4 testes) confirma contra o
+> banco de dev real: saldo do sistema calculado certo a partir de `Entry`
+> verdadeiro, diferença registrada quando o declarado diverge, erro pra carteira
+> de outro workspace (isolamento multi-tenant respeitado), e
+> `latestReconciliationByWallet` trazendo só a checagem mais recente por
+> carteira. Suíte de integração completa: 10 arquivos, 37 testes, tudo verde. Não
+> verificado por navegação real na tela — mesma ressalva de sempre (sem senha real
+> do admin); o teste de integração exercita a mesma função que a tela chama.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 068).
+>
+> **Última atualização anterior: 2026-08-15 (Etapa 1 do Método — macro_bloco, Régua de
+> Alocação e ownerPersonId — Registro Nº 067).** Primeira entrega do Bloco I. Três
+> peças, todas do escopo já desenhado em `ARQUITETURA-METODO-PROSPECTAR.md` §5.1/6:
+>
+> **`macro_bloco`** — `Subcategory.macroBloco`/`Entry.macroBlocoOverride` (enum
+> `MacroBloco`, mesmo espírito de `isFixedOverride`: eixo independente de
+> fixo×variável). As 285 subcategorias reais de Despesa (`seeds/seed_taxonomia.csv`)
+> foram classificadas por categoria com exceções explícitas onde a categoria mistura
+> essencial e discricionário (ex.: "1.Alimentação" tem Supermercado E Restaurante) —
+> processo já documentado na revisão do próprio `ARQUITETURA-METODO-PROSPECTAR.md`
+> (planilha enviada, usuário corrigiu duas regras gerais: financiamento de
+> Habitação/Transporte fica Essencial, não Obrigação — diverge de propósito da leitura
+> literal de §11.2; vestuário segue conforme o método). `seeds/seed_macro_blocos.csv`
+> (novo) carrega isso via `prisma/seed.ts::seedMacroBlocos()` — nunca sobrescreve
+> classificação já feita (mesmo padrão de `NatureLabel`). 282 das 285 preenchidas; as
+> 3 restantes ("Ajuste", "Outros (atualização)", "Outras (despesas)") ficam
+> deliberadamente sem bloco — não são gasto real.
+>
+> **Régua de Alocação** — `lib/method/allocation.ts` (novo): `computeAllocation()`
+> soma Essenciais/Estilo de vida/Obrigações por `macroBlocoOverride ?? subcategory.
+> macroBloco`; Poupança pela **fórmula (b) — soma direta** (decisão do usuário,
+> seção 5.1 do documento de arquitetura): aportes de `INVESTIMENTO` + transferências
+> pra carteira `CONTA_CAIXA` (só a perna de entrada, `amount > 0`), preferida à
+> alternativa residual porque mede o que foi guardado de fato. `percentOfIncome()`
+> calcula % sobre a receita do período, com `naoAlocado` como resíduo explícito (nunca
+> escondido). `ALLOCATION_BANDS`/`bandForIncome()`/`compareToBand()` implementam as 5
+> faixas de renda de §11.3. `lib/method/from-db.ts::toAllocationEntry()` (novo) faz a
+> tradução Prisma→tipo puro — vive em `lib/method/`, não em `lib/finance/from-db.ts`,
+> porque a regra de camadas do documento de arquitetura é `lib/method/` depender de
+> `lib/finance/`, nunca o contrário. Nova tela `app/(app)/relatorios/regua/page.tsx`
+> (grupo "Relatórios" no Sidebar, ícone `Ruler`) — mês corrente, só realizado
+> (settled), 4 cards com valor/%/faixa-alvo/comparação, mais um aviso separado quando
+> há despesa não classificada ou receita não alocada. Sem regime nem PDF nesta
+> primeira versão (fica pra quando houver demanda).
+>
+> **`ownerPersonId`** — `Wallet`/`Investment`/`Asset` ganharam campo opcional
+> apontando pra `Person` (não `Profile` — titularidade de recurso é conceito de
+> negócio, não de login), preparação para Open Finance e para o diagnóstico familiar
+> do Método (§9.4 da Metodologia: "cada adulto lança os próprios gastos"), decidido em
+> `AVALIACAO-UNIDADE-FINANCEIRA-CONSULTORIA.md` §4.3. Sem UI nova — só o campo, nulo
+> em tudo que já existe.
+>
+> Migration `20260815130000_etapa1_macro_bloco_e_titularidade` (1 enum + 5 colunas + 3
+> FKs, mesmo contorno de sempre — `prisma migrate dev` trava nesta máquina, §23: `.sql`
+> escrito à mão seguindo a convenção exata de migrations anteriores do Prisma, aplicado
+> via `pg` cru + registro em `_prisma_migrations`, script descartável apagado depois).
+>
+> **Verificado:** `tsc --noEmit` limpo; `npm test` 323/323 (18 testes novos de
+> `computeAllocation`/`percentOfIncome`/`bandForIncome`/`compareToBand`); `npm run
+> build` limpo, 62 rotas. Seed rodado contra o banco de dev real (`macro_blocos: 282
+> subcategorias classificadas`). Teste de integração novo
+> (`tests/integration/method/allocation.test.ts`) confirma, contra o banco de dev de
+> verdade: (1) o seed classificou `supermercado`=ESSENCIAL, `restaurante`=
+> ESTILO_DE_VIDA, `financiamento`/Habitação=ESSENCIAL (decisão do usuário confirmada
+> no dado real), `uniforme_escolar`=ESSENCIAL; (2) `Entry` reais criadas no banco,
+> lidas de volta com os relations de verdade e passadas por `computeAllocation`, batem
+> exatamente com o total esperado (R$3.000 essencial, R$500 estilo de vida, R$600
+> poupança = R$400 aporte + R$200 transferência, R$10.000 receita, 30%/6% dos totais).
+> Suíte de integração completa: 9 arquivos, 35 testes, todos verdes. Não verificado
+> por navegação real na tela — exigiria login com senha real do administrador, que não
+> está disponível; o teste de integração exercita a mesma query/mapeamento que a tela
+> usa, o que dá confiança equivalente.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 067).
+>
+> **Última atualização anterior: 2026-08-15 (Etapa 0 do Método — acesso do consultor deixa
+> de ser escrita automática — Registro Nº 066).** Usuário aprovou `ARQUITETURA-METODO-
+> PROSPECTAR.md` na íntegra e pediu para começar pela Etapa 0 — a mais simples e mais
+> urgente do roteiro, e a única tratada como correção independente do Método (não
+> depende de `ConsultingEngagement`, que ainda não existe).
+>
+> `Membership.advisorCanWrite` (novo, default `false`) — consultor (`ADVISOR`) nasce
+> só com leitura, mesmo com Membership `ACTIVE`; antes tinha escrita plena, idêntica a
+> `MEMBRO`, tanto em `lib/auth/session.ts::can()` quanto na RLS
+> (`008_rls_completeness.sql`, decisão deliberada de 2026-08-10). Revertido por
+> exigência de segurança/LGPD (Art. 20 — toda ação sobre dado de terceiro precisa ser
+> rastreável, não automática por papel).
+>
+> `assertCanWrite()` ganhou terceiro parâmetro **obrigatório**, sem default —
+> `advisorCanWrite: boolean` — mesmo padrão já usado em `periodTotals(settlement)`
+> (Registro Nº 053): o compilador aponta todo call site que precisa de revisão em vez
+> de herdar em silêncio um comportamento errado. `tsc --noEmit` encontrou exatamente
+> 49 erros em 20 arquivos (46 pontos de chamada de `assertCanWrite`, alguns arquivos
+> com múltiplas actions reusando um helper local `currentMembership()`) — todos
+> corrigidos passando `membership.advisorCanWrite` (ou, nas rotas de API, o campo novo
+> que `requireApiWorkspaceMembership()` passou a devolver) como terceiro argumento.
+>
+> `lib/workspace/advisor.ts::setAdvisorWriteAccess()` (novo) concede/revoga, sempre
+> gravando `AccessLog` (`GRANT_ADVISOR_WRITE`/`REVOKE_ADVISOR_WRITE`) — reaproveita a
+> tabela já existente, não criou mecanismo de auditoria paralelo. `assignAdvisor()`
+> ganhou uma linha a mais: toda (re)atribuição de consultor zera `advisorCanWrite`,
+> mesmo se for a mesma pessoa voltando depois de ter sido removida — nunca herda
+> concessão anterior. UI nova: `AdvisorWriteToggle.tsx`, ao lado do já existente
+> `AdvisorControl.tsx` em `/admin/usuarios` — "Escrita: só leitura" com botão
+> "conceder"/"revogar". `MANUAL-DE-USO.md` atualizado (seções 14 e 16).
+>
+> Migration `prisma/migrations/20260815120000_advisor_can_write/` (coluna nova) +
+> `prisma/sql/011_advisor_write_grant.sql` (RLS em sincronia — mesmo aviso do
+> `008`: defesa em profundidade, RLS não é tecnicamente exercida hoje, o gate real é
+> `can()`). Aplicadas ao banco de dev com o mesmo contorno já documentado (`prisma
+> migrate dev` trava nesta máquina, §23) — script descartável via `pg` cru +
+> registro em `_prisma_migrations`, apagado depois de rodar.
+>
+> **Verificado:** `tsc --noEmit` limpo; `npm test` 305/305 (4 casos novos: sem
+> `advisorCanWrite` não escreve — mudança de comportamento deliberada — com `true`
+> escreve, com `false` não escreve, não afeta outros papéis); `npm run build` limpo,
+> 61 rotas. Suíte de integração contra o banco de dev real ganhou
+> `tests/integration/workspace/advisor.test.ts` estendido com 5 testes novos
+> (concessão, revogação, `AccessLog` gravado, erro sem consultor ativo, reset ao
+> trocar de consultor) — 9/9 passando. Não verificado via login real na UI (exigiria
+> senha real do administrador, que não está disponível); a suíte de integração roda
+> contra o banco de dev de verdade, incluindo o `AccessLog` gravado de fato, o que dá
+> confiança equivalente para uma mudança de autorização backend como esta.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 066).
+>
+> **Última atualização anterior: 2026-08-15 (Reformulação de arquitetura — Método
+> PROSPECTAR — Registro Nº 065, documento aguardando aprovação).** Usuário entregou
+> `Metodologia PROSPECTA v5.0 — Diretrizes de Planejamento Financeiro, Consultoria e
+> Gestão Patrimonial.docx` (arquivo em `Downloads`, sem pandoc/soffice disponíveis
+> nesta máquina — extraído com um script Python ad-hoc que lê `word/document.xml`
+> direto do zip, ver `scripts/` desta conversa se precisar repetir) e pediu para ler o
+> documento e reformular a arquitetura do sistema para incorporar o método, criando
+> fases de implementação — com duas regras explícitas e vinculantes: nada do que já
+> existe pode ser alterado/renomeado/removido, e toda extensão é aditiva (tabela nova,
+> coluna opcional, módulo novo).
+>
+> O documento de origem (v5.0, controle de versão interno até 12/08/2026) é ao mesmo
+> tempo manual de consultoria, especificação funcional e política comercial da
+> PROSPECTA: separa produto (PROSPECTA Finance — Start/Pro/Max × Individual/Família)
+> de serviço (PROSPECTA Consultoria — Diagnóstico/Planejamento/Projetos/
+> Acompanhamento), une os dois por um "Método PROSPECTAR" de 9 fases (0–8 + ∞) com
+> gates e um Painel de Saúde Financeira de 7 indicadores. A própria seção 13 do
+> documento ("Integração Método ↔ Sistema") já continha um diagnóstico e um roteiro de
+> 17 passos — o trabalho desta etapa foi **verificar cada afirmação daquele
+> diagnóstico contra o código real** antes de aceitá-la.
+>
+> **Duas correções relevantes encontradas na verificação:** o documento afirmava "5
+> dos 7 indicadores do PSF computáveis hoje" — falso, **não existe nenhum código de
+> PSF** (nem tabela, nem tela, nem cálculo; existem só os insumos dispersos que
+> tornariam isso possível). E afirmava a camada comercial (`Plan`/`Feature`/
+> `Subscription`/`Entitlement`) como "projetada e aprovada" — as tabelas existem desde
+> a Arquitetura de Identidade/Planos, mas `prisma/seed.ts` não semeia nenhum `Plan`/
+> `Feature` e o próprio comentário de `lib/billing/entitlements.ts::hasFeature()` diz
+> "nenhum call site usa isto ainda" — zero telas gateadas por feature hoje. Também
+> notado: o documento cita papéis "OWNER/MEMBER/VIEWER", mas os nomes reais
+> implementados são `TITULAR/MEMBRO/LEITURA/ADVISOR` (mesmos 4 papéis, nomenclatura em
+> português veio depois do rascunho que o documento parece ter citado).
+>
+> Produzido `ARQUITETURA-METODO-PROSPECTAR.md` (mesmo protocolo do Registro Nº 006 —
+> documento de projeto, "status: proposta para aprovação", nenhum código/schema
+> tocado). Conteúdo: (1) tabela de diagnóstico verificado; (2) tradução técnica do
+> modelo de direitos em 3 camadas de §4.6 (`Subscription` × `PlanGrant` novo ×
+> `ConsultingEngagement` novo, com `nivelEfetivo()`/`hasFeature()` estendendo — não
+> reescrevendo — a função já existente); (3) classificação de toda rota real de
+> `app/(app)/` em Start/Pro/Max/Método, resolvendo a Pendência #1 "Alta" do documento
+> de origem; (4) modelagem Prisma completa e aditiva das 10 entidades novas de §13.7
+> (`PlanGrant`, `ConsultingEngagement`, `MethodPhase`, `GateCheck`, `Deliverable`,
+> `HealthSnapshot`, `DiagnosticResponse`, `AllocationTarget`, `InsurancePolicy`,
+> `RetirementProjection`) mais dois campos opcionais (`Subcategory.macroBloco`,
+> `Entry.macroBlocoOverride`, `Asset/Investment/Wallet.funcaoPatrimonial`) e a
+> entidade `Debt` — resgatando explicitamente a decisão registrada em
+> `schema.prisma` de 2026-08-11 ("adiado... até haver mais clareza de uso real": o
+> MEC da Fase 3 do método é essa clareza); (5) os 17 passos de §13.9 reorganizados em
+> **16 Etapas de implementação em 4 blocos** — Bloco I (Etapas 1–5, motor comercial:
+> macro_bloco/Régua, Índice de Consistência, Plan/Feature reais, PlanGrant, PSF —
+> monetiza sozinho, sem depender de cliente de consultoria), Bloco II (6–9, abre a
+> trilha de método), Bloco III (10–14, entregáveis vendáveis como projeto avulso —
+> inclui a nova entidade `Debt`), Bloco IV (15–16, PFI compilado + Módulo PJ); (6)
+> tabela de pendências do documento de origem mapeadas a qual Etapa cada uma bloqueia
+> (ex.: "mapear as ~300 subcategorias nos 4 macroblocos" bloqueia a Etapa 1).
+>
+> **Não implementado nesta etapa — por desenho.** Nenhuma migration rodou, nenhum
+> arquivo de código foi tocado. Próximo passo é aprovação do usuário, item a item,
+> começando pelas pendências que bloqueiam a Etapa 1.
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 065).
+>
+> **Última atualização anterior: 2026-08-12 (Compromissos — seleção em lote, filtro de
 > datas e "Salvar e Confirmar" em Incidentes — Registro Nº 064).** Três pedidos: (1)
 > checkbox de seleção em lote nas abas "Lista" e "Incidentes"; (2) filtro de datas nas
 > duas; (3) em Incidentes, "Editar" ganha um terceiro botão "Salvar e Confirmar" (grava

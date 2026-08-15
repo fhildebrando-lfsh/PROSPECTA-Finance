@@ -5,8 +5,10 @@ import { prisma } from "@/lib/db/prisma";
 import { formatClientCode, formatDateBR } from "@/lib/format";
 import { DeleteUserButton } from "./DeleteUserButton";
 import { AdvisorControl } from "@/components/AdvisorControl";
+import { AdvisorWriteToggle } from "@/components/AdvisorWriteToggle";
 import { PlatformAdminToggle } from "./PlatformAdminToggle";
 import { BlockAccessControl } from "./BlockAccessControl";
+import { PlanGrantControl } from "./PlanGrantControl";
 
 const ROLE_LABELS: Record<string, string> = {
   TITULAR: "Titular",
@@ -29,7 +31,8 @@ export default async function AdminUsuariosPage() {
   const admin = await requireAdminProfile();
 
   const supabase = createAdminClient();
-  const [{ data: authData, error }, profiles, workspaces] = await Promise.all([
+  const now = new Date();
+  const [{ data: authData, error }, profiles, workspaces, activePlans, allActiveGrants] = await Promise.all([
     supabase.auth.admin.listUsers({ perPage: 1000 }),
     prisma.profile.findMany({
       include: { memberships: { include: { workspace: true } } },
@@ -37,6 +40,11 @@ export default async function AdminUsuariosPage() {
     }),
     prisma.workspace.findMany({
       include: { memberships: { where: { status: "ACTIVE" }, include: { profile: true } } },
+    }),
+    prisma.plan.findMany({ where: { isActive: true }, orderBy: { priceCents: "asc" } }),
+    prisma.planGrant.findMany({
+      where: { revokedAt: null, startsAt: { lte: now }, endsAt: { gte: now } },
+      include: { plan: true },
     }),
   ]);
 
@@ -60,6 +68,14 @@ export default async function AdminUsuariosPage() {
   }));
 
   const pendingApprovalCount = workspaces.filter((w) => w.blockedReason === "AGUARDANDO_APROVACAO").length;
+
+  const planOptions = activePlans.map((p) => ({ id: p.id, name: p.name }));
+  const grantsByWorkspace = new Map<string, typeof allActiveGrants>();
+  for (const grant of allActiveGrants) {
+    const list = grantsByWorkspace.get(grant.workspaceId) ?? [];
+    list.push(grant);
+    grantsByWorkspace.set(grant.workspaceId, list);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -155,6 +171,12 @@ export default async function AdminUsuariosPage() {
                                 currentAdvisorLabel={currentAdvisorLabel}
                                 options={options}
                               />
+                              {currentAdvisor && (
+                                <AdvisorWriteToggle
+                                  workspaceId={m.workspaceId}
+                                  canWrite={currentAdvisor.advisorCanWrite}
+                                />
+                              )}
                               {u.id !== admin.id && (
                                 <BlockAccessControl
                                   workspaceId={m.workspaceId}
@@ -162,6 +184,16 @@ export default async function AdminUsuariosPage() {
                                   workspaceLabel={m.workspace.name}
                                 />
                               )}
+                              <PlanGrantControl
+                                workspaceId={m.workspaceId}
+                                planOptions={planOptions}
+                                activeGrants={(grantsByWorkspace.get(m.workspaceId) ?? []).map((g) => ({
+                                  id: g.id,
+                                  planName: g.plan.name,
+                                  reason: g.reason,
+                                  endsAt: g.endsAt.toISOString(),
+                                }))}
+                              />
                             </li>
                           );
                         })}

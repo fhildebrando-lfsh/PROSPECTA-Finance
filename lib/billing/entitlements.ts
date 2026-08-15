@@ -1,18 +1,40 @@
 import { prisma } from "@/lib/db/prisma";
+import { activePlanGrants } from "./effective-level";
 
 /**
- * Resolve se um workspace tem direito a uma feature — Subscription ativa
- * (TRIALING ou ACTIVE) no Plan que a inclui, OU um Entitlement pontual não
- * expirado (override que só soma, nunca subtrai o que o plano já dá). Ver
- * ARQUITETURA-IDENTIDADE-PLANOS.md seção 9 para o racional: isto é o único
- * lugar que deve decidir "esse workspace pode usar X" — nunca checar
+ * Resolve se um workspace tem direito a uma feature. Ver
+ * ARQUITETURA-IDENTIDADE-PLANOS.md seção 9 para o racional geral: isto é o
+ * único lugar que deve decidir "esse workspace pode usar X" — nunca checar
  * `plan.code === "..."` direto numa tela, sempre por código de feature via
  * esta função, para renomear/reprecificar plano nunca exigir tocar em tela.
  *
- * Nenhum call site usa isto ainda (Fase 2 Etapa 2 — só a peça existe e é
- * testável; nenhuma tela está "gateada" por feature nesta etapa).
+ * Desde a Etapa 3 do Método (ARQUITETURA-METODO-PROSPECTAR.md §3/5.2,
+ * 2026-08-15), o caminho se bifurca por `Feature.gateKind`:
+ * - `METODO` — reservado às features do Método PROSPECTAR (§13.8), que só
+ *   fazem sentido com um consultor ativo, nunca por dinheiro de assinatura
+ *   sozinho (§3.1 da Metodologia v5.0: "PIP autogerada é recomendação
+ *   disfarçada"). Resolvido por `ConsultingEngagement`, que ainda não existe
+ *   (Etapa 8) — até lá, toda feature METODO retorna `false` para todo mundo,
+ *   de propósito (fail-safe: nenhuma feature de método vaza por engano
+ *   enquanto a camada que deveria concedê-la não existe).
+ * - `PLANO` (default) — três fontes, qualquer uma libera: (1) Entitlement
+ *   pontual não expirado; (2) Subscription ativa (TRIALING ou ACTIVE) no
+ *   Plan que inclui a feature; (3) desde a Etapa 4 (§4.6, 2026-08-15),
+ *   qualquer `PlanGrant` ativo agora cujo Plan inclua a feature — a camada 2
+ *   do modelo de direitos, elevação temporária por consultoria (ou cortesia
+ *   manual do admin), que nunca escreve na Subscription do cliente.
+ *
+ * Primeiras telas gateadas por esta função: Etapa 3 (2026-08-15) — ver
+ * `app/(app)/relatorios/regua/page.tsx` (feature `regua_posicao`).
  */
 export async function hasFeature(workspaceId: string, featureCode: string): Promise<boolean> {
+  const feature = await prisma.feature.findUnique({ where: { code: featureCode } });
+  if (!feature) return false; // código inexistente no catálogo — nunca libera por engano
+
+  if (feature.gateKind === "METODO") {
+    return false; // ConsultingEngagement ainda não existe (Etapa 8) — sempre false até lá
+  }
+
   const entitlement = await prisma.entitlement.findFirst({
     where: {
       workspaceId,
@@ -27,7 +49,8 @@ export async function hasFeature(workspaceId: string, featureCode: string): Prom
     orderBy: { createdAt: "desc" },
     include: { plan: { include: { planFeatures: { include: { feature: true } } } } },
   });
-  if (!subscription) return false;
+  if (subscription?.plan.planFeatures.some((pf) => pf.feature.code === featureCode)) return true;
 
-  return subscription.plan.planFeatures.some((pf) => pf.feature.code === featureCode);
+  const grants = await activePlanGrants(workspaceId);
+  return grants.some((g) => g.plan.planFeatures.some((pf) => pf.feature.code === featureCode));
 }

@@ -14,7 +14,12 @@ async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  return { profileId: profile.id, role: membership.role, isPlatformAdmin: profile.isPlatformAdmin };
+  return {
+    profileId: profile.id,
+    role: membership.role,
+    isPlatformAdmin: profile.isPlatformAdmin,
+    advisorCanWrite: membership.advisorCanWrite,
+  };
 }
 
 async function loadOwnedIncident(id: string, workspaceId: string) {
@@ -64,8 +69,8 @@ function revalidateIncidentPaths() {
 /** Confirma que a linha está correta como está (§13) — some da lista sem alterar nenhum dado. */
 export async function acknowledgeIncident(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   await loadOwnedIncident(id, workspaceId);
@@ -81,8 +86,8 @@ export async function acknowledgeIncident(formData: FormData) {
  * Incidentes. Tolerante a falha individual (ex.: linha já confirmada por outra aba). */
 export async function acknowledgeIncidentsBulk(ids: string[]) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const results = await Promise.allSettled(
     ids.map(async (id) => {
@@ -109,8 +114,8 @@ export async function acknowledgeIncidentsBulk(ids: string[]) {
  */
 export async function updateIncidentEntry(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   await loadOwnedIncident(id, workspaceId);

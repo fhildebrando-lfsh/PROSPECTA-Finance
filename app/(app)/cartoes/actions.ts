@@ -16,7 +16,12 @@ async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  return { profileId: profile.id, role: membership.role, isPlatformAdmin: profile.isPlatformAdmin };
+  return {
+    profileId: profile.id,
+    role: membership.role,
+    isPlatformAdmin: profile.isPlatformAdmin,
+    advisorCanWrite: membership.advisorCanWrite,
+  };
 }
 
 /** Usa a instituição selecionada, ou cria uma nova pelo nome digitado — hoje não existe
@@ -107,8 +112,8 @@ function readCardFields(formData: FormData) {
  * automaticamente em Carteiras", como pedido. */
 export async function createCreditCard(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const fields = readCardFields(formData);
   const institutionId = String(formData.get("institutionId") ?? "");
@@ -153,8 +158,8 @@ export async function createCreditCard(formData: FormData) {
 
 export async function updateCreditCard(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const walletId = String(formData.get("walletId") ?? "");
   if (!walletId) throw new Error("Cartão não identificado.");
@@ -215,8 +220,8 @@ export async function updateCreditCard(formData: FormData) {
 /** §20 — nunca apaga por padrão, só arquiva/desarquiva (mesma regra de Carteiras). */
 export async function archiveCreditCard(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const walletId = String(formData.get("walletId") ?? "");
   const isActive = formData.get("isActive") === "true";
@@ -231,8 +236,8 @@ export async function archiveCreditCard(formData: FormData) {
  * como melhor esforço, e o CreditCard cascade junto com a Wallet. */
 export async function deleteCreditCard(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const walletId = String(formData.get("walletId") ?? "");
   const wallet = await prisma.wallet.findFirst({ where: { id: walletId, workspaceId }, include: { creditCard: true } });
@@ -260,8 +265,8 @@ export async function deleteCreditCard(formData: FormData) {
  */
 export async function updateFaturaEntry(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const entryId = String(formData.get("entryId") ?? "");
   const description = String(formData.get("description") ?? "").trim();

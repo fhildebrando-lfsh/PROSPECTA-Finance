@@ -132,6 +132,7 @@ export async function requireApiWorkspaceMembership(): Promise<{
   platformRole: PlatformRole;
   workspaceId: string;
   role: MembershipRole;
+  advisorCanWrite: boolean;
 }> {
   const profile = await getCurrentProfile();
   if (!profile) throw new ApiError(401, "Não autenticado.");
@@ -161,6 +162,7 @@ export async function requireApiWorkspaceMembership(): Promise<{
     platformRole: profile.platformRole,
     workspaceId: membership.workspaceId,
     role: membership.role,
+    advisorCanWrite: membership.advisorCanWrite,
   };
 }
 
@@ -219,6 +221,12 @@ export interface AuthContext {
   platformRole: PlatformRole;
   /** Ausente para decisões que não dependem de papel de workspace (ex.: `manageTaxonomy`). */
   role?: MembershipRole;
+  /**
+   * Só relevante quando role = ADVISOR (2026-08-15, Etapa 0 — ver
+   * ARQUITETURA-METODO-PROSPECTAR.md §3.2/5.7). Ausente/false = sem escrita,
+   * o padrão seguro — ausência nunca é lida como permissão.
+   */
+  advisorCanWrite?: boolean;
 }
 
 function toPlatformRole(isPlatformAdmin: boolean): PlatformRole {
@@ -238,18 +246,26 @@ export function can(action: Action, ctx: AuthContext): boolean {
 
   switch (action) {
     case "write":
-      return ctx.role !== undefined && ctx.role !== "LEITURA";
+      if (ctx.role === undefined || ctx.role === "LEITURA") return false;
+      // 2026-08-15 — ADVISOR não tem mais escrita automática (Etapa 0):
+      // exige concessão explícita do TITULAR, nunca herdada só do papel.
+      if (ctx.role === "ADVISOR") return ctx.advisorCanWrite === true;
+      return true;
     case "manageTaxonomy":
       return false; // só admin, já coberto acima
   }
 }
 
 /**
- * §20 — LEITURA só consulta; TITULAR/MEMBRO/ADVISOR e admin podem escrever.
- * Mesma assinatura de sempre — call sites existentes não mudam nada.
+ * §20 — LEITURA só consulta; TITULAR/MEMBRO e admin sempre podem escrever;
+ * ADVISOR só com `advisorCanWrite` concedido explicitamente (Etapa 0,
+ * 2026-08-15 — antes disso ADVISOR escrevia igual a MEMBRO, sem concessão).
+ * Parâmetro obrigatório de propósito, sem default — mesmo padrão já usado em
+ * `periodTotals(settlement)`: o compilador aponta todo call site que precisa
+ * ser revisado em vez de herdar em silêncio um valor errado.
  */
-export function assertCanWrite(role: MembershipRole, isPlatformAdmin: boolean) {
-  if (!can("write", { role, platformRole: toPlatformRole(isPlatformAdmin) })) {
+export function assertCanWrite(role: MembershipRole, isPlatformAdmin: boolean, advisorCanWrite: boolean) {
+  if (!can("write", { role, platformRole: toPlatformRole(isPlatformAdmin), advisorCanWrite })) {
     throw new ApiError(403, "Seu papel é somente leitura.");
   }
 }

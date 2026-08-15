@@ -3,26 +3,38 @@ import { prisma } from "@/lib/db/prisma";
 import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
 import { createWallet } from "./actions";
 import { WalletsTable } from "./WalletsTable";
+import { latestReconciliationByWallet } from "@/lib/method/reconciliation";
 
 export default async function CarteirasPage() {
   const workspaceId = await requireWorkspaceId();
 
-  const [wallets, kinds, institutions] = await Promise.all([
+  const [wallets, kinds, institutions, reconciliationByWallet] = await Promise.all([
     prisma.wallet.findMany({ where: { workspaceId }, include: { kind: true }, orderBy: { name: "asc" } }),
     prisma.walletKind.findMany({ orderBy: { labelPt: "asc" } }),
     prisma.institution.findMany({ orderBy: { name: "asc" } }),
+    latestReconciliationByWallet(workspaceId),
   ]);
 
-  const walletRows = wallets.map((w) => ({
-    id: w.id,
-    name: w.name,
-    kindLabel: w.kind?.labelPt ?? w.kindCode,
-    institutionId: w.institutionId ?? "",
-    closingDay: w.closingDay?.toString() ?? "",
-    dueDay: w.dueDay?.toString() ?? "",
-    creditLimit: w.creditLimit?.toString() ?? "",
-    isActive: w.isActive,
-  }));
+  const walletRows = wallets.map((w) => {
+    const reconciliation = reconciliationByWallet.get(w.id);
+    return {
+      id: w.id,
+      name: w.name,
+      kindLabel: w.kind?.labelPt ?? w.kindCode,
+      institutionId: w.institutionId ?? "",
+      closingDay: w.closingDay?.toString() ?? "",
+      dueDay: w.dueDay?.toString() ?? "",
+      creditLimit: w.creditLimit?.toString() ?? "",
+      isActive: w.isActive,
+      reconciliation: reconciliation
+        ? {
+            declaredBalance: reconciliation.declaredBalance.toString(),
+            systemBalance: reconciliation.systemBalance.toString(),
+            checkedAt: reconciliation.checkedAt.toISOString(),
+          }
+        : null,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-6">

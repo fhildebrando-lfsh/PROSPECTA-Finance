@@ -23,7 +23,12 @@ async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  return { profileId: profile.id, role: membership.role, isPlatformAdmin: profile.isPlatformAdmin };
+  return {
+    profileId: profile.id,
+    role: membership.role,
+    isPlatformAdmin: profile.isPlatformAdmin,
+    advisorCanWrite: membership.advisorCanWrite,
+  };
 }
 
 /** Todo campo possível de `Investment.details`, coberto pelas 13 classes — só os
@@ -77,8 +82,8 @@ async function resolveInvestmentWalletId(workspaceId: string, walletId: string, 
 
 export async function createInvestmentAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const name = String(formData.get("name") ?? "").trim();
   const classCode = String(formData.get("classCode") ?? "");
@@ -114,8 +119,8 @@ const NEGATIVE_EVENT_SLUGS = new Set(["perdas", "retiradas", "impostos"]);
 
 export async function registerInvestmentEventAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const investmentId = String(formData.get("investmentId") ?? "");
   const categorySlug = String(formData.get("categorySlug") ?? "") as InvestmentEventCategorySlug;
@@ -144,8 +149,8 @@ export async function registerInvestmentEventAction(formData: FormData) {
 
 export async function registerInvestmentIncomeAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const investmentId = String(formData.get("investmentId") ?? "");
   const walletId = String(formData.get("walletId") ?? "");
@@ -172,8 +177,8 @@ export async function registerInvestmentIncomeAction(formData: FormData) {
 
 export async function updateInvestmentEventEntryAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const entryId = String(formData.get("entryId") ?? "");
   const investmentId = String(formData.get("investmentId") ?? "");
@@ -200,8 +205,8 @@ export async function updateInvestmentEventEntryAction(formData: FormData) {
 
 export async function deleteInvestmentEventEntryAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const entryId = String(formData.get("entryId") ?? "");
   const investmentId = String(formData.get("investmentId") ?? "");
@@ -214,8 +219,8 @@ export async function deleteInvestmentEventEntryAction(formData: FormData) {
 
 export async function generateRentIncomeAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const investmentId = String(formData.get("investmentId") ?? "");
   const walletId = String(formData.get("walletId") ?? "");
@@ -240,8 +245,8 @@ export async function generateRentIncomeAction(formData: FormData) {
 
 export async function updateInvestmentAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -256,8 +261,8 @@ export async function updateInvestmentAction(formData: FormData) {
 
 export async function archiveInvestmentAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   const isActive = formData.get("isActive") === "true";
@@ -269,8 +274,8 @@ export async function archiveInvestmentAction(formData: FormData) {
 
 export async function deleteInvestmentAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("Investimento não identificado.");

@@ -9,13 +9,17 @@ async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  return { role: membership.role, isPlatformAdmin: profile.isPlatformAdmin };
+  return {
+    role: membership.role,
+    isPlatformAdmin: profile.isPlatformAdmin,
+    advisorCanWrite: membership.advisorCanWrite,
+  };
 }
 
 export async function createGoal(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const name = String(formData.get("name") ?? "").trim();
   const walletId = String(formData.get("walletId") ?? "");
@@ -42,8 +46,8 @@ export async function createGoal(formData: FormData) {
 
 export async function updateGoal(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -64,8 +68,8 @@ export async function updateGoal(formData: FormData) {
 /** Arquivar — para meta que ainda existe mas você quer tirar da lista ativa sem perder o histórico. */
 export async function archiveGoal(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   const isActive = formData.get("isActive") === "true";
@@ -80,8 +84,8 @@ export async function archiveGoal(formData: FormData) {
  * botão Arquivar). */
 export async function toggleGoalPinned(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   const pinnedToPainel = formData.get("pinnedToPainel") === "true";
@@ -97,8 +101,8 @@ export async function toggleGoalPinned(formData: FormData) {
  * arrisca perder histórico financeiro, diferente de Bens. */
 export async function deleteGoal(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("Meta não identificada.");
