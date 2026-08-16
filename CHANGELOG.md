@@ -16,6 +16,9 @@
 
 ## 2026-08-16
 
+### Corrigido (Registro Nº 076)
+- **As automações não teriam disparado nunca.** A verificação de login barrava a chamada automática diária antes dela chegar ao sistema, e o erro não aparecia em lugar nenhum — pareceria apenas que "as automações não funcionam". Corrigido e coberto por teste.
+
 ### Adicionado (Registro Nº 075)
 - **Tudo do Bloco I e da Etapa 7 entrou no ar.** Saúde Financeira, Assistente e Automações, Régua de Alocação, Função do Patrimônio, Planos (admin) e o acesso do consultor com escrita explícita passaram a existir em produção. A Régua já abre com as 282 subcategorias de despesa classificadas.
 - **Patrimônio → Função do Patrimônio** ganhou aba própria na seção Patrimônio (antes só aparecia no menu lateral).

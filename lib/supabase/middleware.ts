@@ -1,9 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-
-// /redefinir-senha: a sessão de recuperação é estabelecida no client (hash/code da URL
-// do e-mail do Supabase), então o middleware não pode exigir sessão nesse primeiro request.
-const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha", "/politica-privacidade"];
+import { isPublicPath } from "@/lib/auth/public-paths";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -33,9 +30,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicPath = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
-
-  if (!user && !isPublicPath) {
+  if (!user && !isPublicPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     const returnPath = url.pathname + url.search;
     url.pathname = "/login";

@@ -2334,7 +2334,20 @@
 
 ---
 
-## Próximo número de registro: **076**
+### Registro Nº 076
+- **Data:** 2026-08-16
+- **Etapa concluída:** Correção de falha silenciosa na rota de cron — o middleware de sessão engolia a chamada do Vercel Cron antes de o handler executar
+- **Descrição:** Encontrado ao verificar em produção, depois de o `CRON_SECRET` ter sido configurado: a chamada a `/api/cron/automations` devolvia a tela de login em vez do 401 JSON da rota. Causa: `PUBLIC_PATHS` em `lib/supabase/middleware.ts` não incluía `/api/cron`, e o matcher de `proxy.ts` cobre essa rota. O Vercel Cron chama com `Authorization: Bearer ${CRON_SECRET}` e **nenhum cookie de sessão**, então o middleware não encontrava usuário e respondia `302 → /login`; o handler nunca rodava. **Falha silenciosa:** nenhuma automação dispararia, e o 302 ainda contaria como execução bem-sucedida no painel da Vercel — o sintoma seria "as automações simplesmente não funcionam", sem erro em lugar nenhum. Correção: `PUBLIC_PATHS` e a checagem viraram `lib/auth/public-paths.ts` (`isPublicPath()`), com `/api/cron` incluído. Liberar do middleware **não** afrouxa a segurança: a rota devolve 401 sem o bearer correto — o segredo é o portão, o middleware de sessão só nunca foi o mecanismo certo para uma rota que não é de usuário. **Por que passou batido nas Etapas 6 e 7:** o teste de integração chama `runDueAutomations()` diretamente (decisão deliberada, para testar sem simular `NextRequest`), e o próprio Registro Nº 072 registra "rota exercitada indiretamente" — o handler nunca passou pelo middleware em teste nenhum, e middleware não é exercitado por suíte alguma neste projeto. A lista virou módulo próprio justamente para ser testável: `tests/auth/public-paths.test.ts` (5 casos) fixa que `/api/cron` é público e que `/api/entries`, `/api/import/*`, `/api/me/export`, `/painel`, `/admin/*` **não** são, além de cobrir o caso de prefixo no meio do caminho (`/workspace/login` não é público).
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 428/428 (5 casos novos); `npm run build` limpo. Verificação em produção após o deploy, registrada abaixo.
+- **Solicitado por:** Felipe Hildebrando (configurou `CRON_SECRET` na Vercel; o defeito apareceu na conferência seguinte)
+- **Executado por:** Claude Code
+- **Evidência:** a própria navegação a `/api/cron/automations` em produção devolvendo a tela de login antes da correção; saídas de `tsc`/`npm test`/build.
+- **Lição registrada:** extrair lógica para um módulo puro **torna a rota testável, mas não testa a rota**. A decisão da Etapa 6 (motor em `lib/method/run-automations.ts`, rota como casca fina) continua certa — o erro foi tratar "o motor está testado" como "o caminho até o motor está testado". Camada de borda (middleware, matcher, headers) não tem cobertura neste projeto e precisa de verificação manual explícita em produção.
+- **Documentos relacionados:** Registro Nº 072 (Etapa 6), `lib/auth/public-paths.ts`, `lib/supabase/middleware.ts`, `tests/auth/public-paths.test.ts`, `RUNBOOK-OPERACIONAL.md` §3.
+
+---
+
+## Próximo número de registro: **077**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
