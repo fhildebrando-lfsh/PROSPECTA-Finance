@@ -8,7 +8,11 @@ async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  return { role: membership.role, isPlatformAdmin: profile.isPlatformAdmin };
+  return {
+    role: membership.role,
+    isPlatformAdmin: profile.isPlatformAdmin,
+    advisorCanWrite: membership.advisorCanWrite,
+  };
 }
 
 /**
@@ -18,8 +22,8 @@ async function currentMembership(workspaceId: string) {
  */
 export async function setBudget(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin);
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
 
   const categoryId = String(formData.get("categoryId") ?? "");
   const year = Number(formData.get("year"));

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
+import { logAccess } from "@/lib/audit/access-log";
 
 /**
  * Atribui/troca/remove o consultor (`ADVISOR`) de um workspace — funciona
@@ -37,8 +38,55 @@ export async function assignAdvisor(workspaceId: string, advisorProfileId: strin
         "Essa pessoa já é membro desse workspace com outro papel — não é possível torná-la consultora por aqui.",
       );
     }
-    await prisma.membership.update({ where: { id: existing.id }, data: { status: "ACTIVE", revokedAt: null } });
+    // Troca de consultor: o novo entra sempre sem escrita (§3.2/5.7 do
+    // ARQUITETURA-METODO-PROSPECTAR.md) — nunca herda a concessão de quem
+    // ocupava a vaga antes, mesmo se for a mesma pessoa voltando.
+    await prisma.membership.update({
+      where: { id: existing.id },
+      data: { status: "ACTIVE", revokedAt: null, advisorCanWrite: false },
+    });
   } else {
     await prisma.membership.create({ data: { workspaceId, profileId: advisorProfileId, role: "ADVISOR" } });
   }
+}
+
+/**
+ * Concede ou revoga a escrita do consultor ativo de um workspace (Etapa 0,
+ * 2026-08-15 — ver ARQUITETURA-METODO-PROSPECTAR.md §3.2/5.7). ADVISOR nasce
+ * sempre sem escrita (`Membership.advisorCanWrite` default `false`); esta é a
+ * única forma de mudar isso, e é sempre auditada — LGPD Art. 20 exige que
+ * toda ação sobre dado de terceiro seja rastreável e não automática por papel.
+ * Quem chama isto decide se quem está pedindo tem autoridade para pedir (hoje,
+ * `/admin/usuarios`, `requireAdminProfile()` — dar esse controle direto ao
+ * TITULAR do workspace, sem passar pelo admin da plataforma, é extensão
+ * natural futura, não feita nesta etapa).
+ */
+export async function setAdvisorWriteAccess(params: {
+  workspaceId: string;
+  canWrite: boolean;
+  actorProfileId: string;
+}) {
+  const advisor = await prisma.membership.findFirst({
+    where: { workspaceId: params.workspaceId, role: "ADVISOR", status: "ACTIVE" },
+  });
+  if (!advisor) throw new ApiError(400, "Este workspace não tem consultor ativo no momento.");
+
+  await prisma.membership.update({
+    where: { id: advisor.id },
+    data: { advisorCanWrite: params.canWrite },
+  });
+
+  // `actorRole` aqui identifica que este registro é sobre a relação de
+  // ADVISOR do workspace, não necessariamente o papel de quem executou a
+  // ação (hoje sempre platform admin, sem Membership própria neste
+  // workspace — MembershipRole não tem valor pra "admin externo"). Mesma
+  // leitura que `AccessLog.actorRole` já recebe nos registros de
+  // VIEW_WORKSPACE, onde actorRole é sempre "ADVISOR" mesmo que o ator seja
+  // quem está sendo observado, não quem concedeu o acesso.
+  await logAccess({
+    actorProfileId: params.actorProfileId,
+    workspaceId: params.workspaceId,
+    actorRole: "ADVISOR",
+    action: params.canWrite ? "GRANT_ADVISOR_WRITE" : "REVOKE_ADVISOR_WRITE",
+  });
 }

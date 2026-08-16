@@ -8,7 +8,7 @@ export async function markSettled(formData: FormData) {
   const profile = await requireProfile();
   const membership = profile.memberships[0];
   if (!membership) throw new Error("Sem workspace.");
-  assertCanWrite(membership.role, profile.isPlatformAdmin);
+  assertCanWrite(membership.role, profile.isPlatformAdmin, membership.advisorCanWrite);
 
   const id = String(formData.get("id") ?? "");
   await settleEntry(id, membership.workspaceId, profile.id);
@@ -24,7 +24,7 @@ export async function bulkMarkSettled(ids: string[]) {
   const profile = await requireProfile();
   const membership = profile.memberships[0];
   if (!membership) throw new Error("Sem workspace.");
-  assertCanWrite(membership.role, profile.isPlatformAdmin);
+  assertCanWrite(membership.role, profile.isPlatformAdmin, membership.advisorCanWrite);
 
   const results = await Promise.allSettled(ids.map((id) => settleEntry(id, membership.workspaceId, profile.id)));
   const settled = results.filter((r) => r.status === "fulfilled").length;

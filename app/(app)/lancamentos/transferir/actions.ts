@@ -8,7 +8,7 @@ export async function submitTransfer(formData: FormData) {
   const profile = await requireProfile();
   const membership = profile.memberships[0];
   if (!membership) throw new Error("Sem workspace.");
-  assertCanWrite(membership.role, profile.isPlatformAdmin);
+  assertCanWrite(membership.role, profile.isPlatformAdmin, membership.advisorCanWrite);
 
   const absAmount = Math.abs(Number(formData.get("amount") ?? "0"));
   if (!absAmount) throw new Error("Informe um valor.");

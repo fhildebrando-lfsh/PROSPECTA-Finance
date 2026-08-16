@@ -17,7 +17,7 @@ export async function createQuickEntry(formData: FormData) {
   const profile = await requireProfile();
   const membership = profile.memberships[0];
   if (!membership) throw new Error("Sem workspace.");
-  assertCanWrite(membership.role, profile.isPlatformAdmin);
+  assertCanWrite(membership.role, profile.isPlatformAdmin, membership.advisorCanWrite);
 
   const nature = String(formData.get("nature") ?? "DESPESA");
   const absAmount = Math.abs(Number(formData.get("amount") ?? "0"));
