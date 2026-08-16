@@ -1159,7 +1159,7 @@ duplicada foi criada.
 | Sub-etapa | Entrega | Depende |
 |---|---|---|
 | **9-A.1** ✅ | Perfil de risco: `Person` estendida (§19/§21), `IncomeSource` (§14), motor de observação de renda, tela `/protecao/perfil` | — |
-| **9-A.2** | `InsurancePolicy` + coberturas + `BenefitEntitlement` (§25/§26) | 9-A.1 |
+| **9-A.2** ✅ | `InsurancePolicy` + coberturas + `BenefitEntitlement` (§25/§26) | 9-A.1 |
 | **9-A.3** | CEMA, CCM, liquidez elegível, IPP — puros (§11/§12/§20/§30) | 9-A.1 |
 | **9-A.4** | Stress tests A–H + Reserva Recomendada + `McrfAssessment` versionado (§31/§35/§48) | 9-A.2, 9-A.3 |
 | **9-A.5** | Telas: reserva, explicação, stress test visual, mapa de riscos (§39/§41/§42/§56) | 9-A.4 |
@@ -1210,11 +1210,44 @@ implementações:** ao calcular o CEMA (§11.4), a despesa anual precisa ser
 **removida da série mensal antes** da mediana e reintroduzida como duodécimo —
 senão ela conta duas vezes no mês em que ocorreu.
 
-**Pendência de negócio para a 9-A.3:** §11.1–11.3 exige três níveis (rígida,
-ajustável, discricionária) e o sistema tem quatro blocos que cortam diferente —
-`ESSENCIAL` não distingue moradia (rígida) de alimentação (ajustável), e é
-exatamente essa distinção que separa CEMA de CCM. Precisa de decisão do usuário
-antes de codar, não de escolha técnica.
+**Rigidez da despesa (§11.1–11.3) — decidido pelo usuário em 2026-08-16.**
+`ESSENCIAL` não distinguia moradia (rígida) de alimentação (ajustável), e é
+essa distinção que separa CEMA (custo essencial normal) de CCM (custo durante a
+crise, depois de cortes razoáveis). Regra aprovada:
+
+> **Rígida** = contrato de valor fixo que se paga mesmo sem usar.
+> **Ajustável** = essencial cujo consumo a pessoa controla.
+> **Discricionária** = pode ser suspensa (já é o `ESTILO_DE_VIDA` de hoje).
+
+**Exceção explícita do usuário:** Energia, Água, Gás, Telefone e Internet
+entram como **rígidas**, e não como ajustáveis. Tecnicamente são consumo, mas a
+compressão real é pequena; a escolha é deliberadamente conservadora — erra para
+reserva maior, não menor.
+
+**Redução aplicada às ajustáveis no CCM: 30%.**
+
+**Governança destes parâmetros (decisão do usuário):** rigidez por subcategoria
+e o percentual de redução são **globais e editáveis somente pelo administrador
+da plataforma**, valendo para todo o sistema — não são configuração por
+workspace nem por cliente. Isso mantém a metodologia uniforme (dois clientes
+com o mesmo dado precisam receber a mesma recomendação) e é coerente com §20,
+que já trata a taxonomia como admin-only, e com §52, que exige parâmetros
+centralizados e versionados. Implicação técnica: o percentual não pode ser
+constante em código — vira parâmetro em banco (`MethodologyParameter`), com o
+valor de `lib/method/mcrf/config.ts` servindo de padrão inicial e fallback.
+
+**Etapa 9-A.2 — status: implementada e verificada, em produção (Registro Nº
+078).** `InsurancePolicy`, `InsuranceCoverage` e `BenefitEntitlement` (novos) e
+dois motores puros. **O motor não consome a apólice, consome a cobertura:**
+franquia, carência e `payoutDelayDays` são o que decide se a proteção reduz a
+necessidade de caixa — e o terceiro é o mais esquecido, porque indenização que
+chega no 3º mês não paga a conta do 1º (§33). `bestProtectionFor()` aplica a
+melhor cobertura e **nunca soma** duas apólices do mesmo risco. `benefits-
+engine.ts` implementa §23 (militar/servidor/autônomo/MEI/informal sem FGTS,
+seguro-desemprego e rescisão; regime desconhecido nunca nega proteção), e só
+conta benefício confirmado **e** com valor. Telas `/protecao/seguros` e
+`/protecao/beneficios`, esta filtrando por regime e explicando o que ficou de
+fora — a regra é barrada também na Server Action, não só na tela.
 
 **Etapa 9-A.1 — status: implementada e verificada, em produção (Registro Nº
 077).** `RegimeTrabalho` (os 15 valores de §19), `SegundaAtividadeNivel` (§21.1–

@@ -46,6 +46,8 @@ import {
   Compass,
   ShieldAlert,
   IdCard,
+  Umbrella,
+  HandCoins,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -113,6 +115,8 @@ const PATRIMONIO_ITEMS: NavLeaf[] = [
 
 const PROTECAO_ITEMS: NavLeaf[] = [
   { href: "/protecao/perfil", label: "Perfil de Risco", icon: IdCard },
+  { href: "/protecao/seguros", label: "Seguros", icon: Umbrella },
+  { href: "/protecao/beneficios", label: "Proteções e Benefícios", icon: HandCoins },
 ];
 
 const INVESTIMENTOS_ITEMS: NavLeaf[] = [

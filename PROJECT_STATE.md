@@ -15,7 +15,45 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-16 (Etapa 9-A.1 — perfil de risco, abre o
+> **Última atualização real: 2026-08-16 (Etapa 9-A.2 — seguros e proteções —
+> Registro Nº 078).**
+>
+> Segunda entrega da Etapa 9-A. `InsurancePolicy`, `InsuranceCoverage` e
+> `BenefitEntitlement` (novos), mais dois motores puros.
+>
+> **A decisão de modelagem que importa:** o motor de risco **não consome a
+> apólice, consome a cobertura**. `InsuranceCoverage` carrega os três números
+> que decidem se uma proteção reduz ou não a necessidade de caixa — franquia,
+> carência e, o mais esquecido, **prazo até a indenização cair**
+> (`payoutDelayDays`). Sem o terceiro, o motor daria reserva confortável no
+> papel e insuficiente na vida real: indenização que chega no 3º mês não paga a
+> conta do 1º (§33). `BenefitEntitlement` segue o mesmo princípio com
+> `availableAfterDays`.
+>
+> **`insurance-engine.ts`:** `applyCoverage()` desconta franquia, respeita
+> limite de capital, devolve o **mês** em que o dinheiro entra e marca quando a
+> carência bloqueou. `bestProtectionFor()` aplica a melhor cobertura e **nunca
+> soma** duas apólices do mesmo risco — somar produziria proteção fantasma
+> maior que a própria perda.
+>
+> **`benefits-engine.ts`:** implementa §23 — militar, servidor, autônomo, MEI e
+> informal **não têm** FGTS, seguro-desemprego nem verbas rescisórias. Regime
+> desconhecido nunca nega proteção (desconhecer não é negar). Só entra no fluxo
+> o benefício confirmado **e** com valor; `isEligible` nulo fica registrado mas
+> não é contado — contar com dinheiro incerto é o que faz uma reserva parecer
+> suficiente sem ser.
+>
+> Telas `/protecao/seguros` (gate `seguros_cadastro`, reusado) e
+> `/protecao/beneficios` (gate `reserva_inteligente`). A de benefícios filtra
+> por regime e **explica o que ficou de fora** em vez de só esconder — o
+> cliente precisa entender que a rede dele é diferente, não que o sistema
+> errou. A regra é barrada também na Server Action, não só na tela.
+>
+> **Verificado:** `tsc` limpo, 477/477 unitários (25 novos), 75/75 integração,
+> build limpo. Migration aplicada em produção **antes do código**, checksum
+> idêntico ao de dev, 12 pessoas e 2279 lançamentos intactos.
+>
+> **Última atualização anterior: 2026-08-16 (Etapa 9-A.1 — perfil de risco, abre o
 > módulo PROSPECTA-MCRF — Registro Nº 077).**
 >
 > Primeira entrega da Etapa 9-A, que **antecipa a Etapa 12** por decisão do

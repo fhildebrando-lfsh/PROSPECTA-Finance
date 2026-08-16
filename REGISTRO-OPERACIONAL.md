@@ -2359,7 +2359,19 @@
 
 ---
 
-## Próximo número de registro: **078**
+### Registro Nº 078
+- **Data:** 2026-08-16
+- **Etapa concluída:** Etapa 9-A.2 — seguros e proteções trabalhistas/previdenciárias (PROSPECTA-MCRF §25/§26)
+- **Descrição:** Segunda entrega da Etapa 9-A. **Schema:** `InsuranceKind`, `BenefitKind`, e os models `InsurancePolicy`, `InsuranceCoverage` e `BenefitEntitlement` — todos novos, nenhuma coluna existente alterada. **A decisão de modelagem central:** o motor não consome a apólice, consome a **cobertura**. `InsuranceCoverage` carrega os três números que decidem se uma proteção reduz ou não a necessidade de caixa — franquia (`deductible`), carência (`waitingPeriodDays`) e, o mais esquecido, **prazo até a indenização cair** (`payoutDelayDays`). Sem o terceiro, o motor daria uma reserva confortável no papel e insuficiente na vida real, porque uma indenização que chega no 3º mês não paga a conta do 1º (§33). `BenefitEntitlement` segue o mesmo princípio com `availableAfterDays`. **Motores puros:** `lib/method/mcrf/insurance-engine.ts` — `applyCoverage()` desconta franquia, respeita limite de capital e devolve o **mês** em que o dinheiro entra; `bestProtectionFor()` aplica a melhor cobertura e **nunca soma** duas apólices para o mesmo risco (somar produziria proteção fantasma maior que a própria perda). `lib/method/mcrf/benefits-engine.ts` — `benefitAppliesTo()` implementa §23: militar, servidor, autônomo, MEI e informal **não têm** FGTS, seguro-desemprego nem verbas rescisórias; regime desconhecido nunca nega proteção (desconhecer não é negar). Só entra no fluxo o benefício **confirmado como elegível e com valor**; `isEligible` nulo fica registrado mas não é contado, porque contar com dinheiro incerto é o que faz uma reserva parecer suficiente sem ser. **Telas** `/protecao/seguros` (gate `seguros_cadastro`, já existente) e `/protecao/beneficios` (gate `reserva_inteligente`). A de benefícios filtra as opções pelo regime de cada pessoa e **explica o que ficou de fora** em vez de apenas esconder — o cliente precisa entender que a rede de proteção dele é diferente, não que o sistema errou. A regra é barrada também no servidor, não só na tela: cadastrar FGTS para um militar é rejeitado na Server Action. A de seguros avisa quando uma apólice está sem cobertura cadastrada, porque nesse estado ela não entra no cálculo.
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 477/477 (25 casos novos: franquia que continua saindo do bolso, perda menor que a franquia, excedente do capital, carência bloqueando e liberando, posicionamento do mês de pagamento, duas apólices que não pagam em dobro, e a matriz de regime × benefício); suíte de integração 17 arquivos / 75 testes; `npm run build` limpo, rotas `/protecao/seguros` e `/protecao/beneficios` novas. Migration `20260816140000_mcrf_seguros_beneficios` aplicada **em produção antes do código** (runbook §5), checksum `f599ab0bd56a…` idêntico ao de dev; 12 pessoas e 2279 lançamentos intactos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saídas de `tsc`/`npm test`/build; verificação contra o banco de produção após a migration.
+- **Documentos relacionados:** `PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md` §25/§26, `ARQUITETURA-METODO-PROSPECTAR.md` §6 (Etapa 9-A), `lib/method/mcrf/insurance-engine.ts`, `lib/method/mcrf/benefits-engine.ts`, `app/(app)/protecao/`, `prisma/migrations/20260816140000_mcrf_seguros_beneficios/`.
+
+---
+
+## Próximo número de registro: **079**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

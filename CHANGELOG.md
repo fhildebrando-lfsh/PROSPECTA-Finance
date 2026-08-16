@@ -16,6 +16,10 @@
 
 ## 2026-08-16
 
+### Adicionado (Registro Nº 078)
+- **Proteção e Segurança → Seguros** (nova tela, plano Max): cadastre suas apólices e, dentro de cada uma, as coberturas — com franquia, carência e, principalmente, **quanto tempo leva até a indenização cair na conta**. Esse último dado é o que o cálculo da reserva mais precisa: um seguro que paga em 60 dias não resolve a conta que vence semana que vem.
+- **Proteção e Segurança → Proteções e Benefícios** (nova tela, plano Max): FGTS, seguro-desemprego, auxílio-doença, licenças e benefícios do empregador, com valor, duração e prazo até o recebimento. As opções mudam conforme o regime de trabalho de cada pessoa — quem é servidor ou militar não tem as proteções típicas de CLT, e o sistema explica isso em vez de simplesmente omitir.
+
 ### Adicionado (Registro Nº 077)
 - **Proteção e Segurança → Perfil de Risco** (novo menu e nova tela, plano Max): o primeiro passo da Reserva de Emergência PROSPECTA. Para cada pessoa da sua unidade financeira você informa regime de trabalho, profissão, tempo de casa, experiência e se tem outra atividade capaz de gerar renda — e cadastra as fontes de renda, incluindo quem paga cada uma.
 - **A renda não é perguntada.** A tela mostra a renda que o sistema já mediu nos seus lançamentos, com quantos meses de histórico e o quanto isso é confiável. Usa a mediana, não a média, para que um 13º não faça parecer que você ganha mais do que ganha todo mês.

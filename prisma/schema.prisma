@@ -120,6 +120,8 @@ model Workspace {
   descriptionRules DescriptionRule[]
   investments      Investment[]
   incomeSources    IncomeSource[]
+  insurancePolicies InsurancePolicy[]
+  benefitEntitlements BenefitEntitlement[]
   balanceReconciliations BalanceReconciliation[]
 
   @@map("workspaces")
@@ -728,6 +730,8 @@ model Person {
   workspace       Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   entries         Entry[]
   incomeSources   IncomeSource[]
+  insurancePolicies InsurancePolicy[]
+  benefitEntitlements BenefitEntitlement[]
   /// Etapa 1 (2026-08-15) — titularidade econômica de carteiras/investimentos/
   /// bens dentro da unidade financeira. Ver Wallet/Investment/Asset.ownerPersonId.
   ownedWallets     Wallet[]     @relation("WalletOwner")
@@ -797,6 +801,123 @@ model IncomeSource {
 
   @@index([workspaceId, personId])
   @@map("income_sources")
+}
+
+/// §26 da especificação PROSPECTA-MCRF — tipos de seguro relevantes para o
+/// motor de risco.
+enum InsuranceKind {
+  VIDA
+  INCAPACIDADE
+  PROTECAO_RENDA
+  SAUDE
+  ODONTOLOGICO
+  AUTOMOVEL
+  RESIDENCIAL
+  PRESTAMISTA
+  EMPRESARIAL
+  OUTRO
+}
+
+/// §26 — uma apólice contratada. O que o motor consome de verdade são as
+/// coberturas (`InsuranceCoverage`); a apólice é o agrupador comercial.
+model InsurancePolicy {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String        @map("workspace_id") @db.Uuid
+  /// Quem está segurado. Nulo = protege a unidade financeira toda (ex.: seguro
+  /// residencial), não uma pessoa específica.
+  personId    String?       @map("person_id") @db.Uuid
+  kind        InsuranceKind
+  name        String
+  insurerName String?       @map("insurer_name")
+  /// Prêmio mensal equivalente — o custo da proteção, que é despesa essencial
+  /// rígida no CEMA. Opcional: a apólice serve ao motor mesmo sem ele.
+  premiumMonthly Decimal?   @map("premium_monthly") @db.Decimal(14, 2)
+  startsAt    DateTime?     @map("starts_at") @db.Date
+  endsAt      DateTime?     @map("ends_at") @db.Date
+  isActive    Boolean       @default(true) @map("is_active")
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  workspace Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  person    Person?             @relation(fields: [personId], references: [id], onDelete: SetNull)
+  coverages InsuranceCoverage[]
+
+  @@index([workspaceId, isActive])
+  @@map("insurance_policies")
+}
+
+/// §26 — o que a apólice de fato cobre, com os três números que decidem se ela
+/// reduz ou não a necessidade de liquidez:
+///
+/// - **franquia** (`deductible`): sai do bolso mesmo com seguro;
+/// - **carência** (`waitingPeriodDays`): antes dela, não há cobertura nenhuma;
+/// - **prazo de indenização** (`payoutDelayDays`): o dinheiro chega DEPOIS.
+///
+/// O terceiro é o mais esquecido e o mais importante para §33: uma indenização
+/// que só chega no terceiro mês **não reduz** a necessidade de caixa do
+/// primeiro. Sem este campo o motor daria uma reserva confortável no papel e
+/// insuficiente na vida real.
+model InsuranceCoverage {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policyId String @map("policy_id") @db.Uuid
+  /// Risco coberto em texto livre ("colisão", "morte", "invalidez por acidente").
+  riskCovered String @map("risk_covered")
+  /// Capital segurado ou limite máximo da cobertura.
+  capitalInsured    Decimal? @map("capital_insured") @db.Decimal(14, 2)
+  deductible        Decimal? @map("deductible") @db.Decimal(14, 2)
+  waitingPeriodDays Int?     @map("waiting_period_days")
+  payoutDelayDays   Int?     @map("payout_delay_days")
+  exclusions        String?
+
+  policy InsurancePolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@index([policyId])
+  @@map("insurance_coverages")
+}
+
+/// §25 — proteções trabalhistas e previdenciárias. Quais existem depende do
+/// regime (`Person.regimeTrabalho`): militar e servidor estatutário NÃO têm
+/// FGTS, seguro-desemprego nem verbas rescisórias de CLT, e presumir isso seria
+/// erro material no stress test (§23).
+enum BenefitKind {
+  FGTS
+  SEGURO_DESEMPREGO
+  VERBAS_RESCISORIAS
+  AUXILIO_DOENCA
+  APOSENTADORIA_INVALIDEZ
+  PENSAO_MORTE
+  LICENCA_ESTATUTARIA
+  BENEFICIO_EMPREGADOR
+  OUTRO
+}
+
+/// §25 — um benefício ao qual a pessoa **pode** ter direito.
+///
+/// "Ter direito" não basta: o motor precisa de elegibilidade, valor, duração e
+/// **quando o dinheiro chega**. `isEligible` é nulo enquanto não confirmado —
+/// nunca `false` por omissão, porque ausência de informação não pode virar
+/// afirmação de que a proteção não existe (§8).
+model BenefitEntitlement {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String      @map("workspace_id") @db.Uuid
+  personId    String      @map("person_id") @db.Uuid
+  kind        BenefitKind
+  isEligible  Boolean?    @map("is_eligible")
+  /// Valor mensal estimado (ou parcela única, conforme o benefício).
+  estimatedAmount Decimal? @map("estimated_amount") @db.Decimal(14, 2)
+  durationMonths  Int?     @map("duration_months")
+  /// Dias entre o evento e a disponibilidade real do recurso. Mesmo papel do
+  /// `payoutDelayDays` do seguro: o benefício só entra no fluxo do mês em que
+  /// razoavelmente estará na conta.
+  availableAfterDays Int?  @map("available_after_days")
+  notes       String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  person    Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, personId])
+  @@map("benefit_entitlements")
 }
 
 // ---------------------------------------------------------------------------
