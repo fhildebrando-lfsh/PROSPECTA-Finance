@@ -2306,7 +2306,20 @@
 
 ---
 
-## Próximo número de registro: **074**
+### Registro Nº 074
+- **Data:** 2026-08-16
+- **Etapa concluída:** Correção de dois defeitos da Etapa 7 e da afirmação errada feita no Registro Nº 073 — **retifica o Nº 073, que fica como está** (regra de escrituração: entrada fechada não é reescrita)
+- **Descrição:** Revisão adversarial da Etapa 7 (5 dimensões independentes, cada achado submetido a dois refutadores) confirmou 3 de 6 achados; 3 foram derrubados na refutação. **Achado principal — dupla contagem real:** o Registro Nº 073 afirma que somar bens + investimentos + saldo de carteiras "não conta nada duas vezes" porque lançamento de patrimônio usa AQUISICAO/ATUALIZACAO, fora de `SETTLED_FOR_BALANCE`. **A premissa é verdadeira, a conclusão não era.** A disjunção vale por lançamento, mas não no agregado: o dinheiro entra na carteira de investimento por transferência comum, cujas duas pernas nascem `PAGO` (`lib/entries/transfer.ts:68`) e entram no saldo, e a compra da posição não debita esse caixa (`lib/entries/investment.ts`, um único `Entry` AQUISICAO). Resultado: R$ 10.000 exibidos como R$ 20.000. O teste de integração citado como prova no Nº 073 passava por acidente do cenário — aquele workspace nunca fez transferência pra carteira, então o saldo era zero. **Correção:** o desconto passou a viver em `lib/method/patrimony-function.ts::buildPatrimonyItems()` (novo) — saldo da carteira menos as posições que ela abriga, chaveado por `Investment.walletId` (a relação direta, não `kindCode`), o que é exatamente o caixa ainda não alocado; piso em zero para posição cadastrada sem transferência correspondente. A montagem dos itens estava **duplicada** entre tela e teste, e foi essa duplicação que permitiu os dois divergirem — agora ambos chamam a mesma função pura. **Segundo achado:** `percentOf` guardava só `isZero()`; com patrimônio total negativo (conta no cheque especial maior que o resto) os percentuais saíam com sinal invertido e acima de 100%, impressos crus na tela. Trocado por `lessThanOrEqualTo(0)`, alinhando com `lib/method/allocation.ts` e `lib/method/psf.ts`, que já usavam essa guarda. **Terceiro achado (baixo):** a pseudo-carteira interna "Patrimônio" (§9) aparecia como item classificável, inflando a contagem de itens sem que o usuário pudesse arquivá-la por nenhuma tela — excluída por `isPseudoWallet`.
+- **Verificado:** `tsc --noEmit` limpo; `npm test` com 19 casos em `patrimony-function.ts` (8 novos: total negativo, total zero por cancelamento, e os 6 do desconto de dupla contagem); teste de integração de 5 para 8 casos, com os três cenários que faltavam contra o banco de dev — transferência + compra da mesma quantia (saldo vai a zero, total não dobra), transferiu mais do que investiu (caixa não alocado preservado) e posição sem transferência (sem negativo fantasma). Verificação completa registrada abaixo, na entrada da Etapa 8.
+- **Solicitado por:** Felipe Hildebrando (revisão adversarial executada por decisão própria após fechar a Etapa 7)
+- **Executado por:** Claude Code
+- **Evidência:** saída de `tsc`/`npm test`/suíte de integração; o próprio contraste entre o Nº 073 e esta entrada, preservado de propósito porque documenta um erro de método — verifiquei metade de uma afirmação e a escrevi inteira como provada, em três documentos.
+- **Observação de processo registrada:** o defeito só apareceu porque uma revisão adversarial independente rodou depois da etapa dada como fechada. Testes próprios e `tsc`/`build` limpos não pegaram nada disso.
+- **Documentos relacionados:** Registro Nº 073 (retificado por este), `PROJECT_STATE.md` (entrada da Etapa 7, corrigida em texto por ser documento vivo), `ARQUITETURA-METODO-PROSPECTAR.md` §6 (Etapa 7), `lib/method/patrimony-function.ts`, `app/(app)/patrimonio/funcao/page.tsx`.
+
+---
+
+## Próximo número de registro: **075**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

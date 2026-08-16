@@ -27,6 +27,94 @@ export interface PatrimonyItem {
   funcao: FuncaoPatrimonial | null;
 }
 
+export interface PatrimonyAssetInput {
+  id: string;
+  name: string;
+  /** `assetCurrentValue(...)`, já calculado pelo chamador. */
+  value: Decimal;
+  funcao: FuncaoPatrimonial | null;
+}
+
+export interface PatrimonyInvestmentInput {
+  id: string;
+  name: string;
+  /** Carteira que abriga a posição — a chave do desconto de dupla contagem. */
+  walletId: string;
+  /** `investmentPositionValue(...)`, já calculado pelo chamador. */
+  value: Decimal;
+  funcao: FuncaoPatrimonial | null;
+}
+
+export interface PatrimonyWalletInput {
+  id: string;
+  name: string;
+  /** `walletBalance(...)` cru, sem nenhum desconto — quem desconta é esta função. */
+  balance: Decimal;
+  funcao: FuncaoPatrimonial | null;
+}
+
+/**
+ * Monta a lista de itens do mapa a partir das três origens, **descontando do
+ * saldo de cada carteira as posições que ela abriga**.
+ *
+ * Por que o desconto existe (achado de revisão, 2026-08-15): somar saldo de
+ * carteira + posições parecia seguro porque lançamento de patrimônio usa
+ * AQUISICAO/ATUALIZACAO, fora de `SETTLED_FOR_BALANCE`
+ * (`lib/finance/balance.ts`). Isso vale **por lançamento**, mas não no
+ * agregado — o dinheiro chega na carteira de investimento por uma
+ * transferência comum (as duas pernas nascem `PAGO`, ver
+ * `lib/entries/transfer.ts`), entra no saldo e nunca sai: comprar a posição
+ * não debita o caixa. Sem desconto, R$ 10.000 viravam R$ 20.000 no total.
+ *
+ * Saldo − posições abrigadas é exatamente o caixa ainda não alocado
+ * (transferiu 15k, comprou 10k → 5k parados). Piso em zero para o caso de uma
+ * posição cadastrada sem transferência correspondente (registrar um CDB que já
+ * existia): ali o saldo é 0 e a subtração daria um negativo fantasma.
+ *
+ * Esta função vive aqui, e não na página, de propósito: foi justamente a
+ * duplicação desse cálculo entre tela e teste que deixou a dupla contagem
+ * passar batido na primeira versão.
+ */
+export function buildPatrimonyItems(input: {
+  assets: PatrimonyAssetInput[];
+  investments: PatrimonyInvestmentInput[];
+  wallets: PatrimonyWalletInput[];
+}): PatrimonyItem[] {
+  const hostedByWallet = new Map<string, Decimal>();
+  for (const i of input.investments) {
+    const current = hostedByWallet.get(i.walletId) ?? new Decimal(0);
+    hostedByWallet.set(i.walletId, current.plus(i.value));
+  }
+
+  return [
+    ...input.assets.map((a) => ({
+      id: a.id,
+      kind: "BEM" as const,
+      name: a.name,
+      value: a.value,
+      funcao: a.funcao,
+    })),
+    ...input.investments.map((i) => ({
+      id: i.id,
+      kind: "INVESTIMENTO" as const,
+      name: i.name,
+      value: i.value,
+      funcao: i.funcao,
+    })),
+    ...input.wallets.map((w) => {
+      const hosted = hostedByWallet.get(w.id);
+      const value = hosted ? w.balance.minus(hosted) : w.balance;
+      return {
+        id: w.id,
+        kind: "CARTEIRA" as const,
+        name: w.name,
+        value: hosted && value.isNegative() ? new Decimal(0) : value,
+        funcao: w.funcao,
+      };
+    }),
+  ];
+}
+
 export const FUNCOES: FuncaoPatrimonial[] = [
   "PROTECAO",
   "LIQUIDEZ_OPERACIONAL",
@@ -54,8 +142,18 @@ export interface PatrimonyFunctionMap {
   total: Decimal;
 }
 
+/**
+ * `lessThanOrEqualTo(0)`, não `isZero()` — mesma guarda de
+ * `lib/method/allocation.ts::percentOfIncome` e dos indicadores de
+ * `lib/method/psf.ts`. Com denominador negativo (patrimônio total negativo:
+ * conta no cheque especial maior que o resto), a divisão inverteria o sinal
+ * de todo percentual — uma fatia positiva apareceria como "-33%" e a negativa
+ * como "133%". Percentual de um total que não é positivo não tem significado;
+ * devolver 0 aqui é o que faz a tela cair no mesmo tratamento de "sem base
+ * para calcular" que ela já dá ao patrimônio zerado.
+ */
 function percentOf(part: Decimal, whole: Decimal): number {
-  if (whole.isZero()) return 0;
+  if (whole.lessThanOrEqualTo(0)) return 0;
   return part.div(whole).times(100).toNumber();
 }
 

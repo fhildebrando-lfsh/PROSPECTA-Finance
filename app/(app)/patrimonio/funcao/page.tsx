@@ -4,9 +4,11 @@ import { hasFeature } from "@/lib/billing/entitlements";
 import { assetCurrentValue, type AssetValuationEntry } from "@/lib/finance/patrimony";
 import { investmentPositionValue } from "@/lib/finance/investment";
 import { walletBalance } from "@/lib/finance/balance";
+import { Decimal } from "@/lib/finance/types";
 import { toFinanceEntry } from "@/lib/finance/from-db";
 import { formatCurrencyBRL } from "@/lib/format";
 import {
+  buildPatrimonyItems,
   computeFunctionMap,
   unclassifiedFindings,
   FUNCOES,
@@ -70,9 +72,13 @@ export default async function FuncaoPatrimonialPage() {
     prisma.investment.findMany({ where: { workspaceId, isActive: true }, orderBy: { name: "asc" } }),
     // Cartão de crédito e afins ficam de fora por `isLiability` (dado do
     // catálogo `WalletKind`, nunca uma lista de códigos escrita à mão aqui):
-    // dívida não recebe função patrimonial.
+    // dívida não recebe função patrimonial. `isPseudoWallet` também sai — a
+    // pseudo-conta "Patrimônio" (§9) é um artefato interno da planilha
+    // original, não um lugar onde alguém guarda dinheiro; deixá-la na lista
+    // dava ao usuário uma linha de R$ 0,00 classificável que ele não tem como
+    // arquivar por nenhuma tela.
     prisma.wallet.findMany({
-      where: { workspaceId, isActive: true, kind: { isLiability: false } },
+      where: { workspaceId, isActive: true, isPseudoWallet: false, kind: { isLiability: false } },
       orderBy: { name: "asc" },
     }),
     prisma.entry.findMany({
@@ -83,10 +89,6 @@ export default async function FuncaoPatrimonialPage() {
       where: { workspaceId, investmentId: { not: null }, nature: "INVESTIMENTO" },
       select: { investmentId: true, amount: true, category: { select: { slug: true } } },
     }),
-    // Saldo de carteira e valor de bem/investimento nunca se sobrepõem: os
-    // lançamentos de patrimônio usam AQUISICAO/ATUALIZACAO, que
-    // `SETTLED_FOR_BALANCE` (PAGO/RECEBIDO/ISENTO) exclui de propósito —
-    // somar os três aqui não conta nada duas vezes.
     prisma.entry.findMany({
       where: { workspaceId },
       select: {
@@ -123,29 +125,29 @@ export default async function FuncaoPatrimonialPage() {
 
   const financeEntries = walletEntries.map(toFinanceEntry);
 
-  const items: PatrimonyItem[] = [
-    ...assets.map((a) => ({
+  // O desconto de posições abrigadas (dupla contagem) vive em
+  // `buildPatrimonyItems`, não aqui — ver o comentário lá.
+  const items: PatrimonyItem[] = buildPatrimonyItems({
+    assets: assets.map((a) => ({
       id: a.id,
-      kind: "BEM" as const,
       name: a.name,
       value: assetCurrentValue(assetEntriesById.get(a.id) ?? []),
       funcao: a.funcaoPatrimonial,
     })),
-    ...investments.map((i) => ({
+    investments: investments.map((i) => ({
       id: i.id,
-      kind: "INVESTIMENTO" as const,
       name: i.name,
+      walletId: i.walletId,
       value: investmentPositionValue(investmentEntriesById.get(i.id) ?? []),
       funcao: i.funcaoPatrimonial,
     })),
-    ...wallets.map((w) => ({
+    wallets: wallets.map((w) => ({
       id: w.id,
-      kind: "CARTEIRA" as const,
       name: w.name,
-      value: walletBalance(financeEntries, w.id, today),
+      balance: walletBalance(financeEntries, w.id, today),
       funcao: w.funcaoPatrimonial,
     })),
-  ];
+  });
 
   const map = computeFunctionMap(items);
   const findings = unclassifiedFindings(items);

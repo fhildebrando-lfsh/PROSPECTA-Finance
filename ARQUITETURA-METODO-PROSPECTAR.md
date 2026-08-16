@@ -1138,26 +1138,38 @@ Abre a trilha de consultoria propriamente dita.
 | **9** | `Deliverable` + templates dos 10 artefatos codificados (PAN, AFF, RAP, MEC, MRP, PLA, PIP, MFP, PCP, PFI) — v0 pode ser HTML/PDF gerado a partir de `content: Json`, reaproveitando `lib/reports/pdf/` já existente como padrão de geração | Etapa 8 |
 | **10** | Instrumentos A1/A2/C como formulário digital + envio automático (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
 
-**Etapa 7 — status: implementada e verificada contra o banco de dev (Registro Nº
-073), abre o Bloco II.** `FuncaoPatrimonial` (7 valores) como campo opcional em
-`Asset`/`Investment`/`Wallet` — eixo de estoque, independente do `MacroBloco` (fluxo,
-Etapa 1) e do `InvestmentClass` (o que a coisa é, não para que serve).
-`lib/method/patrimony-function.ts` (novo, puro) com 11 testes unitários:
-`computeFunctionMap()` mantém "sem função" sempre separado das 7 fatias (mesmo
-princípio do "não alocado" da Régua e do "não avaliado" do PSF), e
-`unclassifiedFindings()` é o achado automático de §13.4 — só valor positivo, maior
-primeiro. **Risco investigado antes de codar:** somar bens + investimentos + saldo de
-carteiras parecia contar aporte duas vezes; conferido que lançamentos de patrimônio
-usam AQUISICAO/ATUALIZACAO e `SETTLED_FOR_BALANCE` é {PAGO, RECEBIDO, ISENTO} — os
-conjuntos são disjuntos por construção. A invariante virou comentário na query **e**
-teste de integração, pra não precisar ser redescoberta. Nova tela `/patrimonio/funcao`
-(dentro do grupo Patrimônio já existente), gateada por `patrimonio_funcao` (Max, já no
-catálogo desde a Etapa 3), com classificação inline; carteira de passivo sai por
-`WalletKind.isLiability`, nunca por lista de códigos na tela. **Limite de escopo
-deliberado:** a tela mostra a distribuição e não julga se está certa — opinar sobre
-composição é aconselhamento (§3.1/P2) e pertence ao `mfp_diagnostico` (feature de
-método, Etapa 14, exige consultor ativo). `tsc`, `npm test` (415/415) e `npm run build`
-(65 rotas) limpos; suíte de integração com 16 arquivos, 67 testes.
+**Etapa 7 — status: implementada e verificada contra o banco de dev (Registros Nº
+073 e Nº 074), abre o Bloco II.** `FuncaoPatrimonial` (7 valores) como campo opcional
+em `Asset`/`Investment`/`Wallet` — eixo de estoque, independente do `MacroBloco`
+(fluxo, Etapa 1) e do `InvestmentClass` (o que a coisa é, não para que serve).
+`lib/method/patrimony-function.ts` (novo, puro): `computeFunctionMap()` mantém "sem
+função" sempre separado das 7 fatias (mesmo princípio do "não alocado" da Régua e do
+"não avaliado" do PSF), `unclassifiedFindings()` é o achado automático de §13.4 (só
+valor positivo, maior primeiro) e `buildPatrimonyItems()` monta os itens das três
+origens descontando dupla contagem.
+
+**Dupla contagem — a primeira versão errou e foi corrigida (Registro Nº 074).** O
+raciocínio original era: lançamento de patrimônio usa AQUISICAO/ATUALIZACAO,
+`SETTLED_FOR_BALANCE` é {PAGO, RECEBIDO, ISENTO}, logo somar bens + investimentos +
+saldo de carteiras não conta nada duas vezes. **A premissa é verdadeira, a conclusão
+não era:** a disjunção vale por lançamento, não no agregado — o dinheiro chega na
+carteira de investimento por transferência comum (pernas `PAGO`, que entram no saldo)
+e comprar a posição não debita esse caixa, então R$ 10.000 apareciam como R$ 20.000.
+Hoje `buildPatrimonyItems()` desconta do saldo de cada carteira as posições que ela
+abriga (chaveado por `Investment.walletId`, o que sobra é o caixa não alocado; piso em
+zero para posição cadastrada sem transferência). A função ficou no módulo puro de
+propósito: a montagem estava duplicada entre tela e teste, e foi isso que deixou o
+defeito passar. Vale como precedente para as próximas etapas — **valor agregado de
+patrimônio nunca deve ser somado de duas origens sem provar o cenário completo com
+transferência real.**
+
+Nova tela `/patrimonio/funcao` (dentro do grupo Patrimônio já existente), gateada por
+`patrimonio_funcao` (Max, já no catálogo desde a Etapa 3), com classificação inline;
+carteira de passivo sai por `WalletKind.isLiability` e a pseudo-carteira interna
+"Patrimônio" por `isPseudoWallet`, nunca por lista de códigos na tela. **Limite de
+escopo deliberado:** a tela mostra a distribuição e não julga se está certa — opinar
+sobre composição é aconselhamento (§3.1/P2) e pertence ao `mfp_diagnostico` (feature
+de método, Etapa 14, exige consultor ativo). Verificação final na entrada da Etapa 8.
 
 ### Bloco III — Entregáveis especializados do método (Etapas 11–15)
 

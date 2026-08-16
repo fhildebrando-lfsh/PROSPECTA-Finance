@@ -39,16 +39,33 @@
 > sendo fonte de verdade única (mesma disciplina aplicada em toda etapa deste
 > bloco).
 >
-> **Risco real investigado antes de escrever a tela — dupla contagem.** Somar
-> bens + investimentos + saldo de carteiras no mesmo mapa parece contar aporte
-> duas vezes (o aporte fica ligado à posição E à carteira). Conferido no
-> código: lançamentos de patrimônio usam `statusCode` AQUISICAO/ATUALIZACAO
-> (`lib/entries/asset.ts`, `lib/entries/investment.ts`), e
-> `SETTLED_FOR_BALANCE` em `lib/finance/balance.ts` é só
-> {PAGO, RECEBIDO, ISENTO} — os dois conjuntos são disjuntos por construção,
-> não por coincidência. A invariante ficou comentada na própria query da tela
-> **e** virou teste de integração explícito, pra ninguém precisar redescobrir
-> isso no futuro.
+> **Dupla contagem — errei a análise na primeira versão, corrigido depois de
+> revisão adversarial (ver Registro Nº 074).** A primeira versão desta entrada
+> afirmava que somar bens + investimentos + saldo de carteiras era seguro "por
+> construção", porque lançamento de patrimônio usa `statusCode`
+> AQUISICAO/ATUALIZACAO e `SETTLED_FOR_BALANCE` (`lib/finance/balance.ts`) é
+> só {PAGO, RECEBIDO, ISENTO}. **Essa metade é verdadeira, a conclusão não
+> era.** A disjunção vale **por lançamento**, mas não no agregado: o dinheiro
+> chega na carteira de investimento por uma transferência comum, cujas duas
+> pernas nascem `PAGO` (`lib/entries/transfer.ts`) e portanto entram no saldo —
+> e comprar a posição **não debita esse caixa**. Resultado: R$ 10.000 apareciam
+> como R$ 20.000 no total da tela.
+>
+> O teste de integração que eu citei como prova passava por acidente do
+> cenário: aquele workspace nunca fez transferência pra carteira, então o saldo
+> era zero e a soma fechava. Lição registrada porque o erro foi de método, não
+> de digitação: **verifiquei metade de uma afirmação e escrevi a inteira como
+> provada** — em três documentos, ainda por cima.
+>
+> Correção aplicada: o desconto vive em
+> `lib/method/patrimony-function.ts::buildPatrimonyItems()` — saldo da carteira
+> menos as posições que ela abriga (chaveado por `Investment.walletId`, não por
+> `kindCode`), que é exatamente o caixa ainda não alocado, com piso em zero
+> para o caso de posição cadastrada sem transferência correspondente. A função
+> ficou no módulo puro **de propósito**: a montagem dos itens estava duplicada
+> entre tela e teste, e foi essa duplicação que permitiu os dois divergirem.
+> Agora tela e teste chamam a mesma função, e o cenário completo
+> (transferência + compra) é teste unitário **e** de integração.
 >
 > Nova tela `/patrimonio/funcao` (Sidebar, dentro do grupo Patrimônio já
 > existente — não virou item de topo, diferente de "Saúde Financeira"/
