@@ -505,6 +505,22 @@ enum MacroBloco {
   POUPANCA
 }
 
+/// §13.4 da Metodologia PROSPECTA v5.0 (ARQUITETURA-METODO-PROSPECTAR.md §5.1,
+/// Etapa 7) — para que serve cada peça do patrimônio. Eixo de ESTOQUE,
+/// independente do `MacroBloco` (que é eixo de FLUXO) e do `InvestmentClass`
+/// (que diz o que a coisa É, não para que serve): o mesmo CDB pode ser
+/// PROTECAO numa família e CRESCIMENTO noutra. Sempre opcional — patrimônio
+/// não classificado é estado explícito ("sem função"), nunca erro.
+enum FuncaoPatrimonial {
+  PROTECAO
+  LIQUIDEZ_OPERACIONAL
+  OBJETIVOS
+  LONGEVIDADE
+  CRESCIMENTO
+  USO
+  SUCESSAO
+}
+
 // ---------------------------------------------------------------------------
 // Carteiras (§9) — wallet_kind é referência extensível, nunca enum (§6.2).
 // ---------------------------------------------------------------------------
@@ -555,6 +571,9 @@ model Wallet {
   /// Nulo = comum/compartilhado entre os membros da família (comportamento
   /// atual de toda carteira existente).
   ownerPersonId  String?  @map("owner_person_id") @db.Uuid
+  /// Etapa 7 (2026-08-15) — ver enum FuncaoPatrimonial. Nulo = "sem função
+  /// definida", o estado de toda carteira existente até alguém classificar.
+  funcaoPatrimonial FuncaoPatrimonial? @map("funcao_patrimonial")
   createdAt      DateTime @default(now()) @map("created_at")
 
   workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -928,6 +947,8 @@ model Asset {
   isActive    Boolean  @default(true) @map("is_active")
   /// Etapa 1 (2026-08-15) — ver Wallet.ownerPersonId, mesmo padrão.
   ownerPersonId String? @map("owner_person_id") @db.Uuid
+  /// Etapa 7 (2026-08-15) — ver Wallet.funcaoPatrimonial, mesmo padrão.
+  funcaoPatrimonial FuncaoPatrimonial? @map("funcao_patrimonial")
   createdAt   DateTime @default(now()) @map("created_at")
 
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -1006,6 +1027,8 @@ model Investment {
   isActive    Boolean  @default(true) @map("is_active")
   /// Etapa 1 (2026-08-15) — ver Wallet.ownerPersonId, mesmo padrão.
   ownerPersonId String? @map("owner_person_id") @db.Uuid
+  /// Etapa 7 (2026-08-15) — ver Wallet.funcaoPatrimonial, mesmo padrão.
+  funcaoPatrimonial FuncaoPatrimonial? @map("funcao_patrimonial")
   createdAt   DateTime @default(now()) @map("created_at")
 
   workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)

@@ -15,7 +15,94 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-15 (Etapa 6 do Método — Assistente de IA +
+> **Última atualização real: 2026-08-15 (Etapa 7 do Método — classificação
+> funcional do patrimônio, abre o Bloco II — Registro Nº 073).** Primeira
+> entrega do Bloco II (Camada de Método).
+>
+> **Eixo novo de ESTOQUE, independente dos dois que já existiam.**
+> `FuncaoPatrimonial` (enum de 7 valores: PROTECAO, LIQUIDEZ_OPERACIONAL,
+> OBJETIVOS, LONGEVIDADE, CRESCIMENTO, USO, SUCESSAO) como campo **opcional**
+> em `Asset`, `Investment` e `Wallet`. Não se confunde com `MacroBloco` (eixo
+> de FLUXO, Etapa 1) nem com `InvestmentClass` (que diz o que a coisa **é**,
+> não para que **serve**) — o mesmo CDB pode ser PROTECAO numa família e
+> CRESCIMENTO noutra. Nulo em tudo por padrão: nenhum bem/carteira/
+> investimento existente muda de estado ao aplicar a migration.
+>
+> `lib/method/patrimony-function.ts` (novo, puro) — `computeFunctionMap()` (7
+> fatias + bloco "sem função" **sempre separado**, nunca diluído nas sete:
+> mesmo princípio do "não alocado" da Régua e do "não avaliado" do PSF) e
+> `unclassifiedFindings()` (o achado automático de §13.4 — só itens de valor
+> positivo, maior primeiro; item zerado não é achado acionável, apontá-lo
+> seria ruído numa lista cujo propósito é dizer "olhe para isto"). O módulo
+> **nunca recalcula valor de patrimônio**: recebe o valor já pronto de
+> `assetCurrentValue`/`investmentPositionValue`/`walletBalance`, que continuam
+> sendo fonte de verdade única (mesma disciplina aplicada em toda etapa deste
+> bloco).
+>
+> **Dupla contagem — errei a análise na primeira versão, corrigido depois de
+> revisão adversarial (ver Registro Nº 074).** A primeira versão desta entrada
+> afirmava que somar bens + investimentos + saldo de carteiras era seguro "por
+> construção", porque lançamento de patrimônio usa `statusCode`
+> AQUISICAO/ATUALIZACAO e `SETTLED_FOR_BALANCE` (`lib/finance/balance.ts`) é
+> só {PAGO, RECEBIDO, ISENTO}. **Essa metade é verdadeira, a conclusão não
+> era.** A disjunção vale **por lançamento**, mas não no agregado: o dinheiro
+> chega na carteira de investimento por uma transferência comum, cujas duas
+> pernas nascem `PAGO` (`lib/entries/transfer.ts`) e portanto entram no saldo —
+> e comprar a posição **não debita esse caixa**. Resultado: R$ 10.000 apareciam
+> como R$ 20.000 no total da tela.
+>
+> O teste de integração que eu citei como prova passava por acidente do
+> cenário: aquele workspace nunca fez transferência pra carteira, então o saldo
+> era zero e a soma fechava. Lição registrada porque o erro foi de método, não
+> de digitação: **verifiquei metade de uma afirmação e escrevi a inteira como
+> provada** — em três documentos, ainda por cima.
+>
+> Correção aplicada: o desconto vive em
+> `lib/method/patrimony-function.ts::buildPatrimonyItems()` — saldo da carteira
+> menos as posições que ela abriga (chaveado por `Investment.walletId`, não por
+> `kindCode`), que é exatamente o caixa ainda não alocado, com piso em zero
+> para o caso de posição cadastrada sem transferência correspondente. A função
+> ficou no módulo puro **de propósito**: a montagem dos itens estava duplicada
+> entre tela e teste, e foi essa duplicação que permitiu os dois divergirem.
+> Agora tela e teste chamam a mesma função, e o cenário completo
+> (transferência + compra) é teste unitário **e** de integração.
+>
+> Nova tela `/patrimonio/funcao` (Sidebar, dentro do grupo Patrimônio já
+> existente — não virou item de topo, diferente de "Saúde Financeira"/
+> "Assistente", porque pertence a um grupo que já existe). Gateada por
+> `patrimonio_funcao` (Max, já no catálogo desde a Etapa 3 — nenhum backfill
+> novo). Classificação inline que salva ao trocar o `select`, sem botão por
+> linha: classificar patrimônio é sessão de muitos itens seguidos, um botão
+> por linha viraria atrito puro. Carteiras de passivo (cartão de crédito) saem
+> pelo próprio dado do catálogo (`WalletKind.isLiability`), nunca por lista de
+> códigos escrita à mão na tela — dívida não recebe função patrimonial.
+>
+> **Limite de escopo deliberado, documentado no código pra não ser "melhorado"
+> por engano numa sessão futura:** a tela mostra a distribuição e **não julga
+> se ela está certa**. Dizer "40% do seu patrimônio está em USO" é informação;
+> dizer se isso está bom é aconselhamento (§3.1/P2) e pertence ao MFP completo
+> (`mfp_diagnostico`, feature de **método**, Etapa 14, que exige consultor
+> ativo). A diferença entre as duas features não é de tamanho, é de natureza.
+>
+> **Verificado:** `tsc --noEmit` limpo; `npm test` 415/415 (11 casos novos de
+> `patrimony-function.ts` — total negativo/zero, ordenação decrescente, fatia
+> vazia que não some do mapa, os três tipos de item no mesmo mapa);
+> `npm run build` limpo, 65 rotas (`/patrimonio/funcao` nova). Migration
+> `20260815190000_funcao_patrimonial` aplicada e confirmada no banco de dev.
+> Teste de integração novo (`tests/integration/method/patrimony-function.test.ts`,
+> 5 testes) contra dado real: bem nasce sem função e aparece no achado com o
+> valor real dos lançamentos, classificar tira do achado e move o valor pra
+> fatia certa, limpar devolve pra "sem função", AQUISICAO não entra no saldo
+> da carteira (a invariante acima, provada contra o banco), e carteira de
+> passivo fica fora. Suíte de integração completa: 16 arquivos, 67 testes,
+> tudo verde. Não verificado por navegação real logada — mesma ressalva do
+> Registro Nº 072 (injeção de cookie de sessão bloqueada pelo classificador de
+> permissão do ambiente; sem tentativa de contornar).
+>
+> **Registrado formalmente:** `CHANGELOG.md` (2026-08-15), `REGISTRO-OPERACIONAL.md`
+> (Registro Nº 073).
+>
+> **Última atualização anterior: 2026-08-15 (Etapa 6 do Método — Assistente de IA +
 > Automações, fecha o Bloco I — Registro Nº 072).** Sexta e última entrega do
 > Bloco I (Etapas 1-6).
 >

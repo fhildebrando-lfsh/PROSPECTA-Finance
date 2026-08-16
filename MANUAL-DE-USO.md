@@ -368,10 +368,10 @@ tem finalidade informativa, sem constituir recomendação de investimento.
 
 ---
 
-## 12. Patrimônio (Bens, Metas e Dívidas)
+## 12. Patrimônio (Bens, Metas, Dívidas e Função do Patrimônio)
 
-Três telas de acompanhamento de longo prazo, no grupo "Patrimônio" do menu lateral. Assim
-como os Relatórios, cada uma tem um botão **"Baixar PDF"** próprio.
+Telas de acompanhamento de longo prazo, no grupo "Patrimônio" do menu lateral. Bens, Metas e
+Dívidas têm, assim como os Relatórios, um botão **"Baixar PDF"** próprio.
 
 ### 11.1 Bens
 
@@ -414,6 +414,38 @@ aparecem.
   caindo ao longo do tempo até a última parcela.
 - Tabela com cada dívida, ordenada da maior para a menor: total contratado, parcelas pagas
   e restantes, valor restante, próxima parcela e prazo final.
+
+### 11.4 Função do Patrimônio (novo, 2026-08-15; a partir do plano Max)
+
+Enquanto as outras telas respondem "quanto eu tenho", esta responde **"para que serve cada
+parte"**. Seus bens, investimentos e carteiras ativas entram num mapa só, cada um recebendo
+uma de sete funções:
+
+- **Proteção** — cobre imprevisto sem desmontar o resto.
+- **Liquidez operacional** — dinheiro do dia a dia, disponível na hora.
+- **Objetivos** — guardado para algo com data e nome.
+- **Longevidade** — sustenta você quando a renda do trabalho parar.
+- **Crescimento** — aceita oscilar para crescer no longo prazo.
+- **Uso** — serve para usar, não para render.
+- **Sucessão** — pensado para atravessar gerações.
+
+A função é uma dimensão **independente** do tipo da coisa: dois CDBs iguais podem ter funções
+diferentes, porque função é o papel que aquele dinheiro cumpre na sua vida, não o produto que
+ele é. Nada nasce classificado — todo bem, investimento e carteira começa como "sem função
+definida", e essa é uma resposta válida, não um erro.
+
+A tela aponta sozinha **o que ainda está sem função**, do maior valor para o menor (o que mais
+pesa é o que mais vale classificar primeiro), e você classifica ali mesmo: escolha a função no
+seletor e ela é salva na hora, sem botão de confirmar. Para desfazer, escolha "— sem função —".
+O bloco "Sem função definida" aparece sempre separado dos outros sete, nunca somado dentro
+deles.
+
+Cartão de crédito e qualquer outra carteira de dívida ficam de fora — dívida não recebe função
+patrimonial.
+
+**O que esta tela não faz:** ela mostra como seu patrimônio está distribuído, mas não diz se
+essa distribuição está certa. Avaliar a composição e recomendar mudanças é trabalho de
+consultoria — faz parte do Mapa Funcional do Patrimônio completo, que exige um consultor ativo.
 
 ---
 
