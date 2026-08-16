@@ -2294,7 +2294,19 @@
 
 ---
 
-## Próximo número de registro: **073**
+### Registro Nº 073
+- **Data:** 2026-08-15
+- **Etapa concluída:** Etapa 7 do roteiro do Método — classificação funcional do patrimônio e achado automático de "ativo sem função"; abre o Bloco II
+- **Descrição:** Primeira entrega do Bloco II (Camada de Método). Eixo novo de **estoque**, independente dos que já existiam: `FuncaoPatrimonial` (enum de 7 valores — PROTECAO, LIQUIDEZ_OPERACIONAL, OBJETIVOS, LONGEVIDADE, CRESCIMENTO, USO, SUCESSAO) como campo opcional em `Asset`, `Investment` e `Wallet`. Não se confunde com `MacroBloco` (fluxo, Etapa 1) nem com `InvestmentClass` (o que a coisa É, não para que serve) — o mesmo CDB pode ser PROTECAO numa família e CRESCIMENTO noutra. Nulo em tudo por padrão: nenhum bem/carteira/investimento existente muda de estado. `lib/method/patrimony-function.ts` (novo, puro) — `computeFunctionMap()` (7 fatias + bloco "sem função" sempre separado, nunca diluído nas sete, mesmo princípio do "não alocado" da Régua e do "não avaliado" do PSF) e `unclassifiedFindings()` (o achado automático de §13.4: só itens de valor positivo, maior primeiro — item zerado não é achado acionável, seria ruído). O módulo **nunca recalcula valor de patrimônio**: recebe o valor já pronto de `assetCurrentValue`/`investmentPositionValue`/`walletBalance`, que continuam sendo fonte de verdade única. Nova tela `/patrimonio/funcao` gateada por `patrimonio_funcao` (Max, já no catálogo desde a Etapa 3) — distribuição, lista do que falta classificar e classificação inline (salva ao trocar o select, sem botão por linha: classificar é sessão de muitos itens seguidos). Carteiras de passivo saem pelo próprio dado do catálogo (`WalletKind.isLiability`), nunca por lista de códigos escrita à mão. **Limite de escopo deliberado, documentado no código:** a tela mostra a distribuição e não julga se ela está certa — opinar sobre composição é aconselhamento (§3.1/P2) e pertence ao MFP completo (`mfp_diagnostico`, feature de método, Etapa 14, exige consultor ativo).
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 415/415 (11 casos novos de `patrimony-function.ts`); `npm run build` limpo, 65 rotas (`/patrimonio/funcao` nova). Migration `20260815190000_funcao_patrimonial` aplicada e confirmada no banco de dev. Suíte de integração ganhou `tests/integration/method/patrimony-function.test.ts` (5 testes: bem nasce sem função e aparece no achado com o valor real dos lançamentos, classificar tira do achado e move o valor pra fatia certa, limpar devolve pra "sem função", **lançamento de patrimônio AQUISICAO não entra no saldo da carteira — confirma contra dado real que somar bens + investimentos + carteiras no mesmo mapa não conta nada duas vezes**, e carteira de passivo fica fora). Suíte completa: 16 arquivos, 67 testes, tudo verde. Não verificado por navegação real logada — mesma ressalva registrada no Nº 072 (injeção de cookie de sessão bloqueada pelo classificador de permissão do ambiente).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saída de `tsc`/`npm test`/`npm run build`; resultado da suíte de integração contra o banco de dev, incluindo o teste que fecha o risco de dupla contagem.
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §5.1/6 (Etapa 7), `MANUAL-DE-USO.md` (seção 12, subseção 11.4 — a numeração das subseções de Patrimônio já vinha assim, não foi alterada), `lib/method/patrimony-function.ts`, `app/(app)/patrimonio/funcao/`, `prisma/migrations/20260815190000_funcao_patrimonial/`.
+
+---
+
+## Próximo número de registro: **074**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

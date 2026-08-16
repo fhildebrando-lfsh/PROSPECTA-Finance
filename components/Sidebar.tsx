@@ -43,6 +43,7 @@ import {
   CandlestickChart,
   PieChart,
   Sparkles,
+  Compass,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -105,6 +106,7 @@ const PATRIMONIO_ITEMS: NavLeaf[] = [
   { href: "/patrimonio/bens", label: "Bens", icon: Boxes },
   { href: "/patrimonio/metas", label: "Metas", icon: Target },
   { href: "/patrimonio/dividas", label: "Dívidas", icon: TrendingDown },
+  { href: "/patrimonio/funcao", label: "Função do Patrimônio", icon: Compass },
 ];
 
 const INVESTIMENTOS_ITEMS: NavLeaf[] = [

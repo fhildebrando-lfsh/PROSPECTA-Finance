@@ -1133,10 +1133,31 @@ Abre a trilha de consultoria propriamente dita.
 
 | Etapa | Entrega | Depende de |
 |---|---|---|
-| **7** | `funcao_patrimonial` em bens/investimentos/carteiras + achado automático de "ativo sem função" (§13.4) | Bloco I (Max) |
+| **7** ✅ | `funcao_patrimonial` em bens/investimentos/carteiras + achado automático de "ativo sem função" (§13.4) | Bloco I (Max) |
 | **8** | `ConsultingEngagement` + `MethodPhase` + `GateCheck` — a trilha de fases e o ritual de passagem (§7.3) em tela para o consultor | Etapa 4 (`PlanGrant` nasce junto com o engagement) |
 | **9** | `Deliverable` + templates dos 10 artefatos codificados (PAN, AFF, RAP, MEC, MRP, PLA, PIP, MFP, PCP, PFI) — v0 pode ser HTML/PDF gerado a partir de `content: Json`, reaproveitando `lib/reports/pdf/` já existente como padrão de geração | Etapa 8 |
 | **10** | Instrumentos A1/A2/C como formulário digital + envio automático (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
+
+**Etapa 7 — status: implementada e verificada contra o banco de dev (Registro Nº
+073), abre o Bloco II.** `FuncaoPatrimonial` (7 valores) como campo opcional em
+`Asset`/`Investment`/`Wallet` — eixo de estoque, independente do `MacroBloco` (fluxo,
+Etapa 1) e do `InvestmentClass` (o que a coisa é, não para que serve).
+`lib/method/patrimony-function.ts` (novo, puro) com 11 testes unitários:
+`computeFunctionMap()` mantém "sem função" sempre separado das 7 fatias (mesmo
+princípio do "não alocado" da Régua e do "não avaliado" do PSF), e
+`unclassifiedFindings()` é o achado automático de §13.4 — só valor positivo, maior
+primeiro. **Risco investigado antes de codar:** somar bens + investimentos + saldo de
+carteiras parecia contar aporte duas vezes; conferido que lançamentos de patrimônio
+usam AQUISICAO/ATUALIZACAO e `SETTLED_FOR_BALANCE` é {PAGO, RECEBIDO, ISENTO} — os
+conjuntos são disjuntos por construção. A invariante virou comentário na query **e**
+teste de integração, pra não precisar ser redescoberta. Nova tela `/patrimonio/funcao`
+(dentro do grupo Patrimônio já existente), gateada por `patrimonio_funcao` (Max, já no
+catálogo desde a Etapa 3), com classificação inline; carteira de passivo sai por
+`WalletKind.isLiability`, nunca por lista de códigos na tela. **Limite de escopo
+deliberado:** a tela mostra a distribuição e não julga se está certa — opinar sobre
+composição é aconselhamento (§3.1/P2) e pertence ao `mfp_diagnostico` (feature de
+método, Etapa 14, exige consultor ativo). `tsc`, `npm test` (415/415) e `npm run build`
+(65 rotas) limpos; suíte de integração com 16 arquivos, 67 testes.
 
 ### Bloco III — Entregáveis especializados do método (Etapas 11–15)
 

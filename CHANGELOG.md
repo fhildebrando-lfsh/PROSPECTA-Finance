@@ -16,6 +16,9 @@
 
 ## 2026-08-15
 
+### Adicionado (Registro Nº 073)
+- **Patrimônio → Função do Patrimônio** (nova tela, plano Max): além de "quanto eu tenho", responde "para que serve cada parte" — Proteção, Liquidez operacional, Objetivos, Longevidade, Crescimento, Uso e Sucessão. Bens, investimentos e carteiras ativas entram no mesmo mapa, com o valor que o sistema já calcula. A tela também aponta sozinha o que ainda está **sem função definida**, do maior valor para o menor, e deixa você classificar ali mesmo. Cartão de crédito (e qualquer carteira de dívida) fica de fora — dívida não recebe função patrimonial.
+
 ### Adicionado (Registro Nº 072)
 - **Painel → Assistente** (nova tela, plano Max): pergunte em português simples sobre seu saldo, receita/gasto do mês (geral ou por categoria), quanto falta pra reserva ou quantos incidentes estão pendentes — a resposta usa sempre os mesmos cálculos do Painel/Relatórios, nunca um número inventado. Nunca recomenda produto ou ativo específico — se a pergunta parecer pedir isso, o assistente recusa e explica por quê.
 - **Painel → Assistente — Automações** (mesma tela, plano Max): 5 tipos de alerta automático que você liga/desliga (gasto de categoria passou de X, compromisso vencendo, recorrência mudou de valor, meta fora do ritmo, fila de incidentes acumulando). Roda 1x por dia; só avisa, nunca cria, edita ou paga nada sozinho.
