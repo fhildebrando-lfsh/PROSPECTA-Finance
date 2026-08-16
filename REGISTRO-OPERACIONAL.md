@@ -2384,7 +2384,19 @@
 
 ---
 
-## Próximo número de registro: **080**
+### Registro Nº 080
+- **Data:** 2026-08-16
+- **Etapa concluída:** Etapa 9-A.3 (parte 2, fecha a etapa) — motor de liquidez elegível e motor profissional (IPP + curva de recuperação)
+- **Descrição:** Fecha a Etapa 9-A.3 com os dois motores puros que faltavam. **`liquidity-engine.ts` (§29/§30):** classifica cada peça do patrimônio em 6 classes de liquidez e calcula o `EmergencyEligibleValue`. **Reuso confirmado:** a classificação de liquidez já existia no sistema com outro nome — `funcaoPatrimonial` (Etapa 7) responde "para que serve esta peça", que é exatamente o que §29 pede; o que parecia tela de classificação era a fundação deste motor. `WalletKind.isLiability` tem **precedência sobre tudo**: cartão classificado como PROTECAO por engano continua sendo crédito, e §29.5 proíbe crédito como reserva. Sem função nem tipo conhecido, assume ESTRATEGICO (elegibilidade baixa) — contar como imediato o que ninguém classificou inflaria a reserva disponível. Ilíquido entra com fator 0 (imóvel não paga a conta do mês que vem) mas continua visível no bruto, porque §55 exige tratá-lo em separado; a diferença entre bruto e elegível é justamente o que a pessoa acha que tem e não tem. Saldo negativo não vira reserva ao ser multiplicado por fator. **Correção do modelo de §30 aplicada** (divergência 2 da análise): o produto puro de três fatores de 0,8 daria 0,51 e destruiria metade da elegibilidade de um ativo levemente restrito — a composição ficou multiplicativa (explicável, como §30 quer) **com piso no pior fator isolado**. **`employment-engine.ts` (§20/§22/§23):** IPP de 0 a 100 e curva de recuperação de renda. Três princípios de §20 nos pesos: atividade **exercida** vale mais que formação (a segunda atividade é o maior peso do modelo, e `POSSIBILIDADE_TEORICA` não vale ponto nenhum, §21.4); experiência tem retorno decrescente (2→10 anos muda muito, 10→20 quase nada); e **estabilidade não é portabilidade** (§23) — militar e servidor têm a renda mais estável do sistema e a menor conversão para o privado, o que reduz o IPP sem que isso, sozinho, aumente a reserva. A curva de recuperação sai do IPP, nunca é universal (§22), começa sempre em 0% no mês da interrupção e é monotônica. `hasEnoughData` avisa quando falta dado demais, em vez de fingir precisão (§9).
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 524/524 (33 casos novos; 86 no conjunto dos seis motores MCRF), incluindo os testes que fixam as decisões acima — crédito nunca elegível, ilíquido fora da reserva, piso do fator de elegibilidade, atividade exercida acima da teórica, militar com portabilidade menor que CLT, e a segunda atividade compensando boa parte dessa diferença (que é a recomendação que §23 manda dar em vez de inflar reserva); suíte de integração 17 arquivos / 75 testes; `npm run build` limpo. Sem migration nesta parte — os dois motores são puros e consomem schema já existente.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saídas de `tsc`/`npm test`/build.
+- **Documentos relacionados:** `PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md` §20/§22/§23/§29/§30, `ARQUITETURA-METODO-PROSPECTAR.md` §6, `lib/method/mcrf/liquidity-engine.ts`, `lib/method/mcrf/employment-engine.ts`.
+
+---
+
+## Próximo número de registro: **081**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

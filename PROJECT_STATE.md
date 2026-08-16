@@ -15,7 +15,53 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-16 (Etapa 9-A.3 parte 1 — rigidez,
+> **Última atualização real: 2026-08-16 (Etapa 9-A.3 fechada — liquidez
+> elegível e motor profissional — Registro Nº 080).**
+>
+> Os dois motores puros que faltavam. Sem migration: ambos consomem schema já
+> existente.
+>
+> **`liquidity-engine.ts` (§29/§30).** Reuso confirmado pela segunda vez: a
+> classificação de liquidez que a especificação pede **já existia** como
+> `funcaoPatrimonial` (Etapa 7). PROTECAO e LIQUIDEZ_OPERACIONAL viram
+> liquidez imediata; OBJETIVOS e LONGEVIDADE viram estratégico; USO vira
+> ilíquido. `WalletKind.isLiability` tem **precedência sobre tudo** — cartão
+> classificado como PROTECAO por engano continua sendo crédito, e §29.5 proíbe
+> crédito como reserva.
+>
+> Três decisões conservadoras: sem função nem tipo conhecido, assume
+> ESTRATEGICO (contar como imediato o que ninguém classificou inflaria a
+> reserva disponível); ilíquido tem fator 0 mas continua visível no bruto
+> (§55 exige tratá-lo em separado, e a diferença entre bruto e elegível é o
+> que a pessoa acha que tem e não tem); saldo negativo não vira reserva ao ser
+> multiplicado por fator.
+>
+> **Correção de §30 aplicada** (divergência 2 da análise): o produto puro de
+> três fatores de 0,8 daria 0,51 e destruiria metade da elegibilidade de um
+> ativo levemente restrito. Ficou multiplicativo — explicável, como §30 quer —
+> **com piso no pior fator isolado**.
+>
+> **`employment-engine.ts` (§20/§22/§23).** IPP 0–100 e curva de recuperação.
+> Os pesos seguem três princípios: atividade **exercida** vale mais que
+> formação (segunda atividade é o maior peso; `POSSIBILIDADE_TEORICA` vale
+> zero, §21.4); experiência tem retorno decrescente; e **estabilidade não é
+> portabilidade** — militar e servidor têm a renda mais estável do sistema e a
+> menor conversão para o privado.
+>
+> Isso reduz o IPP deles, e é aqui que §23 importa: **IPP baixo não infla a
+> reserva sozinho.** Ele alimenta a curva de recuperação, e a curva só entra
+> num cenário materialmente relevante. Há teste mostrando que uma segunda
+> atividade ativa compensa boa parte da diferença — que é exatamente a
+> recomendação que §23 manda dar em vez de mandar guardar mais dinheiro.
+>
+> **Verificado:** `tsc` limpo, 524/524 unitários (33 novos; 86 no conjunto dos
+> seis motores MCRF), 75/75 integração, build limpo.
+>
+> **Etapa 9-A.3 fechada.** Próxima é a 9-A.4: stress tests A–H, Reserva
+> Recomendada e `McrfAssessment` versionado — onde os seis motores finalmente
+> se encontram e um número sai.
+>
+> **Última atualização anterior: 2026-08-16 (Etapa 9-A.3 parte 1 — rigidez,
 > parâmetros globais e motor CEMA/CCM — Registro Nº 079).**
 >
 > Implementa a decisão de negócio do usuário sobre §11.1–11.3: **rígida** =

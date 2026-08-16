@@ -16,6 +16,9 @@
 
 ## 2026-08-16
 
+### Adicionado (Registro Nº 080)
+- **Motor de cálculo de risco completo** (interno, ainda sem tela): o sistema agora sabe calcular quanto do seu patrimônio realmente serve de reserva — um imóvel não paga a conta do mês que vem, e limite de cartão não é dinheiro — e o quanto sua profissão facilita recomeçar caso a renda pare. São as últimas peças antes do cálculo da Reserva Recomendada.
+
 ### Adicionado (Registro Nº 079)
 - **Admin → Metodologia** (nova tela, só administrador): controla os parâmetros do cálculo de risco para todo o sistema. Define quanto uma despesa ajustável encolhe durante uma crise (padrão 30%) e classifica cada despesa como **rígida** (contrato que não cede, como aluguel e mensalidade), **ajustável** (consumo que você controla, como supermercado e combustível) ou **discricionária** (pode suspender). Energia, água, gás, telefone e internet entram como rígidas, por escolha conservadora.
 - Essa classificação é o que separa "quanto sua vida custa hoje" de "quanto custaria durante uma crise" — e é a segunda medida que dimensiona a reserva de emergência, não a primeira.
