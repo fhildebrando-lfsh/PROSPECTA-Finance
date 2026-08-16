@@ -16,6 +16,11 @@
 
 ## 2026-08-16
 
+### Adicionado (Registro Nº 077)
+- **Proteção e Segurança → Perfil de Risco** (novo menu e nova tela, plano Max): o primeiro passo da Reserva de Emergência PROSPECTA. Para cada pessoa da sua unidade financeira você informa regime de trabalho, profissão, tempo de casa, experiência e se tem outra atividade capaz de gerar renda — e cadastra as fontes de renda, incluindo quem paga cada uma.
+- **A renda não é perguntada.** A tela mostra a renda que o sistema já mediu nos seus lançamentos, com quantos meses de histórico e o quanto isso é confiável. Usa a mediana, não a média, para que um 13º não faça parecer que você ganha mais do que ganha todo mês.
+- **Concentração da renda**: mostra o quanto a família depende de uma única fonte. É diagnóstico — não aumenta sua reserva por si só.
+
 ### Corrigido (Registro Nº 076)
 - **As automações não teriam disparado nunca.** A verificação de login barrava a chamada automática diária antes dela chegar ao sistema, e o erro não aparecia em lugar nenhum — pareceria apenas que "as automações não funcionam". Corrigido e coberto por teste.
 

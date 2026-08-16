@@ -449,6 +449,57 @@ consultoria — faz parte do Mapa Funcional do Patrimônio completo, que exige u
 
 ---
 
+## 12-A. Proteção e Segurança (novo, 2026-08-16; a partir do plano Max)
+
+Menu novo, dedicado a uma pergunta diferente das outras telas: **o que aconteceria com suas
+finanças se algo desse errado?** Ele está sendo construído por partes; a primeira é o Perfil
+de Risco.
+
+### 12-A.1 Perfil de Risco
+
+É a base do cálculo da sua Reserva de Emergência. Em vez de multiplicar sua despesa por um
+número fixo de meses — três, seis, doze —, o sistema vai analisar de onde vem sua renda,
+quem depende dela e o que aconteceria se ela parasse. Para isso precisa conhecer duas coisas
+que seus lançamentos não contam.
+
+**O que o sistema já sabe e não vai te perguntar.** No topo de cada pessoa aparece a **renda
+observada**: quanto ela recebe por mês, medido nos seus próprios lançamentos, com quantos
+meses de histórico existem e o quanto isso é confiável. Esse número usa a **mediana**, não a
+média — assim um 13º ou umas férias não fazem parecer que você ganha todo mês mais do que
+realmente ganha. Essa distinção importa: superestimar a renda produziria uma reserva menor
+do que a necessária.
+
+**O que você informa.** Por pessoa: regime de trabalho (CLT, servidor efetivo, militar,
+autônomo, MEI, aposentado e outros), profissão, cargo, setor, há quanto tempo está no
+vínculo atual e quanto tempo de experiência tem no total. Esses dois tempos são separados de
+propósito — tempo de casa mede estabilidade, experiência total mede a facilidade de
+recomeçar em outro lugar, e são coisas diferentes.
+
+Há também um campo para **outra atividade capaz de gerar renda** caso a principal seja
+interrompida, com quatro respostas possíveis: já gera renda hoje, gerou recentemente, tenho
+formação mas pouca prática, ou é só uma possibilidade. A diferença é importante: só as duas
+primeiras entram nos cálculos como renda de verdade. Uma possibilidade teórica não protege
+ninguém.
+
+Marque **dependente** para quem não gera renda própria e depende financeiramente da família.
+
+**Fontes de renda.** Cadastre cada fonte com nome, tipo e, opcionalmente, **quem paga** —
+empregador ou cliente principal. Esse último campo tem um propósito específico: se duas
+pessoas da família recebem da mesma empresa, essas rendas não protegem uma à outra. Se a
+empresa fechar, as duas param juntas. O sistema precisa saber disso para não considerar a
+família mais protegida do que ela é.
+
+Marque **fonte principal** aquela cuja interrupção é o cenário mais relevante a simular.
+
+**Concentração da renda.** No topo da tela, mostra o quanto a família depende de uma única
+fonte. É um diagnóstico para você enxergar sua exposição — ele não aumenta sua reserva
+sozinho.
+
+Nada aqui é obrigatório. Quanto mais preenchido, mais preciso será o cálculo — e o sistema
+sempre informa o quanto está confiante, em vez de fingir precisão que não tem.
+
+---
+
 ## 13. Investimentos
 
 Grupo de menu dedicado a investimentos, com duas telas: **Carteira** e **Análise**.

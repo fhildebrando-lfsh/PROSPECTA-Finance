@@ -44,6 +44,8 @@ import {
   PieChart,
   Sparkles,
   Compass,
+  ShieldAlert,
+  IdCard,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -109,6 +111,10 @@ const PATRIMONIO_ITEMS: NavLeaf[] = [
   { href: "/patrimonio/funcao", label: "Função do Patrimônio", icon: Compass },
 ];
 
+const PROTECAO_ITEMS: NavLeaf[] = [
+  { href: "/protecao/perfil", label: "Perfil de Risco", icon: IdCard },
+];
+
 const INVESTIMENTOS_ITEMS: NavLeaf[] = [
   { href: "/investimentos", label: "Carteira", icon: Wallet },
   { href: "/investimentos/analise", label: "Análise", icon: PieChart },
@@ -150,6 +156,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { label: "Relatórios", icon: BarChart3, items: RELATORIOS_ITEMS },
     { label: "Patrimônio", icon: Landmark, items: PATRIMONIO_ITEMS },
     { label: "Investimentos", icon: CandlestickChart, items: INVESTIMENTOS_ITEMS },
+    { label: "Proteção e Segurança", icon: ShieldAlert, items: PROTECAO_ITEMS },
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },
   ];
   if (isPlatformAdmin) {

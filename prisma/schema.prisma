@@ -119,6 +119,7 @@ model Workspace {
   googleCalendarConnection GoogleCalendarConnection?
   descriptionRules DescriptionRule[]
   investments      Investment[]
+  incomeSources    IncomeSource[]
   balanceReconciliations BalanceReconciliation[]
 
   @@map("workspaces")
@@ -455,6 +456,7 @@ model Category {
   budgets          Budget[]
   assets           Asset[]
   descriptionRules DescriptionRule[]
+  incomeSources    IncomeSource[]
 
   @@unique([nature, slug])
   @@map("categories")
@@ -649,16 +651,83 @@ model BalanceReconciliation {
 // Responsáveis (§2, §9) — por workspace.
 // ---------------------------------------------------------------------------
 
+/// §19 da especificação PROSPECTA-MCRF — regime de trabalho. Determina quais
+/// proteções trabalhistas/previdenciárias são aplicáveis (§25): militar e
+/// servidor estatutário NÃO têm FGTS, seguro-desemprego nem verbas rescisórias
+/// de CLT, e presumir isso seria erro material no stress test.
+enum RegimeTrabalho {
+  SERVIDOR_EFETIVO
+  MILITAR
+  EMPREGADO_PUBLICO
+  CLT
+  CARGO_COMISSIONADO
+  TEMPORARIO
+  PROFISSIONAL_LIBERAL
+  AUTONOMO
+  EMPRESARIO
+  MEI
+  INFORMAL
+  APOSENTADO
+  PENSIONISTA
+  DESEMPREGADO
+  OUTRO
+}
+
+/// §21.1–21.4 — quão real é a capacidade de gerar renda substituta. A ordem é
+/// decrescente em evidência prática: só ATIVA e ADORMECIDA entram como renda
+/// resiliente nos cenários; POSSIBILIDADE_TEORICA nunca entra (§21.4).
+enum SegundaAtividadeNivel {
+  /// Já existe e pode ser comprovada.
+  RENDA_SECUNDARIA_ATIVA
+  /// Existiu recentemente, hoje parada.
+  RENDA_SECUNDARIA_ADORMECIDA
+  /// Há formação/capacidade, pouca evidência prática.
+  CAPACIDADE_POTENCIAL
+  /// Apenas hipótese — não é renda resiliente.
+  POSSIBILIDADE_TEORICA
+}
+
 model Person {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   workspaceId String   @map("workspace_id") @db.Uuid
   name        String
   slug        String
   isShared    Boolean  @default(false) @map("is_shared")
+
+  /// --- Perfil de risco (Etapa 9-A.1, PROSPECTA-MCRF §19/§21) ---
+  /// Todos opcionais: `Person` existe desde a Fase 0 como "responsável" de
+  /// lançamento e continua funcionando sem nada disto preenchido. Estender aqui
+  /// em vez de criar uma entidade "membro da família" é deliberado — §59 proíbe
+  /// nova fonte de verdade para dado que já existe, e titularidade econômica já
+  /// mora em `Person` (ver ownedWallets/ownedInvestments/ownedAssets).
+  regimeTrabalho RegimeTrabalho? @map("regime_trabalho")
+  /// Profissão declarada, texto livre. `cboCode` é a normalização opcional —
+  /// §19 pede a estrutura pronta para CBO sem exigir a integração agora.
+  occupation     String?         @map("occupation")
+  cboCode        String?         @map("cbo_code")
+  cargo          String?
+  setor          String?
+  /// Meses no vínculo atual e de experiência total — insumos do IPP (§20).
+  /// Separados de propósito: tempo de casa mede estabilidade, experiência total
+  /// mede portabilidade, e confundir os dois é justamente o erro que §23 aponta.
+  tenureCurrentMonths   Int? @map("tenure_current_months")
+  experienceTotalMonths Int? @map("experience_total_months")
+
+  /// §21 — capacidade de renda substituta. `segundaAtividade` é a descrição;
+  /// o nível é o que o motor consome.
+  segundaAtividade      String?                @map("segunda_atividade")
+  segundaAtividadeNivel SegundaAtividadeNivel? @map("segunda_atividade_nivel")
+
+  /// §7.2 — dependentes não geram renda e ampliam a despesa essencial que
+  /// precisa continuar sendo paga no cenário adverso. Nunca inferido: uma
+  /// `Person` sem lançamento de receita pode ser só um responsável pouco usado.
+  isDependent Boolean @default(false) @map("is_dependent")
+
   createdAt   DateTime @default(now()) @map("created_at")
 
   workspace       Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   entries         Entry[]
+  incomeSources   IncomeSource[]
   /// Etapa 1 (2026-08-15) — titularidade econômica de carteiras/investimentos/
   /// bens dentro da unidade financeira. Ver Wallet/Investment/Asset.ownerPersonId.
   ownedWallets     Wallet[]     @relation("WalletOwner")
@@ -667,6 +736,67 @@ model Person {
 
   @@unique([workspaceId, slug])
   @@map("people")
+}
+
+/// §14 da especificação PROSPECTA-MCRF — natureza da fonte de renda. Define
+/// previsibilidade e o que acontece com ela em cada cenário: salário some na
+/// demissão, aluguel não; aposentadoria não some em cenário nenhum.
+enum IncomeSourceKind {
+  SALARIO
+  PRO_LABORE
+  AUTONOMO
+  ALUGUEL
+  APOSENTADORIA
+  PENSAO
+  BENEFICIO
+  RENDA_PASSIVA
+  BICO
+  OUTRO
+}
+
+/// §14 — uma fonte de renda de uma pessoa da unidade financeira.
+///
+/// **Não duplica o lançamento de receita.** O `Entry` de natureza RECEITA
+/// continua sendo a única fonte de verdade sobre quanto entrou e quando —
+/// mediana, volatilidade e sazonalidade (§15) são medidas a partir dele, nunca
+/// declaradas aqui. Esta tabela guarda só o que o extrato **não** revela: que
+/// tipo de vínculo é, de quem depende, e se pode ser interrompida. `categoryId`
+/// aponta para a categoria RECEITA já seedada, para o motor casar os `Entry`
+/// desta fonte sem inventar taxonomia nova (§59).
+model IncomeSource {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String           @map("workspace_id") @db.Uuid
+  personId    String           @map("person_id") @db.Uuid
+  name        String
+  kind        IncomeSourceKind
+  /// Categoria RECEITA correspondente — opcional: nem toda fonte tem uma
+  /// categoria própria, e forçar o vínculo criaria cadastro obrigatório sem ganho.
+  categoryId  String?          @map("category_id") @db.Uuid
+
+  /// §18 — o nome do empregador/pagador é o que permite **inferir** correlação
+  /// de renda familiar em vez de perguntar: duas fontes de pessoas diferentes
+  /// com o mesmo pagador não são duas rendas independentes. Texto livre e
+  /// opcional; a comparação é por normalização, nunca por FK (não é entidade).
+  employerName String? @map("employer_name")
+  setor        String?
+
+  /// §14 — o que torna a fonte frágil. Nulo = não informado, nunca "false":
+  /// ausência de dado não pode virar afirmação de segurança (§8).
+  dependeDeEmpregador     Boolean? @map("depende_de_empregador")
+  dependeDePoucosClientes Boolean? @map("depende_de_poucos_clientes")
+
+  /// Marca a fonte cuja interrupção é simulada no Cenário B (§31). Só uma por
+  /// pessoa faz sentido, mas não é travado no banco — quem valida é a ação.
+  isPrincipal Boolean @default(false) @map("is_principal")
+  isActive    Boolean @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  person    Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  category  Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([workspaceId, personId])
+  @@map("income_sources")
 }
 
 // ---------------------------------------------------------------------------

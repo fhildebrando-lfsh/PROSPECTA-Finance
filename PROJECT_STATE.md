@@ -15,7 +15,69 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-16 (Bloco I + Etapa 7 em produção, sem
+> **Última atualização real: 2026-08-16 (Etapa 9-A.1 — perfil de risco, abre o
+> módulo PROSPECTA-MCRF — Registro Nº 077).**
+>
+> Primeira entrega da Etapa 9-A, que **antecipa a Etapa 12** por decisão do
+> usuário a partir da especificação
+> `PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md`. Motivo técnico da
+> antecipação: o indicador **Proteção do PSF só sai de zero quando reserva e
+> seguros existirem juntos** — hoje ele espelha Liquidez por falta da metade de
+> coberturas. A `ConsultingEngagement` (Etapa 8 original) fica para depois.
+>
+> **Análise técnica entregue antes de tocar em qualquer arquivo** (§58 da
+> especificação). Ela achou o que mais importa saber daqui pra frente: **três
+> peças centrais da metodologia já existiam no sistema com outro nome.**
+> `Subcategory.macroBloco` (Etapa 1) **é** o eixo de classificação do CEMA;
+> `funcaoPatrimonial` (Etapa 7) **é** a classificação de liquidez do §29;
+> `Person` + `Entry.responsibleId` **são** a estrutura familiar e a atribuição
+> de renda por pessoa. O que parecia tela de classificação na Etapa 7 era, na
+> verdade, a fundação do motor de liquidez.
+>
+> **Seis divergências encontradas na especificação, com decisão registrada em
+> `ARQUITETURA-METODO-PROSPECTAR.md` §6.** As duas de maior consequência:
+> (a) §33 dimensiona a reserva somando déficits mensais já pisados em zero, o
+> que ignora que superávit de um mês financia déficit de outro — adotado **pico
+> de saldo acumulado negativo**, porque reserva é estoque, não fluxo;
+> (b) a Reserva Recomendada colidiria com `Goal`, e este projeto **já teve bug
+> por calcular meta de reserva paralela à `Goal` real** — decisão: o MCRF
+> produz recomendação, `Goal` segue fonte única do alvo, e adotar é ação
+> explícita do usuário. Não repetir esse erro foi decidido antes de escrever
+> qualquer linha.
+>
+> **Entregue:** `RegimeTrabalho` (15 regimes), `SegundaAtividadeNivel`,
+> `IncomeSourceKind`, `Person` estendida, `IncomeSource` novo — tudo aditivo e
+> nulo por padrão. `lib/method/mcrf/config.ts` centraliza versão e parâmetros
+> (§52: nenhum número mágico); `income-observation.ts` mede mediana, pior mês,
+> meses sem renda, variabilidade e HHI a partir do `Entry` real.
+>
+> **Mediana, não média — e há um teste que existe só para provar isso:** 5
+> meses de R$ 5.000 mais um 13º de R$ 20.000 dá mediana 5.000 e média 7.500. A
+> média superestimaria em 50% a renda tida como resiliente e produziria reserva
+> insuficiente justamente para quem depende dela.
+>
+> **`IncomeSource` não duplica o lançamento:** `Entry` de RECEITA segue fonte
+> única sobre quanto e quando entrou. A tabela guarda o que o extrato não
+> revela — e `employerName` existe para **inferir** correlação de renda
+> familiar (§18) sem perguntar: duas fontes de pessoas diferentes com o mesmo
+> pagador não são rendas independentes.
+>
+> Tela `/protecao/perfil` no menu novo **Proteção e Segurança**, aplicando §6
+> literalmente: a renda **não é perguntada**, é exibida como observada.
+>
+> **Verificado:** `tsc` limpo, 452/452 unitários, 75/75 integração, build
+> limpo. Migration aplicada em produção **antes do código** (regra do runbook
+> §5), com checksum correto e idêntico ao de dev. Em produção: 12 pessoas
+> intactas e nenhuma alterada, 35 migrations com zero checksum vazio, 9
+> workspaces e 2279 lançamentos intactos.
+>
+> **Pendência de negócio para a 9-A.3:** §11.1–11.3 exige três níveis de
+> despesa (rígida, ajustável, discricionária) e o sistema tem quatro blocos que
+> cortam diferente — `ESSENCIAL` não distingue moradia de alimentação, e é
+> essa distinção que separa CEMA de CCM. Decisão do usuário, não escolha
+> técnica.
+>
+> **Última atualização anterior: 2026-08-16 (Bloco I + Etapa 7 em produção, sem
 > pendências — Registros Nº 074 e Nº 075).**
 >
 > **Incidente que domina esta entrada: derrubei produção.** O push do Bloco I

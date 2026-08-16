@@ -1138,6 +1138,97 @@ Abre a trilha de consultoria propriamente dita.
 | **9** | `Deliverable` + templates dos 10 artefatos codificados (PAN, AFF, RAP, MEC, MRP, PLA, PIP, MFP, PCP, PFI) — v0 pode ser HTML/PDF gerado a partir de `content: Json`, reaproveitando `lib/reports/pdf/` já existente como padrão de geração | Etapa 8 |
 | **10** | Instrumentos A1/A2/C como formulário digital + envio automático (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
 
+#### Etapa 9-A — Proteção e Segurança / PROSPECTA-MCRF (antecipa a Etapa 12)
+
+Reordenação decidida com o usuário em 2026-08-16, a partir da especificação
+`PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md` (metodologia
+PROSPECTA-MCRF-1.0). Antecipa `InsurancePolicy`/MRP, que eram Etapa 12, porque o
+indicador **Proteção do PSF só sai de zero quando reserva e seguros existirem
+juntos** — hoje ele espelha Liquidez por falta da metade de coberturas.
+
+A `ConsultingEngagement` (Etapa 8 original) fica para depois: ela destrava
+features de método, que só fazem sentido com consultor ativo, enquanto o MCRF é
+valor direto ao cliente final.
+
+**Gate comercial (decisão do usuário, 2026-08-16):** reserva recomendada e
+stress tests em `reserva_inteligente` (**Max**, `gateKind = PLANO`); mapa de
+riscos e plano de tratamento em `mrp_completo` (**método**, exige consultor).
+Seguros seguem em `seguros_cadastro` (Max), que já existia — nenhuma feature
+duplicada foi criada.
+
+| Sub-etapa | Entrega | Depende |
+|---|---|---|
+| **9-A.1** ✅ | Perfil de risco: `Person` estendida (§19/§21), `IncomeSource` (§14), motor de observação de renda, tela `/protecao/perfil` | — |
+| **9-A.2** | `InsurancePolicy` + coberturas + `BenefitEntitlement` (§25/§26) | 9-A.1 |
+| **9-A.3** | CEMA, CCM, liquidez elegível, IPP — puros (§11/§12/§20/§30) | 9-A.1 |
+| **9-A.4** | Stress tests A–H + Reserva Recomendada + `McrfAssessment` versionado (§31/§35/§48) | 9-A.2, 9-A.3 |
+| **9-A.5** | Telas: reserva, explicação, stress test visual, mapa de riscos (§39/§41/§42/§56) | 9-A.4 |
+| **9-A.6** | Simulador "E se?", plano de construção, protocolo de recomposição (§43/§44/§45) | 9-A.5 |
+| **9-A.7** | PSF passa a consumir MCRF em Proteção e Liquidez | 9-A.4 |
+
+**Reuso confirmado no código — três peças centrais da especificação já existiam
+com outro nome**, o que encurta muito o caminho: `Subcategory.macroBloco`
+(Etapa 1) **é** o eixo de classificação do CEMA (§11);
+`funcaoPatrimonial` (Etapa 7) **é** a classificação de liquidez (§29);
+`Person` + `Entry.responsibleId` **são** a estrutura familiar e a atribuição de
+renda por pessoa (§7.2/§32). `WalletKind.isLiability` já exclui crédito, que
+§29.5 proíbe contar como reserva.
+
+**Seis divergências encontradas na especificação e as decisões tomadas** (§58
+manda não implementar silenciosamente; cada uma preserva o objetivo de negócio):
+
+1. **§33 dimensiona a reserva por soma de déficits mensais já pisados em zero.**
+   Isso ignora que superávit de um mês financia déficit de outro e superestima a
+   necessidade. Reserva é estoque, não fluxo — adotado o **pico de saldo
+   acumulado negativo** (máximo drawdown). Quando todos os meses são
+   deficitários os dois coincidem, então nunca reduz conservadorismo.
+2. **§30 multiplica três fatores** (`liquidez × estabilidade × disponibilidade`):
+   0,8³ = 0,51 destruiria a elegibilidade de um ativo apenas levemente
+   restrito. Mantido o modelo multiplicativo (é explicável), com fatores
+   calibrados e piso por classe, versionados em `MethodologyConfig`.
+3. **IPRF colidiria com o PSF já em produção** — Liquidez, Proteção e
+   Endividamento medem quase o mesmo. Dois scores de saúde divergentes e nenhum
+   com autoridade. Decisão: **o IPRF não vira segundo score de capa**; ele
+   alimenta os indicadores do PSF e aparece decomposto dentro de Proteção e
+   Segurança.
+4. **Reserva Recomendada colidiria com `Goal`.** O projeto já teve bug por
+   calcular meta de reserva paralela à `Goal` real ("nunca um número paralelo",
+   comentário em `painel/page.tsx`). Decisão: MCRF produz **recomendação**;
+   `Goal` segue fonte de verdade única do alvo; a tela mostra os dois e oferece
+   ação explícita de **adotar a recomendação**.
+5. **Margem dupla entre §35 e §37.** Se o cenário H (combinado) já está no
+   `max()`, Proteção Reforçada = Recomendada e o terceiro nível some. Decisão:
+   Essencial = PLI; **Recomendada = max(PLI, cenários materiais incluindo H) ×
+   (1 + margem)**; Reforçada = margem elevada e horizonte estendido.
+6. **HHI (§17) e correlação (§18) medem faceta sobreposta.** Penalizar por
+   ambos conta a mesma vulnerabilidade duas vezes. Decisão: a **correlação
+   ajusta a renda resiliente dentro do cenário**; o HHI fica só como diagnóstico
+   no IPRF, fora da conta da reserva.
+
+**Detalhe de implementação que a especificação não menciona e erra a maioria das
+implementações:** ao calcular o CEMA (§11.4), a despesa anual precisa ser
+**removida da série mensal antes** da mediana e reintroduzida como duodécimo —
+senão ela conta duas vezes no mês em que ocorreu.
+
+**Pendência de negócio para a 9-A.3:** §11.1–11.3 exige três níveis (rígida,
+ajustável, discricionária) e o sistema tem quatro blocos que cortam diferente —
+`ESSENCIAL` não distingue moradia (rígida) de alimentação (ajustável), e é
+exatamente essa distinção que separa CEMA de CCM. Precisa de decisão do usuário
+antes de codar, não de escolha técnica.
+
+**Etapa 9-A.1 — status: implementada e verificada, em produção (Registro Nº
+077).** `RegimeTrabalho` (os 15 valores de §19), `SegundaAtividadeNivel` (§21.1–
+21.4), `IncomeSourceKind`, `Person` estendida e `IncomeSource` novo — tudo
+aditivo e nulo por padrão. `lib/method/mcrf/config.ts` centraliza a versão da
+metodologia e os parâmetros (§52: nenhum número mágico); `income-observation.ts`
+mede mediana, pior mês, meses sem renda, variabilidade e HHI a partir do `Entry`
+real. **Mediana e não média, por decisão registrada em teste**: 5 meses de
+R$ 5.000 mais um 13º de R$ 20.000 dá mediana 5.000 e média 7.500 — a média
+superestimaria em 50% a renda tida como resiliente e produziria reserva
+insuficiente. Tela `/protecao/perfil` no menu novo **Proteção e Segurança**,
+que aplica §6 literalmente: a renda **não é perguntada**, é exibida como
+observada, e o formulário só pede o que o extrato não revela.
+
 **Etapa 7 — status: implementada e verificada contra o banco de dev (Registros Nº
 073 e Nº 074), abre o Bloco II.** `FuncaoPatrimonial` (7 valores) como campo opcional
 em `Asset`/`Investment`/`Wallet` — eixo de estoque, independente do `MacroBloco`

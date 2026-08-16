@@ -58,6 +58,10 @@ const MAX_FEATURES: Record<string, string> = {
   seguros_cadastro: "Cadastro de apólices de seguro",
   patrimonio_funcao: "Classificação funcional do patrimônio",
   automacoes: "Automações",
+  /// PROSPECTA-MCRF (Etapa 9-A) — perfil de risco, reserva recomendada e stress
+  /// tests. O mapa de riscos e o plano de tratamento ficam em `mrp_completo`
+  /// (camada de método, exige consultor ativo) — decisão do usuário, 2026-08-16.
+  reserva_inteligente: "Reserva de Emergência inteligente e stress tests",
 };
 
 const METODO_FEATURES: Record<string, string> = {
