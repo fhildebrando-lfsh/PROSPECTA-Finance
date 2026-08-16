@@ -95,9 +95,16 @@ rotacionar, mesmo que pareça improvável de ter vazado.
 5. **Aplicar o SQL manual pendente** (`prisma/sql/*.sql`), se houver.
 
 - **Gerenciadas pelo Prisma:** `npx prisma migrate dev` (local) gera e aplica. **Neste
-  ambiente `prisma migrate dev` trava** — o fluxo em uso é escrever o `migration.sql` à mão
-  seguindo as convenções que o Prisma geraria, aplicar via script `pg` descartável dentro de
-  uma transação, registrar a linha em `_prisma_migrations` e apagar o script.
+  ambiente `prisma migrate dev` e `prisma migrate status` travam** — o fluxo em uso é
+  escrever o `migration.sql` à mão seguindo as convenções que o Prisma geraria, aplicar via
+  script `pg` descartável dentro de uma transação, registrar a linha em
+  `_prisma_migrations` e apagar o script.
+- **Ao registrar a linha à mão, gravar o `checksum` — não deixar vazio.** O Prisma valida
+  esse campo e acusa "migration modificada depois de aplicada" quando ele não bate. A
+  fórmula (confirmada empiricamente contra migrations que o próprio Prisma aplicou) é o
+  **SHA-256 dos bytes do arquivo `migration.sql` como estão em disco**:
+  `createHash("sha256").update(readFileSync(path)).digest("hex")`. Oito migrations do Bloco
+  I foram registradas com checksum vazio e tiveram de ser corrigidas depois (2026-08-16).
 - **SQL manual (RLS, triggers em `auth.users`)** — não gerenciado pelo Prisma, vive em
   `prisma/sql/*.sql`, aplicado com `prisma db execute --file <arquivo>` ou script `pg`.
   Ordem importa — seguir a numeração (`001_...` a `011_...`). **Estes arquivos não têm
