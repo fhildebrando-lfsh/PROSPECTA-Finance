@@ -108,6 +108,27 @@ describe("computeExpenseBaseline — CEMA e CCM", () => {
     expect(r.monthsObserved).toBe(12);
   });
 
+  /**
+   * Regressão do bug achado por teste de integração em 2026-08-16: a janela de
+   * 12 meses preenchia com zero os meses anteriores ao primeiro lançamento, e a
+   * mediana de `[0,0,0,0,0,0,X,X,X,X,X,X]` dava **metade** do custo real.
+   * Subestimaria a reserva de todo usuário novo — quem mais precisa acertar.
+   */
+  it("histórico curto não corta o custo essencial pela metade", () => {
+    const seisMeses = todoMes(3000, 6, "RIGIDA");
+    const r = computeExpenseBaseline(seisMeses, HOJE, 12, 30);
+
+    expect(r.cema.toString()).toBe("3000"); // e não 1500
+    expect(r.monthsObserved).toBe(6);
+  });
+
+  it("a janela recortada reduz a confiança, como §11 manda", () => {
+    const doze = computeExpenseBaseline(todoMes(1000, 12, "RIGIDA"), HOJE, 12, 30);
+    const seis = computeExpenseBaseline(todoMes(1000, 6, "RIGIDA"), HOJE, 12, 30);
+    expect(doze.confidence).toBe("MUITO_ALTA");
+    expect(seis.confidence).toBe("ALTA");
+  });
+
   it("pouco histórico derruba a confiança sem impedir o cálculo", () => {
     const r = computeExpenseBaseline(todoMes(1000, 2, "RIGIDA"), HOJE, 2, 30);
     expect(r.confidence).toBe("BAIXA");

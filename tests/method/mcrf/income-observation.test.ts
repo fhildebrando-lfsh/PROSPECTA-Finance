@@ -40,10 +40,28 @@ describe("observeIncomeByPerson", () => {
   });
 
   it("conta meses sem renda — sinal de intermitência", () => {
+    // Primeiro recebimento há 3 meses: a janela observada começa ali, e o mês 2
+    // (sem renda entre os dois) é o único buraco real.
     const entries = [receita("p1", 6000, 1), receita("p1", 6000, 3)];
     const [obs] = observeIncomeByPerson(entries, ["p1"], HOJE, 4);
-    expect(obs.monthsWithoutIncome).toBe(2);
-    expect(obs.monthsObserved).toBe(4);
+    expect(obs.monthsWithoutIncome).toBe(1);
+    expect(obs.monthsObserved).toBe(3);
+  });
+
+  /**
+   * Regressão do bug achado por teste de integração em 2026-08-16: preencher
+   * com zero os meses anteriores ao primeiro recebimento derrubava a mediana
+   * pela metade. Quem tinha 6 meses de histórico numa janela de 12 parecia
+   * ganhar metade do que ganha — e isso subdimensionaria a reserva de todo
+   * usuário novo, justamente quem mais precisa do número certo.
+   */
+  it("histórico curto não corta a renda pela metade", () => {
+    const seisMeses = [1, 2, 3, 4, 5, 6].map((m) => receita("p1", 5000, m));
+    const [obs] = observeIncomeByPerson(seisMeses, ["p1"], HOJE, 12);
+
+    expect(obs.median.toString()).toBe("5000"); // e não 2500
+    expect(obs.monthsObserved).toBe(6);
+    expect(obs.monthsWithoutIncome).toBe(0);
   });
 
   it("registra o pior mês observado, não só a mediana", () => {
@@ -100,8 +118,10 @@ describe("observeIncomeByPerson", () => {
       HOJE,
       12,
     )[0];
+    // Intermitência de verdade: histórico longo (começa há 12 meses) com
+    // buracos no meio. Diferente de quem só começou a usar o sistema há pouco.
     const dozeComBuracos = observeIncomeByPerson(
-      [1, 2, 3].map((m) => receita("p2", 5000, m)),
+      [12, 10, 8, 6, 4, 2].map((m) => receita("p2", 5000, m)),
       ["p2"],
       HOJE,
       12,
@@ -111,6 +131,29 @@ describe("observeIncomeByPerson", () => {
     expect(doze.confidence).toBe("MUITO_ALTA");
     expect(dozeComBuracos.confidence).toBe("MODERADA");
     expect(curto.confidence).toBe("BAIXA");
+  });
+
+  /**
+   * A distinção que a correção da janela trouxe: renda intermitente e usuário
+   * novo produziam a mesma leitura antes, e são coisas muito diferentes.
+   */
+  it("distingue renda intermitente de histórico curto", () => {
+    const intermitente = observeIncomeByPerson(
+      [12, 10, 8, 6, 4, 2].map((m) => receita("p1", 5000, m)),
+      ["p1"],
+      HOJE,
+      12,
+    )[0];
+    const novo = observeIncomeByPerson(
+      [1, 2, 3].map((m) => receita("p2", 5000, m)),
+      ["p2"],
+      HOJE,
+      12,
+    )[0];
+
+    expect(intermitente.monthsWithoutIncome).toBeGreaterThan(0);
+    expect(novo.monthsWithoutIncome).toBe(0); // não tem buraco, só pouco histórico
+    expect(novo.monthsObserved).toBe(3);
   });
 });
 

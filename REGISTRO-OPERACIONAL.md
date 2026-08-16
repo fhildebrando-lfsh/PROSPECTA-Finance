@@ -2410,7 +2410,22 @@
 
 ---
 
-## Próximo número de registro: **082**
+### Registro Nº 082
+- **Data:** 2026-08-16
+- **Etapa concluída:** Etapa 9-A.5 — tela da Reserva de Emergência PROSPECTA, com correção de um bug grave achado na integração
+- **Descrição:** `lib/method/mcrf/run-assessment.ts` (novo, impuro) reúne o dado real de todas as fontes, chama os sete motores puros na ordem certa e devolve a avaliação pronta — mesmo padrão de `run-automations.ts`, com toda a lógica nos motores testáveis. **§18 sem perguntar:** a correlação de renda familiar é **inferida** comparando `IncomeSource.employerName` entre provedores; duas pessoas com o mesmo pagador recebem correlação 1 (uma renda não protege a outra), e a ausência de informação de pagador assume correlação moderada — §8 proíbe tratar dado ausente como afirmação de independência. Nova tela `/protecao/reserva` (gate `reserva_inteligente`, Max) seguindo §56: valor destacado com barra de progresso, custo essencial × custo de crise, cobertura matemática e cobertura no cenário, "Por que este valor?" com os fatores explicativos, painel de stress dos 10 cenários e a lista do que deixaria o cálculo mais preciso. §42 respeitado na linguagem — "proteção insuficiente", nunca alarmismo. O **IPRF e o mapa de riscos ficam atrás de `mrp_completo`** (camada de método, exige consultor), conforme a decisão comercial do usuário; quem tem só o Max vê a reserva e os cenários, e uma nota explicando que o plano de tratamento faz parte da consultoria. Botão "Salvar no histórico" grava um `McrfAssessment` versionado, nunca sobrescrevendo (§48).
+  **BUG GRAVE ENCONTRADO E CORRIGIDO — o custo essencial saía pela metade.** O teste de integração novo esperava CEMA de R$ 3.000 e recebeu R$ 1.500. Causa: com janela de 12 meses e apenas 6 meses de histórico, os motores preenchiam os 6 meses vazios com zero e tiravam a mediana de `[0,0,0,0,0,0,X,X,X,X,X,X]` — exatamente metade. §11 manda o contrário: *"caso haja menos dados, utilizar os meses disponíveis e reduzir a confiança da análise"*. **Consequência real:** todo usuário com menos de 12 meses de sistema — ou seja, praticamente todo usuário novo — receberia um custo essencial subestimado pela metade e, portanto, uma reserva insuficiente. Justamente quem mais precisa do número certo. Corrigido em `expense-engine.ts` e `income-observation.ts`: a janela passa a começar no primeiro mês com movimento (por pessoa, no caso da renda, para que um provedor que entrou depois não arraste a observação do outro). **Os testes unitários não pegaram porque sempre criavam dado para a janela inteira** — só a integração, com dado real e janela parcial, expôs. **Efeito colateral positivo da correção:** o motor passou a distinguir **renda intermitente** de **usuário novo**, que antes produziam a mesma leitura e são coisas muito diferentes.
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 571/571 (133 nos oito motores MCRF, incluindo dois testes de regressão dedicados ao bug da janela, um em cada motor); suíte de integração 18 arquivos / 81 testes, com `mcrf-assessment.test.ts` novo (6 casos) — entre eles **o teste que a análise da Etapa 9-A chamou de indispensável: dois perfis com o mesmo CEMA e riscos diferentes precisam produzir reservas diferentes**, senão a metodologia teria degenerado para o múltiplo fixo de despesa que ela existe para substituir (provado com CLT × militar, mesmo custo, reservas distintas); `npm run build` limpo, rota `/protecao/reserva` nova. Sem migration nesta etapa.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saídas de `tsc`/`npm test`/build; o próprio histórico de falha-diagnóstico-correção do teste de integração, preservado neste registro porque documenta um defeito que nenhum teste unitário pegaria.
+- **Observação de processo:** é a segunda vez nesta etapa que um teste falha por motivo diferente do esperado e expõe falha de modelagem, não de asserção (a primeira foi o desembolso imediato somado fora do drawdown, Registro Nº 081). Diagnosticar antes de ajustar o teste foi o que separou corrigir o código de mascarar o defeito.
+- **Pendente da Etapa 9-A:** 9-A.6 (simulador "E se?", plano de construção, protocolo de recomposição) e 9-A.7 (PSF passa a consumir MCRF).
+- **Documentos relacionados:** `PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md` §11/§18/§41/§42/§48/§56, `ARQUITETURA-METODO-PROSPECTAR.md` §6, `lib/method/mcrf/run-assessment.ts`, `app/(app)/protecao/reserva/`, `tests/integration/method/mcrf-assessment.test.ts`.
+
+---
+
+## Próximo número de registro: **083**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

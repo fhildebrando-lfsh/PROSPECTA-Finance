@@ -76,6 +76,35 @@ function confidenceFor(monthsObserved: number, temNaoClassificada: boolean): Con
 }
 
 /**
+ * §11 — "caso haja menos dados, utilizar os meses disponíveis e reduzir a
+ * confiança da análise". Recorta a janela para começar no primeiro mês com
+ * movimento, em vez de preencher com zero o período anterior ao uso do sistema.
+ *
+ * **Bug real que isto corrige (2026-08-16, achado por teste de integração):**
+ * sem o recorte, quem tinha 6 meses de histórico numa janela de 12 recebia a
+ * mediana de `[0,0,0,0,0,0,X,X,X,X,X,X]` — ou seja, **metade** do custo
+ * essencial real. Isso subestimaria a reserva de todo usuário novo, que é
+ * justamente quem mais precisa de um número correto. Os testes unitários não
+ * pegaram porque sempre criavam dado para a janela inteira.
+ */
+function janelaObservada(
+  entries: ExpenseEntry[],
+  periods: { start: Date; end: Date }[],
+): { start: Date; end: Date }[] {
+  const comMovimento = entries.filter((e) => !e.isPeriodic);
+  if (comMovimento.length === 0) return periods;
+
+  const primeiro = comMovimento.reduce(
+    (min, e) => (e.dueDate < min ? e.dueDate : min),
+    comMovimento[0].dueDate,
+  );
+  const recortada = periods.filter((p) => p.end >= primeiro);
+  // Nunca devolve vazio: se todo lançamento é mais recente que a janela, o mês
+  // mais próximo ainda representa a observação disponível.
+  return recortada.length > 0 ? recortada : periods.slice(0, 1);
+}
+
+/**
  * Mediana mensal de um grupo de despesas, ignorando as periódicas.
  *
  * **Mediana e não média** (§11.4): um mês com uma despesa médica atípica
@@ -112,9 +141,13 @@ export function computeExpenseBaseline(
   const refMonth = referenceDate.getUTCMonth();
   // Meses fechados — o corrente ainda está em curso e entraria como queda
   // artificial de despesa (mesma convenção de lib/finance/reserve.ts).
-  const periods = Array.from({ length: Math.max(0, monthsBack) }, (_, i) => monthRange(refYear, refMonth - (i + 1)));
+  const janelaCompleta = Array.from({ length: Math.max(0, monthsBack) }, (_, i) =>
+    monthRange(refYear, refMonth - (i + 1)),
+  );
 
   const despesas = entries.filter((e) => e.nature === "DESPESA" && SETTLED_STATUSES.has(e.status));
+  // §11 — usa só os meses efetivamente disponíveis; ver `janelaObservada`.
+  const periods = janelaObservada(despesas, janelaCompleta);
 
   const rigidas = despesas.filter((e) => e.rigidez === "RIGIDA");
   const ajustaveis = despesas.filter((e) => e.rigidez === "AJUSTAVEL");

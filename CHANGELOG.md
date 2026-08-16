@@ -16,6 +16,13 @@
 
 ## 2026-08-16
 
+### Adicionado (Registro Nº 082)
+- **Proteção e Segurança → Reserva de Emergência** (nova tela, plano Max): sua Reserva Recomendada PROSPECTA, com barra de progresso, quanto você já tem e quanto falta. Mostra seu custo essencial de hoje ao lado do custo durante uma crise, por quantos meses sua reserva cobriria cada um, e um painel com os dez cenários simulados indicando onde você está protegido e onde não está.
+- **"Por que este valor?"**: em vez de despejar matemática, a tela explica em poucas linhas o que mais pesou no seu caso — e lista o que você poderia preencher para o cálculo ficar mais preciso.
+
+### Corrigido (Registro Nº 082)
+- **O custo essencial saía pela metade para quem tem menos de um ano de sistema.** O cálculo considerava doze meses e tratava os meses anteriores ao seu primeiro lançamento como se você não tivesse gasto nada, derrubando a mediana. Agora ele usa só os meses que você realmente tem, e avisa quando o histórico é curto. Isso afetaria a reserva de praticamente todo usuário novo.
+
 ### Adicionado (Registro Nº 081)
 - **O cálculo da Reserva Recomendada está pronto** (interno; as telas vêm na próxima etapa). O sistema simula dez cenários adversos mês a mês — perda de renda, redução parcial, incapacidade, emergência com o carro ou a casa, emergência familiar, queda de faturamento e o choque combinado — e mede quanta liquidez cada um consumiria até a recuperação. A reserva é o maior entre esses cenários e um piso mínimo de liquidez, com margem maior quando faltam dados no seu perfil.
 - Cada cálculo é guardado com a versão da metodologia que o produziu, para que comparar sua evolução ao longo do tempo continue fazendo sentido.

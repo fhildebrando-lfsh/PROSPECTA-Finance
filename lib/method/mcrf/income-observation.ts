@@ -75,12 +75,28 @@ export function observeIncomeByPerson(
   const refYear = referenceDate.getUTCFullYear();
   const refMonth = referenceDate.getUTCMonth();
 
-  const periods = Array.from({ length: Math.max(0, monthsBack) }, (_, i) => monthRange(refYear, refMonth - (i + 1)));
+  const janelaCompleta = Array.from({ length: Math.max(0, monthsBack) }, (_, i) =>
+    monthRange(refYear, refMonth - (i + 1)),
+  );
 
   const settledIncome = entries.filter((e) => e.nature === "RECEITA" && SETTLED_STATUSES.has(e.status));
 
   return personIds.map((personId) => {
     const mine = settledIncome.filter((e) => e.responsibleId === personId);
+
+    /**
+     * §11/§15 — janela recortada ao histórico realmente disponível desta
+     * pessoa. Preencher com zero os meses anteriores ao primeiro recebimento
+     * derrubaria a mediana pela metade e faria o motor tratar como intermitente
+     * quem simplesmente começou a usar o sistema há pouco. Mesmo bug corrigido
+     * em `expense-engine.ts` na mesma rodada (2026-08-16).
+     *
+     * A janela é **por pessoa**: um provedor que entrou na família depois não
+     * deve arrastar a observação do outro para baixo.
+     */
+    const primeiro = mine.length > 0 ? mine.reduce((min, e) => (e.dueDate < min ? e.dueDate : min), mine[0].dueDate) : null;
+    const recortada = primeiro ? janelaCompleta.filter((p) => p.end >= primeiro) : janelaCompleta;
+    const periods = recortada.length > 0 ? recortada : janelaCompleta.slice(0, 1);
 
     const monthly = periods.map((p) =>
       mine.filter((e) => isWithin(e.dueDate, p.start, p.end)).reduce((sum, e) => sum.plus(e.amount), new Decimal(0)),

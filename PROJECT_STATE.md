@@ -15,7 +15,68 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-16 (Etapa 9-A.4 — stress tests, Reserva
+> **Última atualização real: 2026-08-16 (Etapa 9-A.5 — tela da Reserva, e um
+> bug grave corrigido — Registro Nº 082).**
+>
+> `run-assessment.ts` (impuro) reúne o dado real, chama os sete motores puros e
+> devolve a avaliação. Tela `/protecao/reserva` no ar (gate
+> `reserva_inteligente`), seguindo §56. IPRF e mapa de riscos ficam atrás de
+> `mrp_completo` — quem tem só o Max vê reserva e cenários; o plano de
+> tratamento é consultoria, conforme a decisão comercial.
+>
+> **§18 sem perguntar:** a correlação de renda familiar é **inferida**
+> comparando `IncomeSource.employerName` entre provedores. Mesmo pagador →
+> correlação 1 (uma renda não protege a outra). Sem informação de pagador,
+> assume correlação moderada — §8 proíbe tratar dado ausente como afirmação de
+> independência.
+>
+> ---
+>
+> **BUG GRAVE, e o mais importante desta etapa: o custo essencial saía pela
+> metade.**
+>
+> O teste de integração novo esperava CEMA de R$ 3.000 e recebeu R$ 1.500. Com
+> janela de 12 meses e 6 meses de histórico, os motores preenchiam os meses
+> vazios com zero e tiravam a mediana de `[0,0,0,0,0,0,X,X,X,X,X,X]` —
+> exatamente metade. §11 manda o contrário: *"caso haja menos dados, utilizar
+> os meses disponíveis e reduzir a confiança"*.
+>
+> **Quem seria afetado:** todo usuário com menos de 12 meses de sistema — ou
+> seja, praticamente todo usuário novo — receberia custo essencial subestimado
+> pela metade e reserva insuficiente. Justamente quem mais precisa acertar.
+>
+> Corrigido em `expense-engine.ts` e `income-observation.ts`: a janela começa
+> no primeiro mês com movimento (por pessoa, no caso da renda, para que um
+> provedor que entrou depois não arraste a observação do outro).
+>
+> **Por que os testes unitários não pegaram:** eles sempre criavam dado para a
+> janela inteira. Só a integração, com dado real e janela parcial, expôs. Há
+> agora teste de regressão dedicado em cada motor.
+>
+> **Efeito colateral positivo:** o motor passou a distinguir **renda
+> intermitente** de **usuário novo** — antes produziam a mesma leitura, e são
+> coisas muito diferentes.
+>
+> ---
+>
+> **O teste que a análise chamou de indispensável está no ar:** dois perfis com
+> o mesmo CEMA e riscos diferentes produzem reservas diferentes (CLT × militar,
+> mesmo custo, reservas distintas). Sem ele, a metodologia poderia ter
+> degenerado para o múltiplo fixo de despesa que ela existe para substituir, e
+> ninguém notaria.
+>
+> **Verificado:** `tsc` limpo, 571/571 unitários (133 nos oito motores MCRF),
+> 81/81 integração, build limpo. Sem migration nesta etapa.
+>
+> **Nota de processo:** segunda vez nesta etapa que um teste falha por motivo
+> diferente do esperado e expõe falha de **modelagem**, não de asserção.
+> Diagnosticar antes de ajustar o teste foi o que separou corrigir o código de
+> mascarar o defeito.
+>
+> **Falta na 9-A:** 9-A.6 (simulador "E se?", plano de construção, protocolo de
+> recomposição) e 9-A.7 (PSF consumindo MCRF).
+>
+> **Última atualização anterior: 2026-08-16 (Etapa 9-A.4 — stress tests, Reserva
 > Recomendada e `McrfAssessment` — Registro Nº 081).**
 >
 > A etapa em que os seis motores anteriores se encontram e um número sai.
