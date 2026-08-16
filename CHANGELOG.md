@@ -16,6 +16,10 @@
 
 ## 2026-08-16
 
+### Adicionado (Registro Nº 079)
+- **Admin → Metodologia** (nova tela, só administrador): controla os parâmetros do cálculo de risco para todo o sistema. Define quanto uma despesa ajustável encolhe durante uma crise (padrão 30%) e classifica cada despesa como **rígida** (contrato que não cede, como aluguel e mensalidade), **ajustável** (consumo que você controla, como supermercado e combustível) ou **discricionária** (pode suspender). Energia, água, gás, telefone e internet entram como rígidas, por escolha conservadora.
+- Essa classificação é o que separa "quanto sua vida custa hoje" de "quanto custaria durante uma crise" — e é a segunda medida que dimensiona a reserva de emergência, não a primeira.
+
 ### Adicionado (Registro Nº 078)
 - **Proteção e Segurança → Seguros** (nova tela, plano Max): cadastre suas apólices e, dentro de cada uma, as coberturas — com franquia, carência e, principalmente, **quanto tempo leva até a indenização cair na conta**. Esse último dado é o que o cálculo da reserva mais precisa: um seguro que paga em 60 dias não resolve a conta que vence semana que vem.
 - **Proteção e Segurança → Proteções e Benefícios** (nova tela, plano Max): FGTS, seguro-desemprego, auxílio-doença, licenças e benefícios do empregador, com valor, duração e prazo até o recebimento. As opções mudam conforme o regime de trabalho de cada pessoa — quem é servidor ou militar não tem as proteções típicas de CLT, e o sistema explica isso em vez de simplesmente omitir.

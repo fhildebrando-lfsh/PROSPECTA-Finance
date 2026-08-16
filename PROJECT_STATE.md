@@ -15,7 +15,54 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-16 (Etapa 9-A.2 — seguros e proteções —
+> **Última atualização real: 2026-08-16 (Etapa 9-A.3 parte 1 — rigidez,
+> parâmetros globais e motor CEMA/CCM — Registro Nº 079).**
+>
+> Implementa a decisão de negócio do usuário sobre §11.1–11.3: **rígida** =
+> contrato de valor fixo que se paga mesmo sem usar; **ajustável** = essencial
+> cujo consumo a pessoa controla; **discricionária** = pode ser suspensa.
+> Exceção explícita dele: energia, água, gás, telefone e internet como
+> **rígidas** — tecnicamente são consumo, mas comprimem pouco, e a escolha erra
+> de propósito para reserva maior. Redução das ajustáveis: **30%**.
+>
+> **Governança que mudou a arquitetura:** o usuário decidiu que rigidez e
+> percentual são **globais e só o admin da plataforma altera**. Isso impediu a
+> solução óbvia (constante em `config.ts`), porque constante só muda com
+> deploy. Virou `MethodologyParameter` (tabela), com o `config.ts` como padrão
+> inicial e fallback — se a tabela não tiver o registro, o motor funciona
+> mesmo assim. Tela `/admin/metodologia` nova, guardada por
+> `requireAdminProfile()`, o mesmo de `/admin/planos`.
+>
+> **Seed por lista de exceções, não por planilha.** As 30 rígidas estão
+> enumeradas em `prisma/seed-rigidez.ts` e todo o resto do ESSENCIAL deriva
+> para AJUSTAVEL. Uma planilha de 285 linhas seria mais difícil de auditar e de
+> manter coerente com a regra. O seed **avisa se um slug da lista não existir**
+> na taxonomia — sem isso, um erro de digitação viraria "ajustável" em
+> silêncio. Distribuição idêntica em dev e produção: 39/98/145.
+>
+> **`expense-engine.ts` — CEMA e CCM.** A diferença entre os dois é o que
+> dimensiona a reserva: usar o CEMA infla (você guardaria para sustentar um
+> padrão que não manteria desempregado); assumir que tudo é cortável
+> subdimensiona e é irreal.
+>
+> **Correção de um erro que a especificação não menciona:** despesa periódica
+> (IPVA, IPTU) é removida da série mensal **antes** da mediana e reintroduzida
+> como duodécimo. Deixá-la na série faria contar duas vezes no mês em que
+> ocorreu — há teste dedicado a isso.
+>
+> **Escolha conservadora deliberada:** essencial sem classificação de rigidez
+> entra como **rígida** e reduz a confiança da análise. Assumir que comprime
+> reduziria a reserva com base em decisão que ninguém tomou.
+>
+> **Verificado:** `tsc` limpo, 491/491 unitários (14 novos), 75/75 integração,
+> build limpo. Migration e seed aplicados em produção **antes do código**,
+> checksum idêntico ao de dev, 338 subcategorias e 2279 lançamentos intactos.
+> Conferência dirigida: 11 de 11 subcategorias-amostra na classificação
+> esperada.
+>
+> **Falta para fechar a 9-A.3:** liquidez elegível (§29/§30) e IPP (§20).
+>
+> **Última atualização anterior: 2026-08-16 (Etapa 9-A.2 — seguros e proteções —
 > Registro Nº 078).**
 >
 > Segunda entrega da Etapa 9-A. `InsurancePolicy`, `InsuranceCoverage` e

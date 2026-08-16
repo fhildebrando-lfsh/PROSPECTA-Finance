@@ -486,6 +486,11 @@ model Subcategory {
   /// naturezas e em subcategorias de DESPESA ainda não classificadas (seed
   /// inicial em seeds/seed_macro_blocos.csv cobre as 285 existentes).
   macroBloco  MacroBloco? @map("macro_bloco")
+  /// PROSPECTA-MCRF §11.1–11.3 (Etapa 9-A.3) — ver enum `Rigidez`. Eixo
+  /// independente do `macroBloco`, e é ele que separa CEMA de CCM. Global e
+  /// admin-only (decisão do usuário, 2026-08-16): editável em
+  /// `/admin/metodologia`, nunca por workspace.
+  rigidez     Rigidez?    @map("rigidez")
   createdAt   DateTime @default(now()) @map("created_at")
 
   category         Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -507,6 +512,50 @@ enum MacroBloco {
   ESTILO_DE_VIDA
   OBRIGACAO
   POUPANCA
+}
+
+/// §11.1–11.3 da especificação PROSPECTA-MCRF — como a despesa se comporta
+/// quando a renda aperta. Eixo **independente** do `MacroBloco`: aluguel e
+/// supermercado são os dois ESSENCIAL (e corretamente), mas um não cede e o
+/// outro comprime — e é essa diferença que separa o CEMA (custo essencial
+/// normal) do CCM (custo durante a crise).
+///
+/// Regra aprovada pelo usuário em 2026-08-16:
+/// - RIGIDA = contrato de valor fixo que se paga mesmo sem usar;
+/// - AJUSTAVEL = essencial cujo consumo a pessoa controla;
+/// - DISCRICIONARIA = pode ser suspensa (o `ESTILO_DE_VIDA` de hoje).
+///
+/// Exceção explícita do usuário: Energia, Água, Gás, Telefone e Internet ficam
+/// como RIGIDA, apesar de tecnicamente serem consumo — a compressão real é
+/// pequena e a escolha erra deliberadamente para reserva maior.
+enum Rigidez {
+  RIGIDA
+  AJUSTAVEL
+  DISCRICIONARIA
+}
+
+/// §52 — parâmetros da metodologia, centralizados e versionados. Existe porque
+/// o usuário decidiu (2026-08-16) que estes números são **globais e editáveis
+/// somente pelo administrador da plataforma**, valendo para todo o sistema:
+/// dois clientes com o mesmo dado precisam receber a mesma recomendação, então
+/// não pode ser configuração por workspace.
+///
+/// Sem tabela, o número viveria como constante em código e só mudaria com
+/// deploy — o oposto do que foi pedido. `lib/method/mcrf/config.ts` continua
+/// definindo o **padrão inicial e o fallback**; esta tabela é a sobreposição.
+model MethodologyParameter {
+  /// Chave estável, ex.: "ccm.reducao_ajustavel_pct". Nunca renomeada — o motor
+  /// depende dela, e renomear silenciosamente faria o valor voltar ao padrão.
+  key         String   @id
+  value       Decimal  @db.Decimal(14, 4)
+  label       String
+  description String?
+  /// Profile do admin que alterou por último — auditoria mínima, mesmo espírito
+  /// de `HealthSnapshot.reviewedBy`.
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("methodology_parameters")
 }
 
 /// §13.4 da Metodologia PROSPECTA v5.0 (ARQUITETURA-METODO-PROSPECTAR.md §5.1,

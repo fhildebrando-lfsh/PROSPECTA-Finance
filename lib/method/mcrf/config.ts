@@ -25,6 +25,23 @@ export const OBSERVATION_MONTHS_MINIMUM = 6;
  */
 export type ConfiancaAnalise = "MUITO_ALTA" | "ALTA" | "MODERADA" | "BAIXA";
 
+/**
+ * §11.2/§12 — quanto uma despesa **ajustável** encolhe durante a crise.
+ *
+ * Este é o **padrão inicial e o fallback**, não a fonte de verdade: o valor
+ * vigente vive em `MethodologyParameter` (`ccm.reducao_ajustavel_pct`), porque
+ * o usuário decidiu em 2026-08-16 que o número é global e editável só pelo
+ * admin da plataforma. Se a tabela não tiver o registro, o motor usa este valor
+ * e continua funcionando — nunca falha por falta de configuração.
+ *
+ * 30% foi a escolha do usuário: corte real, sem a fantasia de que dá para viver
+ * com metade da comida. Rígida não cede; discricionária zera.
+ */
+export const CCM_REDUCAO_AJUSTAVEL_PCT_PADRAO = 30;
+
+/** Chaves dos parâmetros — string solta espalhada pelo código vira typo silencioso. */
+export const PARAM_CCM_REDUCAO_AJUSTAVEL = "ccm.reducao_ajustavel_pct";
+
 /** §8 — origem do dado. Inferido nunca é tratado como fato confirmado. */
 export type DataSource = "SYSTEM_OBSERVED" | "USER_DECLARED" | "OFFICIAL_EXTERNAL_DATA" | "SYSTEM_INFERRED";
 

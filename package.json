@@ -12,6 +12,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:workspace": "tsx prisma/seed-workspace.ts",
     "db:seed:plans": "tsx prisma/seed-plans.ts",
+    "db:seed:rigidez": "tsx prisma/seed-rigidez.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",

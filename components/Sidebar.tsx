@@ -48,6 +48,7 @@ import {
   IdCard,
   Umbrella,
   HandCoins,
+  SlidersHorizontal,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -91,6 +92,7 @@ const ADMIN_ITEMS: NavLeaf[] = [
   { href: "/admin/clientes", label: "Clientes", icon: UserPlus },
   { href: "/admin/consultores", label: "Consultores", icon: Network },
   { href: "/admin/planos", label: "Planos", icon: Tags },
+  { href: "/admin/metodologia", label: "Metodologia", icon: SlidersHorizontal },
 ];
 
 const CARTOES_ITEMS: NavLeaf[] = [
