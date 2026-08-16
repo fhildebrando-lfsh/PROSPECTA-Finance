@@ -15,7 +15,73 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-15 (Etapa 7 do Método — classificação
+> **Última atualização real: 2026-08-16 (Bloco I + Etapa 7 em produção, sem
+> pendências — Registros Nº 074 e Nº 075).**
+>
+> **Incidente que domina esta entrada: derrubei produção.** O push do Bloco I
+> foi publicado com as migrations aplicadas só no banco de dev.
+> `getCurrentProfile()` (`lib/auth/session.ts`) usa `include: { memberships }`
+> — o Prisma seleciona todas as colunas que conhece, inclusive
+> `advisor_can_write`, inexistente em produção. Como essa função roda em
+> **toda rota autenticada**, o sistema inteiro atrás do login caiu, não uma
+> tela. Restabelecido revertendo o deploy, com a árvore conferida como
+> byte-a-byte idêntica ao último estado bom antes de publicar; o banco de
+> produção nunca havia sido tocado, por isso a volta foi limpa.
+>
+> **A regra que saiu disso, agora no `RUNBOOK-OPERACIONAL.md` §5: banco antes
+> do código, sempre.** E ela é segura justamente porque migration aditiva é
+> inerte para o código antigo — o Prisma Client antigo não conhece a coluna
+> nova e não a seleciona. Dá pra migrar, verificar com calma, e só então
+> deployar.
+>
+> **Subida refeita na ordem certa:** inspeção somente-leitura → 8 migrations
+> em transação única → `seed-plans` → `seed.ts` → deploy → `prisma/sql/011`.
+> Produção: 9 workspaces, 2278 lançamentos, 53 carteiras, 11 memberships,
+> tudo intacto em cada passo.
+>
+> **A inspeção prévia pegou uma regressão que nenhum teste pegaria**, porque
+> dependia do estado real do banco: 4 workspaces tinham `Subscription`
+> LEGACY_INTERNAL ativa, e o catálogo antigo de produção não tinha
+> `multi_seat_5` — `hasSeatAvailable()` resolveria `cap = 1` com o assento já
+> ocupado pelo titular, **impedindo esses 4 de convidar qualquer pessoa**.
+> `seed-plans` deixou de ser cosmético e virou parte obrigatória da subida.
+>
+> **`seed.ts` completo em produção, com rede de proteção.** O risco era o
+> upsert reverter nome de categoria editado à mão pelo admin. Mitigado com
+> foto da taxonomia antes e depois: **0 categorias alteradas, 0 subcategorias
+> alteradas fora de `macro_bloco`**, 282 classificadas. O risco não se
+> materializou, mas só dá pra afirmar isso porque a foto foi tirada.
+>
+> **Pendência encontrada ao varrer o fechamento:**
+> `prisma/sql/011_advisor_write_grant.sql` estava aplicado só em dev — as
+> policies de RLS de produção ainda concediam escrita a ADVISOR enquanto a
+> aplicação já revogava. Aplicado (24 policies `using` + 12 `with check`).
+> Esses arquivos **não têm controle de "já aplicado"**; a conferência agora
+> está no runbook.
+>
+> **Mudança de comportamento real, informada e aprovada antes:** os 4
+> consultores ativos ficaram somente-leitura (`advisor_can_write` nasce
+> `false`). Escrita se concede em `/admin/usuarios`.
+>
+> **Correções da Etapa 7 antes da subida (Registro Nº 074), achadas por
+> revisão adversarial depois de eu dar a etapa por fechada:** dupla contagem
+> (R$ 10.000 exibidos como R$ 20.000), percentual invertido com patrimônio
+> negativo, e a pseudo-carteira interna aparecendo como classificável. Ver a
+> entrada da Etapa 7 mais abaixo para o detalhe do erro de análise.
+>
+> **Verificado:** `tsc` limpo, `npm test` 423/423, integração 16 arquivos / 70
+> testes, `npm run build` limpo. Em produção, verificação objeto a objeto,
+> workspace a workspace e diff de taxonomia. Site respondendo após o deploy.
+> **Não verificado por navegação real logada** — injeção de cookie de sessão
+> bloqueada pelo classificador de permissão do ambiente; sem tentativa de
+> contornar.
+>
+> **Pendência aberta, fora do meu alcance:** `CRON_SECRET` precisa ser criada
+> nas env vars da Vercel para as automações dispararem. Sem ela a rota
+> responde 401 — o app não quebra, só não alerta. É segredo de produção;
+> quem define é o Felipe.
+>
+> **Última atualização anterior: 2026-08-15 (Etapa 7 do Método — classificação
 > funcional do patrimônio, abre o Bloco II — Registro Nº 073).** Primeira
 > entrega do Bloco II (Camada de Método).
 >

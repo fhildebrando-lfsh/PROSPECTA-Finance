@@ -5,6 +5,7 @@ const TABS = [
   { href: "/patrimonio/bens", label: "Bens" },
   { href: "/patrimonio/metas", label: "Metas" },
   { href: "/patrimonio/dividas", label: "Dívidas" },
+  { href: "/patrimonio/funcao", label: "Função do Patrimônio" },
 ];
 
 export default async function PatrimonioLayout({ children }: { children: React.ReactNode }) {

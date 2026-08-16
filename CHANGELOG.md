@@ -14,6 +14,23 @@
 
 ---
 
+## 2026-08-16
+
+### Adicionado (Registro Nº 075)
+- **Tudo do Bloco I e da Etapa 7 entrou no ar.** Saúde Financeira, Assistente e Automações, Régua de Alocação, Função do Patrimônio, Planos (admin) e o acesso do consultor com escrita explícita passaram a existir em produção. A Régua já abre com as 282 subcategorias de despesa classificadas.
+- **Patrimônio → Função do Patrimônio** ganhou aba própria na seção Patrimônio (antes só aparecia no menu lateral).
+
+### Alterado (Registro Nº 075)
+- **Consultores agora começam sem permissão de escrita.** Quem já tinha acesso como consultor passou a somente-leitura; o titular (ou o administrador, em `/admin/usuarios`) concede escrita explicitamente quando quiser. Mudança de segurança planejada, não um efeito colateral.
+
+### Corrigido (Registro Nº 074)
+- **Função do Patrimônio: total inflado.** Dinheiro parado numa carteira de investimento era somado junto com as posições compradas com ele — R$ 10.000 apareciam como R$ 20.000. Agora o saldo da carteira desconta as posições que ela abriga, e o que sobra é o caixa ainda não investido.
+- **Função do Patrimônio: percentuais sem sentido** quando o patrimônio total ficava negativo (conta no cheque especial maior que o resto) — apareciam invertidos e acima de 100%.
+- **Função do Patrimônio:** a conta interna "Patrimônio" deixou de aparecer na lista como se fosse algo a classificar.
+
+### Corrigido — incidente (Registro Nº 075)
+- **Sistema fora do ar em 2026-08-15.** Uma publicação levou código novo ao ar sem preparar o banco de produção, e todas as telas depois do login passaram a dar erro. Restabelecido no mesmo dia voltando à versão anterior; nenhum dado foi afetado. A subida foi refeita depois com o banco preparado primeiro.
+
 ## 2026-08-15
 
 ### Adicionado (Registro Nº 073)

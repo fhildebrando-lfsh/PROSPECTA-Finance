@@ -1027,7 +1027,7 @@ dev real. Não implementado ainda: concessão direta pelo TITULAR do workspace (
 só o admin da plataforma concede/revoga, via `/admin/usuarios`) — extensão natural
 futura, fora do escopo desta correção.
 
-### Bloco I — Motor comercial e monetização imediata (Etapas 1–6) — ✅ fechado em 2026-08-15
+### Bloco I — Motor comercial e monetização imediata (Etapas 1–6) — ✅ fechado em 2026-08-15, **em produção desde 2026-08-16** (Registro Nº 075)
 
 Sustenta a diferença real entre Start/Pro/Max e liga o que já existe. Nenhuma
 depende de haver um cliente de consultoria.
@@ -1169,7 +1169,10 @@ carteira de passivo sai por `WalletKind.isLiability` e a pseudo-carteira interna
 "Patrimônio" por `isPseudoWallet`, nunca por lista de códigos na tela. **Limite de
 escopo deliberado:** a tela mostra a distribuição e não julga se está certa — opinar
 sobre composição é aconselhamento (§3.1/P2) e pertence ao `mfp_diagnostico` (feature
-de método, Etapa 14, exige consultor ativo). Verificação final na entrada da Etapa 8.
+de método, Etapa 14, exige consultor ativo).
+
+**Em produção desde 2026-08-16** (Registro Nº 075), junto com todo o Bloco I. `tsc` limpo,
+`npm test` 423/423, integração 16 arquivos / 70 testes, `npm run build` limpo.
 
 ### Bloco III — Entregáveis especializados do método (Etapas 11–15)
 
