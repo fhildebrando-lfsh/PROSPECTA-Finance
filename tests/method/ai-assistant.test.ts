@@ -132,6 +132,52 @@ describe("answerQuestion", () => {
     expect(result.answerText).toContain("5.000");
   });
 
+  /**
+   * Regressão de um defeito real visto em produção (2026-08-16): "Quanto eu
+   * tenho de investimentos?" batia em "quanto eu tenho" e era respondida com o
+   * SALDO TOTAL, enquanto "quais investimentos eu tenho?" respondia
+   * corretamente "não sei". Duas formas da mesma pergunta, dois
+   * comportamentos — e o errado era o que respondia com confiança.
+   */
+  it("não responde saldo para pergunta sobre investimentos", () => {
+    const context = baseContext({
+      entries: [makeEntry({ nature: "RECEITA", amount: new Decimal(1000) })],
+    });
+    const result = answerQuestion("Quanto eu tenho de investimentos?", context);
+
+    expect(result.intent).toBe("NAO_RECONHECIDA");
+    // A mensagem de recusa cita "saldo total" ao listar o que ele sabe responder;
+    // o que não pode acontecer é ele de fato responder com o valor.
+    expect(result.answerText).not.toContain("Seu saldo total hoje é");
+    expect(result.answerQuery).toBeNull();
+  });
+
+  it("trata as duas formas da mesma pergunta igual", () => {
+    const context = baseContext();
+    const a = answerQuestion("Quanto eu tenho de investimentos?", context);
+    const b = answerQuestion("quais investimentos eu tenho?", context);
+    expect(a.intent).toBe(b.intent);
+  });
+
+  it.each([
+    "quanto eu tenho de patrimônio?",
+    "qual minha dívida hoje?",
+    "quanto gastei no cartão?",
+    "qual a rentabilidade da carteira?",
+  ])("admite não saber em vez de responder outra coisa: %s", (pergunta) => {
+    const result = answerQuestion(pergunta, baseContext());
+    expect(result.intent).toBe("NAO_RECONHECIDA");
+    expect(result.answerQuery).toBeNull();
+  });
+
+  it("continua respondendo saldo quando a pergunta é mesmo sobre saldo", () => {
+    const context = baseContext({
+      entries: [makeEntry({ nature: "RECEITA", amount: new Decimal(1000) })],
+    });
+    expect(answerQuestion("quanto eu tenho?", context).intent).toBe("SALDO_TOTAL");
+    expect(answerQuestion("qual meu saldo?", context).intent).toBe("SALDO_TOTAL");
+  });
+
   it("retorna intent não reconhecida para pergunta fora do catálogo", () => {
     const result = answerQuestion("qual é o sentido da vida?", baseContext());
     expect(result.intent).toBe("NAO_RECONHECIDA");

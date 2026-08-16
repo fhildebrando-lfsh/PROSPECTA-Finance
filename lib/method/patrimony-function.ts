@@ -185,14 +185,25 @@ export function computeFunctionMap(items: PatrimonyItem[]): PatrimonyFunctionMap
 }
 
 /**
- * O "achado automático" de §13.4 — o que ainda não tem função definida,
+ * O "achado automático" de §13.4 — tudo que ainda não tem função definida,
  * maior valor primeiro (o que mais pesa no patrimônio é o que mais importa
- * classificar). Só itens com valor positivo: um bem já baixado a zero, ou uma
- * carteira zerada, não é um achado acionável — apontá-lo seria ruído numa
- * lista cujo propósito é dizer "olhe para isto".
+ * classificar).
+ *
+ * **Devolve todos os não classificados, inclusive os de valor zero ou
+ * negativo.** A primeira versão filtrava `value > 0` com o argumento de que
+ * carteira zerada não é achado acionável. O argumento era razoável isolado, mas
+ * criava um defeito na tela (2026-08-16): o card "Sem função definida" contava
+ * 51 itens e a lista logo abaixo mostrava 14 — dois números contraditórios,
+ * lado a lado, ambos corretos e impossíveis de conciliar olhando. Pior ainda
+ * como lista de trabalho: item fora daqui **não tem onde ser classificado**.
+ * A ordenação decrescente já resolve o ruído — o que importa fica no topo e o
+ * zerado afunda.
  */
 export function unclassifiedFindings(items: PatrimonyItem[]): PatrimonyItem[] {
-  return items
-    .filter((i) => i.funcao === null && i.value.greaterThan(0))
-    .sort((a, b) => b.value.comparedTo(a.value));
+  return items.filter((i) => i.funcao === null).sort((a, b) => b.value.comparedTo(a.value));
+}
+
+/** Contraparte de `unclassifiedFindings` — o que já tem função, maior valor primeiro. */
+export function classifiedItems(items: PatrimonyItem[]): PatrimonyItem[] {
+  return items.filter((i) => i.funcao !== null).sort((a, b) => b.value.comparedTo(a.value));
 }

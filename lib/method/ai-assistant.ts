@@ -62,6 +62,29 @@ function normalize(text: string): string {
     .trim();
 }
 
+/**
+ * Assuntos que o assistente **sabe que não sabe** responder. Checados antes de
+ * qualquer outro casamento de padrão, porque as frases naturais desses temas
+ * contêm as mesmas palavras dos temas suportados e roubariam a resposta.
+ *
+ * Bug real que originou esta lista (2026-08-16): "Quanto eu tenho de
+ * investimentos?" batia em `"quanto eu tenho"` e era respondida com o **saldo
+ * total** — enquanto "quais investimentos eu tenho?" caía corretamente em "não
+ * sei responder". A mesma pergunta, duas formas, dois comportamentos, e o
+ * errado era o que respondia com confiança. Num domínio financeiro, responder
+ * outra coisa é pior que admitir desconhecimento.
+ */
+const UNSUPPORTED_TOPICS = [
+  "investiment",
+  "patrimoni",
+  "divida",
+  "cartao",
+  "fatura",
+  "aporte",
+  "rentabilidade",
+  "orcamento",
+];
+
 const RECOMMENDATION_KEYWORDS = [
   "em que eu invisto",
   "onde eu invisto",
@@ -93,6 +116,16 @@ export function answerQuestion(question: string, context: AiAssistantContext): A
       intent: "RECOMENDACAO_RECUSADA",
       answerText:
         "Não posso recomendar um produto ou ativo específico — a PROSPECTA faz diagnóstico e organização, não indicação de investimento (isso é papel do profissional licenciado que você escolher). Posso te mostrar seus números (saldo, gasto por categoria, reserva) pra apoiar essa conversa.",
+      answerQuery: null,
+    };
+  }
+
+  // Antes de qualquer outro padrão — ver comentário de UNSUPPORTED_TOPICS.
+  if (UNSUPPORTED_TOPICS.some((topic) => q.includes(topic))) {
+    return {
+      intent: "NAO_RECONHECIDA",
+      answerText:
+        "Ainda não sei responder sobre esse assunto. Por enquanto posso te dizer: saldo total, quanto você recebeu ou gastou no mês (por categoria também), quanto falta pra sua reserva, e quantos incidentes estão pendentes.",
       answerQuery: null,
     };
   }

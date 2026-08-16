@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Decimal } from "@/lib/finance/types";
 import {
   buildPatrimonyItems,
+  classifiedItems,
   computeFunctionMap,
   unclassifiedFindings,
   FUNCOES,
@@ -209,14 +210,32 @@ describe("unclassifiedFindings", () => {
     expect(findings.map((f) => f.name)).toEqual(["maior", "menor"]);
   });
 
-  it("ignora item zerado — não é achado acionável", () => {
+  /**
+   * Mudança deliberada de comportamento (2026-08-16): antes filtrava valor > 0.
+   * O filtro criava dois números contraditórios na tela (card contava 51, lista
+   * mostrava 14) e, pior, deixava itens sem lugar nenhum onde classificar.
+   */
+  it("inclui item zerado — ele também precisa de um lugar onde ser classificado", () => {
     const findings = unclassifiedFindings([item({ funcao: null, value: new Decimal(0) })]);
-    expect(findings).toHaveLength(0);
+    expect(findings).toHaveLength(1);
   });
 
-  it("ignora item de valor negativo", () => {
-    const findings = unclassifiedFindings([item({ funcao: null, value: new Decimal(-50) })]);
-    expect(findings).toHaveLength(0);
+  it("inclui item de valor negativo, ordenado por último", () => {
+    const findings = unclassifiedFindings([
+      item({ funcao: null, value: new Decimal(-50), name: "negativo" }),
+      item({ funcao: null, value: new Decimal(10), name: "positivo" }),
+    ]);
+    expect(findings.map((f) => f.name)).toEqual(["positivo", "negativo"]);
+  });
+
+  it("a contagem de pendentes bate com semFuncaoCount do mapa — os dois aparecem na mesma tela", () => {
+    const lista = [
+      item({ funcao: null, value: new Decimal(100) }),
+      item({ funcao: null, value: new Decimal(0) }),
+      item({ funcao: null, value: new Decimal(-5) }),
+      item({ funcao: "USO", value: new Decimal(900) }),
+    ];
+    expect(unclassifiedFindings(lista)).toHaveLength(computeFunctionMap(lista).semFuncaoCount);
   });
 
   it("devolve lista vazia quando está tudo classificado", () => {
@@ -225,5 +244,34 @@ describe("unclassifiedFindings", () => {
       item({ funcao: "LIQUIDEZ_OPERACIONAL" }),
     ]);
     expect(findings).toHaveLength(0);
+  });
+});
+
+describe("classifiedItems", () => {
+  it("é o complemento exato de unclassifiedFindings — todo item cai em exatamente uma das duas", () => {
+    const lista = [
+      item({ funcao: null, value: new Decimal(100) }),
+      item({ funcao: "USO", value: new Decimal(200) }),
+      item({ funcao: null, value: new Decimal(0) }),
+      item({ funcao: "PROTECAO", value: new Decimal(300) }),
+    ];
+
+    const pendentes = unclassifiedFindings(lista);
+    const classificados = classifiedItems(lista);
+
+    expect(pendentes).toHaveLength(2);
+    expect(classificados).toHaveLength(2);
+    expect(pendentes.length + classificados.length).toBe(lista.length);
+    // nenhum item nas duas ao mesmo tempo
+    const idsPendentes = new Set(pendentes.map((i) => i.id));
+    expect(classificados.some((i) => idsPendentes.has(i.id))).toBe(false);
+  });
+
+  it("ordena do maior valor para o menor", () => {
+    const classificados = classifiedItems([
+      item({ funcao: "USO", value: new Decimal(50), name: "menor" }),
+      item({ funcao: "USO", value: new Decimal(500), name: "maior" }),
+    ]);
+    expect(classificados.map((i) => i.name)).toEqual(["maior", "menor"]);
   });
 });
