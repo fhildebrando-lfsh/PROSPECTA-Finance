@@ -15,7 +15,59 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-16 (Etapa 9-A.3 fechada — liquidez
+> **Última atualização real: 2026-08-16 (Etapa 9-A.4 — stress tests, Reserva
+> Recomendada e `McrfAssessment` — Registro Nº 081).**
+>
+> A etapa em que os seis motores anteriores se encontram e um número sai.
+>
+> **`scenario-engine.ts` — a correção matemática que eu havia identificado na
+> análise, agora aplicada.** §33 define `Need = ImmediateOutOfPocket + Σ max(0,
+> Deficit_t)`. Somar déficits mensais já pisados em zero ignora que superávit de
+> um mês financia déficit de outro — reserva é **estoque**, não fluxo. Trocado
+> pelo **pico de saldo acumulado negativo**. O caso que motivou está em teste:
+> déficit 1.000 / superávit 800 / déficit 1.000 pede 1.200, não 2.000. Quando
+> todo mês é deficitário os dois coincidem, então a correção nunca afrouxa
+> conservadorismo.
+>
+> **Segunda correção, essa descoberta pelo próprio teste durante a
+> implementação.** Eu somava o desembolso imediato **por fora** do drawdown, o
+> que anulava justamente o efeito que a primeira correção veio proteger: a
+> franquia paga hoje doía igual com o seguro pagando amanhã ou daqui a seis
+> meses. Movido para dentro do fluxo, no mês 0. Agora indenização tardia
+> protege menos que imediata, com teste dos dois lados.
+>
+> Vale registrar o contraste: na mesma rodada, **dois testes falharam por
+> motivos opostos** — num, a asserção é que estava errada (assumi crescimento
+> estrito onde o piso em zero faz cenários empatarem, corretamente); no outro,
+> o modelo. Diagnosticar antes de corrigir foi o que separou os dois.
+>
+> **`reserve-engine.ts`.** PLI derivado do CCM da própria pessoa, nunca valor
+> fixo nacional. Margem de incerteza que cresce quando falta dado, com teto de
+> 35% — acima disso a margem viraria o cálculo, e o resultado deixaria de ser
+> derivado dos cenários para ser derivado da própria ignorância. **Divergência
+> 5 resolvida:** o cenário H (combinado) entra no `max()` da Recomendada, como
+> §31 exige, e a Reforçada se distingue por margem elevada — senão os dois
+> níveis empatariam e o terceiro sumiria.
+>
+> **IPRF** implementado como diagnóstico de 6 componentes, **nunca
+> multiplicador da reserva**, e sem virar segundo score de capa ao lado do PSF
+> (divergência 3 da análise).
+>
+> **`McrfAssessment` (§48):** foto versionada; cada avaliação é linha nova com
+> `methodologyVersion`, porque duas fotos com regras diferentes pareceriam
+> comparáveis e a comparação no tempo mentiria. Diferente do PSF, onde a quebra
+> de comparabilidade foi aceita — aqui é um valor em reais que a pessoa
+> persegue por meses.
+>
+> **Verificado:** `tsc` limpo, 567/567 unitários (43 novos), 75/75 integração,
+> build limpo. Migration em produção **antes do código**, checksum idêntico ao
+> de dev, zero checksums vazios, 2279 lançamentos e 12 pessoas intactos.
+>
+> **Falta na 9-A:** 9-A.5 (telas), 9-A.6 (simulador "E se?", plano de
+> construção, protocolo de recomposição) e 9-A.7 (PSF consumindo MCRF). O
+> motor está pronto; nenhuma tela mostra o resultado ainda.
+>
+> **Última atualização anterior: 2026-08-16 (Etapa 9-A.3 fechada — liquidez
 > elegível e motor profissional — Registro Nº 080).**
 >
 > Os dois motores puros que faltavam. Sem migration: ambos consomem schema já

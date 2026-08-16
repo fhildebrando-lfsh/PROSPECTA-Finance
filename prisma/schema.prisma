@@ -123,6 +123,7 @@ model Workspace {
   insurancePolicies InsurancePolicy[]
   benefitEntitlements BenefitEntitlement[]
   balanceReconciliations BalanceReconciliation[]
+  mcrfAssessments        McrfAssessment[]
 
   @@map("workspaces")
 }
@@ -532,6 +533,49 @@ enum Rigidez {
   RIGIDA
   AJUSTAVEL
   DISCRICIONARIA
+}
+
+/// §48 da especificação PROSPECTA-MCRF — a foto de um cálculo de reserva.
+///
+/// **Nunca sobrescreve cálculo histórico** (§48 é explícito). Cada avaliação é
+/// uma linha nova, com a versão da metodologia que a produziu — sem isso, duas
+/// fotos com regras diferentes pareceriam comparáveis, e a comparação ao longo
+/// do tempo (que é o propósito do módulo) mentiria.
+///
+/// Mesmo espírito de `HealthSnapshot` (Etapa 5), mas com um campo a mais que
+/// faz toda a diferença: `methodologyVersion`. O PSF aceitou quebra de
+/// comparabilidade por decisão do usuário; aqui não dá — a reserva é um valor
+/// em reais que a pessoa persegue por meses.
+model McrfAssessment {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId        String   @map("workspace_id") @db.Uuid
+  methodologyVersion String   @map("methodology_version")
+  calculationDate    DateTime @default(now()) @map("calculation_date")
+  /// Data-base do dado usado — distinta da data do cálculo: recalcular hoje
+  /// com dado de ontem produz números diferentes de recalcular amanhã.
+  dataReferenceDate  DateTime @map("data_reference_date") @db.Date
+
+  cema             Decimal @map("cema") @db.Decimal(14, 2)
+  ccm              Decimal @map("ccm") @db.Decimal(14, 2)
+  /// A Proteção Recomendada (§37) — o número que a tela destaca.
+  reserveTarget    Decimal @map("reserve_target") @db.Decimal(14, 2)
+  /// §30 — o que a pessoa tem hoje, já ponderado pela elegibilidade.
+  eligibleReserve  Decimal @map("eligible_reserve") @db.Decimal(14, 2)
+  iprf             Int?
+
+  /// Resultado de cada cenário e os fatores explicativos (§41/§53). Json porque
+  /// a forma evolui junto com a metodologia, e travar em colunas obrigaria
+  /// migration a cada refinamento de cenário.
+  scenarios    Json
+  mainDrivers  Json  @map("main_drivers")
+  dataConfidence String @map("data_confidence")
+
+  createdBy String?  @map("created_by") @db.Uuid
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, calculationDate])
+  @@map("mcrf_assessments")
 }
 
 /// §52 — parâmetros da metodologia, centralizados e versionados. Existe porque

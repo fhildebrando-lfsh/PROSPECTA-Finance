@@ -2396,7 +2396,21 @@
 
 ---
 
-## Próximo número de registro: **081**
+### Registro Nº 081
+- **Data:** 2026-08-16
+- **Etapa concluída:** Etapa 9-A.4 — stress tests A–H, Reserva Recomendada e `McrfAssessment` versionado
+- **Descrição:** A etapa em que os seis motores anteriores se encontram e um número sai. **`scenario-engine.ts` (§31/§33):** 10 cenários (A, B, C×3, D, E, F, G, H) e a equação central. **Correção matemática aplicada (divergência 1 da análise):** §33 define `ScenarioNeed = ImmediateOutOfPocket + Σ max(0, Deficit_t)`; somar déficits mensais já pisados em zero ignora que superávit de um mês financia déficit de outro e superestima a reserva — reserva é **estoque**, não fluxo. Substituído pelo **pico de saldo acumulado negativo** (máximo drawdown). Teste dedicado com o caso que motivou a troca: déficit 1.000 / superávit 800 / déficit 1.000 pede 1.200 de liquidez, não 2.000. Quando todos os meses são deficitários os dois resultados coincidem, então a correção nunca reduz conservadorismo. **Segunda correção, descoberta pelo próprio teste durante a implementação:** eu somava o desembolso imediato **por fora** do drawdown, o que anulava o efeito do tempo — a franquia paga hoje doía igual com o seguro pagando amanhã ou daqui a seis meses. Movido para dentro do fluxo, no mês 0. Agora indenização tardia protege menos que imediata, e há teste dos dois lados. Cenários respeitam materialidade (§23): interrupção de renda não é material para regime estável e queda de faturamento só para quem vive de negócio próprio — ambos continuam calculados e exibidos, apenas não dominam a recomendação. **`reserve-engine.ts` (§34/§35/§37/§4):** PLI derivado do CCM da própria pessoa (nunca valor fixo nacional), margem de incerteza que cresce quando falta dado (com teto de 35%, para a margem não virar o cálculo), e os três níveis de proteção. **Divergência 5 resolvida:** o cenário H (combinado) entra no `max()` da Recomendada, como §31 exige, e a Reforçada se distingue por margem elevada — se H ficasse só na Reforçada, o cenário de "grande relevância" não entraria no resultado principal; se a Reforçada não tivesse margem própria, empataria com a Recomendada e o terceiro nível sumiria. **IPRF (§4)** implementado como diagnóstico com 6 componentes ponderados, **nunca multiplicador da reserva**, e — decisão de arquitetura da análise (divergência 3) — não vira segundo score de capa ao lado do PSF. **`McrfAssessment` (§48):** foto versionada; cada avaliação é linha nova com `methodologyVersion`, porque duas fotos com regras diferentes pareceriam comparáveis e a comparação no tempo mentiria.
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 567/567 (43 casos novos: 23 de cenários, 20 de reserva); suíte de integração 17 arquivos / 75 testes; `npm run build` limpo. Migration `20260816180000_mcrf_assessment` aplicada **em produção antes do código** (runbook §5), checksum `dc3fe6d7afbb…` idêntico ao de dev, zero checksums vazios, 2279 lançamentos e 12 pessoas intactos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saídas de `tsc`/`npm test`/build; verificação contra o banco de produção.
+- **Observação de processo:** a segunda correção do motor de cenários foi encontrada por um teste que eu havia escrito esperando que passasse. Ele falhou por um motivo diferente do que eu imaginava e expôs uma falha de modelagem, não de asserção — o oposto do que aconteceu no outro teste que falhou na mesma rodada, onde a asserção é que estava errada. Vale registrar que os dois casos exigiram diagnóstico separado antes de qualquer correção.
+- **Pendente da Etapa 9-A:** 9-A.5 (telas de reserva, explicação, stress test visual e mapa de riscos), 9-A.6 (simulador "E se?", plano de construção, protocolo de recomposição) e 9-A.7 (PSF passa a consumir MCRF).
+- **Documentos relacionados:** `PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md` §31/§33/§34/§35/§37/§48, `ARQUITETURA-METODO-PROSPECTAR.md` §6, `lib/method/mcrf/scenario-engine.ts`, `lib/method/mcrf/reserve-engine.ts`, `prisma/migrations/20260816180000_mcrf_assessment/`.
+
+---
+
+## Próximo número de registro: **082**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

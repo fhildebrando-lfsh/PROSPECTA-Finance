@@ -16,6 +16,10 @@
 
 ## 2026-08-16
 
+### Adicionado (Registro Nº 081)
+- **O cálculo da Reserva Recomendada está pronto** (interno; as telas vêm na próxima etapa). O sistema simula dez cenários adversos mês a mês — perda de renda, redução parcial, incapacidade, emergência com o carro ou a casa, emergência familiar, queda de faturamento e o choque combinado — e mede quanta liquidez cada um consumiria até a recuperação. A reserva é o maior entre esses cenários e um piso mínimo de liquidez, com margem maior quando faltam dados no seu perfil.
+- Cada cálculo é guardado com a versão da metodologia que o produziu, para que comparar sua evolução ao longo do tempo continue fazendo sentido.
+
 ### Adicionado (Registro Nº 080)
 - **Motor de cálculo de risco completo** (interno, ainda sem tela): o sistema agora sabe calcular quanto do seu patrimônio realmente serve de reserva — um imóvel não paga a conta do mês que vem, e limite de cartão não é dinheiro — e o quanto sua profissão facilita recomeçar caso a renda pare. São as últimas peças antes do cálculo da Reserva Recomendada.
 

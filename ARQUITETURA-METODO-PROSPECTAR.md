@@ -1161,7 +1161,7 @@ duplicada foi criada.
 | **9-A.1** ✅ | Perfil de risco: `Person` estendida (§19/§21), `IncomeSource` (§14), motor de observação de renda, tela `/protecao/perfil` | — |
 | **9-A.2** ✅ | `InsurancePolicy` + coberturas + `BenefitEntitlement` (§25/§26) | 9-A.1 |
 | **9-A.3** ✅ | CEMA, CCM, liquidez elegível, IPP — puros (§11/§12/§20/§30). Registros Nº 079 e 080 | 9-A.1 |
-| **9-A.4** | Stress tests A–H + Reserva Recomendada + `McrfAssessment` versionado (§31/§35/§48) | 9-A.2, 9-A.3 |
+| **9-A.4** ✅ | Stress tests A–H + Reserva Recomendada + `McrfAssessment` versionado (§31/§35/§48). Registro Nº 081 | 9-A.2, 9-A.3 |
 | **9-A.5** | Telas: reserva, explicação, stress test visual, mapa de riscos (§39/§41/§42/§56) | 9-A.4 |
 | **9-A.6** | Simulador "E se?", plano de construção, protocolo de recomposição (§43/§44/§45) | 9-A.5 |
 | **9-A.7** | PSF passa a consumir MCRF em Proteção e Liquidez | 9-A.4 |
