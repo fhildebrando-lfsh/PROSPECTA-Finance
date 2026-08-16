@@ -19,7 +19,7 @@ export async function disconnectGoogleCalendar() {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  assertCanWrite(membership.role, profile.isPlatformAdmin, membership.advisorCanWrite);
+  assertCanWrite(membership.role, profile.isPlatformAdmin);
 
   const connection = await prisma.googleCalendarConnection.findFirst({ where: { workspaceId, revokedAt: null } });
   if (!connection) return;

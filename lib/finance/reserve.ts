@@ -29,30 +29,3 @@ export function averageMonthlyExpense(
   const sum = monthlyExpenses.reduce((total, expense) => total.plus(expense), new Decimal(0));
   return sum.div(monthsBack);
 }
-
-/**
- * Espelha `averageMonthlyExpense` — usada pelo Método PROSPECTAR §13.5
- * (ARQUITETURA-METODO-PROSPECTAR.md §5.3.1, Etapa 5) como denominador do
- * indicador de Endividamento do PSF ("compromisso mensal ÷ renda líquida
- * média" — troca de propósito em relação à tela de Dívidas, que usa despesa).
- */
-export function averageMonthlyIncome(
-  entries: FinanceEntry[],
-  referenceDate: Date,
-  monthsBack = 6,
-  regime: Regime = "caixa",
-): Decimal {
-  if (monthsBack <= 0) return new Decimal(0);
-
-  const refYear = referenceDate.getUTCFullYear();
-  const refMonth = referenceDate.getUTCMonth();
-
-  const monthlyIncomes = Array.from({ length: monthsBack }, (_, i) => {
-    const monthsAgo = i + 1;
-    const period = monthRange(refYear, refMonth - monthsAgo);
-    return periodTotals(entries, period, "settled", regime).receita;
-  });
-
-  const sum = monthlyIncomes.reduce((total, income) => total.plus(income), new Decimal(0));
-  return sum.div(monthsBack);
-}

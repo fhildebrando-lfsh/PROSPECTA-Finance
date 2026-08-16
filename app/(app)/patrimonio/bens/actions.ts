@@ -10,18 +10,13 @@ async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  return {
-    profileId: profile.id,
-    role: membership.role,
-    isPlatformAdmin: profile.isPlatformAdmin,
-    advisorCanWrite: membership.advisorCanWrite,
-  };
+  return { profileId: profile.id, role: membership.role, isPlatformAdmin: profile.isPlatformAdmin };
 }
 
 export async function createAssetAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const name = String(formData.get("name") ?? "").trim();
   const categoryId = String(formData.get("categoryId") ?? "");
@@ -46,8 +41,8 @@ export async function createAssetAction(formData: FormData) {
 
 export async function registerValuationAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { profileId, role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const assetId = String(formData.get("assetId") ?? "");
   const date = String(formData.get("date") ?? "");
@@ -77,8 +72,8 @@ export async function registerValuationAction(formData: FormData) {
  * valorização usa a categoria nova, ver `registerAssetValuation`). */
 export async function updateAssetAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -95,8 +90,8 @@ export async function updateAssetAction(formData: FormData) {
  * vendeu o carro) e você quer manter o histórico, só tirando da lista ativa. */
 export async function archiveAsset(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const id = String(formData.get("id") ?? "");
   const isActive = formData.get("isActive") === "true";
@@ -113,8 +108,8 @@ export async function archiveAsset(formData: FormData) {
  * o botão é vermelho e o rótulo deixa claro que é permanente. */
 export async function deleteAssetAction(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("Bem não identificado.");

@@ -7,8 +7,8 @@ import { settleEntry } from "@/lib/entries/settle";
 export async function PATCH(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { workspaceId, role, isPlatformAdmin, profileId, advisorCanWrite } = await requireApiWorkspaceMembership();
-    assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+    const { workspaceId, role, isPlatformAdmin, profileId } = await requireApiWorkspaceMembership();
+    assertCanWrite(role, isPlatformAdmin);
 
     const updated = await settleEntry(id, workspaceId, profileId);
     return NextResponse.json({ entry: updated });

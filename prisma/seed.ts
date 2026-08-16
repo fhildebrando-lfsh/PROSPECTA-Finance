@@ -15,18 +15,13 @@ import { join } from "node:path";
 import { parse } from "csv-parse/sync";
 import { prisma } from "../lib/db/prisma";
 import { slugify } from "../lib/slug";
-import { EntryNature, MacroBloco } from "../app/generated/prisma/enums";
+import { EntryNature } from "../app/generated/prisma/enums";
 
 const SEEDS_DIR = join(__dirname, "..", "seeds");
 
 function parseNature(value: string): EntryNature {
   if (value in EntryNature) return value as EntryNature;
   throw new Error(`seed_taxonomia.csv: nature desconhecida "${value}"`);
-}
-
-function parseMacroBloco(value: string): MacroBloco {
-  if (value in MacroBloco) return value as MacroBloco;
-  throw new Error(`seed_macro_blocos.csv: macro_bloco desconhecido "${value}"`);
 }
 
 function readCsv<T extends Record<string, string>>(filename: string): T[] {
@@ -219,40 +214,6 @@ async function seedInstitutions() {
   console.log(`institutions: ${names.length}`);
 }
 
-/** Método PROSPECTAR §13.3 (Etapa 1, 2026-08-15) — classificação inicial das
- * subcategorias de Despesa nos 4 blocos da Régua de Alocação. Editável depois
- * pelo admin (mesmo espírito de NatureLabel) — este seed nunca sobrescreve
- * uma classificação que já existe, só preenche o que ainda está nulo. */
-async function seedMacroBlocos() {
-  const rows = readCsv<{ category_slug: string; subcategory_slug: string; macro_bloco: string }>(
-    "seed_macro_blocos.csv",
-  );
-
-  let updated = 0;
-  for (const row of rows) {
-    if (!row.macro_bloco) continue; // linhas de ajuste contábil (ex.: "Ajuste") ficam sem macro_bloco
-
-    const subcategory = await prisma.subcategory.findFirst({
-      where: {
-        slug: row.subcategory_slug,
-        workspaceId: null,
-        category: { slug: row.category_slug, nature: "DESPESA" },
-      },
-    });
-    if (!subcategory) {
-      throw new Error(`seed_macro_blocos.csv: subcategoria "${row.category_slug}/${row.subcategory_slug}" não encontrada`);
-    }
-    if (subcategory.macroBloco !== null) continue; // não sobrescreve classificação já feita (pelo admin ou por este seed antes)
-
-    await prisma.subcategory.update({
-      where: { id: subcategory.id },
-      data: { macroBloco: parseMacroBloco(row.macro_bloco) },
-    });
-    updated += 1;
-  }
-  console.log(`macro_blocos: ${updated} subcategorias classificadas (${rows.length - updated} já tinham valor ou são sem macro_bloco)`);
-}
-
 async function seedNatureLabels() {
   const defaults: Record<string, string> = {
     RECEITA: "Receita",
@@ -280,7 +241,6 @@ async function main() {
   await seedInstitutions();
   await seedNatureLabels();
   await seedInvestmentClasses();
-  await seedMacroBlocos(); // depois de seedTaxonomia — precisa das subcategorias já existirem
 }
 
 main()

@@ -6,24 +6,18 @@ import { assertCanWrite } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { slugify } from "@/lib/slug";
 import { rethrowFriendly } from "@/lib/api/prisma-errors";
-import { reconcileWalletBalance } from "@/lib/method/reconciliation";
 
 async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  return {
-    profileId: profile.id,
-    role: membership.role,
-    isPlatformAdmin: profile.isPlatformAdmin,
-    advisorCanWrite: membership.advisorCanWrite,
-  };
+  return { role: membership.role, isPlatformAdmin: profile.isPlatformAdmin };
 }
 
 export async function createWallet(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const name = String(formData.get("name") ?? "").trim();
   const kindCode = String(formData.get("kindCode") ?? "");
@@ -56,8 +50,8 @@ export async function createWallet(formData: FormData) {
 
 export async function updateWallet(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -78,8 +72,8 @@ export async function updateWallet(formData: FormData) {
 
 export async function toggleWalletActive(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const id = String(formData.get("id") ?? "");
   const isActive = formData.get("isActive") === "true";
@@ -98,8 +92,8 @@ export async function toggleWalletActive(formData: FormData) {
  */
 export async function deleteWallet(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const id = String(formData.get("id") ?? "");
   try {
@@ -107,24 +101,5 @@ export async function deleteWallet(formData: FormData) {
   } catch {
     throw new Error("Não dá para excluir — essa carteira já tem lançamentos. Arquive em vez de excluir.");
   }
-  revalidatePath("/cadastros/carteiras");
-}
-
-/**
- * Etapa 2 do Método (2026-08-15) — captura "quanto a carteira realmente
- * tem", pro componente de Conciliação do Índice de Consistência
- * (lib/method/consistency.ts). Mesma permissão de escrita das demais ações
- * desta tela — LEITURA e ADVISOR sem concessão não conferem saldo.
- */
-export async function conciliateWallet(formData: FormData) {
-  const workspaceId = await requireWorkspaceId();
-  const { profileId, role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
-
-  const walletId = String(formData.get("walletId") ?? "");
-  const declaredBalance = String(formData.get("declaredBalance") ?? "").trim();
-  if (!walletId || !declaredBalance) throw new Error("Informe o saldo real da carteira.");
-
-  await reconcileWalletBalance({ workspaceId, walletId, declaredBalance, checkedBy: profileId });
   revalidatePath("/cadastros/carteiras");
 }

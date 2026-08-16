@@ -10,17 +10,13 @@ async function currentMembership(workspaceId: string) {
   const profile = await requireProfile();
   const membership = profile.memberships.find((m) => m.workspaceId === workspaceId);
   if (!membership) throw new Error("Sem acesso a este workspace.");
-  return {
-    role: membership.role,
-    isPlatformAdmin: profile.isPlatformAdmin,
-    advisorCanWrite: membership.advisorCanWrite,
-  };
+  return { role: membership.role, isPlatformAdmin: profile.isPlatformAdmin };
 }
 
 export async function createPerson(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const name = String(formData.get("name") ?? "").trim();
   const isShared = formData.get("isShared") === "on";
@@ -36,8 +32,8 @@ export async function createPerson(formData: FormData) {
 
 export async function updatePerson(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -50,8 +46,8 @@ export async function updatePerson(formData: FormData) {
 
 export async function deletePerson(formData: FormData) {
   const workspaceId = await requireWorkspaceId();
-  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
-  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+  const { role, isPlatformAdmin } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin);
 
   const id = String(formData.get("id") ?? "");
   try {

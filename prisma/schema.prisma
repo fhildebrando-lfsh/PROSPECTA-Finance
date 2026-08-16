@@ -106,10 +106,6 @@ model Workspace {
   exportLogs       ExportLog[]
   workspaceInvites WorkspaceInvite[]
   subscriptions    Subscription[]
-  planGrants       PlanGrant[]
-  healthSnapshots  HealthSnapshot[]
-  automationRules  AutomationRule[]
-  aiInteractions   AiInteraction[]
   entitlements     Entitlement[]
   accessLogs       AccessLog[]
   notifications    Notification[]
@@ -119,7 +115,6 @@ model Workspace {
   googleCalendarConnection GoogleCalendarConnection?
   descriptionRules DescriptionRule[]
   investments      Investment[]
-  balanceReconciliations BalanceReconciliation[]
 
   @@map("workspaces")
 }
@@ -167,12 +162,6 @@ model Membership {
   /// acesso, entre quando e quando" (relevante sobretudo pra ADVISOR/auditoria).
   status      MembershipStatus @default(ACTIVE)
   revokedAt   DateTime?        @map("revoked_at")
-  /// Só tem efeito quando role = ADVISOR — ignorado nos demais papéis (2026-08-15,
-  /// AVALIACAO-UNIDADE-FINANCEIRA-CONSULTORIA.md §4.5 / ARQUITETURA-METODO-PROSPECTAR.md
-  /// §3.2). default(false): consultor nasce só com leitura, mesmo com Membership
-  /// ACTIVE; TITULAR concede/revoga a qualquer momento (nunca o próprio consultor),
-  /// sempre auditado em AccessLog (lib/workspace/advisor.ts).
-  advisorCanWrite Boolean       @default(false) @map("advisor_can_write")
   createdAt   DateTime         @default(now()) @map("created_at")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -236,7 +225,6 @@ model Plan {
 
   planFeatures  PlanFeature[]
   subscriptions Subscription[]
-  planGrants    PlanGrant[]
 
   @@map("plans")
 }
@@ -248,22 +236,11 @@ model Feature {
   id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code String @unique
   name String
-  /// ARQUITETURA-METODO-PROSPECTAR.md §3.1/5.2 (Etapa 3, 2026-08-15) — admin
-  /// decide, por feature, se ela é liberada por nível de plano (padrão) ou
-  /// por camada de método (ConsultingEngagement, ainda não implementado —
-  /// feature METODO retorna false em hasFeature() até a Etapa 8 existir).
-  /// Editável na tela /admin/planos, sem deploy.
-  gateKind FeatureGateKind @default(PLANO) @map("gate_kind")
 
   planFeatures PlanFeature[]
   entitlements Entitlement[]
 
   @@map("features")
-}
-
-enum FeatureGateKind {
-  PLANO
-  METODO
 }
 
 /// O que cada Plan libera — join simples, sem coluna própria.
@@ -312,40 +289,6 @@ model Subscription {
 
   @@index([workspaceId])
   @@map("subscriptions")
-}
-
-/// §4.6 da Metodologia PROSPECTA v5.0 (ARQUITETURA-METODO-PROSPECTAR.md §3/5.2,
-/// Etapa 4, 2026-08-15) — camada 2 do modelo de direitos em três camadas:
-/// elevação TEMPORÁRIA de nível decorrente de um contrato de consultoria (ex.:
-/// Max incluído durante o planejamento). Nunca substitui a Subscription — só
-/// soma no cálculo do nível efetivo (lib/billing/effective-level.ts). Garantia
-/// central do documento de arquitetura: `Subscription` nunca é escrita por
-/// causa de contratação/conclusão/cancelamento de consultoria, sempre um
-/// PlanGrant com início e fim.
-model PlanGrant {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId  String    @map("workspace_id") @db.Uuid
-  planId       String    @map("plan_id") @db.Uuid
-  /// Referência solta (sem FK) de propósito, mesmo padrão de
-  /// Notification.relatedEntryId — ConsultingEngagement ainda não existe
-  /// (Etapa 8). Ganha FK de verdade quando essa tabela for criada. Nulo
-  /// quando a concessão não vem de um contrato de consultoria (ex.:
-  /// cortesia manual concedida pelo admin).
-  engagementId String?   @map("engagement_id") @db.Uuid
-  reason       String
-  startsAt     DateTime  @map("starts_at")
-  endsAt       DateTime  @map("ends_at")
-  createdBy    String    @map("created_by") @db.Uuid
-  createdAt    DateTime  @default(now()) @map("created_at")
-  /// Preenchido quando revogada antes do fim natural — nunca DELETE (mesmo
-  /// espírito de Membership.status/revokedAt).
-  revokedAt    DateTime? @map("revoked_at")
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  plan      Plan      @relation(fields: [planId], references: [id])
-
-  @@index([workspaceId, endsAt])
-  @@map("plan_grants")
 }
 
 /// Override pontual de feature pra um workspace específico, além do que o
@@ -476,12 +419,6 @@ model Subcategory {
   isSystem    Boolean  @default(true) @map("is_system")
   /// §20 — excluir em uso é bloqueado; a ação é arquivar (some dos formulários, mantém histórico).
   isActive    Boolean  @default(true) @map("is_active")
-  /// Método PROSPECTAR §13.3 (ARQUITETURA-METODO-PROSPECTAR.md §5.1, Etapa 1) —
-  /// eixo independente de fixo×variável (isFixedOverride), usado pela Régua de
-  /// Alocação. Só se aplica a subcategorias de DESPESA — nulo nas demais
-  /// naturezas e em subcategorias de DESPESA ainda não classificadas (seed
-  /// inicial em seeds/seed_macro_blocos.csv cobre as 285 existentes).
-  macroBloco  MacroBloco? @map("macro_bloco")
   createdAt   DateTime @default(now()) @map("created_at")
 
   category         Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -491,18 +428,6 @@ model Subcategory {
 
   @@unique([categoryId, workspaceId, slug])
   @@map("subcategories")
-}
-
-/// §11.2 da Metodologia PROSPECTA v5.0 — os 4 blocos da Régua de Alocação.
-/// POUPANCA nunca é atribuído a uma Subcategory (poupar não é despesa neste
-/// sistema — é aporte de INVESTIMENTO ou transferência pra caixinha); existe
-/// no enum só porque Entry.macroBlocoOverride precisa do mesmo domínio de
-/// valores para os casos raros de reclassificação manual.
-enum MacroBloco {
-  ESSENCIAL
-  ESTILO_DE_VIDA
-  OBRIGACAO
-  POUPANCA
 }
 
 // ---------------------------------------------------------------------------
@@ -547,14 +472,6 @@ model Wallet {
   creditLimit    Decimal? @map("credit_limit") @db.Decimal(14, 2)
   closingDay     Int?     @map("closing_day")
   dueDay         Int?     @map("due_day")
-  /// AVALIACAO-UNIDADE-FINANCEIRA-CONSULTORIA.md §4.3 (ARQUITETURA-METODO-
-  /// PROSPECTAR.md §5.1, Etapa 1) — titular econômico dentro da unidade
-  /// financeira (Workspace), para Plano Família e preparação de Open Finance.
-  /// Aponta pra Person (o "responsável" já existente), não Profile/login —
-  /// titularidade de recurso é conceito de negócio, não de autenticação.
-  /// Nulo = comum/compartilhado entre os membros da família (comportamento
-  /// atual de toda carteira existente).
-  ownerPersonId  String?  @map("owner_person_id") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at")
 
   workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -562,12 +479,10 @@ model Wallet {
   institution  Institution? @relation(fields: [institutionId], references: [id])
   linkedWallet Wallet?      @relation("WalletLink", fields: [linkedWalletId], references: [id])
   linkedFrom   Wallet[]     @relation("WalletLink")
-  ownerPerson  Person?      @relation("WalletOwner", fields: [ownerPersonId], references: [id])
   entries      Entry[]
   goals        Goal[]
   creditCard   CreditCard?
   investments  Investment[]
-  reconciliations BalanceReconciliation[]
 
   @@unique([workspaceId, slug])
   @@map("wallets")
@@ -598,34 +513,6 @@ model CreditCard {
   @@map("credit_cards")
 }
 
-/// §13.6 da Metodologia PROSPECTA v5.0 (ARQUITETURA-METODO-PROSPECTAR.md
-/// §5.6, Etapa 2) — captura periódica e leve de "quanto essa carteira
-/// realmente tem", pra comparar contra o saldo calculado
-/// (lib/finance/balance.ts::walletBalance). Não é conciliação bancária de
-/// verdade (isso seria Open Finance, §5.9, fora de escopo) — é o cliente
-/// confirmando de próprio punho, mesmo espírito de conferência manual de
-/// extrato. Alimenta o componente "Conciliação" do Índice de Consistência
-/// (lib/method/consistency.ts) — carteira nunca conferida entra como "não
-/// avaliada", nunca como falha.
-model BalanceReconciliation {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId     String   @map("workspace_id") @db.Uuid
-  walletId        String   @map("wallet_id") @db.Uuid
-  declaredBalance Decimal  @map("declared_balance") @db.Decimal(14, 2)
-  /// Saldo calculado (lib/finance/balance.ts) no exato momento da checagem —
-  /// travado aqui, não recalculado depois, pra registro histórico ficar
-  /// estável mesmo se lançamentos passados mudarem.
-  systemBalance   Decimal  @map("system_balance") @db.Decimal(14, 2)
-  checkedBy       String   @map("checked_by") @db.Uuid
-  checkedAt       DateTime @default(now()) @map("checked_at")
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  wallet    Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
-
-  @@index([workspaceId, walletId, checkedAt])
-  @@map("balance_reconciliations")
-}
-
 // ---------------------------------------------------------------------------
 // Responsáveis (§2, §9) — por workspace.
 // ---------------------------------------------------------------------------
@@ -638,13 +525,8 @@ model Person {
   isShared    Boolean  @default(false) @map("is_shared")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  workspace       Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  entries         Entry[]
-  /// Etapa 1 (2026-08-15) — titularidade econômica de carteiras/investimentos/
-  /// bens dentro da unidade financeira. Ver Wallet/Investment/Asset.ownerPersonId.
-  ownedWallets     Wallet[]     @relation("WalletOwner")
-  ownedInvestments Investment[] @relation("InvestmentOwner")
-  ownedAssets      Asset[]      @relation("AssetOwner")
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  entries   Entry[]
 
   @@unique([workspaceId, slug])
   @@map("people")
@@ -747,12 +629,6 @@ model Entry {
 
   /// Quando preenchido, manda sobre a regra automática fixa×variável (§11.7).
   isFixedOverride Boolean? @map("is_fixed_override")
-
-  /// Método PROSPECTAR §13.3 (ARQUITETURA-METODO-PROSPECTAR.md §5.1, Etapa 1) —
-  /// mesmo espírito de isFixedOverride: quando preenchido, manda sobre o
-  /// macroBloco herdado de subcategory nesta linha específica (ex.: combustível
-  /// que é essencial pra um lançamento mas estilo de vida noutro).
-  macroBlocoOverride MacroBloco? @map("macro_bloco_override")
 
   /// Liga as duas linhas de uma transferência (§10 R5). Nulo para lançamentos normais.
   transferId String? @map("transfer_id") @db.Uuid
@@ -926,14 +802,11 @@ model Asset {
   name        String
   /// §20 — nunca exclui (preserva histórico de lançamentos ligados), só arquiva.
   isActive    Boolean  @default(true) @map("is_active")
-  /// Etapa 1 (2026-08-15) — ver Wallet.ownerPersonId, mesmo padrão.
-  ownerPersonId String? @map("owner_person_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
 
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  category    Category  @relation(fields: [categoryId], references: [id])
-  ownerPerson Person?   @relation("AssetOwner", fields: [ownerPersonId], references: [id])
-  entries     Entry[]
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id])
+  entries   Entry[]
 
   @@map("assets")
 }
@@ -1004,15 +877,12 @@ model Investment {
   /// excluir de verdade só é permitido sem nenhum `Entry` vinculado (mesma regra
   /// de `Wallet`/`CreditCard`/`Subcategory`).
   isActive    Boolean  @default(true) @map("is_active")
-  /// Etapa 1 (2026-08-15) — ver Wallet.ownerPersonId, mesmo padrão.
-  ownerPersonId String? @map("owner_person_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
 
-  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  wallet      Wallet          @relation(fields: [walletId], references: [id])
-  class       InvestmentClass @relation(fields: [classCode], references: [code])
-  ownerPerson Person?         @relation("InvestmentOwner", fields: [ownerPersonId], references: [id])
-  entries     Entry[]
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  wallet    Wallet          @relation(fields: [walletId], references: [id])
+  class     InvestmentClass @relation(fields: [classCode], references: [code])
+  entries   Entry[]
 
   @@map("investments")
 }
@@ -1046,79 +916,4 @@ model GoogleCalendarConnection {
   connectedBy Profile   @relation(fields: [connectedByProfileId], references: [id])
 
   @@map("google_calendar_connections")
-}
-
-/// §8 da Metodologia PROSPECTA v5.0 (ARQUITETURA-METODO-PROSPECTAR.md §5.3,
-/// Etapa 5, 2026-08-15) — foto do Painel de Saúde Financeira no tempo. Uma
-/// linha por cálculo (hoje sempre manual, via botão "Salvar no histórico";
-/// automático/mensal fica para quando houver infraestrutura de job) ou por
-/// revisão do consultor (ainda não existe, Etapa 8). Sustenta o "comparativo
-/// início x fim" (§8.1) sem recalcular o passado — indicadores antigos
-/// continuam os mesmos mesmo que a fórmula mude depois.
-model HealthSnapshot {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId  String   @map("workspace_id") @db.Uuid
-  snapshotDate DateTime @map("snapshot_date") @db.Date
-  /// {organizacao, endividamento, liquidez, protecao, construcao, longevidade?, continuidade?}
-  /// cada um {faixa: "critico"|"fragil"|"em_construcao"|"saudavel"|"consolidado"|null, valor: number|null}
-  /// — indicador ausente por nível ou por dependência futura (Longevidade/
-  /// Continuidade, Etapas 13/15) fica null, nunca faixa ruim (§8.3).
-  indicators   Json
-  origin       String   @default("AUTO") // "AUTO" | "REVISADO"
-  reviewedBy   String?  @map("reviewed_by") @db.Uuid
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@index([workspaceId, snapshotDate])
-  @@map("health_snapshots")
-}
-
-/// §13.8 da Metodologia PROSPECTA v5.0 (ARQUITETURA-METODO-PROSPECTAR.md §5.5,
-/// Etapa 6, 2026-08-15) — motor de regras do Max. Cada gatilho observa uma
-/// condição sobre dado já lançado e, quando verdadeira, produz uma
-/// `Notification` — nunca cria, edita ou liquida um `Entry`, nunca transfere,
-/// nunca cancela nada externamente. Decisão validada por benchmark (Pierre,
-/// CloudWalk): mesmo um concorrente com acesso transacional completo via Open
-/// Finance escolhe só alertar, nunca agir sozinho.
-enum AutomationTrigger {
-  LIMIAR_CATEGORIA
-  VENCIMENTO_PROXIMO
-  VARIACAO_RECORRENCIA
-  META_FORA_DA_TRAJETORIA
-  INCIDENTE_ACUMULADO
-}
-
-model AutomationRule {
-  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId String            @map("workspace_id") @db.Uuid
-  trigger     AutomationTrigger
-  /// Parâmetros do gatilho — forma por trigger documentada em
-  /// lib/method/automation-engine.ts (ex.: {categoryId, thresholdAmount} / {daysBefore}).
-  condition   Json
-  isActive    Boolean           @default(true) @map("is_active")
-  createdBy   String            @map("created_by") @db.Uuid
-  createdAt   DateTime          @default(now()) @map("created_at")
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@map("automation_rules")
-}
-
-/// Histórico de perguntas ao assistente — auditoria (P9; mesmo espírito do
-/// LGPD Art. 20 já aplicado ao PSF). `answerQuery` grava a consulta
-/// estruturada que de fato gerou a resposta — cada resposta é reproduzível,
-/// nunca só um texto solto sem lastro.
-model AiInteraction {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  workspaceId String   @map("workspace_id") @db.Uuid
-  askedBy     String   @map("asked_by") @db.Uuid
-  question    String
-  answerQuery Json?    @map("answer_query")
-  answerText  String   @map("answer_text")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@map("ai_interactions")
 }

@@ -20,8 +20,8 @@ async function loadOwnedEntry(id: string, workspaceId: string) {
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { workspaceId, role, isPlatformAdmin, profileId, advisorCanWrite } = await requireApiWorkspaceMembership();
-    assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+    const { workspaceId, role, isPlatformAdmin, profileId } = await requireApiWorkspaceMembership();
+    assertCanWrite(role, isPlatformAdmin);
     await loadOwnedEntry(id, workspaceId);
 
     const body = await request.json();
@@ -61,8 +61,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { workspaceId, role, isPlatformAdmin, advisorCanWrite } = await requireApiWorkspaceMembership();
-    assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+    const { workspaceId, role, isPlatformAdmin } = await requireApiWorkspaceMembership();
+    assertCanWrite(role, isPlatformAdmin);
     const existing = await loadOwnedEntry(id, workspaceId);
 
     let deleted: { googleEventId: string | null }[];

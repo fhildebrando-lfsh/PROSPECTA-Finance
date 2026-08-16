@@ -10,8 +10,8 @@ import { revertImportBatch } from "@/lib/import/revert";
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ batchId: string }> }) {
   try {
     const { batchId } = await params;
-    const { workspaceId, role, isPlatformAdmin, advisorCanWrite } = await requireApiWorkspaceMembership();
-    assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+    const { workspaceId, role, isPlatformAdmin } = await requireApiWorkspaceMembership();
+    assertCanWrite(role, isPlatformAdmin);
 
     await revertImportBatch(batchId, workspaceId);
 

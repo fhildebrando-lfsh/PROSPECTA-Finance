@@ -33,8 +33,8 @@ function deserializePdfTransactions(raw: unknown): PdfStatementTransaction[] {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { workspaceId, role, isPlatformAdmin, advisorCanWrite } = await requireApiWorkspaceMembership();
-    assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+    const { workspaceId, role, isPlatformAdmin } = await requireApiWorkspaceMembership();
+    assertCanWrite(role, isPlatformAdmin);
 
     const body = await request.json();
     const isOfx = body.format === "ofx";

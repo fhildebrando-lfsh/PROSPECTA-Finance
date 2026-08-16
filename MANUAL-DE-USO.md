@@ -53,13 +53,6 @@ como cliente de um consultor), você recebe um link por e-mail ou WhatsApp. Ao a
 link, se ainda não tem conta, você a cria nessa mesma tela (`/definir-senha`); se já tem
 conta, basta entrar normalmente — o convite é aceito automaticamente.
 
-Quando o workspace já tem um plano comercial definido (Individual ou Família, 2026-08-15),
-o número de pessoas é limitado por ele — Individual permite só o titular, Família até 5. Se
-o limite já estiver atingido, o convite não pode ser criado (ou fica pendente, sem aceitar,
-se a pessoa convidada tentar entrar depois do limite ter sido atingido); libera espaço
-removendo alguém, ou faça upgrade pro Plano Família. Workspaces sem plano nenhum
-definido não têm esse limite.
-
 ---
 
 ## 3. Navegação
@@ -109,44 +102,6 @@ Tela inicial depois do login. Mostra, para o período selecionado:
 
 **Trocar o período:** navegue por mês, ou use o seletor **Mensal / Anual / Geral** no topo
 para ver o mês corrente, o ano inteiro (com navegação de ano) ou todo o histórico.
-
-### 4.1 Saúde Financeira (novo, 2026-08-15; a partir do plano Pro)
-
-Sete indicadores gerenciais que traduzem sua situação financeira numa leitura visual e
-comparável ao longo do tempo — cinco já disponíveis: **Organização** (qualidade e
-regularidade dos seus lançamentos), **Endividamento** (peso das dívidas sobre sua renda),
-**Liquidez** (quantos meses seu saldo disponível cobre de despesa), e, a partir do Max,
-**Proteção** e **Construção Patrimonial**. Longevidade e Continuidade só existem com um
-consultor ativo.
-
-Cada indicador aparece numa escala de 5 faixas — Crítico, Frágil, Em construção, Saudável,
-Consolidado — nunca uma nota exata de 0 a 10: é um indicador gerencial, não um score de
-crédito nem diagnóstico clínico, e compara você só com você mesmo ao longo do tempo, nunca
-com outros clientes. Indicador sem dado suficiente aparece como "não avaliado"; indicador
-de um nível que seu plano não inclui aparece como "disponível no Max" — os dois estados são
-visualmente diferentes de propósito.
-
-Botão **"Salvar no histórico"** grava uma foto dos indicadores na data de hoje — é o que
-permite comparar "como eu estava" com "como estou agora" mais adiante.
-
-### 4.2 Assistente (novo, 2026-08-15; a partir do plano Max)
-
-Duas ferramentas na mesma tela, sempre no espírito de **avisar, nunca agir sozinho**.
-
-**Pergunte em português simples:** saldo total, quanto você recebeu ou gastou no mês
-(geral ou de uma categoria específica), quanto falta pra sua reserva chegar no valor-alvo,
-quantos incidentes estão pendentes de revisão. A resposta usa sempre os mesmos cálculos que
-alimentam o Painel e os Relatórios — o assistente nunca "inventa" um número. Toda pergunta e
-resposta fica registrada no histórico da própria tela, para você conferir depois. **Não
-recomenda produto ou ativo específico:** se a pergunta parecer pedir isso ("em que eu
-invisto", "que ação comprar"), o assistente recusa e explica que diagnóstico é papel da
-PROSPECTA, indicação de investimento é papel de um profissional licenciado.
-
-**Automações:** 5 tipos de alerta que você liga e desliga conforme sua necessidade —
-gasto de uma categoria passou de um valor, compromisso vencendo em N dias, valor de uma
-recorrência mudou (ex.: assinatura que subiu de preço), meta abaixo do ritmo esperado para
-a data-alvo, fila de Incidentes acumulando. Avaliados uma vez por dia; cada disparo vira um
-aviso — o sistema nunca cria, edita, paga ou transfere nada por conta própria.
 
 ---
 
@@ -336,9 +291,8 @@ Benefício líquido positivo (verde) significa que o cartão está compensando; 
 
 ## 11. Relatórios
 
-Cinco telas de análise, acessíveis pelo grupo "Relatórios" no menu lateral. As quatro
-primeiras têm navegação de ano/mês e alternância entre regime Caixa e Competência (igual
-ao Painel):
+Quatro telas de análise, acessíveis pelo grupo "Relatórios" no menu lateral, cada uma com
+navegação de ano/mês e alternância entre regime Caixa e Competência (igual ao Painel):
 
 - **Balanço anual:** Receita, Despesa, Investimento e Saldo lado a lado, um mês em cada
   coluna, com o total do ano ("sintético"), mais uma tabela "descritivo por categoria" —
@@ -353,16 +307,8 @@ ao Painel):
 - **Orçamento:** defina quanto planeja gastar em cada categoria por mês (clique em
   "Editar" na linha da categoria) e acompanhe o realizado, a diferença e o percentual já
   usado — fica vermelho quando passa do orçado, âmbar perto do limite.
-- **Régua de Alocação** (novo, 2026-08-15; a partir do plano Pro desde 2026-08-15): como
-  sua receita do mês se distribuiu entre quatro blocos — Essenciais, Estilo de vida,
-  Obrigações e Poupança e Patrimônio — com uma faixa de referência calibrada pela sua
-  própria receita do período (ex.: renda até R$ 3.000 tem uma faixa diferente de renda
-  acima de R$ 25.000). Mostra se cada bloco está abaixo, dentro ou acima da faixa de
-  referência, e destaca separadamente qualquer despesa ainda sem bloco definido ou receita
-  que não virou despesa nem aporte no período. Só navegação de mês (sem regime nem PDF,
-  por enquanto).
 
-As outras quatro telas têm um botão **"Baixar PDF"**, que gera um relatório com a mesma
+Todas as cinco telas têm um botão **"Baixar PDF"**, que gera um relatório com a mesma
 informação da tela, identidade visual da PROSPECTA Finance e um aviso de que o documento
 tem finalidade informativa, sem constituir recomendação de investimento.
 
@@ -488,17 +434,9 @@ Telas de configuração, cada uma com regra própria de quem pode editar:
 | **Tipos** (rótulo de Receita/Despesa/Investimento/Outro) | Só administrador da plataforma |
 | **Membros** | Titular do workspace ou administrador |
 
-Em **Carteiras** (novo, 2026-08-15), cada linha tem uma coluna **Conciliação**: clique em
-"conferir" e digite o saldo real daquela conta/carteira (o que você vê no extrato do
-banco/app). O sistema compara com o que calcula a partir dos seus lançamentos e mostra se
-bate ou a diferença em R$, com a data da última conferência. Serve para você perceber cedo
-se algum lançamento ficou de fora — não precisa conferir toda semana, é uma checagem
-opcional.
-
 Em **Membros**, você convida outra pessoa para o seu workspace (link ou botão "Enviar por
 WhatsApp"), escolhendo o papel dela: Membro (lança e vê), Leitura (só vê) ou Consultor
-(só leitura por padrão, com registro de auditoria de cada acesso — editar/excluir
-lançamentos exige concessão explícita do administrador, ver seção 16).
+(acesso equivalente a membro, com registro de auditoria de cada acesso).
 
 Itens que já foram usados em algum lançamento não são excluídos — são **arquivados**, para
 preservar o histórico.
@@ -528,12 +466,6 @@ preservar o histórico.
   família), nome, e-mail, se é admin, workspaces e papel em cada um, e-mail confirmado,
   data de cadastro, último login. Permite editar dados pessoais de qualquer pessoa,
   promover/remover admin, atribuir consultor, excluir conta.
-  - **Escrita do consultor** — todo consultor atribuído nasce só com leitura, mesmo já
-    ativo no workspace. Ao lado do nome do consultor aparece "Escrita: só leitura" com um
-    botão "conceder"; clicar libera edição/exclusão de lançamentos para aquele consultor
-    até você revogar (botão vira "revogar"). Toda concessão e revogação fica registrada no
-    histórico de auditoria do workspace. Trocar de consultor sempre zera essa concessão — o
-    novo consultor começa do zero, mesmo que seja a mesma pessoa voltando.
   - **Bloquear acesso** — alternativa a excluir a conta de um cliente (por exemplo,
     inadimplência): pausa o acesso de todo mundo que usa aquele workspace (titular,
     membros, consultor), sem apagar nada, escolhendo um motivo num menu suspenso —
@@ -547,22 +479,11 @@ preservar o histórico.
     acesso já nasce pausado automaticamente ("Aguardando aprovação", destacado em âmbar)
     e você recebe um e-mail avisando. O botão "aprovar acesso" nessa linha libera —
     mesmo mecanismo do bloqueio manual acima, só que automático na hora do cadastro.
-  - **Conceder acesso temporário** (novo, 2026-08-15) — eleva o nível de um workspace por
-    um período (ex.: dar acesso ao Max sem mudar o plano contratado — útil pra cortesia ou
-    teste). Escolha o plano, escreva o motivo e a data de término; "revogar" tira o acesso
-    a qualquer momento antes disso. Nunca muda a assinatura do cliente — ao vencer ou ser
-    revogada, o workspace volta exatamente pro plano que já tinha.
 - **`/admin/clientes`** — cria o pré-cadastro de um novo cliente de consultoria: workspace
   novo, plano escolhido, consultor responsável opcional, e um link/WhatsApp de convite para
   o cliente.
 - **`/admin/consultores`** — visão em árvore de quem atende quem: um card por consultor com
   a lista de clientes atendidos.
-- **`/admin/planos`** (novo, 2026-08-15) — catálogo comercial: os 6 planos (Start, Pro, Max
-  × Individual, Família) e cada funcionalidade que cada um libera, numa matriz com
-  checkbox. Marque/desmarque pra mudar o que um plano inclui — vale na hora, sem precisar
-  de deploy. Cada funcionalidade também tem um seletor "Plano"/"Método": a maioria é
-  liberada por nível de plano; um grupo à parte só é liberado com consultor ativo (ainda
-  não implementado). Ativar/desativar um plano inteiro (sem excluir) fica no topo da tela.
 
 ---
 

@@ -14,35 +14,6 @@
 
 ---
 
-## 2026-08-15
-
-### Adicionado (Registro Nº 072)
-- **Painel → Assistente** (nova tela, plano Max): pergunte em português simples sobre seu saldo, receita/gasto do mês (geral ou por categoria), quanto falta pra reserva ou quantos incidentes estão pendentes — a resposta usa sempre os mesmos cálculos do Painel/Relatórios, nunca um número inventado. Nunca recomenda produto ou ativo específico — se a pergunta parecer pedir isso, o assistente recusa e explica por quê.
-- **Painel → Assistente — Automações** (mesma tela, plano Max): 5 tipos de alerta automático que você liga/desliga (gasto de categoria passou de X, compromisso vencendo, recorrência mudou de valor, meta fora do ritmo, fila de incidentes acumulando). Roda 1x por dia; só avisa, nunca cria, edita ou paga nada sozinho.
-
-### Adicionado (Registro Nº 071)
-- **Painel → Saúde Financeira** (nova tela, a partir do plano Pro): cinco indicadores gerenciais — Organização, Endividamento, Liquidez e, no Max, Proteção e Construção Patrimonial — numa escala de 5 faixas (Crítico a Consolidado). Botão "Salvar no histórico" grava uma foto dos indicadores na data de hoje, para comparar a evolução mais adiante.
-
-### Adicionado (Registro Nº 070)
-- **Admin → Usuários**: novo controle "conceder acesso temporário" — eleva o nível de um workspace por um período (cortesia, teste), sem mudar o plano contratado. Revogável a qualquer momento.
-- **Convites**: quando o workspace tem um plano com limite de pessoas definido (Individual ou Família), o sistema agora impede convidar além do limite. Workspaces sem plano definido continuam sem restrição.
-
-### Adicionado (Registro Nº 069)
-- **Admin → Planos** (nova tela): catálogo comercial completo — os 6 planos (Start, Pro, Max, cada um em Individual e Família) e o que cada um libera, editável sem precisar de deploy.
-- **Relatórios → Régua de Alocação**: passa a exigir o plano Pro ou superior (a maioria dos workspaces já ativos continua com acesso total).
-
-### Adicionado (Registro Nº 068)
-- **Cadastros → Carteiras**: nova coluna "Conciliação" — confira o saldo real de uma conta/carteira contra o que o sistema calcula a partir dos seus lançamentos, com a diferença em R$ e a data da última conferência. Ajuda a perceber cedo se algum lançamento ficou de fora.
-
-### Adicionado (Registro Nº 067)
-- **Relatórios → Régua de Alocação** (nova tela): mostra como sua receita do mês se distribuiu entre Essenciais, Estilo de vida, Obrigações e Poupança e Patrimônio, comparando com uma faixa de referência calibrada pela sua própria receita do período. Despesas ainda sem um bloco definido, e receita que não virou despesa nem aporte, aparecem destacadas separadamente em vez de escondidas dentro de outro número.
-
-### Segurança (Registro Nº 066)
-- **Acesso do consultor**: consultor (papel Consultor/ADVISOR) deixa de ter permissão automática para editar ou excluir lançamentos — nasce só com leitura, mesmo já atribuído a um workspace. O administrador da plataforma concede escrita explicitamente em `/admin/usuarios` (botão "conceder", ao lado do nome do consultor), revogável a qualquer momento; toda concessão/revogação fica registrada na auditoria do workspace. Trocar de consultor sempre reinicia essa permissão do zero.
-
-### Adicionado (Registro Nº 065)
-- **Documentação**: `ARQUITETURA-METODO-PROSPECTAR.md` — proposta de arquitetura para integrar a Metodologia PROSPECTA v5.0 (consultoria financeira, Painel de Saúde Financeira, Régua de Alocação, camada comercial Start/Pro/Max) ao sistema já em produção. Documento de projeto, ainda sem nenhum código ou schema alterado — aguardando aprovação item a item antes da implementação.
-
 ## 2026-08-12
 
 ### Adicionado (continuação, mesmo dia — Registro Nº 064)

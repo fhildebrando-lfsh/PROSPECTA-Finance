@@ -38,11 +38,8 @@ import {
   AlertTriangle,
   CreditCard,
   LineChart,
-  Ruler,
-  HeartPulse,
   CandlestickChart,
   PieChart,
-  Sparkles,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -85,7 +82,6 @@ const ADMIN_ITEMS: NavLeaf[] = [
   { href: "/admin/usuarios", label: "Usuários", icon: ShieldCheck },
   { href: "/admin/clientes", label: "Clientes", icon: UserPlus },
   { href: "/admin/consultores", label: "Consultores", icon: Network },
-  { href: "/admin/planos", label: "Planos", icon: Tags },
 ];
 
 const CARTOES_ITEMS: NavLeaf[] = [
@@ -98,7 +94,6 @@ const RELATORIOS_ITEMS: NavLeaf[] = [
   { href: "/relatorios/fluxo-projetado", label: "Fluxo projetado", icon: TrendingUp },
   { href: "/relatorios/parceladas", label: "Despesas parceladas", icon: Layers },
   { href: "/relatorios/orcamento", label: "Orçamento", icon: PiggyBank },
-  { href: "/relatorios/regua", label: "Régua de Alocação", icon: Ruler },
 ];
 
 const PATRIMONIO_ITEMS: NavLeaf[] = [
@@ -140,8 +135,6 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
 
   const entries: NavEntry[] = [
     { href: "/painel", label: "Painel", icon: LayoutDashboard },
-    { href: "/painel/saude-financeira", label: "Saúde Financeira", icon: HeartPulse },
-    { href: "/painel/assistente", label: "Assistente", icon: Sparkles },
     { label: "Lançamentos", icon: Receipt, items: LANCAMENTOS_ITEMS },
     { label: "Compromissos", icon: CalendarClock, items: COMPROMISSOS_ITEMS },
     { label: "Cartões de Crédito", icon: CreditCard, items: CARTOES_ITEMS },
