@@ -110,6 +110,7 @@ model Workspace {
   healthSnapshots  HealthSnapshot[]
   automationRules  AutomationRule[]
   aiInteractions   AiInteraction[]
+  diagnosticResponses DiagnosticResponse[]
   entitlements     Entitlement[]
   accessLogs       AccessLog[]
   notifications    Notification[]
@@ -662,6 +663,7 @@ model ConsultingEngagement {
   planGrants   PlanGrant[]
   phases       MethodPhase[]
   deliverables Deliverable[]
+  diagnosticResponses DiagnosticResponse[]
 
   @@index([workspaceId, status])
   @@map("consulting_engagements")
@@ -1750,4 +1752,55 @@ model AutomationRun {
 
   @@index([startedAt])
   @@map("automation_runs")
+}
+
+/// §12.2 da Metodologia v5.0 — o diagnóstico em três camadas. Cada instrumento
+/// coleta um tipo diferente de dado, em momento diferente, e é essa separação
+/// que neutraliza os dois vieses que a metodologia nomeia: "no formulário ele
+/// omite o que é vergonhoso; na entrevista ele erra o que é numérico".
+///
+/// **B é de uso interno exclusivo** (§12.5: "nunca entregue ao cliente"): é o
+/// roteiro da entrevista, preenchido pelo consultor **depois** da reunião. Por
+/// isso `respondedBy` não é sempre o titular — o campo existe justamente para
+/// registrar quem de fato respondeu.
+enum DiagnosticInstrument {
+  A1
+  A2
+  B
+  C
+}
+
+/// §12 — respostas dos instrumentos de diagnóstico.
+///
+/// `answers` é `Json` de propósito: a **redação** de cada pergunta ainda é
+/// decisão do dono do produto (Pendências #6–8 da Metodologia v5.0), enquanto
+/// os **campos** que cada instrumento coleta estão especificados em §12.3/12.4/
+/// 12.6. Guardar resposta em coluna fixa congelaria uma redação que ainda vai
+/// mudar; guardar em Json com o catálogo versionado em `lib/method/instruments/`
+/// deixa a redação evoluir sem migração e sem perder o que já foi respondido.
+///
+/// Não há unicidade por (engagement, instrumento): o **C é respondido
+/// individualmente e sem companhia** (§12.6), então um mesmo contrato tem uma
+/// resposta de C por pessoa. `respondedBy` é quem separa uma da outra.
+model DiagnosticResponse {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId  String               @map("workspace_id") @db.Uuid
+  engagementId String               @map("engagement_id") @db.Uuid
+  instrument   DiagnosticInstrument
+  /// Estrutura por instrumento — ver lib/method/instruments/.
+  answers      Json
+  /// Versão do catálogo que produziu estas respostas. Sem isso, uma resposta
+  /// antiga seria relida com perguntas que não são as que foram feitas.
+  catalogVersion String             @default("1") @map("catalog_version")
+  /// Nulo enquanto o cliente está preenchendo; preenchido ao enviar. É o que
+  /// distingue rascunho de resposta entregue, sem uma coluna de status à parte.
+  submittedAt  DateTime?            @map("submitted_at")
+  respondedBy  String               @map("responded_by") @db.Uuid
+  respondedAt  DateTime             @default(now()) @map("responded_at")
+
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  engagement ConsultingEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@index([engagementId, instrument])
+  @@map("diagnostic_responses")
 }

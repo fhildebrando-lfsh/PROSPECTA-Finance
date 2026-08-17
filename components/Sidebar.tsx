@@ -53,6 +53,7 @@ import {
   History,
   FileText,
   Timer,
+  ClipboardList,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -122,6 +123,7 @@ const PATRIMONIO_ITEMS: NavLeaf[] = [
 
 const METODO_ITEMS: NavLeaf[] = [
   { href: "/metodo/trilha", label: "Trilha do Método", icon: Route },
+  { href: "/metodo/instrumentos", label: "Diagnóstico (DIP)", icon: ClipboardList },
   { href: "/metodo/entregaveis", label: "Entregáveis", icon: FileText },
 ];
 

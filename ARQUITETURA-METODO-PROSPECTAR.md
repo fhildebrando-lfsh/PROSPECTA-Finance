@@ -1136,7 +1136,26 @@ Abre a trilha de consultoria propriamente dita.
 | **7** ✅ | `funcao_patrimonial` em bens/investimentos/carteiras + achado automático de "ativo sem função" (§13.4) | Bloco I (Max) |
 | **8** ✅ | `ConsultingEngagement` + `MethodPhase` + `GateCheck` — a trilha de fases e o ritual de passagem (§7.3) em tela para o consultor. Registro Nº 084 | Etapa 4 (`PlanGrant` nasce junto com o engagement) |
 | **9** ✅ | `Deliverable` + templates dos 10 artefatos codificados (PAN, AFF, RAP, MEC, MRP, PLA, PIP, MFP, PCP, PFI) — v0 pode ser HTML/PDF gerado a partir de `content: Json`, reaproveitando `lib/reports/pdf/` já existente como padrão de geração | Etapa 8 |
-| **10** | Instrumentos A1/A2/C como formulário digital + envio automático (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
+| **10** ◐ | Instrumentos A1/A2/C como formulário digital + envio automático (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
+
+**Etapa 10 — status: formulários implementados e verificados; envio automático
+pendente (Registro Nº 092, 2026-08-17).** `DiagnosticResponse` + catálogo puro em
+`lib/method/instruments/`, telas `/metodo/instrumentos` e
+`/metodo/instrumentos/[code]`, gateadas por `diagnostico_dip`. Os **campos** de
+cada instrumento vêm literalmente de §12.3 (A1), §12.4 (A2) e §12.6 (C); a
+**redação pergunta a pergunta** segue sendo decisão do dono do produto
+(Pendências #6–8 da Metodologia v5.0) e está marcada como `redacaoConfirmada:
+false`, com um teste que falha de propósito quando for definida.
+
+O `◐` na tabela é literal: a metade **"envio automático"** da entrega não foi
+feita. §12.4 prevê que o A2 seja "guiado pelo sistema após a entrevista, com
+prazo e lembretes automáticos", e hoje não há disparo nem lembrete — o cliente
+só encontra o formulário se entrar na tela. A infraestrutura de cron
+(`runDueAutomations`) e a de e-mail (Brevo) já existem, então o que falta é
+ligar as duas a um gatilho de prazo, não construir base nova.
+
+B continua fora de escopo por decisão do próprio documento (§12.5: uso interno,
+nunca entregue ao cliente); o enum do banco já o prevê.
 
 #### Etapa 9-A — Proteção e Segurança / PROSPECTA-MCRF (antecipa a Etapa 12)
 

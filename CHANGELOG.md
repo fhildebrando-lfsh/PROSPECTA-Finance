@@ -16,6 +16,12 @@
 
 ## 2026-08-17
 
+### Adicionado (Registro Nº 092)
+- **Diagnóstico (DIP)** — novo item no menu Método, com os três formulários do diagnóstico: **A1** (pré-diagnóstico, curto, antes da entrevista), **A2** (complementação detalhada, depois dela) e **C** (perfil comportamental, respondido individualmente).
+- O A2 tem **"Salvar rascunho"**, porque é longo e não se responde de uma sentada. Enviar exige os campos obrigatórios preenchidos, e a tela diz quantos faltam.
+- Depois de enviado, o formulário vira leitura: as respostas continuam visíveis, mas corrigir passa a ser conversa com o consultor.
+- **Ainda não implementado:** o envio automático e os lembretes de prazo do A2 — hoje o formulário só é encontrado entrando na tela.
+
 ### Adicionado (Registro Nº 091)
 - **Tela de Automações no Admin** (`/admin/automacoes`) — mostra se a verificação diária está rodando, quando rodou pela última vez e o que cada execução produziu. Passou de 26h sem rodar, o painel avisa. Tem um botão "Executar agora" para disparar na hora.
 - **Alerta de gasto por categoria agora aceita período**: por mês (como era), por semana (segunda a domingo) ou por dia. Regras já criadas continuam mensais, sem mudança.

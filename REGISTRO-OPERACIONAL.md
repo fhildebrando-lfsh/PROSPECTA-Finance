@@ -2555,7 +2555,23 @@
 
 ---
 
-## Próximo número de registro: **092**
+### Registro Nº 092
+- **Data:** 2026-08-17
+- **Etapa concluída:** Etapa 10 — instrumentos de diagnóstico A1/A2/C como formulário digital. **Parcial e declarada como tal:** a metade "envio automático" da linha do roadmap **não** foi feita.
+- **Descrição:** `DiagnosticResponse` + enum `DiagnosticInstrument`, migration `20260817200000_diagnostic_response` aplicada em dev, depois em produção, e só então o código (`RUNBOOK` §5); mesmo checksum (`b3eedbaa9b4a…`). Catálogo puro em `lib/method/instruments/` (`catalog.ts` + `validation.ts`), telas `/metodo/instrumentos` e `/metodo/instrumentos/[code]`, gateadas por `diagnostico_dip` — feature METODO que **já existia** no seed, então nenhum seed novo foi necessário. Entrada "Diagnóstico (DIP)" no menu Método.
+- **O que veio do documento e o que não veio.** Antes de escrever qualquer código, extraí a §12 da Metodologia v5.0 do `.docx` original. Os **campos** de cada instrumento estão especificados literalmente — §12.3 lista os dez itens do A1, §12.4 os oito blocos do A2 com seus sub-itens, §12.6 as oito dimensões do C — e foram reproduzidos sem invenção. O que **não** está definido é a redação pergunta a pergunta: são as **Pendências #6–8 da própria Metodologia**, decisão do dono do produto. Em vez de inventar redação e deixá-la passar por oficial, cada instrumento carrega `redacaoConfirmada: false`, a tela avisa o cliente, e **um teste falha de propósito quando ela for definida** — mesmo mecanismo que fez PAN e AFF serem confirmados na Etapa 9.
+- **Três detalhes do método que viraram código, não decoração:** (1) §12.3 manda patrimônio **em faixas, não valores** no A1 — o campo é `faixa` e um teste garante que não vire `numero`, porque pedir valor exato antes da entrevista aumenta o atrito e convida à omissão; (2) §12.6 manda o C ser respondido **individualmente e sem companhia** — não há unicidade por (contrato, instrumento), então cada pessoa tem a sua linha, e a tela diz para responder sozinho; (3) §12.5 tira o **B** do escopo — "uso interno exclusivo, nunca entregue ao cliente" —, e o enum do banco já o prevê para quando o registro estruturado pós-entrevista existir.
+- **A regra de atrito virou verificável, e a calibração foi corrigida no meio do caminho.** §12.1 diz que "o A1 nunca deve passar de 10 minutos". Deixar isso como comentário significaria descobrir a violação em produção, então virou `checkAtrito()` com estimativa por tipo de campo. **A primeira versão estimava 5,3 min** para o A1 — mas o próprio documento declara "8 a 10 minutos" para exatamente esses campos. Um medidor descalibrado para baixo deixaria alguém quase dobrar o formulário sem o teste acusar, ou seja, o guard-rail seria decoração. Recalibrei os segundos por tipo até a estimativa pousar em 8,9 min, e **acrescentei um teste que ancora a estimativa na faixa declarada pelo documento** — sem essa âncora, o teto não protege de verdade.
+- **O que ficou de fora, explicitamente:** o **envio automático**. §12.4 prevê que o A2 seja "guiado pelo sistema após a entrevista, com prazo e lembretes automáticos", e hoje não há disparo nem lembrete — o cliente só encontra o formulário se entrar na tela. A infraestrutura já existe dos dois lados (cron em `runDueAutomations`, e-mail em Brevo), então o que falta é ligá-las a um gatilho de prazo, não construir base nova. A tabela do roadmap ficou marcada `◐`, não `✅`.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **690/690** (25 casos novos); integração **108/108** (4 casos novos contra o banco de dev); `npm run build` limpo, com as duas rotas na saída.
+- **Limite de verificação declarado:** as telas **não foram vistas logadas** — sem sessão o middleware manda para `/login`, e eu não insiro credenciais. Some-se a isso que elas exigem `ConsultingEngagement` ativo, que nenhum workspace de produção tem hoje; o teste de integração cria um contrato justamente para exercitar esse caminho.
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §6 (Bloco II, Etapa 10), Metodologia v5.0 §12.1–12.8 e Pendências #6–8, Registro Nº 086 (Etapa 9, de onde veio o padrão de nome não confirmado), `MANUAL-DE-USO.md` §13-A.2.
+
+---
+
+## Próximo número de registro: **093**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

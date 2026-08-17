@@ -811,7 +811,50 @@ O tipo de contrato também aparece aqui: **Diagnóstico**, **Planejamento**, **P
 **Acompanhamento**. Um contrato de projeto cobre uma fase específica, e não o método
 inteiro.
 
-### 13-A.2 Entregáveis
+### 13-A.2 Diagnóstico (DIP)
+
+Os formulários que o consultor usa para conhecer sua situação. São três, e a
+separação entre eles é proposital.
+
+| Instrumento | Quando | O que pergunta |
+| --- | --- | --- |
+| **A1 — Pré-Diagnóstico** | Fase 0, antes da entrevista | o essencial: identificação, ocupação, renda aproximada, existência de dívidas e de patrimônio, suas três maiores preocupações |
+| **A2 — Complementação** | Fase 1, depois da entrevista | o detalhe: renda e estabilidade, despesas, patrimônio, passivos e crédito, proteção, previdência, tributação, objetivos |
+| **C — Perfil Comportamental** | Fase 1 | oito dimensões sobre como você lida com risco, em escala de concordância |
+
+**Por que não é um formulário só.** Porque os erros são de tipos opostos. Num
+formulário, a pessoa tende a omitir o que é constrangedor; numa conversa, tende
+a errar o número. Separar as camadas neutraliza os dois, e o cruzamento entre o
+que você escreveu e o que contou na entrevista é, em si, material de
+diagnóstico.
+
+**O A1 é curto de propósito** — não deve passar de dez minutos. Tudo que exige
+procurar documento fica para o A2. Por isso ele pergunta seu patrimônio em
+**faixa, não em valor**: valor exato antes da entrevista aumenta o atrito e
+convida à omissão, e é justamente o que o A2 levanta depois com calma.
+
+**O C se responde sozinho.** Sem companhia, inclusive sem o cônjuge — é sobre
+como *você* se relaciona com risco, e a presença de outra pessoa muda a
+resposta. Em família, cada um responde o seu. Ele **não substitui** o
+questionário de perfil de investidor da instituição onde você investe.
+
+**Rascunho e envio.** O A2 é longo e não se responde de uma sentada, então há
+**"Salvar rascunho"** ao lado de **"Enviar"**. Enviar exige que os campos
+obrigatórios estejam preenchidos, e a tela diz quantos faltam. Depois de
+enviado, o formulário vira leitura — suas respostas continuam visíveis, mas
+corrigir passa a ser conversa com o consultor, não um clique.
+
+**Uma observação honesta sobre a redação.** Os campos de cada instrumento são os
+que a Metodologia PROSPECTA especifica, mas a redação final de cada pergunta
+ainda está em revisão. A tela avisa isso enquanto durar. O que você responder
+continua valendo.
+
+**Existe um quarto instrumento, o B** — o roteiro da entrevista. Ele não aparece
+no sistema para o cliente: é conduzido como conversa e preenchido pelo consultor
+depois da reunião, porque preencher formulário na frente de alguém destrói a
+conversa.
+
+### 13-A.3 Entregáveis
 
 Os dez documentos codificados do método. Cada um tem seções próprias, e a tela mostra quais
 faltam preencher.

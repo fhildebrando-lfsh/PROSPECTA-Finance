@@ -15,8 +15,45 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (rastro do cron + os três ajustes
-> adiados — Registro Nº 091). Zera a lista de pendências nomeadas.**
+> **Última atualização real: 2026-08-17 (Etapa 10 — instrumentos A1/A2/C.
+> Parcial e declarada como tal — Registro Nº 092).**
+>
+> `DiagnosticResponse` + catálogo puro em `lib/method/instruments/`, telas
+> `/metodo/instrumentos[/code]`, gate `diagnostico_dip` (feature METODO que já
+> existia no seed). Migration em dev → produção → código, mesmo checksum.
+>
+> **O que veio do documento e o que não veio.** Extraí a §12 da Metodologia v5.0
+> do `.docx` antes de escrever código: os **campos** estão especificados
+> literalmente (§12.3 os dez itens do A1, §12.4 os oito blocos do A2, §12.6 as
+> oito dimensões do C) e foram reproduzidos sem invenção. A **redação pergunta
+> a pergunta** são as Pendências #6–8 da própria Metodologia — decisão do dono
+> do produto. Em vez de inventar e deixar passar por oficial:
+> `redacaoConfirmada: false`, aviso na tela, e **um teste que falha de propósito
+> quando for definida**.
+>
+> **Três regras do método viraram código verificável:** patrimônio do A1 em
+> **faixa, não valor** (§12.3), com teste que impede virar `numero`; C com uma
+> linha **por pessoa** (§12.6, "individualmente e sem companhia"); B fora de
+> escopo por decisão do próprio documento (§12.5).
+>
+> **A calibração que eu tinha errado.** §12.1 fixa teto de 10 min para o A1, e
+> virou `checkAtrito()`. A primeira versão estimava **5,3 min** — mas o
+> documento declara **8–10 min** para exatamente esses campos. Medidor
+> subestimando deixaria alguém quase dobrar o formulário sem o teste acusar: o
+> guard-rail seria decoração. Recalibrei para 8,9 min e **ancorei a estimativa
+> na faixa do documento com um teste próprio**.
+>
+> **O que ficou de fora, explicitamente:** o **envio automático**. §12.4 prevê
+> "prazo e lembretes automáticos" para o A2; hoje não há disparo — o cliente só
+> acha o formulário entrando na tela. Cron e e-mail já existem; falta ligá-los a
+> um gatilho de prazo. Roadmap marcado `◐`, não `✅`.
+>
+> **Limite declarado:** telas não vistas logadas (middleware manda para
+> `/login`), e elas exigem `ConsultingEngagement` ativo, que nenhum workspace de
+> produção tem hoje. 690 unitários, 108 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-17 (rastro do cron + os três ajustes
+> adiados — Registro Nº 091).**
 >
 > **Rastro do cron.** Nova `automation_runs`, migration aplicada em dev, depois
 > em produção, e só então o código (`RUNBOOK` §5 — a regra que nasceu do apagão
