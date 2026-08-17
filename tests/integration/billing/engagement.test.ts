@@ -98,6 +98,32 @@ describe("camada de método (integração — Etapa 8, 2026-08-17)", () => {
   });
 
   /**
+   * A sequência que `openConsultingEngagement` executa ao trocar de contrato:
+   * encerra o ativo e abre o novo. Ficou sem cobertura até 2026-08-17 porque
+   * não havia tela que a acionasse — a ação existia sem nada chamá-la. Agora
+   * que `/admin/usuarios` a expõe, um admin consegue disparar isto, e a
+   * invariante precisa estar travada: **nunca dois contratos ATIVO no mesmo
+   * workspace**, senão `activeEngagement()` passa a depender de ordem de
+   * inserção para decidir o que o cliente pode ver.
+   */
+  it("trocar de contrato encerra o anterior e deixa exatamente um ativo", async () => {
+    await criarContrato({ modality: "DIAGNOSTICO" });
+
+    await closeActiveEngagement(workspaceId, "CONCLUIDO");
+    await criarContrato({ modality: "ACOMPANHAMENTO" });
+
+    const ativos = await prisma.consultingEngagement.findMany({ where: { workspaceId, status: "ATIVO" } });
+    expect(ativos).toHaveLength(1);
+    expect(ativos[0].modality).toBe("ACOMPANHAMENTO");
+
+    // O anterior continua existindo como histórico, não é apagado.
+    expect(await prisma.consultingEngagement.count({ where: { workspaceId } })).toBe(2);
+
+    const ativo = await activeEngagement(workspaceId);
+    expect(ativo?.modality).toBe("ACOMPANHAMENTO");
+  });
+
+  /**
    * §13.8 — um contrato de PROJETO libera só a fase contratada, não a camada
    * inteira. Ampliar escopo por omissão daria de graça o que não foi vendido.
    */

@@ -16,6 +16,11 @@
 
 ## 2026-08-17
 
+### Adicionado (Registro Nº 094)
+- **Abrir e encerrar consultoria** direto em `/admin/usuarios`, na coluna Workspaces. Escolha a modalidade (Diagnóstico, Planejamento, Projeto ou Acompanhamento) e o contrato passa a valer na hora; Projeto pede também a fase contratada.
+- **É isso que faz o menu Método aparecer para um cliente.** Atribuir um consultor dá acesso ao workspace; abrir a consultoria é o que registra a responsabilidade metodológica e libera Trilha, Diagnóstico e Entregáveis.
+- Só existe uma consultoria ativa por cliente: abrir uma nova encerra a anterior, com aviso antes. Encerrar não apaga — vira histórico.
+
 ### Alterado (Registro Nº 093)
 - **As perguntas do diagnóstico ganharam redação definitiva.** Antes os campos apareciam com o nome técnico ("Ocupação", "Renda líquida do núcleo"); agora são perguntas em português de conversa ("O que você faz hoje?", "Somando todo mundo da casa, quanto entra por mês já descontados os impostos?").
 - **O questionário comportamental (C) passou a mostrar afirmações**, não nomes de dimensão — numa escala de concordância, "Locus de controle financeiro" não é algo com que se concorde. A pergunta sobre tolerância a perda usa valores em reais, não porcentagem.

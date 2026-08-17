@@ -983,6 +983,30 @@ preservar o histórico.
   liberada por nível de plano; um grupo à parte só é liberado com consultor ativo (ainda
   não implementado). Ativar/desativar um plano inteiro (sem excluir) fica no topo da tela.
 
+- **Abrir uma consultoria** — na coluna Workspaces, abaixo do acesso temporário,
+  cada workspace mostra se tem **contrato de consultoria** e permite abrir ou
+  encerrar um.
+
+  **Isto é diferente de atribuir um consultor**, logo acima na mesma célula, e a
+  diferença importa: atribuir consultor dá a alguém **acesso** ao workspace do
+  cliente; abrir a consultoria registra que um profissional assumiu
+  **responsabilidade metodológica** por ele. É só o contrato que faz o menu
+  **Método** existir para aquele cliente — Trilha, Diagnóstico e Entregáveis.
+  Um cliente pode perfeitamente ter consultor com acesso e nenhuma consultoria
+  aberta.
+
+  Ao abrir, escolha a **modalidade**: Diagnóstico, Planejamento, Projeto ou
+  Acompanhamento. **Projeto pede também a fase contratada** (0 a 9), porque
+  esse tipo de contrato cobre uma fase específica do método, e não a trilha
+  inteira — sem o número, o sistema não teria como saber o que liberar.
+
+  **Só existe uma consultoria ativa por cliente.** Abrir uma nova encerra a
+  anterior, e o sistema avisa antes de fazer isso. Encerrar não apaga nada: o
+  contrato vira histórico, e tudo que foi produzido nele continua gravado.
+
+  Isso é admin-only de propósito: nem o cliente contrata clicando, nem o
+  consultor se autoconcede.
+
 - **`/admin/metodologia`** — os parâmetros do Método PROSPECTAR que valem para **toda a
   plataforma**, não por cliente: a classificação de cada despesa em rígida, ajustável ou
   discricionária, e o percentual de corte considerado possível numa emergência. São

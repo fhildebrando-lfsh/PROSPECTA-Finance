@@ -2588,7 +2588,22 @@
 
 ---
 
-## Próximo número de registro: **094**
+### Registro Nº 094
+- **Data:** 2026-08-17
+- **Etapa concluída:** Tela para abrir e encerrar contrato de consultoria em `/admin/usuarios` — destrava a camada de método inteira, que era inalcançável na prática
+- **Descrição:** `EngagementControl.tsx` novo, no padrão de `PlanGrantControl`: mostra o contrato ativo (modalidade, fase quando é Projeto, data de início), permite **abrir** escolhendo a modalidade e **encerrar**. Projeto pede a fase contratada (0–9), porque cobre uma fase e não a trilha inteira. Sem migration e sem schema novo.
+- **Como o buraco apareceu.** O usuário perguntou "como criar um contrato de consultoria?", e a resposta honesta exigiu procurar: `openConsultingEngagement` e `closeConsultingEngagement` existiam desde a Etapa 8, com a regra de "nunca dois ativos" já implementada, mas **a única ocorrência do nome no projeto inteiro era a própria definição**. Nada as chamava. Ou seja: nenhum workspace tinha como ter contrato, e portanto `/metodo/trilha`, `/metodo/instrumentos` e `/metodo/entregaveis` — Etapas 8, 9 e 10 — eram inalcançáveis para qualquer usuário real. É o mesmo defeito do simulador "E se?" (Registro Nº 090): capacidade construída sem porta de entrada. **Duas ocorrências do mesmo padrão em três dias**, e a causa é comum: ao implementar uma etapa, testei a lógica e a tela da própria etapa, mas não o **caminho que leva um usuário até ela** a partir do estado inicial do sistema.
+- **Correção de premissa do usuário, registrada porque a confusão é natural:** ele leu a coluna "Consultor: Fulano" da tela de usuários como "já está numa consultoria". Não é. São camadas diferentes do §4.6 — atribuir consultor dá **acesso** (papel `ADVISOR`); o `ConsultingEngagement` registra **responsabilidade metodológica** e é o único que abre features de `gateKind = METODO`. Os quatro workspaces com consultor atribuído em produção têm zero contratos. A tela nova põe as duas coisas lado a lado, e o comentário do componente explica a diferença para quem for mexer nele.
+- **Uma invariante que ficou sem cobertura justamente por não haver tela:** "abrir um contrato novo encerra o anterior" vive na Server Action, e os testes existentes criavam contratos direto pelo Prisma, então a sequência nunca era exercitada. Agora que um admin consegue disparar isso com dois cliques, o teste foi escrito: encerra o anterior, deixa **exatamente um** ATIVO, e o antigo permanece como histórico. Sem isso, `activeEngagement()` passaria a depender de ordem de inserção para decidir o que o cliente vê.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **699/699**; integração **109/109** (1 caso novo); `npm run build` limpo.
+- **O que isto destrava:** com um contrato aberto em qualquer workspace, as telas das Etapas 8, 9 e 10 passam a ser visíveis pela primeira vez — incluindo a redação dos instrumentos definida no Registro Nº 093, que até agora só existia em teste.
+- **Documentos relacionados:** Registros Nº 084 (Etapa 8), 090 (o mesmo padrão de defeito), 092 e 093 (Etapa 10), `MANUAL-DE-USO.md` §16.
+
+---
+
+## Próximo número de registro: **095**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

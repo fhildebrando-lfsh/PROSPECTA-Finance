@@ -9,6 +9,7 @@ import { AdvisorWriteToggle } from "@/components/AdvisorWriteToggle";
 import { PlatformAdminToggle } from "./PlatformAdminToggle";
 import { BlockAccessControl } from "./BlockAccessControl";
 import { PlanGrantControl } from "./PlanGrantControl";
+import { EngagementControl } from "./EngagementControl";
 
 const ROLE_LABELS: Record<string, string> = {
   TITULAR: "Titular",
@@ -32,7 +33,8 @@ export default async function AdminUsuariosPage() {
 
   const supabase = createAdminClient();
   const now = new Date();
-  const [{ data: authData, error }, profiles, workspaces, activePlans, allActiveGrants] = await Promise.all([
+  const [{ data: authData, error }, profiles, workspaces, activePlans, allActiveGrants, activeEngagements] =
+    await Promise.all([
     supabase.auth.admin.listUsers({ perPage: 1000 }),
     prisma.profile.findMany({
       include: { memberships: { include: { workspace: true } } },
@@ -46,6 +48,9 @@ export default async function AdminUsuariosPage() {
       where: { revokedAt: null, startsAt: { lte: now }, endsAt: { gte: now } },
       include: { plan: true },
     }),
+    // Camada 3 do §4.6 — o contrato de consultoria. Um por workspace no
+    // máximo, garantido pela ação que o abre.
+    prisma.consultingEngagement.findMany({ where: { status: "ATIVO" } }),
   ]);
 
   if (error) {
@@ -70,6 +75,7 @@ export default async function AdminUsuariosPage() {
   const pendingApprovalCount = workspaces.filter((w) => w.blockedReason === "AGUARDANDO_APROVACAO").length;
 
   const planOptions = activePlans.map((p) => ({ id: p.id, name: p.name }));
+  const engagementByWorkspace = new Map(activeEngagements.map((e) => [e.workspaceId, e]));
   const grantsByWorkspace = new Map<string, typeof allActiveGrants>();
   for (const grant of allActiveGrants) {
     const list = grantsByWorkspace.get(grant.workspaceId) ?? [];
@@ -193,6 +199,20 @@ export default async function AdminUsuariosPage() {
                                   reason: g.reason,
                                   endsAt: g.endsAt.toISOString(),
                                 }))}
+                              />
+                              <EngagementControl
+                                workspaceId={m.workspaceId}
+                                workspaceLabel={m.workspace.name}
+                                active={(() => {
+                                  const e = engagementByWorkspace.get(m.workspaceId);
+                                  return e
+                                    ? {
+                                        modality: e.modality,
+                                        projectPhase: e.projectPhase,
+                                        startsAt: e.startsAt.toISOString(),
+                                      }
+                                    : null;
+                                })()}
                               />
                             </li>
                           );

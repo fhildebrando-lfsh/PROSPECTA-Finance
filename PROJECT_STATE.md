@@ -15,8 +15,44 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (redação dos instrumentos definida;
-> envio automático virou Etapa 10-B. A Etapa 10 fecha — Registro Nº 093).**
+> **Última atualização real: 2026-08-17 (tela de contrato de consultoria —
+> Registro Nº 094). Destrava a camada de método inteira.**
+>
+> `EngagementControl.tsx` em `/admin/usuarios`: abre e encerra
+> `ConsultingEngagement`, mostra o ativo, e Projeto pede a fase contratada.
+> Sem migration.
+>
+> **Como o buraco apareceu.** O usuário perguntou "como criar um contrato de
+> consultoria?" e a resposta exigiu procurar: `openConsultingEngagement` e
+> `closeConsultingEngagement` existiam desde a Etapa 8, com a regra de "nunca
+> dois ativos" implementada, mas **a única ocorrência do nome no projeto era a
+> própria definição**. Nada as chamava — logo, nenhum workspace podia ter
+> contrato, e as Etapas 8, 9 e 10 eram **inalcançáveis para qualquer usuário
+> real**.
+>
+> **Segundo caso do mesmo padrão em três dias** (o primeiro foi o simulador
+> "E se?", Registro Nº 090). A causa é comum e vale como regra daqui pra
+> frente: ao fechar uma etapa eu testava a lógica e a tela **daquela** etapa,
+> mas não o **caminho que leva um usuário até ela partindo do estado inicial
+> do sistema**. Etapa nova cujo gate depende de um registro que só outra tela
+> cria precisa verificar que essa outra tela existe.
+>
+> **Premissa do usuário corrigida:** "Consultor: Fulano" na tela de usuários
+> **não** é consultoria. São camadas distintas do §4.6 — consultor atribuído dá
+> **acesso** (`ADVISOR`); `ConsultingEngagement` registra **responsabilidade
+> metodológica** e é o único que abre `gateKind = METODO`. Os quatro workspaces
+> com consultor em produção têm zero contratos.
+>
+> **Invariante que ficou sem cobertura justamente por não haver tela:** "abrir
+> um novo encerra o anterior" mora na Server Action, e os testes criavam
+> contrato direto pelo Prisma. Agora tem teste: exatamente um ATIVO, anterior
+> preservado como histórico. Sem isso `activeEngagement()` dependeria de ordem
+> de inserção.
+>
+> 699 unitários, 109 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-17 (redação dos instrumentos definida;
+> envio automático virou Etapa 10-B — Registro Nº 093).**
 >
 > As Pendências #6–8 da Metodologia ("instrumentos pergunta a pergunta") foram
 > resolvidas: o usuário delegou a redação, ela foi escrita para os três,
