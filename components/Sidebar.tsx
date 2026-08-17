@@ -51,6 +51,7 @@ import {
   SlidersHorizontal,
   Route,
   History,
+  FileText,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -117,6 +118,11 @@ const PATRIMONIO_ITEMS: NavLeaf[] = [
   { href: "/patrimonio/funcao", label: "Função do Patrimônio", icon: Compass },
 ];
 
+const METODO_ITEMS: NavLeaf[] = [
+  { href: "/metodo/trilha", label: "Trilha do Método", icon: Route },
+  { href: "/metodo/entregaveis", label: "Entregáveis", icon: FileText },
+];
+
 const PROTECAO_ITEMS: NavLeaf[] = [
   { href: "/protecao/reserva", label: "Reserva de Emergência", icon: ShieldAlert },
   { href: "/protecao/perfil", label: "Perfil de Risco", icon: IdCard },
@@ -167,7 +173,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { label: "Patrimônio", icon: Landmark, items: PATRIMONIO_ITEMS },
     { label: "Investimentos", icon: CandlestickChart, items: INVESTIMENTOS_ITEMS },
     { label: "Proteção e Segurança", icon: ShieldAlert, items: PROTECAO_ITEMS },
-    { href: "/metodo/trilha", label: "Trilha do Método", icon: Route },
+    { label: "Método", icon: Route, items: METODO_ITEMS },
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },
   ];
   if (isPlatformAdmin) {

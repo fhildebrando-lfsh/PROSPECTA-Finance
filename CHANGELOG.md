@@ -16,6 +16,11 @@
 
 ## 2026-08-17
 
+### Adicionado (Registro Nº 086)
+- **Método → Entregáveis** (nova tela): os dez documentos do método — mapa de riscos, política de investimento, plano de continuidade e os demais —, cada um com suas seções, versionado e com PDF para baixar.
+- **Validar não sobrescreve.** Uma revisão futura gera uma versão nova e a anterior continua existindo: é ela que prova o que foi dito na época. Documento validado não pode ser reescrito nem excluído.
+- Também no menu **Método**, junto da Trilha.
+
 ### Adicionado (Registro Nº 085)
 - **Proteção e Segurança → Eventos e Recomposição** (nova tela, plano Max): registre o que já aconteceu de verdade — uma despesa inesperada, uma perda de renda, um reparo — com o quanto saiu do seu bolso, se havia seguro e quanto tempo o reembolso levou para cair.
 - **O que já aconteceu com você pesa mais que qualquer simulação.** O maior desembolso registrado passa a compor o piso da sua reserva, e a tela mostra exatamente qual evento mudou qual número — nada acontece por trás.

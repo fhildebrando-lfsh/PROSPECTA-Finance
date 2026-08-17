@@ -126,6 +126,7 @@ model Workspace {
   mcrfAssessments        McrfAssessment[]
   consultingEngagements  ConsultingEngagement[]
   shockEvents            ShockEvent[]
+  deliverables           Deliverable[]
 
   @@map("workspaces")
 }
@@ -658,8 +659,9 @@ model ConsultingEngagement {
   createdAt   DateTime           @default(now()) @map("created_at")
 
   workspace  Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  planGrants PlanGrant[]
-  phases     MethodPhase[]
+  planGrants   PlanGrant[]
+  phases       MethodPhase[]
+  deliverables Deliverable[]
 
   @@index([workspaceId, status])
   @@map("consulting_engagements")
@@ -712,6 +714,55 @@ model GateCheck {
 
   @@index([phaseId])
   @@map("gate_checks")
+}
+
+/// §12.1 — os dez artefatos codificados do Método PROSPECTAR.
+enum DeliverableCode {
+  PAN
+  AFF
+  RAP
+  MEC
+  MRP
+  PLA
+  PIP
+  MFP
+  PCP
+  PFI
+}
+
+enum DeliverableStatus {
+  RASCUNHO
+  VALIDADO
+  ASSINADO
+}
+
+/// §12.1 — um artefato entregue ao cliente dentro de um contrato.
+///
+/// **Versionado, nunca sobrescrito.** Cada validação de fase gera uma versão
+/// nova (PFI v0 na Fase 1, v1 na Fase 2…) — mesmo espírito de `EntryAudit` e
+/// de `McrfAssessment`. Um entregável é o registro do que foi dito ao cliente
+/// numa data; reescrever o passado apagaria a própria prova do trabalho.
+model Deliverable {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId  String            @map("workspace_id") @db.Uuid
+  engagementId String            @map("engagement_id") @db.Uuid
+  code         DeliverableCode
+  version      Int
+  status       DeliverableStatus @default(RASCUNHO)
+  /// Conteúdo estruturado — o formato por código vive em
+  /// `lib/method/deliverables/catalog.ts`. Json porque cada artefato tem suas
+  /// seções e travar em colunas exigiria migration a cada refinamento.
+  content      Json
+  createdBy    String            @map("created_by") @db.Uuid
+  createdAt    DateTime          @default(now()) @map("created_at")
+  validatedAt  DateTime?         @map("validated_at")
+
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  engagement ConsultingEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@unique([engagementId, code, version])
+  @@index([workspaceId, code])
+  @@map("deliverables")
 }
 
 /// §48 da especificação PROSPECTA-MCRF — a foto de um cálculo de reserva.

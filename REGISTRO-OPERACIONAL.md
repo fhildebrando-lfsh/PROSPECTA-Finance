@@ -2465,7 +2465,20 @@
 
 ---
 
-## Próximo número de registro: **086**
+### Registro Nº 086
+- **Data:** 2026-08-17
+- **Etapa concluída:** Etapa 9 — `Deliverable` e os dez artefatos codificados do método (§12.1)
+- **Descrição:** **Schema:** `DeliverableCode` (PAN, AFF, RAP, MEC, MRP, PLA, PIP, MFP, PCP, PFI), `DeliverableStatus` e o model `Deliverable`, **versionado e nunca sobrescrito** — cada validação de fase gera versão nova (PFI v0 na Fase 1, v1 na Fase 2…), mesmo espírito de `EntryAudit` e `McrfAssessment`. Um entregável é o registro do que foi dito ao cliente **numa data**; reescrever o passado apagaria a própria prova do trabalho. O índice único `(engagementId, code, version)` é o que garante isso no banco, não só na aplicação. **`lib/method/deliverables/catalog.ts` (novo, puro):** define o que cada artefato é, em que fase é produzido e quais seções precisa ter. Tela e PDF leem daqui; nenhum dos dois define estrutura por conta própria. `checkCompleteness()` devolve **quais** seções faltam, não um booleano — "incompleto" sem dizer onde é aviso inútil. `nextVersion()` nunca reaproveita número, mesmo com buraco na sequência, para o histórico não ficar ambíguo. **Decisão de honestidade registrada no código e em teste:** oito das dez siglas têm o nome completo confirmado na documentação do projeto; **PAN e AFF não** — a expansão delas não aparece em nenhum documento versionado. Em vez de inventar um nome plausível, ficam com a sigla, `nameConfirmed: false`, aviso na tela e no PDF, e um teste que fixa exatamente esse estado — quando as expansões forem confirmadas, o teste falha e obriga a atualizar o catálogo, em vez de deixar um nome provisório passar despercebido para sempre. Um nome errado num documento entregue ao cliente é pior que um nome ausente. **Tela `/metodo/entregaveis`** (gate `entregaveis`, feature METODO já existente no catálogo): criar rascunho com o esqueleto de seções, editar, validar e baixar PDF. **Regras de integridade:** entregável validado não é reescrito (a ação recusa e orienta a criar versão nova) e não pode ser excluído — só rascunho pode; validar é recusado enquanto houver seção vazia, listando quais. **PDF** em `lib/reports/pdf/entregavel.ts`, reaproveitando o `pdf-shared.ts` dos 8 relatórios existentes em vez de criar um segundo padrão de geração; versão e data vão impressas no documento, porque um PDF que circula por e-mail sem esses dois dados é uma afirmação sem contexto. **Separação de papéis:** o cliente vê e baixa; só o consultor responsável (ou o admin) produz e valida.
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 620/620 (12 casos novos de catálogo, incluindo o que fixa os dois nomes não confirmados e o que garante que seção só com espaço em branco não conta como preenchida); suíte de integração 19 arquivos / 98 testes; `npm run build` limpo, rotas `/metodo/entregaveis` e `/api/metodo/entregavel/[id]/pdf` novas. Migration `20260817160000_deliverable` aplicada **em produção antes do código**, checksum `f0bd1829d114…` idêntico ao de dev, zero checksums vazios, 2279 lançamentos intactos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saídas de `tsc`/`npm test`/build; verificação contra o banco de produção.
+- **Pendência nomeada:** os nomes completos de **PAN** e **AFF** precisam ser confirmados na Metodologia v5.0 e atualizados em `catalog.ts` (o teste correspondente falhará de propósito quando isso for feito).
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §5.3/§6 (Etapa 9), `lib/method/deliverables/catalog.ts`, `lib/reports/pdf/entregavel.ts`, `app/(app)/metodo/entregaveis/`, `prisma/migrations/20260817160000_deliverable/`.
+
+---
+
+## Próximo número de registro: **087**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

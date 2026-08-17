@@ -15,7 +15,42 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (`ShockEvent` — fecha a pendência
+> **Última atualização real: 2026-08-17 (Etapa 9 — `Deliverable` e os dez
+> artefatos codificados — Registro Nº 086).**
+>
+> **Versionado e nunca sobrescrito.** Cada validação de fase gera versão nova
+> (PFI v0 na Fase 1, v1 na Fase 2…). Um entregável é o registro do que foi dito
+> ao cliente **numa data**; reescrever o passado apagaria a prova do trabalho.
+> O índice único `(engagementId, code, version)` garante isso no banco, não só
+> na aplicação. Validado não pode ser reescrito nem excluído — a ação recusa e
+> orienta a criar versão nova.
+>
+> **`catalog.ts` é a fonte única** do que cada artefato é, em que fase nasce e
+> quais seções precisa ter. Tela e PDF leem dali; nenhum define estrutura por
+> conta própria. `checkCompleteness()` devolve **quais** seções faltam —
+> "incompleto" sem dizer onde é aviso inútil. `nextVersion()` nunca reaproveita
+> número, nem com buraco na sequência.
+>
+> **Decisão de honestidade que virou teste:** oito das dez siglas têm nome
+> completo confirmado na documentação; **PAN e AFF não**. Em vez de inventar um
+> nome plausível, ficam com a sigla, `nameConfirmed: false`, aviso na tela e no
+> PDF, e um teste que fixa esse estado — quando as expansões forem
+> confirmadas, o teste falha e obriga a atualizar o catálogo, em vez de deixar
+> um nome provisório passar despercebido para sempre. Nome errado em documento
+> entregue ao cliente é pior que nome ausente.
+>
+> **PDF reaproveita `pdf-shared.ts`** dos 8 relatórios existentes, em vez de
+> criar um segundo padrão. Versão e data vão impressas: um PDF que circula por
+> e-mail sem esses dois dados é afirmação sem contexto.
+>
+> **Verificado:** `tsc` limpo, 620/620 unitários (12 novos), 98/98 integração,
+> build limpo. Migration em produção antes do código, checksum idêntico ao de
+> dev, 2279 lançamentos intactos.
+>
+> **Pendência nomeada:** confirmar os nomes de **PAN** e **AFF** na Metodologia
+> v5.0 e atualizar `catalog.ts`.
+>
+> **Última atualização anterior: 2026-08-17 (`ShockEvent` — fecha a pendência
 > nomeada da Etapa 9-A — Registro Nº 085).**
 >
 > Era o item deixado explicitamente de fora no Registro Nº 083, anotado como
