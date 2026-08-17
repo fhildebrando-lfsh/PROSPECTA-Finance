@@ -22,21 +22,31 @@ describe("catálogo dos artefatos (§12.1)", () => {
   });
 
   /**
-   * Oito nomes estão confirmados na documentação do projeto; PAN e AFF não.
-   * O teste fixa esse estado de propósito — quando as expansões forem
-   * confirmadas, ele falha e obriga a atualizar o catálogo em vez de deixar
-   * um nome provisório passar despercebido para sempre.
+   * A versão anterior deste teste fixava PAN e AFF como **não** confirmados —
+   * eram os dois cujo nome completo não aparecia em documento versionado do
+   * projeto, e o teste existia para falhar quando fossem descobertos, em vez de
+   * deixar um nome provisório passar despercebido para sempre.
+   *
+   * Ele cumpriu o papel: os dois foram encontrados na Metodologia v5.0 em
+   * 2026-08-17 (Panorama Financeiro e Acordo Financeiro Familiar), o teste
+   * falhou como projetado, e a invariante virou esta — mais forte.
    */
-  it("marca explicitamente os dois nomes ainda não confirmados", () => {
+  it("todos os dez nomes estão confirmados e nenhum é a sigla repetida", () => {
     const naoConfirmados = DELIVERABLE_CODES.filter((c) => !DELIVERABLES[c].nameConfirmed);
-    expect(naoConfirmados).toEqual(["PAN", "AFF"]);
+    expect(naoConfirmados).toEqual([]);
 
     for (const code of DELIVERABLE_CODES) {
-      if (DELIVERABLES[code].nameConfirmed) {
-        // Nome confirmado nunca é só a sigla repetida.
-        expect(DELIVERABLES[code].name).not.toBe(code);
-      }
+      expect(DELIVERABLES[code].name).not.toBe(code);
+      expect(DELIVERABLES[code].name.length).toBeGreaterThan(code.length);
     }
+  });
+
+  it("PAN e AFF têm os nomes que a Metodologia v5.0 usa", () => {
+    expect(DELIVERABLES.PAN.name).toBe("Panorama Financeiro");
+    expect(DELIVERABLES.AFF.name).toBe("Acordo Financeiro Familiar");
+    // Ambos nascem na Fase 1 — o PAN é a devolutiva, o AFF é o acordo que a fecha.
+    expect(DELIVERABLES.PAN.phase).toBe(1);
+    expect(DELIVERABLES.AFF.phase).toBe(1);
   });
 
   it("cada artefato aponta a fase em que é produzido", () => {

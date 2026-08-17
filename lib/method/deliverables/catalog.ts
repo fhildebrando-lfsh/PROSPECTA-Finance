@@ -7,13 +7,18 @@ import type { DeliverableCode } from "@/app/generated/prisma/enums";
  * quais seções ele precisa ter para estar completo. A tela e o PDF leem daqui;
  * nenhum dos dois define estrutura por conta própria.
  *
- * **Nota de honestidade sobre dois nomes.** Oito das dez siglas têm o nome
- * completo confirmado na documentação do projeto (`seed-plans.ts` e
- * `ARQUITETURA-METODO-PROSPECTAR.md`). **PAN e AFF não** — a expansão delas não
- * aparece em nenhum documento versionado. Em vez de inventar um nome plausível,
- * ficam com a sigla e uma descrição do que o roteiro indica que elas são, com
- * `nameConfirmed: false` para ser fácil achar e corrigir depois. Um nome errado
- * num documento entregue ao cliente é pior que um nome ausente.
+ * **Os dez nomes estão confirmados na Metodologia v5.0** (2026-08-17). PAN e AFF
+ * eram os dois que faltavam e foram encontrados no documento original:
+ * "apresentação do Panorama Financeiro (PAN)" (§Fase 1, devolutiva) e
+ * "o Acordo Financeiro Familiar (AFF) — uma página, assinada por todos, com
+ * metas comuns, prioridades e regras de decisão". A sequência completa aparece
+ * no fluxo do método: PRÉ-DIAGNÓSTICO (A1) → ENTREVISTA (B) → COMPLEMENTAÇÃO
+ * (A2 + C) → PANORAMA (PAN) → ORGANIZAÇÃO (RAP) → DÍVIDAS (MEC) → PROTEÇÃO
+ * (MRP) → LONGEVIDADE (PLA) → INVESTIMENTOS (PIP) → PATRIMÔNIO (MFP) →
+ * SUCESSÃO (PCP) → PLANO INTEGRADO (PFI) → CONTINUIDADE.
+ *
+ * `nameConfirmed` foi mantido no tipo de propósito: se um artefato novo entrar
+ * sem nome confirmado, o campo existe para marcá-lo em vez de inventar.
  */
 export interface DeliverableSpec {
   code: DeliverableCode;
@@ -30,19 +35,30 @@ export interface DeliverableSpec {
 export const DELIVERABLES: Record<DeliverableCode, DeliverableSpec> = {
   PAN: {
     code: "PAN",
-    name: "PAN",
-    nameConfirmed: false,
-    phase: 0,
-    purpose: "Documento de abertura do trabalho, produzido no diagnóstico inicial.",
-    sections: ["Contexto do cliente", "Objetivos declarados", "Escopo acordado", "Próximos passos"],
+    name: "Panorama Financeiro",
+    nameConfirmed: true,
+    phase: 1,
+    purpose:
+      "A devolutiva da Fase 1: retrato patrimonial, fluxo declarado, mapa de riscos, mapa de dívidas, objetivos " +
+      "priorizados e o PSF de linha de base. É o entregável que faz o cliente entender por que precisa das fases seguintes.",
+    sections: [
+      "Retrato patrimonial",
+      "Fluxo declarado",
+      "Riscos e dívidas",
+      "Objetivos priorizados",
+      "PSF de linha de base",
+      "As três alavancas de maior impacto",
+    ],
   },
   AFF: {
     code: "AFF",
-    name: "AFF",
-    nameConfirmed: false,
+    name: "Acordo Financeiro Familiar",
+    nameConfirmed: true,
     phase: 1,
-    purpose: "Análise do fluxo financeiro observado nos lançamentos do cliente.",
-    sections: ["Receitas observadas", "Despesas por bloco", "Sazonalidade", "Conclusões"],
+    purpose:
+      "Entregável da Reunião de Alinhamento Familiar, ao fim da Fase 1: uma página, assinada por todos, com metas " +
+      "comuns, prioridades e regras de decisão. A Metodologia o descreve como o maior diferencial percebido da PROSPECTA.",
+    sections: ["Metas comuns", "Prioridades acordadas", "Regras de decisão", "Assinaturas"],
   },
   RAP: {
     code: "RAP",

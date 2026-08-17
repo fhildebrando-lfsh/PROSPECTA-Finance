@@ -16,6 +16,10 @@
 
 ## 2026-08-17
 
+### Alterado (Registro Nº 087)
+- **Os entregáveis PAN e AFF agora aparecem com o nome completo:** **Panorama Financeiro** e **Acordo Financeiro Familiar**. Os dois eram os únicos que ainda apareciam só pela sigla, com aviso de nome não confirmado — a expansão foi localizada na Metodologia PROSPECTA v5.0 e o aviso saiu da tela e do PDF.
+- Ambos passaram a constar na **Fase 1**, que é onde a Metodologia os produz: o Panorama é a devolutiva do diagnóstico, e o Acordo Financeiro Familiar é o documento de uma página, assinado por todos, que fecha a fase. As seções de cada um passaram a refletir o que a Metodologia descreve.
+
 ### Adicionado (Registro Nº 086)
 - **Método → Entregáveis** (nova tela): os dez documentos do método — mapa de riscos, política de investimento, plano de continuidade e os demais —, cada um com suas seções, versionado e com PDF para baixar.
 - **Validar não sobrescreve.** Uma revisão futura gera uma versão nova e a anterior continua existindo: é ela que prova o que foi dito na época. Documento validado não pode ser reescrito nem excluído.

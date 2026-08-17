@@ -15,7 +15,39 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (Etapa 9 — `Deliverable` e os dez
+> **Última atualização real: 2026-08-17 (PAN e AFF confirmados; e uma
+> verificação de produção sobre o cron — Registro Nº 087).**
+>
+> **`catalog.ts` não tem mais nome provisório.** **PAN = Panorama Financeiro**
+> (a devolutiva da Fase 1: retrato patrimonial, fluxo declarado, mapa de riscos,
+> mapa de dívidas, objetivos priorizados, PSF de linha de base e as três
+> alavancas de maior impacto) e **AFF = Acordo Financeiro Familiar** (uma
+> página, assinada por todos, com metas comuns, prioridades e regras de
+> decisão). Os dois são da **Fase 1**, corrigida no catálogo junto com propósito
+> e seções. `nameConfirmed` continua no tipo de propósito: serve para marcar um
+> artefato futuro que entre sem nome confirmado, não para ser apagado agora que
+> ficou todo `true`.
+>
+> **Achado de produção em aberto — o cron da Etapa 6 nunca produziu efeito.**
+> `CRON_SECRET` está presente e ativo (o deploy em execução é posterior a ele) e
+> o endpoint responde **401** sem header — rota publicada, gate correto, e o
+> middleware não engole mais `/api/cron` (o defeito do Registro Nº 076 está
+> corrigido em produção). Ainda assim, um *dry-run* somente-leitura do motor
+> contra o banco de produção mostrou que `INCIDENTE_ACUMULADO` **deveria** gerar
+> 1 alerta (163 lançamentos pendentes de revisão), e `notifications` tem **zero**
+> linhas `alerta_automacao` desde sempre. Pela cronologia, a execução de 08-16
+> às 09:00 UTC caiu **antes** do fix do middleware (commit `b6362f0`, 09:27 UTC);
+> a de 08-17 é a primeira com fix e segredo simultâneos no ar. **Verificação
+> pendente e barata:** a condição dos 163 incidentes é persistente, então uma
+> única linha `alerta_automacao` prova que voltou a funcionar — e continuar
+> zerada prova o contrário.
+>
+> **Lacuna que o achado expõe:** a rota não deixa rastro quando roda sem
+> disparar regra, então sucesso e falha silenciosa são indistinguíveis de fora.
+> Só foi detectável porque a condição de uma regra era persistente. Um registro
+> de execução (data, regras avaliadas, alertas gerados) é a correção natural.
+
+> **Última atualização anterior: 2026-08-17 (Etapa 9 — `Deliverable` e os dez
 > artefatos codificados — Registro Nº 086).**
 >
 > **Versionado e nunca sobrescrito.** Cada validação de fase gera versão nova
@@ -31,13 +63,15 @@
 > "incompleto" sem dizer onde é aviso inútil. `nextVersion()` nunca reaproveita
 > número, nem com buraco na sequência.
 >
-> **Decisão de honestidade que virou teste:** oito das dez siglas têm nome
-> completo confirmado na documentação; **PAN e AFF não**. Em vez de inventar um
-> nome plausível, ficam com a sigla, `nameConfirmed: false`, aviso na tela e no
-> PDF, e um teste que fixa esse estado — quando as expansões forem
-> confirmadas, o teste falha e obriga a atualizar o catálogo, em vez de deixar
-> um nome provisório passar despercebido para sempre. Nome errado em documento
-> entregue ao cliente é pior que nome ausente.
+> **Decisão de honestidade que virou teste — e que cobrou o próprio resgate.**
+> Na Etapa 9, oito das dez siglas tinham nome completo confirmado; **PAN e AFF
+> não**. Em vez de inventar um nome plausível, ficaram com a sigla,
+> `nameConfirmed: false`, aviso na tela e no PDF, e um teste fixando esse
+> estado. **Em 2026-08-17 os dois foram encontrados na Metodologia v5.0, o teste
+> falhou exatamente como projetado e obrigou a atualização** (Registro Nº 087) —
+> ver o bloco mais recente acima. Nome errado em documento entregue ao cliente é
+> pior que nome ausente; um teste que falha na hora certa é o que impede o
+> provisório de virar permanente.
 >
 > **PDF reaproveita `pdf-shared.ts`** dos 8 relatórios existentes, em vez de
 > criar um segundo padrão. Versão e data vão impressas: um PDF que circula por
@@ -47,8 +81,9 @@
 > build limpo. Migration em produção antes do código, checksum idêntico ao de
 > dev, 2279 lançamentos intactos.
 >
-> **Pendência nomeada:** confirmar os nomes de **PAN** e **AFF** na Metodologia
-> v5.0 e atualizar `catalog.ts`.
+> **Pendência nomeada — resolvida em 2026-08-17 (Registro Nº 087):** confirmar
+> os nomes de **PAN** e **AFF** na Metodologia v5.0 e atualizar `catalog.ts`.
+> Ver o bloco mais recente no topo.
 >
 > **Última atualização anterior: 2026-08-17 (`ShockEvent` — fecha a pendência
 > nomeada da Etapa 9-A — Registro Nº 085).**
