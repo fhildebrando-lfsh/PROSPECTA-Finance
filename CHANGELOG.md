@@ -16,6 +16,9 @@
 
 ## 2026-08-17
 
+### Corrigido (Registro Nº 089)
+- **Os alertas automáticos voltaram a chegar.** A verificação diária que avisa sobre limite de categoria, vencimento próximo, meta fora da trajetória e fila de incidentes não estava rodando em produção — era barrada antes de executar. A falha era silenciosa: nenhum alerta chegava e nada indicava o motivo. Confirmada funcionando em 2026-08-17.
+
 ### Alterado (Registro Nº 088)
 - **Manual de uso atualizado.** O menu **Método** (Trilha e Entregáveis) ganhou seção própria (§13-A), explicando por que ele é o único que não abre por plano — depende de consultoria ativa —, como funciona a passagem de fase e o ciclo dos dez entregáveis.
 - **Proteção e Segurança (§12-A) completa.** Quatro telas já entregues estavam sem manual: Seguros, Proteções e Benefícios, Eventos e Recomposição, e Reserva de Emergência. O texto de abertura, que ainda dizia que o menu "está sendo construído por partes", foi corrigido.

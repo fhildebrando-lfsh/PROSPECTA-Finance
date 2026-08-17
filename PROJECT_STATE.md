@@ -15,7 +15,28 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (manual posto em dia; e uma
+> **Última atualização real: 2026-08-17 (cron de automações confirmado
+> funcionando em produção — Registro Nº 089).**
+>
+> Às **09:16 UTC**, `notifications` recebeu **exatamente 1** linha
+> `alerta_automacao` — o `INCIDENTE_ACUMULADO` que o *dry-run* do Registro
+> Nº 087 previra horas antes. Previsão e resultado batem em quantidade e em
+> regra disparada, comprovando a cadeia inteira: **Vercel Cron → `Bearer
+> ${CRON_SECRET}` → middleware liberando `/api/cron` → `runDueAutomations()` →
+> `Notification`**. Os 16 minutos de atraso são a tolerância de agendamento da
+> Vercel.
+>
+> Confirma o diagnóstico do Nº 087: a execução de 08-16 foi engolida pelo
+> middleware, não pelo segredo — o `CRON_SECRET` sempre esteve correto. **Zero
+> alterações de código:** o defeito já estava corrigido; faltava evidência.
+>
+> **A pendência de observabilidade continua e o episódio a justifica.** Só foi
+> possível diagnosticar porque a condição de uma regra era persistente e a
+> ausência de efeito virou evidência. Com regras de condição transitória, a
+> mesma pergunta ("rodou?") não teria resposta. Um registro de execução — data,
+> regras avaliadas, alertas gerados — é o que falta.
+
+> **Última atualização anterior: 2026-08-17 (manual posto em dia; e uma
 > funcionalidade sem tela descoberta ao escrevê-lo — Registro Nº 088).**
 >
 > **`MANUAL-DE-USO.md` deixou de estar atrás do produto.** §13-A (menu Método —

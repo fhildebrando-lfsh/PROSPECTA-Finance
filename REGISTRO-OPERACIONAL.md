@@ -2507,7 +2507,19 @@
 
 ---
 
-## Próximo número de registro: **089**
+### Registro Nº 089
+- **Data:** 2026-08-17
+- **Etapa concluída:** Confirmada em produção a primeira execução bem-sucedida do cron de automações — fecha a pendência (1) do Registro Nº 087
+- **Descrição:** Às **09:16 UTC** a tabela `notifications` recebeu **exatamente 1** linha `alerta_automacao` — o alerta de `INCIDENTE_ACUMULADO` que o *dry-run* do Registro Nº 087 havia previsto naquela mesma manhã, antes de a execução ocorrer. A previsão e o resultado batem em quantidade e em regra disparada, então a cadeia inteira está comprovada de ponta a ponta: **Vercel Cron → `Authorization: Bearer ${CRON_SECRET}` → middleware liberando `/api/cron` → `runDueAutomations()` → `Notification` gravada**. O atraso de 16 minutos em relação ao `0 9 * * *` é a tolerância normal de agendamento da Vercel, não sintoma de falha. **Confirma também o diagnóstico de causa do Registro Nº 087:** a execução de 08-16 foi engolida pelo middleware por ter ocorrido antes do commit `b6362f0`, e não por problema de segredo — o `CRON_SECRET` sempre esteve correto. Nenhuma alteração de código foi necessária; o defeito já estava corrigido e o que faltava era **evidência de que estava**.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** consulta **somente leitura** ao banco de produção, sem nenhuma escrita.
+- **Pendências que seguem abertas:** (1) dar rastro de execução à rota de cron — o que tornou este diagnóstico possível foi a condição de uma regra ser persistente, e não haver registro de execução; com regras de condição transitória, a mesma investigação não teria resposta (Registro Nº 087); (2) expor o simulador "E se?" na tela da Reserva, ou decidir removê-lo (Registro Nº 088).
+- **Documentos relacionados:** Registros Nº 076, 087 e 088, `app/api/cron/automations/route.ts`, `lib/method/run-automations.ts`, `lib/auth/public-paths.ts`.
+
+---
+
+## Próximo número de registro: **090**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
