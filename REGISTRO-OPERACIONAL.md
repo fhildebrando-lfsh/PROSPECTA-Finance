@@ -2519,7 +2519,21 @@
 
 ---
 
-## Próximo número de registro: **090**
+### Registro Nº 090
+- **Data:** 2026-08-17
+- **Etapa concluída:** Simulador "E se?" (§43) exposto na tela da Reserva — fecha a pendência (2) do Registro Nº 088
+- **Descrição:** O motor já existia e estava testado desde a Etapa 9-A.6; o que faltava era porta de entrada. **`lib/method/mcrf/simulator.ts` (novo, puro)** traduz query string em `AssessmentOverrides` e devolve, além dos overrides, as **hipóteses em frases** (o que a tela lista para não haver dúvida do que mudou) e os **descartes com o motivo**. Esse último ponto é deliberado: um simulador que ignora entrada inválida em silêncio faz o usuário concluir que a hipótese não teve efeito, quando na verdade ela nem chegou a ser aplicada. Redução de custo acima de 100% é **recusada com aviso**, não truncada — `runAssessment` já faz `clamp`, mas truncar em silêncio responderia outra pergunta que não a feita. Zero é entrada legítima ("e se eu não tivesse nada disso?") e não vira hipótese, porque equivale ao cálculo real; entrada vazia idem, o que importa porque o formulário sempre envia todos os campos e os em branco chegam como `""`. Aceita vírgula e ponto como separador decimal.
+- **Por que query string, e não estado de cliente:** §43 diz que nada da simulação é gravado, e query string é o único lugar que satisfaz isso naturalmente — sem tabela, sem sessão, sem `"use client"`. Dois efeitos colaterais úteis: **uma simulação vira link** (o consultor manda "veja o que acontece se você quitar esta dívida" sem tocar na conta do cliente), e a tela continua **inteiramente Server Component**, o que evita o problema recorrente de `Decimal` vazar para o bundle do cliente.
+- **Desenho da tela (§41/§43):** a simulação é uma **segunda** avaliação, não uma substituição — o painel principal segue mostrando o cálculo real e o simulado aparece ao lado, em tabela com Hoje / Simulado / Diferença sobre quatro linhas (reserva recomendada, falta construir, custo essencial, cobertura no cenário principal). Isso também é o que mantém **"Salvar no histórico" seguro por construção**: a ação chama `runAssessment` sem overrides e grava sempre o real. `runAssessment` só é chamado uma segunda vez **quando há hipótese válida** — do contrário toda visita à tela pagaria uma leitura completa do banco à toa. Diferença zero é pintada de neutro, não de verde: colorir "nenhuma mudança" como melhora seria mentir por cor. E **reserva menor é melhora** — mesmo grau de proteção com menos dinheiro parado —, regra que está isolada em `deltaReserva`/`deltaCobertura` justamente porque o sinal se inverte entre as duas.
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **639/639** (18 casos novos de parsing); integração **102/102** (4 casos novos); `npm run build` limpo. Os quatro testes de integração cobrem exatamente **a composição que a tela faz** — query string → `parseSimulation` → `runAssessment` —, que era o trecho sem cobertura: os testes antigos montavam `AssessmentOverrides` à mão e por isso passavam mesmo com o simulador inalcançável. Incluem o formulário submetido em branco e a **URL editada à mão com valores inválidos**, que não pode virar cálculo errado.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Limite de verificação declarado:** a tela **não foi vista logada**. Subi o servidor de desenvolvimento e a rota respondeu, mas sem sessão o middleware redireciona para `/login`, e eu não insiro credenciais. O que a subida provou foi que o middleware **preserva a query string no `redirectTo`** — ou seja, uma simulação compartilhada por link sobrevive ao login. O restante está coberto por `tsc`, build e os 22 testes novos; o que nenhum deles cobre é o visual do JSX.
+- **Documentos relacionados:** Registro Nº 088 (pendência que esta entrada fecha), `PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md` §41/§43, `lib/method/mcrf/simulator.ts`, `app/(app)/protecao/reserva/page.tsx`, `MANUAL-DE-USO.md` §12-A.5.
+
+---
+
+## Próximo número de registro: **091**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

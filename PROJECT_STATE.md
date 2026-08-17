@@ -15,7 +15,48 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (cron de automações confirmado
+> **Última atualização real: 2026-08-17 (simulador "E se?" ganhou tela —
+> Registro Nº 090).**
+>
+> Fecha a pendência aberta no Nº 088. O motor existia e estava testado desde a
+> 9-A.6; faltava **porta de entrada**.
+>
+> **`lib/method/mcrf/simulator.ts` (novo, puro)** traduz query string em
+> `AssessmentOverrides` e devolve também as **hipóteses em frases** e os
+> **descartes com motivo** — simulador que ignora entrada inválida em silêncio
+> faz o usuário concluir que a hipótese não teve efeito, quando ela nem chegou
+> a ser aplicada. Redução acima de 100% é recusada com aviso, não truncada:
+> `runAssessment` já faz `clamp`, mas truncar calado responderia outra pergunta
+> que não a feita. Zero e vazio não viram hipótese (equivalem ao real) — o que
+> importa porque o formulário envia todos os campos e os em branco chegam `""`.
+>
+> **Query string, não estado de cliente.** §43 exige que nada seja gravado, e a
+> URL é o único lugar que satisfaz isso sem tabela, sem sessão e sem
+> `"use client"`. Dois ganhos: **uma simulação vira link**, e a tela segue
+> inteiramente Server Component — o que evita o `Decimal` vazando para o bundle
+> do cliente, problema recorrente aqui.
+>
+> **A simulação é uma segunda avaliação, não uma substituição.** O painel
+> principal continua mostrando o real; o simulado aparece ao lado em tabela
+> Hoje / Simulado / Diferença. É isso que mantém **"Salvar no histórico" seguro
+> por construção** — a ação chama `runAssessment` sem overrides. A segunda
+> chamada só ocorre **quando há hipótese válida**, senão toda visita pagaria uma
+> leitura completa do banco à toa.
+>
+> **Onde a cobertura estava mentindo.** Os testes antigos montavam
+> `AssessmentOverrides` à mão e por isso passavam mesmo com o simulador
+> inalcançável pelo usuário. Os 4 casos de integração novos cobrem a composição
+> que a **tela** faz — query string → `parseSimulation` → `runAssessment` —,
+> incluindo formulário em branco e **URL editada à mão**, que não pode virar
+> cálculo errado.
+>
+> **Limite declarado:** a tela não foi vista logada — sem sessão o middleware
+> manda para `/login`. A subida do dev server provou uma coisa útil: o
+> middleware **preserva a query string no `redirectTo`**, então simulação
+> compartilhada por link sobrevive ao login. O visual do JSX segue sem
+> verificação.
+
+> **Última atualização anterior: 2026-08-17 (cron de automações confirmado
 > funcionando em produção — Registro Nº 089).**
 >
 > Às **09:16 UTC**, `notifications` recebeu **exatamente 1** linha

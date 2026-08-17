@@ -623,6 +623,33 @@ essencial, quanto disso vai para a reserva e em quanto tempo você chega à meta
 sobra, a tela diz que não há capacidade de poupança no momento, em vez de apresentar um
 prazo fictício.
 
+**"E se…?" — o simulador.** Testa uma mudança na sua vida e mostra o efeito na reserva
+recomendada, sem alterar nada. Você pode combinar seis hipóteses:
+
+| Hipótese | Exemplo |
+| --- | --- |
+| Meu custo mensal cai X% | e se eu enxugar 10% das despesas? |
+| Entra renda extra por mês | e se meu cônjuge voltar a trabalhar? |
+| Quito uma dívida de R$ X por mês | e se eu me livrar desta prestação? |
+| Acrescento liquidez de R$ X | e se eu resgatar aquele investimento? |
+| Minha atividade alternativa passa a gerar renda de verdade | e se eu profissionalizar o freela? |
+| Contrato proteção para o risco principal | e se eu fizer um seguro de renda? |
+
+Deixe em branco o que não quiser testar. O resultado aparece **lado a lado com o cálculo
+real** — reserva recomendada, quanto falta construir, custo essencial e cobertura no cenário
+principal —, com a diferença de cada linha.
+
+**Precisar de menos reserva é melhora**, e a tela pinta assim: é o mesmo grau de proteção com
+menos dinheiro parado. Por isso uma diferença negativa aparece em verde.
+
+**Nada é salvo.** O cálculo real, no topo da tela, não muda; o botão "Salvar no histórico"
+grava sempre o cálculo real, nunca a simulação. Se você digitar algo que não faz sentido —
+uma redução de 150%, um valor negativo —, a tela **avisa que descartou** aquela hipótese, em
+vez de ignorar em silêncio e deixar você achar que ela não teve efeito.
+
+As hipóteses ficam no endereço da página, então **uma simulação é um link**: dá para salvar
+nos favoritos ou mandar para outra pessoa, e ela abre com os mesmos números.
+
 **"O que sua própria história ensinou"** — o que os eventos de §12-A.4 mudaram no cálculo.
 
 **"O que deixaria este cálculo mais preciso"** — a lista do que está faltando preencher, com

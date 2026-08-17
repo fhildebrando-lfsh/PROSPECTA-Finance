@@ -1,11 +1,18 @@
+import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { BTN_GHOST, BTN_PRIMARY } from "@/components/ui/buttonStyles";
 import { prisma } from "@/lib/db/prisma";
 import { hasFeature } from "@/lib/billing/entitlements";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { runAssessment } from "@/lib/method/mcrf/run-assessment";
 import { buildReservePlan, treatmentPlan } from "@/lib/method/mcrf/plan-engine";
+import { deltaCobertura, deltaReserva, parseSimulation, type SimulationParams } from "@/lib/method/mcrf/simulator";
 import { Decimal } from "@/lib/finance/types";
 import { SaveAssessmentButton } from "./SaveAssessmentButton";
+
+const INPUT =
+  "w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:border-indigo-500";
+const LABEL = "flex flex-col gap-1 text-xs text-zinc-400";
 
 const CONFIANCA_LABELS: Record<string, string> = {
   MUITO_ALTA: "Muito alta",
@@ -26,7 +33,11 @@ const CONFIANCA_LABELS: Record<string, string> = {
  * (camada de método, exige consultor ativo) — decisão comercial do usuário em
  * 2026-08-16. Reserva e stress tests são Max; diagnóstico de risco é método.
  */
-export default async function ReservaPage() {
+export default async function ReservaPage({
+  searchParams,
+}: {
+  searchParams: Promise<SimulationParams>;
+}) {
   const workspaceId = await requireWorkspaceId();
 
   const [temReserva, temMapaDeRiscos] = await Promise.all([
@@ -46,6 +57,9 @@ export default async function ReservaPage() {
     );
   }
 
+  const params = await searchParams;
+  const sim = parseSimulation(params);
+
   const [a, historico] = await Promise.all([
     runAssessment(workspaceId),
     prisma.mcrfAssessment.findMany({
@@ -54,6 +68,15 @@ export default async function ReservaPage() {
       take: 6,
     }),
   ]);
+
+  // §43 — a simulação é uma **segunda** avaliação, não uma substituição: o
+  // painel principal continua mostrando o cálculo real, e o simulado aparece ao
+  // lado. Isso também é o que mantém "Salvar no histórico" seguro — a ação
+  // chama `runAssessment` sem overrides e grava sempre o real, nunca a hipótese.
+  //
+  // Só roda quando há hipótese válida: sem isso, toda visita à tela pagaria uma
+  // segunda leitura completa do banco à toa.
+  const simulado = sim.ativo ? await runAssessment(workspaceId, undefined, sim.overrides) : null;
 
   const semDados = a.cema.lessThanOrEqualTo(0);
 
@@ -251,6 +274,167 @@ export default async function ReservaPage() {
             </p>
           </section>
 
+          {/*
+            §43 — o simulador. As hipóteses vão na query string, então uma
+            simulação é um link: dá para mandar "veja o que acontece se você
+            quitar esta dívida" sem tocar em nada da conta do cliente.
+          */}
+          <section id="simulador" className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+            <h2 className="text-sm font-medium text-zinc-200">E se…?</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Teste uma mudança na sua vida e veja o efeito na reserva recomendada. Preencha só o que quiser testar —
+              o que ficar em branco continua como está hoje. <strong className="text-zinc-400">Nada é salvo</strong>:
+              isto não altera seus dados nem o seu histórico.
+            </p>
+
+            <form method="GET" className="mt-4 flex flex-col gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <label className={LABEL}>
+                  Meu custo mensal cai (%)
+                  <input
+                    name="custoPct"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    placeholder="ex.: 10"
+                    defaultValue={params.custoPct ?? ""}
+                    className={INPUT}
+                  />
+                </label>
+                <label className={LABEL}>
+                  Entra renda extra por mês (R$)
+                  <input
+                    name="rendaExtra"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="ex.: 2000"
+                    defaultValue={params.rendaExtra ?? ""}
+                    className={INPUT}
+                  />
+                </label>
+                <label className={LABEL}>
+                  Quito uma dívida de (R$/mês)
+                  <input
+                    name="dividaQuitada"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="ex.: 800"
+                    defaultValue={params.dividaQuitada ?? ""}
+                    className={INPUT}
+                  />
+                </label>
+                <label className={LABEL}>
+                  Acrescento liquidez de (R$)
+                  <input
+                    name="liquidezExtra"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="ex.: 10000"
+                    defaultValue={params.liquidezExtra ?? ""}
+                    className={INPUT}
+                  />
+                </label>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-2 text-xs text-zinc-400">
+                  <input
+                    name="segundaAtividade"
+                    type="checkbox"
+                    value="1"
+                    defaultChecked={params.segundaAtividade === "1"}
+                    className="accent-amber-500"
+                  />
+                  Minha atividade alternativa passa a gerar renda de verdade
+                </label>
+                <label className="flex items-center gap-2 text-xs text-zinc-400">
+                  <input
+                    name="seguroRenda"
+                    type="checkbox"
+                    value="1"
+                    defaultChecked={params.seguroRenda === "1"}
+                    className="accent-amber-500"
+                  />
+                  Contrato proteção para o risco principal
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button type="submit" className={BTN_PRIMARY}>
+                  Simular
+                </button>
+                {sim.ativo && (
+                  <Link href="/protecao/reserva" className={BTN_GHOST}>
+                    Limpar simulação
+                  </Link>
+                )}
+              </div>
+            </form>
+
+            {sim.ignorados.length > 0 && (
+              <ul className="mt-4 flex list-disc flex-col gap-1 rounded-lg border border-amber-900/50 bg-amber-950/10 p-3 pl-7 text-xs text-amber-200">
+                {sim.ignorados.map((i) => (
+                  <li key={i}>{i}</li>
+                ))}
+              </ul>
+            )}
+
+            {simulado && (
+              <div className="mt-5 border-t border-indigo-900/50 pt-4">
+                <h3 className="text-xs font-medium text-indigo-300">Nesse cenário</h3>
+                <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm text-zinc-400">
+                  {sim.hipoteses.map((h) => (
+                    <li key={h}>{h}</li>
+                  ))}
+                </ul>
+
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full min-w-[34rem] text-sm">
+                    <thead>
+                      <tr className="border-b border-zinc-800 text-xs text-zinc-500">
+                        <th className="px-3 py-2 text-left font-medium">&nbsp;</th>
+                        <th className="px-3 py-2 text-right font-medium">Hoje</th>
+                        <th className="px-3 py-2 text-right font-medium">Simulado</th>
+                        <th className="px-3 py-2 text-right font-medium">Diferença</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <LinhaDinheiro
+                        rotulo="Reserva recomendada"
+                        real={a.reserveTarget}
+                        simulado={simulado.reserveTarget}
+                      />
+                      <LinhaDinheiro
+                        rotulo="Falta construir"
+                        real={a.faltaConstruir}
+                        simulado={simulado.faltaConstruir}
+                      />
+                      <LinhaDinheiro
+                        rotulo="Custo essencial (mês)"
+                        real={a.cema}
+                        simulado={simulado.cema}
+                      />
+                      <LinhaMeses
+                        rotulo="Cobertura no cenário principal"
+                        real={a.coberturaNoCenarioMeses}
+                        simulado={simulado.coberturaNoCenarioMeses}
+                      />
+                    </tbody>
+                  </table>
+                </div>
+
+                <p className="mt-3 text-[11px] text-zinc-600">
+                  Precisar de <strong className="text-zinc-500">menos</strong> reserva é melhora: é o mesmo grau de
+                  proteção com menos dinheiro parado. O cálculo real, acima nesta tela, não mudou.
+                </p>
+              </div>
+            )}
+          </section>
+
           {a.aprendizadoDeChoques.length > 0 && (
             <section className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
               <h2 className="text-sm font-medium text-zinc-200">O que sua própria história ensinou</h2>
@@ -303,5 +487,54 @@ function Card({ label, value, hint }: { label: string; value: string; hint: stri
       <p className="mt-1 font-mono text-lg tabular-nums text-zinc-100">{value}</p>
       <p className="mt-1 text-[11px] text-zinc-600">{hint}</p>
     </div>
+  );
+}
+
+/** Neutro quando não muda: pintar de verde uma diferença de zero seria mentir por cor. */
+function corDaDiferenca(melhor: boolean, igual: boolean) {
+  if (igual) return "text-zinc-500";
+  return melhor ? "text-emerald-400" : "text-amber-300";
+}
+
+function LinhaDinheiro({ rotulo, real, simulado }: { rotulo: string; real: Decimal; simulado: Decimal }) {
+  const d = deltaReserva(real, simulado);
+  const sinal = d.diferenca.isNegative() ? "" : "+";
+  return (
+    <tr className="border-b border-zinc-800/60">
+      <td className="px-3 py-2 text-zinc-300">{rotulo}</td>
+      <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-400">{formatCurrencyBRL(real)}</td>
+      <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-100">{formatCurrencyBRL(simulado)}</td>
+      <td className={`px-3 py-2 text-right font-mono tabular-nums ${corDaDiferenca(d.melhor, d.igual)}`}>
+        {d.igual ? "—" : `${sinal}${formatCurrencyBRL(d.diferenca)}`}
+      </td>
+    </tr>
+  );
+}
+
+function LinhaMeses({
+  rotulo,
+  real,
+  simulado,
+}: {
+  rotulo: string;
+  real: number | null;
+  simulado: number | null;
+}) {
+  // Sem cenário material não há cobertura a comparar — e inventar zero aqui
+  // sugeriria desproteção onde só há ausência de cenário.
+  const comparavel = real !== null && simulado !== null;
+  const d = comparavel ? deltaCobertura(real, simulado) : null;
+  const sinal = d && d.diferenca.isNegative() ? "" : "+";
+  return (
+    <tr className="border-b border-zinc-800/60">
+      <td className="px-3 py-2 text-zinc-300">{rotulo}</td>
+      <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-400">{real === null ? "—" : `${real} m`}</td>
+      <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-100">
+        {simulado === null ? "—" : `${simulado} m`}
+      </td>
+      <td className={`px-3 py-2 text-right font-mono tabular-nums ${d ? corDaDiferenca(d.melhor, d.igual) : "text-zinc-500"}`}>
+        {!d || d.igual ? "—" : `${sinal}${d.diferenca.toFixed(0)} m`}
+      </td>
+    </tr>
   );
 }

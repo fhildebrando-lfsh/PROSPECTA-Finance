@@ -16,6 +16,12 @@
 
 ## 2026-08-17
 
+### Adicionado (Registro Nº 090)
+- **Simulador "E se…?" na Reserva de Emergência.** Teste uma mudança na sua vida e veja o efeito na reserva recomendada: custo mensal caindo X%, renda extra entrando, uma dívida quitada, liquidez acrescentada, a atividade alternativa virando renda de verdade, ou uma proteção contratada. Dá para combinar várias.
+- **O resultado aparece lado a lado com o cálculo real**, com a diferença de cada linha. Nada é salvo, e o botão "Salvar no histórico" continua gravando sempre o cálculo real.
+- **Uma simulação é um link:** as hipóteses ficam no endereço da página, então dá para salvar nos favoritos ou mandar para outra pessoa.
+- Se você digitar algo impossível — uma redução de 150%, um valor negativo — a tela avisa que descartou aquela hipótese, em vez de ignorar em silêncio.
+
 ### Corrigido (Registro Nº 089)
 - **Os alertas automáticos voltaram a chegar.** A verificação diária que avisa sobre limite de categoria, vencimento próximo, meta fora da trajetória e fila de incidentes não estava rodando em produção — era barrada antes de executar. A falha era silenciosa: nenhum alerta chegava e nada indicava o motivo. Confirmada funcionando em 2026-08-17.
 

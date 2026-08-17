@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Decimal } from "@/lib/finance/types";
 import { prisma } from "@/lib/db/prisma";
 import { runAssessment } from "@/lib/method/mcrf/run-assessment";
+import { parseSimulation } from "@/lib/method/mcrf/simulator";
 import {
   createTestWorkspace,
   cleanupTestWorkspace,
@@ -184,6 +185,67 @@ describe("runAssessment (integração — Etapa 9-A.5, 2026-08-16)", () => {
 
       expect(depois.reserveTarget.toString()).toBe(antes.reserveTarget.toString());
       expect(depois.eligibleReserve.toString()).toBe(antes.eligibleReserve.toString());
+    });
+
+    /**
+     * Os testes acima passam `AssessmentOverrides` já montados à mão. Estes
+     * cobrem a composição que a **tela** faz — query string → `parseSimulation`
+     * → `runAssessment` —, que é justamente o trecho que ficou sem porta de
+     * entrada até 2026-08-17 e por isso nunca havia sido exercitado ponta a
+     * ponta.
+     */
+    describe("composição que a tela faz (query string → cálculo)", () => {
+      it("a query string do formulário produz o mesmo efeito que o override manual", async () => {
+        const { overrides, ativo } = parseSimulation({ custoPct: "20" });
+        expect(ativo).toBe(true);
+
+        const viaQuery = await runAssessment(workspaceId, REF, overrides);
+        const viaObjeto = await runAssessment(workspaceId, REF, { reducaoCustoPct: 0.2 });
+
+        expect(viaQuery.reserveTarget.toString()).toBe(viaObjeto.reserveTarget.toString());
+        expect(viaQuery.cema.toString()).toBe(viaObjeto.cema.toString());
+      });
+
+      it("formulário submetido em branco não simula nada", async () => {
+        // É o caso real: o form envia todos os campos, e os vazios chegam como "".
+        const { overrides, ativo } = parseSimulation({
+          custoPct: "",
+          rendaExtra: "",
+          dividaQuitada: "",
+          liquidezExtra: "",
+        });
+        expect(ativo).toBe(false);
+
+        const real = await runAssessment(workspaceId, REF);
+        const comVazios = await runAssessment(workspaceId, REF, overrides);
+        expect(comVazios.reserveTarget.toString()).toBe(real.reserveTarget.toString());
+      });
+
+      it("hipótese inválida na URL não altera o cálculo, e o descarte é reportado", async () => {
+        // Uma URL editada à mão (ou um link antigo) não pode virar cálculo errado.
+        const { overrides, ativo, ignorados } = parseSimulation({ custoPct: "150", rendaExtra: "-999" });
+        expect(ativo).toBe(false);
+        expect(ignorados).toHaveLength(2);
+
+        const real = await runAssessment(workspaceId, REF);
+        const comInvalidos = await runAssessment(workspaceId, REF, overrides);
+        expect(comInvalidos.reserveTarget.toString()).toBe(real.reserveTarget.toString());
+      });
+
+      it("várias hipóteses combinadas continuam coerentes", async () => {
+        const { overrides } = parseSimulation({
+          custoPct: "10",
+          liquidezExtra: "5000",
+          segundaAtividade: "1",
+        });
+
+        const real = await runAssessment(workspaceId, REF);
+        const simulado = await runAssessment(workspaceId, REF, overrides);
+
+        expect(simulado.cema.lessThan(real.cema)).toBe(true);
+        expect(simulado.eligibleReserve.minus(real.eligibleReserve).toString()).toBe("5000");
+        expect(simulado.reserveTarget.lessThanOrEqualTo(real.reserveTarget)).toBe(true);
+      });
     });
   });
 
