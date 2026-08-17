@@ -52,6 +52,7 @@ import {
   Route,
   History,
   FileText,
+  Timer,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -96,6 +97,7 @@ const ADMIN_ITEMS: NavLeaf[] = [
   { href: "/admin/consultores", label: "Consultores", icon: Network },
   { href: "/admin/planos", label: "Planos", icon: Tags },
   { href: "/admin/metodologia", label: "Metodologia", icon: SlidersHorizontal },
+  { href: "/admin/automacoes", label: "Automações", icon: Timer },
 ];
 
 const CARTOES_ITEMS: NavLeaf[] = [

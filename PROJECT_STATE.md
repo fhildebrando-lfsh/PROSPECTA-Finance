@@ -15,7 +15,50 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (simulador "E se?" ganhou tela —
+> **Última atualização real: 2026-08-17 (rastro do cron + os três ajustes
+> adiados — Registro Nº 091). Zera a lista de pendências nomeadas.**
+>
+> **Rastro do cron.** Nova `automation_runs`, migration aplicada em dev, depois
+> em produção, e só então o código (`RUNBOOK` §5 — a regra que nasceu do apagão
+> do Nº 071); mesmo checksum nos dois bancos. A gravação vive dentro de
+> `runDueAutomations`, **não na rota**: assim não existe caminho que rode sem
+> registrar. A linha nasce antes do trabalho e fecha depois, o que torna três
+> estados distinguíveis — concluída, falhada, e **morta no meio**
+> (`finishedAt` nulo), que é a falha que não deixa rastro em lugar nenhum.
+> `/admin/automacoes` responde antes de tudo "está rodando?"; "Executar agora"
+> grava `source = MANUAL`, porque um disparo de teste marcado como agendado
+> mascararia a ausência da automática.
+>
+> **Período no alerta de categoria.** `periodo` é **opcional** de propósito —
+> regra antiga lê `?? "MES"` e não muda de significado, que seria a pior falha
+> possível (alterar em silêncio um alerta já configurado). Semana de calendário,
+> não 7 dias móveis: janela móvel faria o alerta acender e apagar sozinho.
+>
+> **Limpar histórico do Assistente.** `AiInteraction` é registro de auditoria,
+> e mesmo assim o titular pode apagar: o dado é dele (LGPD Art. 18, V). O que a
+> auditoria protege — resposta não poder ser **reescrita** — continua valendo,
+> porque aqui só se apaga.
+>
+> **Barra de nível no PSF** (`lib/method/psf-progress.ts`, puro). Cinco degraus
+> discretos, não barra contínua: a escala do §8.3 é ordinal. **A decisão que
+> evita uma mentira sutil:** sem foto anterior, ou com "não avaliado" de um dos
+> lados, a tela **não diz nada** — tratar "não avaliado" como degrau zero
+> inventaria uma queda que nunca houve, e escrever "estável" afirmaria algo que
+> não se sabe.
+>
+> **Um teste foi removido, e vale a lição:** eu havia escrito um caso cujo nome
+> prometia exercitar "execução sem nada a alertar" mas que não exercitava essa
+> condição — o banco de dev é compartilhado e não há como garantir zero regra
+> ativa. Cobertura falsa é pior que ausência de teste. Ficou um comentário
+> apontando a garantia real, que é **estrutural**: a linha é criada antes de
+> qualquer regra ser lida.
+>
+> **Limite declarado:** as três telas novas ou alteradas não foram vistas
+> logadas — sem sessão o middleware manda para `/login`. Cobertura por `tsc`,
+> build e testes (665 unitários, 104 de integração); o visual do JSX segue sem
+> conferência.
+
+> **Última atualização anterior: 2026-08-17 (simulador "E se?" ganhou tela —
 > Registro Nº 090).**
 >
 > Fecha a pendência aberta no Nº 088. O motor existia e estava testado desde a

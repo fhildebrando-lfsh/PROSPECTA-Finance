@@ -2533,7 +2533,29 @@
 
 ---
 
-## Próximo número de registro: **091**
+### Registro Nº 091
+- **Data:** 2026-08-17
+- **Etapa concluída:** Rastro de execução do cron + os três ajustes de tela que estavam adiados desde 2026-08-16 — zera a lista de pendências nomeadas
+- **Descrição:** Quatro entregas.
+
+  **(1) Rastro de execução do cron.** Nova tabela `automation_runs` (`model AutomationRun`), migration `20260817180000_automation_run` aplicada **primeiro em dev, depois em produção** e só então o código — `RUNBOOK-OPERACIONAL.md` §5, a regra que nasceu do apagão do Registro Nº 071. Mesmo checksum nos dois bancos (`05f192619430…`). A gravação vive dentro de `runDueAutomations`, **não na rota**, de propósito: assim não existe caminho que rode sem registrar. A linha nasce *antes* do trabalho e é fechada depois, o que torna **três estados finais distinguíveis** — concluída (`finishedAt` + `error` nulo), falhada (`finishedAt` + mensagem) e **morta no meio** (`finishedAt` nulo numa linha antiga), esta última sendo exatamente a falha que não deixa rastro em lugar nenhum. Tela nova `/admin/automacoes`, cujo destaque não é a tabela e sim a resposta a "está rodando?": passou de 26h sem execução agendada, fica âmbar. Botão "Executar agora" grava `source = "MANUAL"` — um disparo de teste marcado como agendado mascararia a ausência da automática, que é o que o rastro existe para revelar.
+
+  **(2) Seletor de período no alerta de categoria.** `LimiarCategoriaCondition` ganhou `periodo?: "DIA" | "SEMANA" | "MES"`. **Opcional de propósito:** as regras criadas antes não têm o campo, e o motor lê `?? "MES"` — nenhuma regra existente muda de significado, que seria a pior falha possível aqui (alterar em silêncio um alerta que o usuário já configurou). A semana é a de calendário, segunda a domingo, e não os últimos 7 dias móveis: quem põe teto semanal pensa em "esta semana", e janela móvel faria o alerta acender e apagar sozinho sem nada ter mudado. A mensagem do alerta passou a dizer a janela ("hoje" / "esta semana" / "este mês").
+
+  **(3) Limpar histórico do Assistente.** `AiInteraction` nasceu como registro de auditoria, e a decisão foi deixar o titular apagar mesmo assim: o dado é dele, e o direito de eliminação (LGPD Art. 18, V) é do titular, não concessão do sistema. O que a auditoria protege — a resposta **não poder ser reescrita** — continua valendo, porque aqui só se apaga, nunca se edita. Exige `assertCanWrite`: membro de leitura não apaga histórico alheio. Confirmação em dois passos, e a confirmação diz o que vai acontecer em vez de só "tem certeza?".
+
+  **(4) Barra de progresso na Saúde Financeira.** Novo módulo puro `lib/method/psf-progress.ts`. Barra de **cinco degraus discretos**, não contínua: a escala do §8.3 é ordinal, e barra lisa sugeriria que a distância entre "frágil" e "em construção" é quantidade comparável — mesma razão pela qual o PSF usa faixas e não nota de 0 a 10. O primeiro degrau já preenche 1/5, porque estar em "crítico" é estar na escala e barra vazia leria como "não avaliado", que é outro estado. O card diz se o indicador **mudou de nível** desde a última foto.
+- **Decisão que evita uma mentira sutil:** `evolucaoFaixa` devolve `null` — e a tela **não diz nada** — quando não há foto anterior ou quando um dos lados está "não avaliado". Tratar "não avaliado" como degrau zero inventaria uma queda que nunca houve: o indicador não piorou, ele passou a (ou deixou de) ter dado. Escrever "estável" nesse caso afirmaria algo que não se sabe.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **665/665** (26 casos novos); integração **104/104** (2 casos novos, contra o banco de dev real); `npm run build` limpo, com `/admin/automacoes` na saída.
+- **Um teste foi removido durante a escrita, e a razão fica registrada:** eu havia escrito um caso chamado "execução sem nada a alertar também deixa rastro" que **não exercitava a condição do próprio nome** — o banco de dev é compartilhado entre arquivos de teste e não há como garantir zero regra ativa na plataforma sem mexer no dado dos vizinhos. Teste que não exercita o que promete é pior que teste nenhum, porque dá cobertura falsa. Ficou no lugar um comentário explicando que a garantia é **estrutural**: a linha é criada antes de qualquer regra ser lida, então existe mesmo quando nada dispara.
+- **Limite de verificação declarado:** as três telas novas ou alteradas (`/admin/automacoes`, `/painel/assistente`, `/painel/saude-financeira`) **não foram vistas logadas** — sem sessão o middleware redireciona para `/login`, e eu não insiro credenciais. Cobertura por `tsc`, build e testes; o visual do JSX segue sem conferência.
+- **Documentos relacionados:** Registros Nº 087, 088, 089 e 090 (as pendências que esta entrada fecha), `RUNBOOK-OPERACIONAL.md` §5, `MANUAL-DE-USO.md` §4.1, §4.2 e §16.
+
+---
+
+## Próximo número de registro: **092**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

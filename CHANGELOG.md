@@ -16,6 +16,12 @@
 
 ## 2026-08-17
 
+### Adicionado (Registro Nº 091)
+- **Tela de Automações no Admin** (`/admin/automacoes`) — mostra se a verificação diária está rodando, quando rodou pela última vez e o que cada execução produziu. Passou de 26h sem rodar, o painel avisa. Tem um botão "Executar agora" para disparar na hora.
+- **Alerta de gasto por categoria agora aceita período**: por mês (como era), por semana (segunda a domingo) ou por dia. Regras já criadas continuam mensais, sem mudança.
+- **Botão "Limpar histórico" no Assistente**, com confirmação — apaga todas as perguntas do workspace.
+- **Barra de nível na Saúde Financeira**: cada indicador mostra em qual das cinco faixas está e se subiu ou caiu de nível desde a última foto salva.
+
 ### Adicionado (Registro Nº 090)
 - **Simulador "E se…?" na Reserva de Emergência.** Teste uma mudança na sua vida e veja o efeito na reserva recomendada: custo mensal caindo X%, renda extra entrando, uma dívida quitada, liquidez acrescentada, a atividade alternativa virando renda de verdade, ou uma proteção contratada. Dá para combinar várias.
 - **O resultado aparece lado a lado com o cálculo real**, com a diferença de cada linha. Nada é salvo, e o botão "Salvar no histórico" continua gravando sempre o cálculo real.

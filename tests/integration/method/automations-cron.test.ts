@@ -164,4 +164,41 @@ describe("runDueAutomations (integração — Etapa 6, 2026-08-15)", () => {
       await prisma.goal.delete({ where: { id: goal.id } });
     }
   });
+
+  /**
+   * Registro Nº 091 — o rastro. Existe porque no Registro Nº 087 "rodou e não
+   * havia nada a alertar" era indistinguível de "não rodou".
+   */
+  describe("rastro de execução", () => {
+    it("grava a execução com os contadores que devolveu", async () => {
+      const result = await runDueAutomations(new Date());
+
+      const run = await prisma.automationRun.findUnique({ where: { id: result.runId } });
+      expect(run).not.toBeNull();
+      expect(run!.finishedAt).not.toBeNull();
+      expect(run!.error).toBeNull();
+      expect(run!.source).toBe("CRON");
+      // O que ficou gravado tem de ser o mesmo que a função devolveu — se
+      // divergir, o rastro estaria contando outra história que não a real.
+      expect(run!.workspacesEvaluated).toBe(result.workspacesEvaluated);
+      expect(run!.rulesEvaluated).toBe(result.rulesEvaluated);
+      expect(run!.notified).toBe(result.notified);
+    });
+
+    /**
+     * O caso que motivou tudo — "rodou e não havia nada a alertar" — não é
+     * testado isoladamente aqui de propósito: o banco de dev é compartilhado
+     * entre os arquivos de teste, e não há como garantir zero regra ativa na
+     * plataforma inteira sem mexer no dado dos vizinhos. A garantia é
+     * **estrutural** e não depende de teste: a linha é criada *antes* de
+     * qualquer regra ser lida, então existe mesmo quando nada dispara.
+     */
+    it("origem manual não se confunde com a agendada", async () => {
+      // Um disparo de teste marcado como CRON mascararia a ausência da execução
+      // automática — exatamente o que o rastro existe para revelar.
+      const result = await runDueAutomations(new Date(), "MANUAL");
+      const run = await prisma.automationRun.findUnique({ where: { id: result.runId } });
+      expect(run!.source).toBe("MANUAL");
+    });
+  });
 });

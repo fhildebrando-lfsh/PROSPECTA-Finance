@@ -9,6 +9,7 @@ import { toFinanceEntry } from "@/lib/finance/from-db";
 import { walletBalance } from "@/lib/finance/balance";
 import { entryIncidents } from "@/lib/finance/incidents";
 import { answerQuestion, type AiAssistantContext } from "@/lib/method/ai-assistant";
+import type { LimiarPeriodo } from "@/lib/method/automation-engine";
 import type { AutomationTrigger } from "@/app/generated/prisma/enums";
 
 async function currentMembership(workspaceId: string) {
@@ -37,7 +38,11 @@ function buildCondition(trigger: AutomationTrigger, formData: FormData, category
       const thresholdAmount = Number(formData.get("thresholdAmount"));
       if (!categoryId || !categoryName) throw new Error("Escolha uma categoria.");
       if (!(thresholdAmount > 0)) throw new Error("Informe um valor de limite maior que zero.");
-      return { categoryId, categoryName, thresholdAmount };
+      // Valor desconhecido cai em MES — o padrão histórico —, nunca em erro:
+      // o motor já trata a ausência do campo do mesmo jeito.
+      const bruto = String(formData.get("periodo") ?? "MES");
+      const periodo: LimiarPeriodo = bruto === "DIA" || bruto === "SEMANA" ? bruto : "MES";
+      return { categoryId, categoryName, thresholdAmount, periodo };
     }
     case "VENCIMENTO_PROXIMO": {
       const daysBefore = Number(formData.get("daysBefore"));
@@ -197,4 +202,27 @@ export async function askAssistant(_prevState: AskAssistantState, formData: Form
 
   revalidatePath("/painel/assistente");
   return { question, answerText: result.answerText, error: null };
+}
+
+/**
+ * Apaga o histórico de perguntas do workspace.
+ *
+ * `AiInteraction` nasceu como registro de auditoria — cada resposta guarda a
+ * consulta que a gerou, para ser reproduzível. Deixar o titular apagar não
+ * contradiz isso: o dado é dele, e o direito de eliminação (LGPD Art. 18, V) é
+ * do titular, não uma concessão do sistema. O que a auditoria protege é a
+ * resposta **não poder ser reescrita** — e continua verdade: aqui só se apaga,
+ * nunca se edita.
+ *
+ * Exige permissão de escrita: um membro de leitura não apaga histórico alheio.
+ */
+export async function limparHistoricoAssistente() {
+  const workspaceId = await requireWorkspaceId();
+  const { role, isPlatformAdmin, advisorCanWrite } = await currentMembership(workspaceId);
+  assertCanWrite(role, isPlatformAdmin, advisorCanWrite);
+
+  const { count } = await prisma.aiInteraction.deleteMany({ where: { workspaceId } });
+
+  revalidatePath("/painel/assistente");
+  return { count };
 }

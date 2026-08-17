@@ -39,12 +39,47 @@ export interface AutomationGoal {
   currentBalance: Decimal;
 }
 
-// --- LIMIAR_CATEGORIA — gasto de uma categoria passou de X no mês corrente ---
+// --- LIMIAR_CATEGORIA — gasto de uma categoria passou de X no período ---
+
+/** Janela de apuração do limite. */
+export type LimiarPeriodo = "DIA" | "SEMANA" | "MES";
 
 export interface LimiarCategoriaCondition {
   categoryId: string;
   categoryName: string;
   thresholdAmount: number;
+  /**
+   * Ausente nas regras criadas antes de 2026-08-17, que eram sempre mensais —
+   * por isso o padrão é `MES`, e nenhuma regra existente muda de significado.
+   */
+  periodo?: LimiarPeriodo;
+}
+
+/**
+ * A semana é a de calendário, de segunda a domingo, e não os últimos 7 dias
+ * móveis: quem define um teto semanal pensa em "esta semana", e uma janela que
+ * anda todo dia faria o alerta acender e apagar sozinho sem nada ter mudado.
+ */
+export function limiarPeriodRange(periodo: LimiarPeriodo, today: Date): { start: Date; end: Date; label: string } {
+  const y = today.getUTCFullYear();
+  const m = today.getUTCMonth();
+  const d = today.getUTCDate();
+
+  if (periodo === "DIA") {
+    const dia = new Date(Date.UTC(y, m, d));
+    return { start: dia, end: dia, label: "hoje" };
+  }
+
+  if (periodo === "SEMANA") {
+    // getUTCDay(): 0 = domingo. Recuo até a segunda-feira da semana corrente.
+    const diasDesdeSegunda = (today.getUTCDay() + 6) % 7;
+    const start = new Date(Date.UTC(y, m, d - diasDesdeSegunda));
+    const end = new Date(Date.UTC(y, m, d - diasDesdeSegunda + 6));
+    return { start, end, label: "esta semana" };
+  }
+
+  const mes = monthRange(y, m);
+  return { start: mes.start, end: mes.end, label: "este mês" };
 }
 
 export function evaluateLimiarCategoria(
@@ -52,7 +87,7 @@ export function evaluateLimiarCategoria(
   condition: LimiarCategoriaCondition,
   today: Date,
 ): NotificationDraft | null {
-  const period = monthRange(today.getUTCFullYear(), today.getUTCMonth());
+  const period = limiarPeriodRange(condition.periodo ?? "MES", today);
   const spent = entries
     .filter(
       (e) =>
@@ -65,7 +100,7 @@ export function evaluateLimiarCategoria(
 
   if (spent.lessThan(condition.thresholdAmount)) return null;
   return {
-    message: `Você já gastou ${formatCurrencyBRL(spent)} em ${condition.categoryName} este mês — passou do limite de ${formatCurrencyBRL(condition.thresholdAmount)}.`,
+    message: `Você já gastou ${formatCurrencyBRL(spent)} em ${condition.categoryName} ${period.label} — passou do limite de ${formatCurrencyBRL(condition.thresholdAmount)}.`,
   };
 }
 

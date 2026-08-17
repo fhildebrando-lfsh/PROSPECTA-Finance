@@ -131,6 +131,21 @@ com outros clientes. Indicador sem dado suficiente aparece como "não avaliado";
 de um nível que seu plano não inclui aparece como "disponível no Max" — os dois estados são
 visualmente diferentes de propósito.
 
+Abaixo de cada indicador há uma **barra de cinco degraus**, um por faixa, mostrando em qual
+deles você está. Os degraus são separados de propósito, em vez de uma barra contínua: a
+escala é ordinal, e uma barra lisa daria a impressão de que a distância entre "frágil" e
+"em construção" é uma quantidade mensurável — é a mesma razão pela qual não existe nota de
+0 a 10 aqui.
+
+Quando há uma foto anterior salva, o card também diz **se o indicador mudou de nível** desde
+ela: "↑ subiu um nível desde a última foto", "↓ caiu dois níveis", ou "mesmo nível da última
+foto". Essa é a leitura que importa — o número isolado diz pouco, a direção diz muito.
+
+Se não houver foto anterior, ou se o indicador estava "não avaliado" numa das duas pontas,
+**nada é dito**. O sistema não escreve "estável" nesse caso: não saber se mudou é diferente
+de saber que não mudou, e um indicador que passou a ter dado não "subiu" — ele apenas
+passou a existir.
+
 Botão **"Salvar no histórico"** grava uma foto dos indicadores na data de hoje — é o que
 permite comparar "como eu estava" com "como estou agora" mais adiante.
 
@@ -147,11 +162,24 @@ recomenda produto ou ativo específico:** se a pergunta parecer pedir isso ("em 
 invisto", "que ação comprar"), o assistente recusa e explica que diagnóstico é papel da
 PROSPECTA, indicação de investimento é papel de um profissional licenciado.
 
+O histórico tem um botão **"Limpar histórico"**, que apaga todas as perguntas do workspace.
+Ele pede confirmação antes, porque é irreversível. O registro existe para auditoria — cada
+resposta guarda a consulta que a gerou —, mas o dado é seu: apagar é um direito seu, e o que
+a auditoria garante é que uma resposta **não pode ser reescrita**, o que continua valendo
+(aqui só se apaga, nunca se edita). Exige permissão de escrita: quem tem acesso só de
+leitura não apaga histórico dos outros.
+
 **Automações:** 5 tipos de alerta que você liga e desliga conforme sua necessidade —
 gasto de uma categoria passou de um valor, compromisso vencendo em N dias, valor de uma
 recorrência mudou (ex.: assinatura que subiu de preço), meta abaixo do ritmo esperado para
 a data-alvo, fila de Incidentes acumulando. Avaliados uma vez por dia; cada disparo vira um
 aviso — o sistema nunca cria, edita, paga ou transfere nada por conta própria.
+
+No alerta de **gasto de categoria** você escolhe a janela: **por mês**, **por semana** ou
+**por dia**. A semana é a de calendário, de segunda a domingo, e não os últimos sete dias
+corridos — quem define um teto semanal pensa em "esta semana", e uma janela que anda todo
+dia faria o alerta acender e apagar sozinho sem nada ter mudado. Regras criadas antes deste
+seletor continuam mensais, exatamente como eram.
 
 ---
 
@@ -910,6 +938,36 @@ preservar o histórico.
   de deploy. Cada funcionalidade também tem um seletor "Plano"/"Método": a maioria é
   liberada por nível de plano; um grupo à parte só é liberado com consultor ativo (ainda
   não implementado). Ativar/desativar um plano inteiro (sem excluir) fica no topo da tela.
+
+- **`/admin/metodologia`** — os parâmetros do Método PROSPECTAR que valem para **toda a
+  plataforma**, não por cliente: a classificação de cada despesa em rígida, ajustável ou
+  discricionária, e o percentual de corte considerado possível numa emergência. São
+  admin-only de propósito — metodologia que muda por cliente deixa de ser metodologia.
+
+- **`/admin/automacoes`** — a verificação diária de automações: se está rodando, quando
+  rodou pela última vez e o que cada execução produziu.
+
+  O destaque no topo responde a uma única pergunta: **"está rodando?"**. Se a última
+  execução automática tem mais de 26 horas, o painel fica âmbar e diz "Atrasado"; caso
+  contrário, "Em dia". Abaixo, uma tabela com as últimas 30 execuções — início, origem
+  (agendada ou manual), duração, quantos workspaces e regras foram avaliados, quantos
+  alertas saíram, e o resultado.
+
+  Três resultados possíveis, e a diferença entre eles importa: **Concluída** (correu bem),
+  **Falhou** (com a mensagem do erro na própria linha), e **Não terminou** — esta última é
+  a execução que começou e morreu no meio, o tipo de problema que normalmente não deixa
+  rastro em lugar nenhum.
+
+  **Zero alertas numa execução concluída é resultado normal:** significa que nenhuma
+  condição estava verdadeira naquele dia. Essa tela existe justamente porque, antes dela,
+  esse caso era indistinguível de a rotina não ter rodado — e uma rotina que falha em
+  silêncio é pior que uma que falha alto, porque ninguém procura o que não sabe que
+  quebrou.
+
+  O botão **"Executar agora"** dispara a mesma rotina na hora, sem esperar o horário
+  agendado. Ela fica registrada como **manual**, separada das agendadas — um disparo de
+  teste marcado como agendado mascararia a ausência da automática, que é exatamente o que
+  este rastro existe para revelar.
 
 ---
 

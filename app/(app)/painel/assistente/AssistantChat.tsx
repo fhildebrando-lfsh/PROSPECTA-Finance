@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
-import { askAssistant, type AskAssistantState } from "./actions";
-import { BTN_SECONDARY } from "@/components/ui/buttonStyles";
+import { useActionState, useState, useTransition } from "react";
+import { askAssistant, limparHistoricoAssistente, type AskAssistantState } from "./actions";
+import { BTN_GHOST, BTN_DANGER, BTN_SECONDARY } from "@/components/ui/buttonStyles";
 
 export interface InteractionSummary {
   id: string;
@@ -18,6 +18,55 @@ const SUGGESTIONS = [
   "Quanto falta pra minha reserva?",
   "Quantos incidentes eu tenho?",
 ];
+
+/**
+ * Apagar histórico é irreversível, então o botão pede confirmação em vez de
+ * agir no primeiro clique — e a confirmação diz o que vai acontecer, não só
+ * "tem certeza?".
+ */
+function LimparHistorico() {
+  const [confirmando, setConfirmando] = useState(false);
+  const [pending, start] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
+
+  if (!confirmando) {
+    return (
+      <button type="button" onClick={() => setConfirmando(true)} className={BTN_GHOST}>
+        Limpar histórico
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-zinc-400">Apagar todas as perguntas deste workspace?</span>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              setErro(null);
+              try {
+                await limparHistoricoAssistente();
+                setConfirmando(false);
+              } catch (e) {
+                setErro(e instanceof Error ? e.message : "Não foi possível apagar.");
+              }
+            })
+          }
+          className={`${BTN_DANGER} disabled:opacity-40`}
+        >
+          {pending ? "Apagando…" : "Apagar"}
+        </button>
+        <button type="button" onClick={() => setConfirmando(false)} className={BTN_GHOST}>
+          Cancelar
+        </button>
+      </div>
+      {erro && <p className="text-xs text-red-300">{erro}</p>}
+    </div>
+  );
+}
 
 /**
  * Q&A determinístico (lib/method/ai-assistant.ts) — nunca um modelo de
@@ -59,7 +108,10 @@ export function AssistantChat({ history }: { history: InteractionSummary[] }) {
 
       {history.length > 0 && (
         <div className="mt-2">
-          <h2 className="mb-2 text-sm font-medium text-zinc-300">Histórico</h2>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-medium text-zinc-300">Histórico</h2>
+            <LimparHistorico />
+          </div>
           <ul className="flex flex-col gap-2">
             {history.map((h) => (
               <li key={h.id} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-sm">

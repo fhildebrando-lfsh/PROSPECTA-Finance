@@ -120,6 +120,13 @@ function NewLimiarCategoriaForm({ categories }: { categories: CategoryOption[] }
         ))}
       </select>
       <input name="thresholdAmount" type="number" step="0.01" min="0.01" required placeholder="valor limite (R$)" className={INPUT_CLASS} />
+      {/* MES primeiro por ser o padrão histórico: regras criadas antes deste
+          seletor eram todas mensais e continuam sendo. */}
+      <select name="periodo" defaultValue="MES" className={INPUT_CLASS}>
+        <option value="MES">por mês</option>
+        <option value="SEMANA">por semana (segunda a domingo)</option>
+        <option value="DIA">por dia</option>
+      </select>
       <SubmitRow onCancel={() => setOpen(false)} />
     </Card>
   );

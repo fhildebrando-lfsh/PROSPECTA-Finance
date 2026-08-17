@@ -19,10 +19,17 @@ import {
   protecao,
   protecaoCompleta,
   construcaoPatrimonial,
+  type PsfFaixa,
   type PsfIndicatorResult,
 } from "@/lib/method/psf";
 import { runAssessment } from "@/lib/method/mcrf/run-assessment";
 import { latestReconciliationByWallet } from "@/lib/method/reconciliation";
+import {
+  FAIXA_ORDER,
+  evolucaoFaixa,
+  faixaDoSnapshot,
+  faixaIndex,
+} from "@/lib/method/psf-progress";
 import { SaveSnapshotButton } from "./SaveSnapshotButton";
 import { formatDateBR } from "@/lib/format";
 
@@ -43,6 +50,15 @@ const FAIXA_COLORS: Record<string, string> = {
   em_construcao: "text-amber-300",
   saudavel: "text-emerald-400",
   consolidado: "text-emerald-300",
+};
+
+/** Mesmas cores da faixa, como fundo — a barra e o rótulo têm de concordar. */
+const FAIXA_BAR_COLORS: Record<string, string> = {
+  critico: "bg-red-400",
+  fragil: "bg-amber-400",
+  em_construcao: "bg-amber-300",
+  saudavel: "bg-emerald-400",
+  consolidado: "bg-emerald-300",
 };
 
 export default async function SaudeFinanceiraPage() {
@@ -192,6 +208,10 @@ export default async function SaudeFinanceiraPage() {
     { key: "construcao", label: "Construção Patrimonial", result: indicators.construcao, disponivel: nivel2 },
   ];
 
+  // A foto mais recente é a régua da comparação. `snapshots` vem em ordem
+  // decrescente, então [0] é a última salva — o "antes" do valor de agora.
+  const fotoAnterior = snapshots[0] ?? null;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -217,6 +237,13 @@ export default async function SaudeFinanceiraPage() {
                   {card.result.valor?.toFixed(0)}
                 </p>
                 <p className={`mt-1 text-xs ${FAIXA_COLORS[card.result.faixa]}`}>{FAIXA_LABELS[card.result.faixa]}</p>
+                <FaixaBar faixa={card.result.faixa} />
+                <MudancaDeNivelChip
+                  evolucao={evolucaoFaixa(
+                    fotoAnterior ? faixaDoSnapshot(fotoAnterior.indicators, card.key) : undefined,
+                    card.result.faixa,
+                  )}
+                />
               </>
             )}
           </div>
@@ -236,5 +263,46 @@ export default async function SaudeFinanceiraPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Barra de cinco degraus — um por faixa do §8.3. Degraus discretos em vez de
+ * uma barra contínua de propósito: a escala é **ordinal**, e uma barra lisa
+ * sugeriria que a distância entre "frágil" e "em construção" é uma quantidade
+ * comparável, que não é. Pela mesma razão o PSF usa faixas e não nota de 0 a 10.
+ */
+function FaixaBar({ faixa }: { faixa: PsfFaixa }) {
+  const atual = faixaIndex(faixa) ?? 0;
+  return (
+    <div className="mt-3 flex gap-1" aria-label={`Nível ${atual + 1} de ${FAIXA_ORDER.length}`}>
+      {FAIXA_ORDER.map((f, i) => (
+        <span
+          key={f}
+          className={`h-1.5 flex-1 rounded-full ${i <= atual ? FAIXA_BAR_COLORS[faixa] : "bg-zinc-800"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Só aparece quando há comparação honesta: sem foto anterior, ou com indicador
+ * não avaliado de um dos lados, `evolucaoFaixa` devolve null e nada é dito —
+ * em vez de exibir "estável", que afirmaria algo que não se sabe.
+ */
+function MudancaDeNivelChip({ evolucao }: { evolucao: ReturnType<typeof evolucaoFaixa> }) {
+  if (evolucao === null) return null;
+
+  if (evolucao.mudanca === "igual") {
+    return <p className="mt-2 text-[11px] text-zinc-600">mesmo nível da última foto</p>;
+  }
+
+  const subiu = evolucao.mudanca === "subiu";
+  const degraus = evolucao.degraus === 1 ? "um nível" : `${evolucao.degraus} níveis`;
+  return (
+    <p className={`mt-2 text-[11px] ${subiu ? "text-emerald-400" : "text-amber-300"}`}>
+      {subiu ? "↑" : "↓"} {subiu ? "subiu" : "caiu"} {degraus} desde a última foto
+    </p>
   );
 }

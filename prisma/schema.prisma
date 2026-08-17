@@ -1720,3 +1720,34 @@ model AiInteraction {
 
   @@map("ai_interactions")
 }
+
+/// Rastro de execução do cron de automações (ARQUITETURA-METODO-PROSPECTAR.md
+/// §5.5.1). Existe por causa de um episódio concreto: no Registro Nº 087 não
+/// havia como distinguir **"rodou e não havia nada a alertar"** de **"não
+/// rodou"**, e o diagnóstico só foi possível porque a condição de uma regra era
+/// permanente — com regra de condição transitória, a pergunta "rodou?" não
+/// teria resposta.
+///
+/// A linha nasce no **início** da execução e é fechada no fim. Uma linha com
+/// `finishedAt` nulo e antiga é justamente o sinal mais valioso: começou e
+/// morreu no meio, que é a falha que não deixa rastro em lugar nenhum.
+///
+/// Não tem `workspaceId`: uma execução atravessa todos os workspaces. Os
+/// contadores são o resumo; o efeito por workspace continua sendo a
+/// `Notification`.
+model AutomationRun {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  startedAt           DateTime  @default(now()) @map("started_at")
+  /// Nulo enquanto corre — e permanentemente nulo se a execução morreu no meio.
+  finishedAt          DateTime? @map("finished_at")
+  workspacesEvaluated Int       @default(0) @map("workspaces_evaluated")
+  rulesEvaluated      Int       @default(0) @map("rules_evaluated")
+  notified            Int       @default(0)
+  /// Mensagem do erro quando a execução falhou. Nulo em execução bem-sucedida.
+  error               String?
+  /// "CRON" (Vercel) | "MANUAL" (admin disparou pela tela).
+  source              String    @default("CRON")
+
+  @@index([startedAt])
+  @@map("automation_runs")
+}

@@ -8,8 +8,10 @@ import { AssistantChat, type InteractionSummary } from "./AssistantChat";
 function describeRule(trigger: string, condition: unknown): string {
   switch (trigger) {
     case "LIMIAR_CATEGORIA": {
-      const c = condition as { categoryName?: string; thresholdAmount?: number };
-      return `Avisar quando gastar mais de ${formatCurrencyBRL(c.thresholdAmount ?? 0)} em ${c.categoryName ?? "categoria"}.`;
+      const c = condition as { categoryName?: string; thresholdAmount?: number; periodo?: string };
+      // Sem `periodo` é regra anterior ao seletor: era mensal e continua mensal.
+      const janela = c.periodo === "DIA" ? "por dia" : c.periodo === "SEMANA" ? "por semana" : "por mês";
+      return `Avisar quando gastar mais de ${formatCurrencyBRL(c.thresholdAmount ?? 0)} ${janela} em ${c.categoryName ?? "categoria"}.`;
     }
     case "VENCIMENTO_PROXIMO": {
       const c = condition as { daysBefore?: number };

@@ -7,6 +7,7 @@ import {
   evaluateMetaForaDaTrajetoria,
   evaluateVariacaoRecorrencia,
   evaluateVencimentoProximo,
+  limiarPeriodRange,
   type AutomationEntry,
   type AutomationGoal,
 } from "@/lib/method/automation-engine";
@@ -29,6 +30,98 @@ function makeEntry(overrides: Partial<AutomationEntry> = {}): AutomationEntry {
 }
 
 const HOJE = new Date(Date.UTC(2026, 5, 15));
+
+/**
+ * Seletor de período (2026-08-17). A regra antiga não tinha o campo e era
+ * sempre mensal — a retrocompatibilidade é a parte que não pode quebrar, já
+ * que mudaria em silêncio o significado de regra que o usuário já criou.
+ */
+describe("limiarPeriodRange", () => {
+  // 2026-06-15 é uma segunda-feira.
+  const SEGUNDA = new Date(Date.UTC(2026, 5, 15));
+  const QUARTA = new Date(Date.UTC(2026, 5, 17));
+  const DOMINGO = new Date(Date.UTC(2026, 5, 21));
+
+  it("DIA começa e termina no mesmo dia", () => {
+    const r = limiarPeriodRange("DIA", QUARTA);
+    expect(r.start.toISOString().slice(0, 10)).toBe("2026-06-17");
+    expect(r.end.toISOString().slice(0, 10)).toBe("2026-06-17");
+    expect(r.label).toBe("hoje");
+  });
+
+  it("SEMANA vai de segunda a domingo", () => {
+    const r = limiarPeriodRange("SEMANA", QUARTA);
+    expect(r.start.toISOString().slice(0, 10)).toBe("2026-06-15");
+    expect(r.end.toISOString().slice(0, 10)).toBe("2026-06-21");
+  });
+
+  it("na própria segunda, a semana começa nela", () => {
+    expect(limiarPeriodRange("SEMANA", SEGUNDA).start.toISOString().slice(0, 10)).toBe("2026-06-15");
+  });
+
+  it("no domingo, a semana ainda é a que começou na segunda anterior", () => {
+    // O caso que uma implementação ingênua erra: getUTCDay() do domingo é 0.
+    const r = limiarPeriodRange("SEMANA", DOMINGO);
+    expect(r.start.toISOString().slice(0, 10)).toBe("2026-06-15");
+    expect(r.end.toISOString().slice(0, 10)).toBe("2026-06-21");
+  });
+
+  it("a semana pode atravessar a virada do mês", () => {
+    // 2026-07-01 é uma quarta; a semana começou em 29/06.
+    const r = limiarPeriodRange("SEMANA", new Date(Date.UTC(2026, 6, 1)));
+    expect(r.start.toISOString().slice(0, 10)).toBe("2026-06-29");
+  });
+
+  it("MES é o mês de calendário", () => {
+    const r = limiarPeriodRange("MES", QUARTA);
+    expect(r.start.toISOString().slice(0, 10)).toBe("2026-06-01");
+    expect(r.end.toISOString().slice(0, 10)).toBe("2026-06-30");
+  });
+});
+
+describe("evaluateLimiarCategoria — período", () => {
+  const QUARTA = new Date(Date.UTC(2026, 5, 17));
+  const cond = (periodo?: "DIA" | "SEMANA" | "MES") => ({
+    categoryId: "cat-1",
+    categoryName: "Alimentação",
+    thresholdAmount: 500,
+    ...(periodo ? { periodo } : {}),
+  });
+
+  it("regra sem o campo continua mensal — retrocompatibilidade", () => {
+    // Gasto no dia 2, fora da semana corrente mas dentro do mês: só dispara se
+    // a janela for mensal, que é o que a regra antiga significava.
+    const entries = [makeEntry({ amount: new Decimal(-600), dueDate: new Date(Date.UTC(2026, 5, 2)) })];
+    const r = evaluateLimiarCategoria(entries, cond(), QUARTA);
+    expect(r).not.toBeNull();
+    expect(r?.message).toContain("este mês");
+  });
+
+  it("a mesma despesa não dispara a regra semanal", () => {
+    const entries = [makeEntry({ amount: new Decimal(-600), dueDate: new Date(Date.UTC(2026, 5, 2)) })];
+    expect(evaluateLimiarCategoria(entries, cond("SEMANA"), QUARTA)).toBeNull();
+  });
+
+  it("gasto de hoje dispara a regra diária, e a mensagem diz \"hoje\"", () => {
+    const entries = [makeEntry({ amount: new Decimal(-600), dueDate: QUARTA })];
+    const r = evaluateLimiarCategoria(entries, cond("DIA"), QUARTA);
+    expect(r?.message).toContain("hoje");
+  });
+
+  it("gasto de ontem não conta na regra diária", () => {
+    const entries = [makeEntry({ amount: new Decimal(-600), dueDate: new Date(Date.UTC(2026, 5, 16)) })];
+    expect(evaluateLimiarCategoria(entries, cond("DIA"), QUARTA)).toBeNull();
+  });
+
+  it("a regra semanal soma os dias da semana corrente", () => {
+    const entries = [
+      makeEntry({ amount: new Decimal(-300), dueDate: new Date(Date.UTC(2026, 5, 15)) }),
+      makeEntry({ amount: new Decimal(-300), dueDate: new Date(Date.UTC(2026, 5, 17)) }),
+    ];
+    const r = evaluateLimiarCategoria(entries, cond("SEMANA"), QUARTA);
+    expect(r?.message).toContain("esta semana");
+  });
+});
 
 describe("evaluateLimiarCategoria", () => {
   it("dispara quando o gasto do mês na categoria passa do limite", () => {

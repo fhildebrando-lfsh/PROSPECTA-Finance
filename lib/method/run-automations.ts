@@ -10,6 +10,8 @@ import {
 } from "@/lib/method/automation-engine";
 
 export interface RunAutomationsResult {
+  /** Id da linha de `automation_runs` — o rastro desta execução. */
+  runId: string;
   workspacesEvaluated: number;
   rulesEvaluated: number;
   notified: number;
@@ -22,8 +24,51 @@ export interface RunAutomationsResult {
  * pra ser testável direto contra o banco de dev, mesmo padrão de
  * `lib/method/reconciliation.ts`. Nunca cria, edita ou liquida um `Entry`,
  * nunca transfere, nunca cancela nada — só produz alertas.
+ *
+ * **Toda execução deixa rastro em `automation_runs`** (Registro Nº 091). A
+ * gravação vive aqui, e não na rota, de propósito: assim não existe caminho
+ * que rode sem registrar. Era exatamente esse o buraco — no Registro Nº 087,
+ * "rodou e não havia nada a alertar" e "não rodou" eram indistinguíveis, e o
+ * diagnóstico só saiu porque a condição de uma regra era permanente.
+ *
+ * A linha nasce **antes** do trabalho e é fechada depois. Os três estados
+ * finais são distinguíveis de propósito:
+ * - `finishedAt` preenchido e `error` nulo — correu bem;
+ * - `finishedAt` preenchido e `error` presente — falhou, e a mensagem está lá;
+ * - `finishedAt` **nulo** numa linha antiga — morreu no meio sem nem chegar ao
+ *   `catch` (timeout, processo derrubado), que é a falha que normalmente não
+ *   deixa rastro em lugar nenhum.
  */
-export async function runDueAutomations(today: Date = new Date()): Promise<RunAutomationsResult> {
+export async function runDueAutomations(
+  today: Date = new Date(),
+  source: "CRON" | "MANUAL" = "CRON",
+): Promise<RunAutomationsResult> {
+  const run = await prisma.automationRun.create({ data: { source }, select: { id: true } });
+
+  try {
+    const result = await executarRegras(today);
+    await prisma.automationRun.update({
+      where: { id: run.id },
+      data: {
+        finishedAt: new Date(),
+        workspacesEvaluated: result.workspacesEvaluated,
+        rulesEvaluated: result.rulesEvaluated,
+        notified: result.notified,
+      },
+    });
+    return { runId: run.id, ...result };
+  } catch (err) {
+    // O rastro do fracasso importa mais que o do sucesso: é o que responde
+    // "por que ninguém recebeu alerta ontem?".
+    await prisma.automationRun.update({
+      where: { id: run.id },
+      data: { finishedAt: new Date(), error: err instanceof Error ? err.message : String(err) },
+    });
+    throw err;
+  }
+}
+
+async function executarRegras(today: Date): Promise<Omit<RunAutomationsResult, "runId">> {
   const rules = await prisma.automationRule.findMany({
     where: { isActive: true },
     select: { id: true, workspaceId: true, trigger: true, condition: true },
