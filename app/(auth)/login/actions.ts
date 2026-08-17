@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
@@ -38,6 +39,11 @@ export async function login(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: translateAuthError(error), info: null };
 
+  // Par do `revalidatePath` do logout (ver `app/(app)/actions.ts`). Invalidar
+  // dos dois lados cobre o caso em que não houve logout — sessão expirada, ou
+  // troca de conta em outra aba —, quando o Router Cache do navegador ainda
+  // guarda o layout de quem estava logado antes, inclusive o menu Admin.
+  revalidatePath("/", "layout");
   redirect(safeRedirectTo(formData));
 }
 

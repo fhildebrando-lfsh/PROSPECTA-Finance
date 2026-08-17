@@ -16,6 +16,9 @@
 
 ## 2026-08-17
 
+### Corrigido (Registro Nº 095)
+- **O menu Admin podia aparecer para quem não é administrador** ao trocar de conta no mesmo navegador. Era aparência apenas — as telas de administração sempre exigiram permissão no servidor, então clicar levava a erro de autorização, nunca a dado de outra pessoa. Corrigido invalidando o cache de layout no login e no logout.
+
 ### Adicionado (Registro Nº 094)
 - **Abrir e encerrar consultoria** direto em `/admin/usuarios`, na coluna Workspaces. Escolha a modalidade (Diagnóstico, Planejamento, Projeto ou Acompanhamento) e o contrato passa a valer na hora; Projeto pede também a fase contratada.
 - **É isso que faz o menu Método aparecer para um cliente.** Atribuir um consultor dá acesso ao workspace; abrir a consultoria é o que registra a responsabilidade metodológica e libera Trilha, Diagnóstico e Entregáveis.

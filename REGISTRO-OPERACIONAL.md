@@ -2603,7 +2603,22 @@
 
 ---
 
-## Próximo número de registro: **095**
+### Registro Nº 095
+- **Data:** 2026-08-17
+- **Etapa concluída:** Menu Admin vazando para não-admin por cache de rota — corrigido no login e no logout
+- **Descrição:** `revalidatePath("/", "layout")` acrescentado a `logout()` (`app/(app)/actions.ts`) e a `login()` (`app/(auth)/login/actions.ts`), antes do `redirect()` — que interrompe a execução lançando, então a ordem importa.
+- **Investigação antes da correção, porque o relato não batia com a evidência apresentada.** O usuário relatou "o menu Admin aparece para todo mundo" anexando um print — mas o print era da **própria sessão dele, que é admin** (código 0001), onde o menu deve mesmo aparecer. Em vez de mexer no código pela descrição, verifiquei três coisas: (1) o gate existe, `Sidebar.tsx:183` só empurra `ADMIN_ITEMS` se `isPlatformAdmin`; (2) consulta somente-leitura em produção mostrou **um único perfil admin** entre cinco, com `is_platform_admin` e `platform_role` concordando em **todos** — zero divergência, apesar de o schema tratar o primeiro como legado; (3) as **sete** telas sob `/admin` chamam `requireAdminProfile()`, e `setPlatformAdmin` escreve os dois campos na mesma transação, então nem a divergência futura estava aberta.
+- **Onde estava o defeito.** Nenhum dos três. O App Router mantém um **Router Cache no navegador** com o RSC já renderizado, e quem decide o menu Admin é o layout. `logout()` fazia `signOut()` e redirecionava sem invalidar nada — então o próximo login no mesmo navegador podia receber o layout do usuário anterior, menu Admin incluído. O `login()` recebeu o mesmo tratamento para cobrir o caso sem logout: sessão expirada, ou troca de conta em outra aba.
+- **Severidade real, dita sem inflar nem minimizar:** era **aparência**. As sete telas exigem `requireAdminProfile()` no servidor, então clicar no menu levava a erro de autorização, nunca a dado alheio — não houve exposição. Ainda assim é defeito: menu que promete o que não entrega mina a confiança na interface, e num sistema financeiro isso não é detalhe.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 699/699; `npm run build` limpo. **Sem teste automatizado novo**, e a razão está declarada: o defeito vive no cache do navegador entre duas sessões, que o projeto não tem infraestrutura para exercitar — não há teste de componente nem de navegador com login real. Fingir cobertura aqui seria pior que admitir a ausência.
+- **Como confirmar na prática:** entrar como admin, sair, entrar com uma conta não-admin no mesmo navegador, e verificar que o menu Admin não aparece.
+- **Documentos relacionados:** `components/Sidebar.tsx`, `app/(app)/actions.ts`, `app/(auth)/login/actions.ts`.
+
+---
+
+## Próximo número de registro: **096**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
