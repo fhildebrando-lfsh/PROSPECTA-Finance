@@ -1791,7 +1791,13 @@ model DiagnosticResponse {
   answers      Json
   /// Versão do catálogo que produziu estas respostas. Sem isso, uma resposta
   /// antiga seria relida com perguntas que não são as que foram feitas.
-  catalogVersion String             @default("1") @map("catalog_version")
+  ///
+  /// **Sem `@default` de propósito.** Ter um valor padrão aqui criaria uma
+  /// segunda cópia da versão — a do banco e a de `CATALOG_VERSION` — que
+  /// divergem silenciosamente na primeira mudança de redação, e o resultado
+  /// seria pior que não ter o campo: resposta rotulada com a redação errada.
+  /// Quem grava é obrigado a dizer qual redação usou.
+  catalogVersion String             @map("catalog_version")
   /// Nulo enquanto o cliente está preenchendo; preenchido ao enviar. É o que
   /// distingue rascunho de resposta entregue, sem uma coluna de status à parte.
   submittedAt  DateTime?            @map("submitted_at")

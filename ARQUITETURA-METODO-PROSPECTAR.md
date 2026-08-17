@@ -1127,7 +1127,7 @@ logada — tentativa de login sem senha (magic link) bloqueada pelo
 classificador de permissão do ambiente no passo de injetar o cookie de sessão
 no browser; sem tentativa de contornar.
 
-### Bloco II — Camada de Método (Etapas 7–10)
+### Bloco II — Camada de Método (Etapas 7–10-B)
 
 Abre a trilha de consultoria propriamente dita.
 
@@ -1136,26 +1136,37 @@ Abre a trilha de consultoria propriamente dita.
 | **7** ✅ | `funcao_patrimonial` em bens/investimentos/carteiras + achado automático de "ativo sem função" (§13.4) | Bloco I (Max) |
 | **8** ✅ | `ConsultingEngagement` + `MethodPhase` + `GateCheck` — a trilha de fases e o ritual de passagem (§7.3) em tela para o consultor. Registro Nº 084 | Etapa 4 (`PlanGrant` nasce junto com o engagement) |
 | **9** ✅ | `Deliverable` + templates dos 10 artefatos codificados (PAN, AFF, RAP, MEC, MRP, PLA, PIP, MFP, PCP, PFI) — v0 pode ser HTML/PDF gerado a partir de `content: Json`, reaproveitando `lib/reports/pdf/` já existente como padrão de geração | Etapa 8 |
-| **10** ◐ | Instrumentos A1/A2/C como formulário digital + envio automático (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
+| **10** ✅ | Instrumentos A1/A2/C como formulário digital, com a redação definida (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
+| **10-B** | Envio automático dos instrumentos e lembretes de prazo (§12.4/§12.8) — disparo do A1 na abertura do contrato, do C e do A2 após a entrevista, com os prazos do protocolo D0–D17 | Etapa 10 + cron (Etapa 6) |
 
-**Etapa 10 — status: formulários implementados e verificados; envio automático
-pendente (Registro Nº 092, 2026-08-17).** `DiagnosticResponse` + catálogo puro em
-`lib/method/instruments/`, telas `/metodo/instrumentos` e
-`/metodo/instrumentos/[code]`, gateadas por `diagnostico_dip`. Os **campos** de
-cada instrumento vêm literalmente de §12.3 (A1), §12.4 (A2) e §12.6 (C); a
-**redação pergunta a pergunta** segue sendo decisão do dono do produto
-(Pendências #6–8 da Metodologia v5.0) e está marcada como `redacaoConfirmada:
-false`, com um teste que falha de propósito quando for definida.
+**Etapa 10 — status: implementada e verificada (Registros Nº 092 e 093,
+2026-08-17).** `DiagnosticResponse` + catálogo puro em `lib/method/instruments/`,
+telas `/metodo/instrumentos` e `/metodo/instrumentos/[code]`, gateadas por
+`diagnostico_dip`.
 
-O `◐` na tabela é literal: a metade **"envio automático"** da entrega não foi
-feita. §12.4 prevê que o A2 seja "guiado pelo sistema após a entrevista, com
-prazo e lembretes automáticos", e hoje não há disparo nem lembrete — o cliente
-só encontra o formulário se entrar na tela. A infraestrutura de cron
-(`runDueAutomations`) e a de e-mail (Brevo) já existem, então o que falta é
-ligar as duas a um gatilho de prazo, não construir base nova.
+Os **campos** de cada instrumento vêm literalmente de §12.3 (A1), §12.4 (A2) e
+§12.6 (C). A **redação pergunta a pergunta** — Pendências #6–8 da Metodologia
+v5.0 — foi escrita e aprovada pelo usuário em 2026-08-17, e `redacaoConfirmada`
+passou a `true` nos três; `CATALOG_VERSION` foi para `"2"`, de modo que qualquer
+resposta futura registre qual redação a produziu.
 
-B continua fora de escopo por decisão do próprio documento (§12.5: uso interno,
+Três regras do método viraram teste, não comentário: patrimônio do A1 em faixa e
+nunca em valor (§12.3), o teto de dez minutos do A1 com a estimativa ancorada nos
+"8 a 10 minutos" que o próprio documento declara (§12.1), e o cenário de perda do
+C em **valores absolutos**, nunca em percentual (§12.6).
+
+B segue fora de escopo por decisão do próprio documento (§12.5: uso interno,
 nunca entregue ao cliente); o enum do banco já o prevê.
+
+**A metade "envio automático" virou a Etapa 10-B**, por decisão do usuário em
+2026-08-17. Não é adiamento disfarçado: §12.4 pede "prazo e lembretes
+automáticos" e §12.8 fixa um protocolo com datas (D0 contrato + A1, D8 entrevista
++ envio do C e abertura do A2, D9–D16 preenchimento), o que é trabalho de
+agendamento e notificação — assunto diferente de formulário, com risco diferente
+(disparo indevido chega no e-mail do cliente). A infraestrutura dos dois lados já
+existe: cron em `lib/method/run-automations.ts`, com rastro de execução desde o
+Registro Nº 091, e e-mail em Brevo. O que falta é ligá-las ao protocolo de
+prazos, não construir base nova.
 
 #### Etapa 9-A — Proteção e Segurança / PROSPECTA-MCRF (antecipa a Etapa 12)
 

@@ -16,6 +16,11 @@
 
 ## 2026-08-17
 
+### Alterado (Registro Nº 093)
+- **As perguntas do diagnóstico ganharam redação definitiva.** Antes os campos apareciam com o nome técnico ("Ocupação", "Renda líquida do núcleo"); agora são perguntas em português de conversa ("O que você faz hoje?", "Somando todo mundo da casa, quanto entra por mês já descontados os impostos?").
+- **O questionário comportamental (C) passou a mostrar afirmações**, não nomes de dimensão — numa escala de concordância, "Locus de controle financeiro" não é algo com que se concorde. A pergunta sobre tolerância a perda usa valores em reais, não porcentagem.
+- O aviso de "redação em revisão" saiu das telas.
+
 ### Adicionado (Registro Nº 092)
 - **Diagnóstico (DIP)** — novo item no menu Método, com os três formulários do diagnóstico: **A1** (pré-diagnóstico, curto, antes da entrevista), **A2** (complementação detalhada, depois dela) e **C** (perfil comportamental, respondido individualmente).
 - O A2 tem **"Salvar rascunho"**, porque é longo e não se responde de uma sentada. Enviar exige os campos obrigatórios preenchidos, e a tela diz quantos faltam.

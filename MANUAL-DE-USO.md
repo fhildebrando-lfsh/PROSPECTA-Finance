@@ -844,10 +844,11 @@ obrigatórios estejam preenchidos, e a tela diz quantos faltam. Depois de
 enviado, o formulário vira leitura — suas respostas continuam visíveis, mas
 corrigir passa a ser conversa com o consultor, não um clique.
 
-**Uma observação honesta sobre a redação.** Os campos de cada instrumento são os
-que a Metodologia PROSPECTA especifica, mas a redação final de cada pergunta
-ainda está em revisão. A tela avisa isso enquanto durar. O que você responder
-continua valendo.
+**Sobre o C especificamente.** Ele não pergunta o que você sabe, e sim como você
+reage. São oito afirmações, e você diz o quanto concorda com cada uma. A
+primeira usa um cenário com valores em reais — não uma porcentagem — porque
+"cair 16%" quase não assusta ninguém no papel, enquanto "R$ 50.000 virarem
+R$ 42.000" é sentido de verdade, e é essa reação que interessa medir.
 
 **Existe um quarto instrumento, o B** — o roteiro da entrevista. Ele não aparece
 no sistema para o cliente: é conduzido como conversa e preenchido pelo consultor

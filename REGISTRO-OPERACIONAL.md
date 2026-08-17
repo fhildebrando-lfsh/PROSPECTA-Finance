@@ -2571,7 +2571,24 @@
 
 ---
 
-## Próximo número de registro: **093**
+### Registro Nº 093
+- **Data:** 2026-08-17
+- **Etapa concluída:** Redação dos instrumentos definida e confirmada; envio automático separado como **Etapa 10-B**. Com isso a **Etapa 10 fecha** (✅ na tabela do roadmap).
+- **Descrição:** As Pendências #6–8 da Metodologia v5.0 ("instrumentos pergunta a pergunta") foram resolvidas: o usuário delegou a redação, ela foi escrita para os três instrumentos, `redacaoConfirmada` passou a `true` e `CATALOG_VERSION` foi de `"1"` para `"2"`. O teste que existia para falhar quando isso acontecesse falhou como projetado (Registro Nº 092) e virou a invariante inversa — nenhum instrumento sem redação confirmada.
+- **Princípios que a redação segue**, agora documentados no próprio catálogo para que pergunta acrescentada depois não destoe: segunda pessoa e linguagem de conversa ("Somando todo mundo da casa, quanto entra por mês" no lugar de "renda líquida do núcleo"); uma pergunta por campo; onde o dado exato exigiria procurar documento, a pergunta **autoriza a aproximação em voz alta** — é o que protege o teto de dez minutos do A1; e nenhum julgamento embutido ("Você tem alguma dívida hoje?" e não "Você está endividado?"), porque §12.2 observa que no formulário a pessoa omite o que é constrangedor, e redação que constrange aumenta justamente a omissão que o método quer evitar.
+- **O C ganhou afirmações, não rótulos.** "Locus de controle financeiro" não é uma frase com a qual alguém concorda ou discorda, então `DIMENSOES_C` passou a ter `label` (nome técnico, que o consultor lê) e `afirmacao` (o que o cliente vê). A primeira delas usa **valores absolutos** — "R$ 50.000 caírem para R$ 42.000" — porque §12.6 é literal quanto a isso, e há um teste garantindo que ela contenha `R$` e **não** contenha `%`: perda em porcentagem é subestimada por quem responde, e alguém "simplificar" para "queda de 16%" mais adiante mataria o item.
+- **Uma decisão declarada, com o custo dito:** todas as afirmações do C apontam para o mesmo lado (concordar = mais capacidade de risco). A prática usual mistura frases invertidas para detectar quem responde tudo igual sem ler, mas isso exigiria que o cálculo do perfil soubesse quais itens inverter — e esse cálculo ainda não existe. Ficou registrado no código que o momento de reavaliar é quando ele for construído.
+- **Um bug latente que o teste de integração revelou.** `catalog_version` tinha `@default("1")` no banco. Ao subir a redação para `"2"`, o default virou uma **segunda cópia da versão, divergente** — e uma resposta gravada sem passar o campo seria rotulada com a redação errada, que é pior do que não ter o campo, já que ele existe exatamente para dizer quais perguntas foram feitas. Migration `20260817220000_catalog_version_sem_default` **remove o default** (coluna segue `NOT NULL`): quem grava é obrigado a declarar a versão, e a única fonte de verdade volta a ser `CATALOG_VERSION`. Aplicada em dev e produção, mesmo checksum. A Server Action já passava o campo, então nenhum dado de produção foi afetado — o defeito era latente.
+- **Envio automático → Etapa 10-B.** Decisão do usuário. Não é adiamento disfarçado: §12.4 pede "prazo e lembretes automáticos" e §12.8 fixa um protocolo com datas (D0 contrato + A1, D8 entrevista + envio do C e abertura do A2, D9–D16 preenchimento), o que é trabalho de agendamento e notificação — assunto diferente de formulário e com risco diferente, já que disparo indevido chega no e-mail do cliente. Cron (com rastro desde o Registro Nº 091) e Brevo já existem; falta ligá-los ao protocolo.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **699/699** (9 casos novos, todos sobre a redação); integração **108/108**; `npm run build` limpo.
+- **Uma asserção minha estava frágil e foi corrigida:** um teste checava que a mensagem de campo faltante contivesse a string `"LGPD"`. O consentimento novo descreve os direitos em vez de citar a lei, então quebrou — mas o problema era a asserção, que testava uma palavra do texto em vez do que importa. Passou a verificar que a lista de faltantes aponta **o campo de consentimento**, o que continua valendo quando a redação mudar de novo.
+- **Documentos relacionados:** Registro Nº 092 (Etapa 10), Metodologia v5.0 §12.1–12.8 e Pendências #6–8, `ARQUITETURA-METODO-PROSPECTAR.md` §6 (Bloco II, Etapas 10 e 10-B).
+
+---
+
+## Próximo número de registro: **094**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

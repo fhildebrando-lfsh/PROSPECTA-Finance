@@ -52,14 +52,45 @@ describe("catálogo dos instrumentos (§12)", () => {
   });
 
   /**
-   * A redação pergunta a pergunta é decisão do dono do produto (Pendências
-   * #6–8 da Metodologia v5.0). Este teste falha de propósito quando ela for
-   * definida — mesmo mecanismo que fez PAN e AFF serem confirmados na Etapa 9,
-   * em vez de um texto provisório passar despercebido para sempre.
+   * A versão anterior deste teste fixava os três como **não** confirmados: a
+   * redação pergunta a pergunta eram as Pendências #6–8 da Metodologia, e o
+   * teste existia para falhar quando fossem definidas, em vez de um texto
+   * provisório passar despercebido para sempre.
+   *
+   * Cumpriu o papel: a redação foi escrita e aprovada em 2026-08-17, o teste
+   * falhou como projetado, e a invariante virou esta — mais forte.
    */
-  it("a redação ainda não é a oficial, e isso está declarado", () => {
+  it("os três instrumentos têm redação confirmada", () => {
     const naoConfirmados = INSTRUMENT_CODES.filter((c) => !INSTRUMENTS[c].redacaoConfirmada);
-    expect(naoConfirmados).toEqual(["A1", "A2", "C"]);
+    expect(naoConfirmados).toEqual([]);
+  });
+
+  /**
+   * Guarda a redação contra regressão silenciosa. Rótulo curto demais quase
+   * sempre é o nome do campo tendo voltado no lugar da pergunta — foi
+   * exatamente o estado anterior deste catálogo ("Ocupação" em vez de "O que
+   * você faz hoje?").
+   */
+  it("nenhum rótulo é um nome de campo disfarçado de pergunta", () => {
+    for (const code of INSTRUMENT_CODES) {
+      for (const f of allFields(code)) {
+        expect(f.label.length, `${code}.${f.key}`).toBeGreaterThan(14);
+        expect(f.label.trim()).toBe(f.label);
+      }
+    }
+  });
+
+  it("fala com o cliente na segunda pessoa, não no jargão do analista", () => {
+    // Termos que só fazem sentido para quem escreveu o método, e que apareciam
+    // nos rótulos provisórios.
+    const jargao = ["núcleo familiar", "hard facts", "modalidades", "instrumento"];
+    for (const code of INSTRUMENT_CODES) {
+      for (const f of allFields(code)) {
+        for (const termo of jargao) {
+          expect(f.label.toLowerCase(), `${code}.${f.key}`).not.toContain(termo);
+        }
+      }
+    }
   });
 });
 
@@ -164,6 +195,74 @@ describe("C — o que §12.6 exige", () => {
   });
 });
 
+describe("redação do C (§12.6)", () => {
+  it("o cliente vê uma afirmação, não o nome da dimensão", () => {
+    // "Locus de controle financeiro" não é frase com a qual alguém concorda.
+    for (const f of allFields("C")) {
+      const dim = DIMENSOES_C.find((d) => d.key === f.key)!;
+      expect(f.label).toBe(dim.afirmacao);
+      expect(f.label).not.toBe(dim.label);
+      // O nome técnico continua acessível ao consultor, como apoio.
+      expect(f.hint).toBe(dim.label);
+    }
+  });
+
+  /**
+   * §12.6, literal: "tolerância à perda (cenários com valores absolutos)".
+   * Perda em porcentagem é subestimada por quem responde; em reais, a pessoa
+   * sente o tamanho. Este teste é o que impede alguém "simplificar" para "uma
+   * queda de 16%" mais adiante.
+   */
+  it("a tolerância à perda usa cenário com valores em reais", () => {
+    const item = allFields("C").find((f) => f.key === "tolerancia_perda")!;
+    expect(item.label).toContain("R$");
+    expect(item.label).not.toContain("%");
+  });
+
+  it("toda afirmação é uma frase, não uma pergunta", () => {
+    // Numa escala de concordância, pergunta não funciona: não se "concorda
+    // totalmente" com uma interrogação.
+    for (const d of DIMENSOES_C) {
+      expect(d.afirmacao, d.key).not.toContain("?");
+      expect(d.afirmacao.endsWith(".")).toBe(true);
+    }
+  });
+
+  it("as afirmações são distintas entre si", () => {
+    const frases = DIMENSOES_C.map((d) => d.afirmacao);
+    expect(new Set(frases).size).toBe(frases.length);
+  });
+});
+
+describe("redação do A1", () => {
+  it("as perguntas são perguntas", () => {
+    // Exceto o consentimento, que é declaração de vontade, e por isso afirma.
+    for (const f of allFields("A1")) {
+      if (f.kind === "consentimento") continue;
+      expect(f.label.endsWith("?"), `${f.key}: ${f.label}`).toBe(true);
+    }
+  });
+
+  /**
+   * O consentimento é o único campo que produz efeito jurídico, então precisa
+   * dizer três coisas: para que serve, que os direitos do titular seguem
+   * valendo, e o que acontece se ele for retirado. Texto genérico de "aceito os
+   * termos" não sustenta base legal.
+   */
+  it("o consentimento diz finalidade, direitos e efeito da retirada", () => {
+    const c = allFields("A1").find((f) => f.kind === "consentimento")!;
+    expect(c.label).toContain("consultoria");
+    expect(c.label.toLowerCase()).toContain("eliminação");
+    expect(c.label.toLowerCase()).toContain("retirar este");
+  });
+
+  it("continua cabendo nos dez minutos depois da redação nova", () => {
+    // Redação mais longa não muda a estimativa (que conta campos, não
+    // caracteres), mas o teto é revalidado aqui de propósito.
+    expect(checkAtrito("A1")!.withinBudget).toBe(true);
+  });
+});
+
 describe("isEmpty", () => {
   it("trata em branco, nulo e lista vazia como vazio", () => {
     expect(isEmpty("")).toBe(true);
@@ -232,7 +331,10 @@ describe("validateAnswers", () => {
   it("consentimento não dado reprova, mesmo sendo um booleano válido", () => {
     const r = validateAnswers("A1", { ...a1Completo, consentimento_lgpd: false });
     expect(r.isComplete).toBe(false);
-    expect(r.missing.join(" ")).toContain("LGPD");
+    // Asserção sobre o campo apontado, não sobre uma palavra do texto: a
+    // redação do consentimento pode mudar, e quem falta é que importa.
+    const consentimento = allFields("A1").find((f) => f.kind === "consentimento")!;
+    expect(r.missing).toEqual([consentimento.label]);
   });
 
   it("o C só está completo com as oito dimensões respondidas", () => {

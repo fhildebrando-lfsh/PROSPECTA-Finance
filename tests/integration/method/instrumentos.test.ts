@@ -52,12 +52,17 @@ describe("DiagnosticResponse (integração)", () => {
         engagementId,
         instrument: "A2",
         answers: { fixos_por_categoria: "aluguel 2000" },
+        catalogVersion: CATALOG_VERSION,
         respondedBy: profileId,
       },
     });
     expect(rascunho.submittedAt).toBeNull();
     // Só a ausência de data distingue os dois estados — não há coluna de status
     // à parte, e é isso que impede os dois de discordarem entre si.
+    //
+    // A versão do catálogo é gravada por quem escreve, nunca por default do
+    // banco: um default seria uma segunda cópia de CATALOG_VERSION, e foi
+    // exatamente assim que ele divergiu na primeira mudança de redação.
     expect(rascunho.catalogVersion).toBe(CATALOG_VERSION);
 
     const enviado = await prisma.diagnosticResponse.update({
@@ -74,6 +79,7 @@ describe("DiagnosticResponse (integração)", () => {
       engagementId,
       instrument: "C" as const,
       answers: { tolerancia_perda: "Discordo" },
+      catalogVersion: CATALOG_VERSION,
       respondedBy,
       submittedAt: new Date(),
     });
@@ -107,7 +113,15 @@ describe("DiagnosticResponse (integração)", () => {
     };
 
     const criado = await prisma.diagnosticResponse.create({
-      data: { workspaceId, engagementId, instrument: "A1", answers: completo, respondedBy: profileId, submittedAt: new Date() },
+      data: {
+        workspaceId,
+        engagementId,
+        instrument: "A1",
+        answers: completo,
+        catalogVersion: CATALOG_VERSION,
+        respondedBy: profileId,
+        submittedAt: new Date(),
+      },
     });
 
     const lido = await prisma.diagnosticResponse.findUniqueOrThrow({ where: { id: criado.id } });
@@ -127,7 +141,14 @@ describe("DiagnosticResponse (integração)", () => {
       },
     });
     await prisma.diagnosticResponse.create({
-      data: { workspaceId, engagementId: engagement.id, instrument: "A1", answers: {}, respondedBy: profileId },
+      data: {
+        workspaceId,
+        engagementId: engagement.id,
+        instrument: "A1",
+        answers: {},
+        catalogVersion: CATALOG_VERSION,
+        respondedBy: profileId,
+      },
     });
 
     await prisma.consultingEngagement.delete({ where: { id: engagement.id } });

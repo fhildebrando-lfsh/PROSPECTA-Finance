@@ -15,8 +15,45 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (Etapa 10 — instrumentos A1/A2/C.
-> Parcial e declarada como tal — Registro Nº 092).**
+> **Última atualização real: 2026-08-17 (redação dos instrumentos definida;
+> envio automático virou Etapa 10-B. A Etapa 10 fecha — Registro Nº 093).**
+>
+> As Pendências #6–8 da Metodologia ("instrumentos pergunta a pergunta") foram
+> resolvidas: o usuário delegou a redação, ela foi escrita para os três,
+> `redacaoConfirmada` passou a `true` e `CATALOG_VERSION` foi para `"2"`. O
+> teste que existia para falhar nesse momento falhou como projetado e virou a
+> invariante inversa.
+>
+> **O C ganhou afirmações, não rótulos.** `DIMENSOES_C` passou a ter `label`
+> (nome técnico, para o consultor) e `afirmacao` (o que o cliente vê) — "Locus
+> de controle financeiro" não é frase com a qual alguém concorda. A primeira
+> usa **valores absolutos** (§12.6 é literal), com teste exigindo `R$` e
+> proibindo `%`: perda em porcentagem é subestimada, e alguém "simplificar"
+> para "queda de 16%" mataria o item.
+>
+> **Decisão declarada com o custo dito:** todas as afirmações apontam para o
+> mesmo lado. Misturar frases invertidas pegaria quem responde sem ler, mas
+> exigiria que o cálculo do perfil soubesse quais inverter — e ele ainda não
+> existe. O código registra que é aí que se reavalia.
+>
+> **Bug latente que o teste de integração revelou.** `catalog_version` tinha
+> `@default("1")` no banco. Ao subir a redação para `"2"`, o default virou uma
+> **segunda cópia divergente** da versão, e resposta gravada sem o campo seria
+> rotulada com a redação errada — pior que não ter o campo. Migration
+> `20260817220000_catalog_version_sem_default` **remove o default**; a coluna
+> segue `NOT NULL`, então quem grava declara a versão e a fonte de verdade volta
+> a ser única. Aplicada em dev e produção. A Server Action já passava o campo:
+> o defeito era latente, nenhum dado foi afetado.
+>
+> **Envio automático → Etapa 10-B**, por decisão do usuário. §12.4 pede "prazo e
+> lembretes automáticos" e §12.8 fixa o protocolo D0–D17: é agendamento e
+> notificação, assunto diferente de formulário e com risco diferente (disparo
+> indevido chega no e-mail do cliente). Cron e Brevo já existem; falta ligá-los.
+>
+> 699 unitários, 108 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-17 (Etapa 10 — instrumentos A1/A2/C —
+> Registro Nº 092).**
 >
 > `DiagnosticResponse` + catálogo puro em `lib/method/instruments/`, telas
 > `/metodo/instrumentos[/code]`, gate `diagnostico_dip` (feature METODO que já

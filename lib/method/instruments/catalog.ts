@@ -3,17 +3,25 @@ import type { DiagnosticInstrument } from "@/app/generated/prisma/enums";
 /**
  * Etapa 10 — catálogo dos instrumentos de diagnóstico (§12 da Metodologia v5.0).
  *
- * **O que vem do documento e o que ainda não vem.** Os *campos* que cada
+ * **De onde vêm os campos e de onde vem a redação.** Os *campos* que cada
  * instrumento coleta estão especificados literalmente em §12.3 (A1), §12.4 (A2)
- * e §12.6 (C) — eles são reproduzidos aqui sem invenção. O que **não** está
- * definido é a redação pergunta a pergunta: são as Pendências #6–8 da própria
- * Metodologia, decisão do dono do produto. Por isso cada instrumento carrega
- * `redacaoConfirmada`, hoje `false` — mesmo mecanismo que fez PAN e AFF serem
- * confirmados na Etapa 9, em vez de um texto provisório passar despercebido
- * para sempre.
+ * e §12.6 (C) — reproduzidos aqui sem invenção. A *redação* pergunta a pergunta
+ * eram as Pendências #6–8 da Metodologia; foi definida e aprovada pelo dono do
+ * produto em 2026-08-17, e `redacaoConfirmada` passou a `true`.
  *
- * O rótulo aqui é, portanto, **trabalho em cima do campo especificado**, não
- * a pergunta oficial. A tela diz isso ao consultor.
+ * **Princípios que a redação segue**, para que uma pergunta nova acrescentada
+ * depois não destoe:
+ * - Segunda pessoa e linguagem de conversa — quem responde é o cliente, não um
+ *   analista. "Quanto entra por mês" em vez de "renda líquida do núcleo".
+ * - Uma pergunta por campo. Pergunta dupla produz resposta ambígua e obriga o
+ *   consultor a desempatar na entrevista.
+ * - Onde o dado exato exigiria procurar documento, a pergunta **autoriza a
+ *   aproximação em voz alta** — no A1 isso é o que protege o teto de dez
+ *   minutos; o número exato é justamente o que o A2 levanta depois.
+ * - Nada de julgamento embutido. "Você tem alguma dívida hoje?" e não "Você
+ *   está endividado?": §12.2 observa que no formulário a pessoa omite o que é
+ *   constrangedor, e redação que constrange aumenta a omissão que o método
+ *   quer justamente evitar.
  *
  * B não está aqui de propósito: §12.5 é explícito em que é "impresso, uso
  * interno exclusivo, nunca entregue ao cliente", preenchido pelo consultor
@@ -21,8 +29,14 @@ import type { DiagnosticInstrument } from "@/app/generated/prisma/enums";
  * escopo da Etapa 10.
  */
 
-/** Sobe quando a redação ou os campos mudam — fica gravado em cada resposta. */
-export const CATALOG_VERSION = "1";
+/**
+ * Sobe quando a redação ou os campos mudam — fica gravado em cada resposta.
+ *
+ * v2 (2026-08-17): redação definida e confirmada. A v1 nunca chegou a receber
+ * resposta em produção, mas o número avança do mesmo jeito: reaproveitá-lo
+ * faria duas redações diferentes se apresentarem como a mesma.
+ */
+export const CATALOG_VERSION = "2";
 
 export type FieldKind = "texto" | "texto_longo" | "numero" | "data" | "escolha" | "escolha_multipla" | "sim_nao" | "faixa" | "likert" | "consentimento";
 
@@ -95,23 +109,23 @@ const A1: InstrumentSpec = {
   // §12.1, regra de atrito: "o A1 nunca deve passar de 10 minutos. Tudo que
   // puder esperar vai para o A2." O teto é verificável — ver checkA1Atrito().
   maxMinutes: 10,
-  redacaoConfirmada: false,
+  redacaoConfirmada: true,
   blocks: [
     {
       title: "Identificação",
       fields: [
-        { key: "nome_completo", label: "Nome completo", kind: "texto", required: true },
-        { key: "idade", label: "Idade", kind: "numero", required: true },
+        { key: "nome_completo", label: "Qual o seu nome completo?", kind: "texto", required: true },
+        { key: "idade", label: "Quantos anos você tem?", kind: "numero", required: true },
         {
           key: "estado_civil",
-          label: "Estado civil",
+          label: "Qual o seu estado civil?",
           kind: "escolha",
           options: ["Solteiro(a)", "Casado(a)", "União estável", "Divorciado(a)", "Viúvo(a)"],
           required: true,
         },
         {
           key: "regime_bens",
-          label: "Regime de bens",
+          label: "Se você é casado ou vive em união estável, qual o regime de bens?",
           kind: "escolha",
           options: [
             "Não se aplica",
@@ -123,18 +137,18 @@ const A1: InstrumentSpec = {
             "Não sei",
           ],
           required: false,
-          hint: "Se não souber, deixe em branco — isso é confirmado no A2.",
+          hint: "Se não souber ou não se aplicar, deixe em branco — isso é confirmado depois.",
         },
-        { key: "dependentes", label: "Quantos dependentes financeiros você tem?", kind: "numero", required: true },
+        { key: "dependentes", label: "Quantas pessoas dependem financeiramente de você hoje?", kind: "numero", required: true },
       ],
     },
     {
       title: "Ocupação",
       fields: [
-        { key: "ocupacao", label: "Ocupação", kind: "texto", required: true },
+        { key: "ocupacao", label: "O que você faz hoje?", kind: "texto", required: true },
         {
           key: "natureza_vinculo",
-          label: "Natureza do vínculo",
+          label: "Como é o seu vínculo de trabalho?",
           kind: "escolha",
           options: [
             "CLT",
@@ -162,20 +176,20 @@ const A1: InstrumentSpec = {
       fields: [
         {
           key: "renda_liquida_nucleo",
-          label: "Renda líquida aproximada do núcleo familiar (por mês)",
+          label: "Somando todo mundo da casa, quanto entra por mês já descontados os impostos?",
           kind: "numero",
           required: true,
-          hint: "Aproximada mesmo — o valor exato é levantado depois, no A2.",
+          hint: "Pode ser por alto. O número exato entra depois, no A2 — aqui interessa a ordem de grandeza.",
         },
       ],
     },
     {
       title: "Dívidas",
       fields: [
-        { key: "tem_dividas", label: "Você tem dívidas hoje?", kind: "sim_nao", required: true },
+        { key: "tem_dividas", label: "Você tem alguma dívida hoje?", kind: "sim_nao", required: true },
         {
           key: "modalidades_divida",
-          label: "De que tipo?",
+          label: "Quais destas você tem?",
           kind: "escolha_multipla",
           options: [
             "Cartão de crédito rotativo",
@@ -197,13 +211,13 @@ const A1: InstrumentSpec = {
       fields: [
         {
           key: "faixa_patrimonio",
-          label: "Faixa aproximada do seu patrimônio",
+          label: "Somando o que você tem — imóveis, veículos, aplicações —, em qual faixa isso cai?",
           kind: "faixa",
           options: FAIXAS_PATRIMONIO,
           required: true,
-          hint: "Faixa, não valor — o levantamento detalhado é feito no A2.",
+          hint: "Só a faixa. O levantamento item a item é feito depois, com calma.",
         },
-        { key: "tem_pj_propria", label: "Você tem empresa própria (PJ)?", kind: "sim_nao", required: true },
+        { key: "tem_pj_propria", label: "Você tem empresa própria (CNPJ)?", kind: "sim_nao", required: true },
       ],
     },
     {
@@ -211,10 +225,10 @@ const A1: InstrumentSpec = {
       fields: [
         {
           key: "tres_preocupacoes",
-          label: "Quais são suas três maiores preocupações financeiras hoje?",
+          label: "Quais são as três coisas que mais te preocupam hoje, quando você pensa em dinheiro?",
           kind: "texto_longo",
           required: true,
-          hint: "Escreva com suas palavras. Não há resposta certa.",
+          hint: "Escreva com suas palavras, do jeito que vier. Não existe resposta certa aqui — e é uma das partes que o consultor mais lê.",
         },
       ],
     },
@@ -223,7 +237,11 @@ const A1: InstrumentSpec = {
       fields: [
         {
           key: "consentimento_lgpd",
-          label: "Autorizo o tratamento dos meus dados para fins da consultoria contratada (LGPD).",
+          label:
+            "Autorizo a PROSPECTA a tratar as informações que eu fornecer aqui e os dados da minha conta para " +
+            "executar a consultoria que contratei — elaborar meu diagnóstico, meus planos e acompanhar sua execução. " +
+            "Sei que posso pedir acesso, correção ou eliminação desses dados a qualquer momento, e que retirar este " +
+            "consentimento interrompe a consultoria daqui para a frente, sem apagar o que já foi entregue.",
           kind: "consentimento",
           required: true,
         },
@@ -248,36 +266,36 @@ const A2: InstrumentSpec = {
     "puder esperar, justamente para o A1 caber em dez minutos.",
   estimatedMinutes: null,
   maxMinutes: null,
-  redacaoConfirmada: false,
+  redacaoConfirmada: true,
   blocks: [
     {
       title: "Renda e estabilidade",
       fields: [
-        { key: "fontes_por_pessoa", label: "Fontes de renda por pessoa (bruta e líquida)", kind: "texto_longo", required: true },
-        { key: "sazonalidade", label: "Há sazonalidade na renda?", kind: "texto_longo", required: false },
-        { key: "beneficios", label: "Benefícios recebidos", kind: "texto_longo", required: false },
-        { key: "tempo_vinculo", label: "Tempo de vínculo atual", kind: "texto", required: false },
-        { key: "perspectiva_mudanca", label: "Perspectiva de mudança na renda", kind: "texto_longo", required: false },
+        { key: "fontes_por_pessoa", label: "Quais são as fontes de renda de cada pessoa da casa? Informe o valor bruto e o líquido de cada uma.", kind: "texto_longo", required: true },
+        { key: "sazonalidade", label: "Sua renda varia ao longo do ano? Se varia, em quais meses ela sobe e em quais ela cai?", kind: "texto_longo", required: false },
+        { key: "beneficios", label: "Que benefícios vocês recebem além do salário? (vale-refeição, plano de saúde, PLR, bônus, auxílios)", kind: "texto_longo", required: false },
+        { key: "tempo_vinculo", label: "Há quanto tempo você está no vínculo de trabalho atual?", kind: "texto", required: false },
+        { key: "perspectiva_mudanca", label: "Você espera alguma mudança na sua renda nos próximos doze meses?", kind: "texto_longo", required: false },
       ],
     },
     {
       title: "Despesas declaradas",
       fields: [
-        { key: "fixos_por_categoria", label: "Despesas fixas por categoria", kind: "texto_longo", required: true },
-        { key: "variaveis_estimados", label: "Despesas variáveis estimadas", kind: "texto_longo", required: false },
-        { key: "despesas_anuais", label: "Despesas anuais (IPVA, IPTU, matrículas…)", kind: "texto_longo", required: false },
-        { key: "gastos_dependentes_terceiros", label: "Gastos com dependentes e terceiros", kind: "texto_longo", required: false },
+        { key: "fixos_por_categoria", label: "Quais são suas despesas fixas e quanto cada uma custa por mês?", kind: "texto_longo", required: true },
+        { key: "variaveis_estimados", label: "E as despesas que mudam de mês para mês — quanto elas costumam somar?", kind: "texto_longo", required: false },
+        { key: "despesas_anuais", label: "Que despesas aparecem só uma ou duas vezes por ano? (IPVA, IPTU, matrícula, seguro, férias)", kind: "texto_longo", required: false },
+        { key: "gastos_dependentes_terceiros", label: "Você banca alguma despesa de dependentes ou de outras pessoas? Quais, e quanto?", kind: "texto_longo", required: false },
       ],
     },
     {
       title: "Patrimônio",
       fields: [
-        { key: "imoveis", label: "Imóveis", kind: "texto_longo", required: false },
-        { key: "veiculos", label: "Veículos", kind: "texto_longo", required: false },
-        { key: "aplicacoes", label: "Aplicações por instituição e classe", kind: "texto_longo", required: false },
-        { key: "previdencia_privada", label: "Previdência privada", kind: "texto_longo", required: false },
-        { key: "participacoes_societarias", label: "Participações societárias", kind: "texto_longo", required: false },
-        { key: "direitos_a_receber", label: "Direitos a receber", kind: "texto_longo", required: false },
+        { key: "imoveis", label: "Que imóveis vocês têm? Diga o uso de cada um e um valor aproximado.", kind: "texto_longo", required: false },
+        { key: "veiculos", label: "Que veículos vocês têm, e quanto vale cada um aproximadamente?", kind: "texto_longo", required: false },
+        { key: "aplicacoes", label: "Onde está o seu dinheiro aplicado hoje? Liste por instituição e tipo de aplicação.", kind: "texto_longo", required: false },
+        { key: "previdencia_privada", label: "Vocês têm previdência privada? Em qual instituição, que tipo de plano e com qual saldo?", kind: "texto_longo", required: false },
+        { key: "participacoes_societarias", label: "Você é sócio de alguma empresa? Qual a sua participação?", kind: "texto_longo", required: false },
+        { key: "direitos_a_receber", label: "Há valores que você tem a receber? (aluguéis, precatórios, empréstimos a terceiros, acordos)", kind: "texto_longo", required: false },
       ],
     },
     {
@@ -285,32 +303,38 @@ const A2: InstrumentSpec = {
       fields: [
         {
           key: "dividas_detalhadas",
-          label: "Por dívida: credor, modalidade, saldo, parcela, CET, prazo restante, garantia, situação",
+          label: "Para cada dívida em aberto: quem é o credor, que tipo de dívida é, quanto falta, qual a parcela, o CET, o prazo restante, se há garantia e como está a situação.",
           kind: "texto_longo",
           required: false,
         },
-        { key: "negativacao", label: "Negativação, protesto ou ação judicial", kind: "texto_longo", required: false },
-        { key: "rotativo_cheque_especial", label: "Uso de rotativo e cheque especial", kind: "texto_longo", required: false },
-        { key: "fianca_aval", label: "Fiança ou aval a terceiros", kind: "texto_longo", required: false },
+        { key: "negativacao", label: "Existe negativação, protesto ou ação judicial no seu nome ou no de alguém da casa?", kind: "texto_longo", required: false },
+        { key: "rotativo_cheque_especial", label: "Você usa rotativo do cartão ou cheque especial? Com que frequência?", kind: "texto_longo", required: false },
+        { key: "fianca_aval", label: "Você é fiador ou avalista de alguém?", kind: "texto_longo", required: false },
       ],
     },
     {
       title: "Proteção",
       fields: [
-        { key: "seguros", label: "Seguros contratados", kind: "texto_longo", required: false },
-        { key: "coberturas_empregador", label: "Coberturas do empregador", kind: "texto_longo", required: false },
-        { key: "plano_saude", label: "Plano de saúde", kind: "texto_longo", required: false },
-        { key: "cobertura_cartao", label: "Coberturas do cartão", kind: "texto_longo", required: false },
-        { key: "reserva_atual", label: "Reserva atual", kind: "texto_longo", required: false },
+        { key: "seguros", label: "Que seguros vocês têm hoje? (vida, residencial, automóvel, viagem, outros)", kind: "texto_longo", required: false },
+        { key: "coberturas_empregador", label: "Seu empregador oferece alguma cobertura? (seguro de vida em grupo, auxílios, previdência)", kind: "texto_longo", required: false },
+        { key: "plano_saude", label: "Vocês têm plano de saúde? Qual é, e o que ele cobre?", kind: "texto_longo", required: false },
+        { key: "cobertura_cartao", label: "Seu cartão oferece alguma cobertura que você conhece ou já usou?", kind: "texto_longo", required: false },
+        { key: "reserva_atual", label: "Quanto vocês têm guardado hoje para emergências, e onde esse dinheiro está?", kind: "texto_longo", required: false },
       ],
     },
     {
       title: "Previdência",
       fields: [
-        { key: "regime_previdenciario", label: "Regime previdenciário", kind: "texto", required: false },
-        { key: "tempo_contribuicao", label: "Tempo de contribuição", kind: "texto", required: false },
-        { key: "previdencia_complementar", label: "Previdência complementar", kind: "texto_longo", required: false },
-        { key: "acesso_cnis", label: "Tem acesso ao extrato do CNIS?", kind: "sim_nao", required: false },
+        { key: "regime_previdenciario", label: "Em qual regime previdenciário você contribui? (INSS, regime próprio, militar, nenhum)", kind: "texto", required: false },
+        { key: "tempo_contribuicao", label: "Há quanto tempo você contribui?", kind: "texto", required: false },
+        { key: "previdencia_complementar", label: "Você tem previdência complementar? Qual plano, de que tipo e com qual saldo?", kind: "texto_longo", required: false },
+        {
+          key: "acesso_cnis",
+          label: "Você consegue acessar o seu extrato do CNIS?",
+          kind: "sim_nao",
+          required: false,
+          hint: "É o extrato das suas contribuições ao INSS, no app ou site Meu INSS. Se nunca acessou, responda não — o consultor orienta.",
+        },
       ],
     },
     {
@@ -318,16 +342,16 @@ const A2: InstrumentSpec = {
       fields: [
         {
           key: "modelo_declaracao",
-          label: "Modelo de declaração de IR",
+          label: "Como você declara imposto de renda?",
           kind: "escolha",
           options: ["Simplificada", "Completa", "Isento", "Não sei"],
           required: false,
         },
-        { key: "rendimentos_tributaveis_isentos", label: "Rendimentos tributáveis e isentos", kind: "texto_longo", required: false },
-        { key: "pj_propria", label: "PJ própria e pró-labore", kind: "texto_longo", required: false },
+        { key: "rendimentos_tributaveis_isentos", label: "Que rendimentos você recebe, e como cada um é tributado?", kind: "texto_longo", required: false },
+        { key: "pj_propria", label: "Se você tem empresa própria: qual o faturamento, o pró-labore, e como você se remunera?", kind: "texto_longo", required: false },
         {
           key: "mistura_pf_pj",
-          label: "Grau de mistura entre pessoa física e jurídica",
+          label: "O quanto as contas da empresa se misturam com as suas contas pessoais?",
           kind: "escolha",
           options: ["Não se aplica", "Totalmente separados", "Alguma mistura", "Muito misturados"],
           required: false,
@@ -339,7 +363,7 @@ const A2: InstrumentSpec = {
       fields: [
         {
           key: "objetivos",
-          label: "Seus objetivos: valor, prazo e priorização",
+          label: "Quais são os seus objetivos financeiros? Para cada um, diga o valor e o prazo — e depois coloque-os em ordem, do mais importante para o menos.",
           kind: "texto_longo",
           required: true,
           hint: "A priorização é forçada de propósito — ordenar objetivos é o que revela o que de fato importa.",
@@ -353,16 +377,68 @@ const A2: InstrumentSpec = {
 // "Digital, escala Likert, respondido individualmente e sem companhia."
 // As oito dimensões são as do documento, nesta ordem.
 
-/** §12.6 — as oito dimensões, na ordem em que a Metodologia as lista. */
+/**
+ * §12.6 — as oito dimensões, na ordem em que a Metodologia as lista.
+ *
+ * `label` é o nome técnico da dimensão, que o consultor lê; `afirmacao` é o que
+ * o cliente de fato vê. São separados porque "Locus de controle financeiro" não
+ * é uma frase com a qual alguém concorda ou discorda.
+ *
+ * **Todas as afirmações apontam para o mesmo lado**: concordar sempre indica
+ * mais capacidade de assumir risco. A alternativa clássica — misturar frases
+ * invertidas para pegar quem responde tudo igual sem ler — foi deixada de fora
+ * por ora, porque exigiria que o cálculo do perfil soubesse quais itens
+ * inverter, e esse cálculo ainda não existe. Quando existir, é o momento de
+ * reavaliar: uniformidade facilita responder, mas não detecta resposta
+ * automática.
+ *
+ * A primeira afirmação usa **valores absolutos**, e não percentuais, porque
+ * §12.6 é explícito quanto a isso: "tolerância à perda (cenários com valores
+ * absolutos)". Perda em porcentagem é sistematicamente subestimada por quem
+ * responde; em reais, a pessoa sente o tamanho.
+ */
 export const DIMENSOES_C = [
-  { key: "tolerancia_perda", label: "Tolerância à perda" },
-  { key: "horizonte", label: "Horizonte" },
-  { key: "conhecimento_previo", label: "Conhecimento prévio" },
-  { key: "necessidade_liquidez", label: "Necessidade de liquidez" },
-  { key: "aversao_complexidade", label: "Aversão a complexidade" },
-  { key: "disciplina", label: "Disciplina" },
-  { key: "locus_controle", label: "Locus de controle financeiro" },
-  { key: "propensao_endividamento", label: "Propensão ao endividamento" },
+  {
+    key: "tolerancia_perda",
+    label: "Tolerância à perda",
+    afirmacao:
+      "Se eu tivesse R$ 50.000 aplicados e, num mês ruim, esse valor caísse para R$ 42.000, eu deixaria o dinheiro onde está.",
+  },
+  {
+    key: "horizonte",
+    label: "Horizonte",
+    afirmacao: "Eu consigo deixar uma parte do meu dinheiro aplicada por mais de cinco anos sem precisar dela.",
+  },
+  {
+    key: "conhecimento_previo",
+    label: "Conhecimento prévio",
+    afirmacao: "Antes de aplicar em alguma coisa, eu entendo sozinho como aquilo funciona e o que pode dar errado.",
+  },
+  {
+    key: "necessidade_liquidez",
+    label: "Necessidade de liquidez",
+    afirmacao: "Eu conseguiria passar três meses sem sacar nada do que está investido.",
+  },
+  {
+    key: "aversao_complexidade",
+    label: "Aversão a complexidade",
+    afirmacao: "Eu me sinto à vontade com um investimento de regras mais complicadas, que exige acompanhamento.",
+  },
+  {
+    key: "disciplina",
+    label: "Disciplina",
+    afirmacao: "Quando eu me comprometo a guardar um valor todo mês, eu cumpro — inclusive nos meses apertados.",
+  },
+  {
+    key: "locus_controle",
+    label: "Locus de controle financeiro",
+    afirmacao: "O resultado das minhas finanças depende muito mais das minhas decisões do que da sorte ou da economia.",
+  },
+  {
+    key: "propensao_endividamento",
+    label: "Propensão ao endividamento",
+    afirmacao: "Eu evito usar crédito para antecipar consumo, mesmo quando as condições parecem boas.",
+  },
 ] as const;
 
 /** Likert de 5 pontos. */
@@ -385,16 +461,17 @@ const C: InstrumentSpec = {
     "instituição onde o cliente opera.",
   estimatedMinutes: null,
   maxMinutes: null,
-  redacaoConfirmada: false,
+  redacaoConfirmada: true,
   blocks: [
     {
       title: "Perfil comportamental",
       fields: DIMENSOES_C.map((d) => ({
         key: d.key,
-        label: d.label,
+        label: d.afirmacao,
         kind: "likert" as const,
         options: LIKERT_OPTIONS,
         required: true,
+        hint: d.label,
       })),
     },
   ],
