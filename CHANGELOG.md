@@ -16,6 +16,10 @@
 
 ## 2026-08-17
 
+### Corrigido (Registro Nº 096)
+- **Contrato de consultoria do tipo Projeto não liberava nada.** Nenhuma funcionalidade do método tinha a fase preenchida, e a regra exigia correspondência de fase — resultado: abrir um Projeto deixava o menu Método igualmente vazio. Cada funcionalidade recebeu sua fase, e as estruturais (trilha, gates, entregáveis, acesso do consultor) passaram a valer em qualquer contrato.
+- **A mensagem das telas de método mentia.** Diziam "existe quando há uma consultoria ativa" mesmo havendo uma — o que faltava era a fase. Agora dizem qual é o contrato ativo e por que aquela tela ficou fora do escopo.
+
 ### Corrigido (Registro Nº 095)
 - **O menu Admin podia aparecer para quem não é administrador** ao trocar de conta no mesmo navegador. Era aparência apenas — as telas de administração sempre exigiram permissão no servidor, então clicar levava a erro de autorização, nunca a dado de outra pessoa. Corrigido invalidando o cache de layout no login e no logout.
 

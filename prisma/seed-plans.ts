@@ -132,6 +132,47 @@ const PLANS: PlanSeed[] = [
   },
 ];
 
+/**
+ * §13.8 / §12.1 — a fase do método a que cada feature pertence.
+ *
+ * Existe por causa do contrato de **Projeto** (§4.9), que cobre **uma** fase e
+ * não a trilha inteira. Sem este mapa, `engagementCoversFeature` não tinha como
+ * decidir e recusava tudo: um contrato de Projeto liberava **zero** features,
+ * defeito encontrado em produção em 2026-08-17 quando o usuário abriu um e as
+ * três telas do menu Método continuaram negando.
+ *
+ * As fases vêm da tabela de artefatos da Metodologia v5.0 (§12.1), não de
+ * arbítrio: MEC é 3, MRP é 4, PIP é 6, MFP é 7, PCP é 8, PFI é ∞ (9), RAP é 2.
+ *
+ * **`null` aqui significa "transversal", não "não classificada"** — e é a
+ * distinção que faltava. São as features estruturais da camada de método, que
+ * qualquer contrato precisa ter para o trabalho existir: sem a trilha, um
+ * cliente de Projeto não consegue nem ver em que ponto está; sem o acesso do
+ * consultor, não há quem execute. Cobrar por fase o andaime do próprio método
+ * seria vender uma sala sem porta.
+ */
+const METODO_FEATURE_PHASE: Record<string, number | null> = {
+  // Estruturais — todo contrato tem, inclusive Projeto.
+  metodo_trilha: null,
+  metodo_gates: null,
+  consultor_workspace: null,
+  agenda_consultoria: null,
+  entregaveis: null,
+  psf_nivel_3: null,
+  psf_revisado: null,
+
+  // Por fase, conforme §12.1.
+  diagnostico_dip: 0, // A1 na Fase 0; A2 e C na Fase 1 (§12.8) — ancorado na origem.
+  regua_trajetoria: 2, // RAP
+  mec_completo: 3, // MEC
+  mrp_completo: 4, // MRP
+  pip_politica: 6, // PIP
+  mfp_diagnostico: 7, // MFP
+  pcp_sucessorio: 8, // PCP
+  pla_projecao: 5, // PLA
+  pfi_compilador: 9, // PFI — Fase ∞
+};
+
 async function seedFeatures() {
   const allFeatures: Record<string, string> = {
     ...START_FEATURES,
@@ -145,11 +186,15 @@ async function seedFeatures() {
   let count = 0;
   for (const [code, name] of Object.entries(allFeatures)) {
     const gateKind: FeatureGateKind = methodoCodes.has(code) ? "METODO" : "PLANO";
+    const methodPhase = methodoCodes.has(code) ? (METODO_FEATURE_PHASE[code] ?? null) : null;
     await prisma.feature.upsert({
       where: { code },
       // Nunca sobrescreve name/gateKind já existente — admin pode ter editado via /admin/planos.
-      create: { code, name, gateKind },
-      update: {},
+      // `methodPhase` é exceção: nenhuma tela o edita, então não há edição de
+      // admin a preservar, e ele **precisa** ser corrigido em base já semeada —
+      // era justamente o campo que estava nulo em produção e travava o Projeto.
+      create: { code, name, gateKind, methodPhase },
+      update: { methodPhase },
     });
     count += 1;
   }

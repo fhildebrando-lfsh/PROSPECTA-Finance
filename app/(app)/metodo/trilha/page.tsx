@@ -1,6 +1,7 @@
 import { requireWorkspaceId, requireProfile } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { hasFeature } from "@/lib/billing/entitlements";
+import { GateAviso } from "@/components/method/GateAviso";
 import { activeEngagement } from "@/lib/billing/engagement";
 import { formatDateBR } from "@/lib/format";
 import { GateForm, IniciarFaseForm } from "./GateForm";
@@ -56,13 +57,11 @@ export default async function TrilhaPage() {
 
   if (!(await hasFeature(workspaceId, "metodo_trilha"))) {
     return (
-      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
-        <p className="text-zinc-200">A trilha do método existe quando há uma consultoria ativa.</p>
-        <p className="mt-2">
-          Diferente das demais telas, esta não é liberada por plano: ela acompanha um trabalho conduzido por um
-          profissional, com fases e critérios de passagem registrados.
-        </p>
-      </div>
+      <GateAviso
+        workspaceId={workspaceId}
+        titulo="A trilha do método existe quando há uma consultoria ativa."
+        explicacao="Diferente das demais telas, esta não é liberada por plano: ela acompanha um trabalho conduzido por um profissional, com fases e critérios de passagem registrados."
+      />
     );
   }
 

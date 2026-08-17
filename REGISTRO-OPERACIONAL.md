@@ -2618,7 +2618,24 @@
 
 ---
 
-## Próximo número de registro: **096**
+### Registro Nº 096
+- **Data:** 2026-08-17
+- **Etapa concluída:** Contrato de Projeto liberava zero features — corrigido; e a mensagem de gate, que mentia por omissão
+- **Descrição:** O usuário abriu contratos de **Projeto** em três workspaces e as três telas do menu Método continuaram negando. Não era o contrato: `engagementCoversFeature` recusava feature com `methodPhase` nulo sob Projeto, e consulta em produção mostrou que **as 16 features de método tinham `method_phase` nulo** — o campo foi desenhado na Etapa 8 e **nunca populado**. Ou seja, `PROJETO` era uma modalidade vendável (§4.9, Projeto Especializado) que **não entregava nada**, e só podia negar.
+- **A causa de fundo era semântica:** `null` acumulava dois significados opostos — "transversal" e "ainda não classificada" — e o código tratava os dois como o pior caso. Separei: o mapa `METODO_FEATURE_PHASE` em `prisma/seed-plans.ts` agora exige decisão explícita para cada feature, e `null` passou a significar **transversal**. As fases vêm da tabela de artefatos da Metodologia (§12.1), não de arbítrio: MEC 3, MRP 4, PLA 5, PIP 6, MFP 7, PCP 8, PFI 9, RAP 2, DIP 0.
+- **Sete features ficaram transversais** — trilha, gates, acesso do consultor, agenda, entregáveis e os dois níveis de PSF. O critério: são o andaime da própria camada de método. Sem a trilha, um cliente de Projeto não consegue nem ver em que ponto está; cobrar por fase o andaime seria vender uma sala sem porta.
+- **A inversão de `null` é perigosa e por isso veio com trava.** Antes, esquecer de classificar negava (seguro); agora libera. O que impede a brecha é um teste de integração que percorre todas as features `METODO` e exige decisão registrada — transversal explícita ou fase numérica. Feature nova sem decisão quebra o teste em vez de virar acesso de graça. O teste antigo, que fixava o comportamento oposto, foi **substituído com o motivo escrito no próprio arquivo**, para a inversão não parecer relaxamento de regra.
+- **Produção recebeu apenas o campo, não o seed inteiro.** Rodar `seed-plans.ts` contra produção teria trazido efeitos colaterais — em dev ele criou uma Subscription de backfill. Apliquei um `UPDATE` cirúrgico de `features.method_phase` numa transação, com guarda de `PROD_REF`, snapshot antes/depois e uma checagem que aborta se existir feature `METODO` fora do mapa. Resultado: 9 com fase, 7 transversais.
+- **Segundo defeito, de diagnóstico:** as três telas diziam "existe quando há uma consultoria ativa" **mesmo havendo uma**. Diagnóstico ruim é pior que erro, porque manda procurar no lugar errado — o usuário poderia ter concluído que o contrato não fora salvo. Novo `components/method/GateAviso.tsx` consulta o contrato ativo e, quando ele existe, diz qual é a modalidade, qual fase foi contratada, e que Projeto cobre uma fase e não a trilha.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 699/699; integração **111/111** (3 casos novos, incluindo a trava de exaustividade); `npm run build` limpo.
+- **Efeito imediato para o usuário:** os contratos de Projeto já abertos passam a liberar trilha, diagnóstico e entregáveis (transversais) mais a fase contratada. Para a camada inteira, o contrato precisa ser Diagnóstico, Planejamento ou Acompanhamento — e agora a tela diz isso quando nega.
+- **Documentos relacionados:** Registro Nº 094 (a tela que permitiu abrir o contrato e expôs este defeito), Metodologia v5.0 §4.9 e §12.1, `lib/billing/engagement.ts`, `prisma/seed-plans.ts`.
+
+---
+
+## Próximo número de registro: **097**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

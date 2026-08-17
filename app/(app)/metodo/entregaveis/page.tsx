@@ -1,6 +1,7 @@
 import { requireWorkspaceId, requireProfile } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { hasFeature } from "@/lib/billing/entitlements";
+import { GateAviso } from "@/components/method/GateAviso";
 import { activeEngagement } from "@/lib/billing/engagement";
 import { formatDateBR } from "@/lib/format";
 import {
@@ -31,13 +32,11 @@ export default async function EntregaveisPage() {
 
   if (!(await hasFeature(workspaceId, "entregaveis"))) {
     return (
-      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
-        <p className="text-zinc-200">Os entregáveis do método existem quando há uma consultoria ativa.</p>
-        <p className="mt-2">
-          São os documentos que registram o trabalho: mapa de riscos, política de investimento, plano de continuidade
-          e os demais — cada um versionado na data em que foi entregue.
-        </p>
-      </div>
+      <GateAviso
+        workspaceId={workspaceId}
+        titulo="Os entregáveis do método existem quando há uma consultoria ativa."
+        explicacao="São os documentos que registram o trabalho: mapa de riscos, política de investimento, plano de continuidade e os demais — cada um versionado na data em que foi entregue."
+      />
     );
   }
 

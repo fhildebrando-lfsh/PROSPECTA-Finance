@@ -40,14 +40,26 @@ export async function activeEngagement(
  * (diagnóstico, planejamento, acompanhamento) liberam a camada toda enquanto
  * estiverem ativas.
  *
- * `featurePhase` é a fase do método à qual a feature pertence; nulo significa
- * "não pertence a uma fase específica" e, nesse caso, um contrato de projeto
- * **não** a libera — escopo de projeto é escopo, e ampliar por omissão seria
- * dar de graça o que não foi contratado.
+ * `featurePhase` nulo significa **transversal**: a feature é andaime da própria
+ * camada de método — a trilha, os gates, o acesso do consultor, os entregáveis
+ * —, e todo contrato precisa dela para o trabalho existir. Sem a trilha, um
+ * cliente de Projeto não consegue nem ver em que ponto está.
+ *
+ * **A versão anterior tratava nulo como "não coberta"**, e o resultado foi um
+ * defeito silencioso encontrado em produção em 2026-08-17: como **nenhuma**
+ * feature tinha fase preenchida, um contrato de Projeto liberava **zero**
+ * features — a modalidade era vendável e não entregava nada, enquanto a tela
+ * dizia "não há consultoria ativa" com uma consultoria ativa.
+ *
+ * A inversão só é segura porque a fase de cada feature agora é decisão
+ * explícita em `prisma/seed-plans.ts`, e um teste exige que o mapa cubra todas
+ * as features de método. Feature nova sem decisão quebra o teste em vez de
+ * virar acesso de graça.
  */
 export function engagementCoversFeature(engagement: ConsultingEngagement, featurePhase: number | null): boolean {
   if (engagement.modality !== "PROJETO") return true;
-  if (engagement.projectPhase === null || featurePhase === null) return false;
+  if (featurePhase === null) return true;
+  if (engagement.projectPhase === null) return false;
   return engagement.projectPhase === featurePhase;
 }
 

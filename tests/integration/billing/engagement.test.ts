@@ -138,9 +138,60 @@ describe("camada de método (integração — Etapa 8, 2026-08-17)", () => {
       expect(engagementCoversFeature(contrato, 5)).toBe(false);
     });
 
-    it("não libera feature sem fase definida", async () => {
+    /**
+     * Esta invariante foi **invertida** em 2026-08-17, e o motivo fica aqui
+     * para a inversão não parecer relaxamento de regra.
+     *
+     * Antes: fase nula não era coberta por Projeto, com a intenção de "escopo
+     * de projeto é escopo". Só que **nenhuma** feature tinha fase preenchida em
+     * produção, então um contrato de Projeto liberava **zero** features — uma
+     * modalidade vendável que não entregava nada, com a tela dizendo "não há
+     * consultoria ativa" enquanto havia uma.
+     *
+     * Agora fase nula significa **transversal**: o andaime da camada de método
+     * (trilha, gates, acesso do consultor, entregáveis), sem o qual não dá nem
+     * para conduzir o projeto contratado. O que impede isso de virar brecha é a
+     * fase de cada feature ser decisão explícita no seed, com o teste de
+     * exaustividade logo abaixo.
+     */
+    it("libera as features transversais, que são o andaime do método", async () => {
       const contrato = await criarContrato({ modality: "PROJETO", projectPhase: 3 });
-      expect(engagementCoversFeature(contrato, null)).toBe(false);
+      expect(engagementCoversFeature(contrato, null)).toBe(true);
+    });
+
+    /** Projeto sem fase contratada é contrato malformado — não libera por engano. */
+    it("projeto sem fase contratada não libera feature de fase alguma", async () => {
+      const contrato = await criarContrato({ modality: "PROJETO", projectPhase: null });
+      expect(engagementCoversFeature(contrato, 3)).toBe(false);
+    });
+
+    /**
+     * A trava que sustenta a inversão acima: toda feature de método precisa ter
+     * uma decisão de fase tomada — número ou o `null` explícito de transversal.
+     * Feature nova sem decisão apareceria aqui em vez de virar acesso de graça.
+     */
+    it("toda feature de método tem fase decidida no seed", async () => {
+      const metodo = await prisma.feature.findMany({ where: { gateKind: "METODO" }, orderBy: { code: "asc" } });
+      expect(metodo.length).toBeGreaterThan(0);
+
+      // Estas são transversais por decisão registrada em prisma/seed-plans.ts.
+      const TRANSVERSAIS = new Set([
+        "metodo_trilha",
+        "metodo_gates",
+        "consultor_workspace",
+        "agenda_consultoria",
+        "entregaveis",
+        "psf_nivel_3",
+        "psf_revisado",
+      ]);
+
+      for (const f of metodo) {
+        if (TRANSVERSAIS.has(f.code)) {
+          expect(f.methodPhase, `${f.code} deveria ser transversal`).toBeNull();
+        } else {
+          expect(f.methodPhase, `${f.code} está sem fase — decida em seed-plans.ts`).not.toBeNull();
+        }
+      }
     });
 
     it("as demais modalidades liberam a camada inteira", async () => {
