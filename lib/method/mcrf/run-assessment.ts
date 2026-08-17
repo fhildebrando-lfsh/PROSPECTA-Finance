@@ -35,6 +35,8 @@ export interface AssessmentResult {
   dataReferenceDate: Date;
   cema: Decimal;
   ccm: Decimal;
+  /** Renda mediana observada da unidade financeira — medida, nunca estimada. */
+  rendaMensalObservada: Decimal;
   reserveTarget: Decimal;
   protecaoEssencial: Decimal;
   protecaoReforcada: Decimal;
@@ -60,7 +62,34 @@ function piorConfianca(a: ConfiancaAnalise, b: ConfiancaAnalise): ConfiancaAnali
   return ordem.indexOf(a) <= ordem.indexOf(b) ? a : b;
 }
 
-export async function runAssessment(workspaceId: string, referenceDate = new Date()): Promise<AssessmentResult> {
+/**
+ * §43 — Simulador "E se?". As hipóteses são aplicadas ao contexto **depois** de
+ * ler o dado real e **antes** de rodar os cenários, então tudo a jusante
+ * (cenários, reserva, IPRF) recalcula sozinho e de forma coerente.
+ *
+ * Nada aqui é gravado: simulação nunca altera o dado do cliente. O resultado é
+ * comparado com o cálculo real na tela, lado a lado.
+ */
+export interface AssessmentOverrides {
+  /** "E se meu custo mensal cair 10%?" — fração de redução do CEMA/CCM, 0–1. */
+  reducaoCustoPct?: number;
+  /** "E se meu cônjuge começar a trabalhar?" / "E se minha atividade render R$ 2.000?" */
+  rendaExtraMensal?: Decimal;
+  /** "E se eu desenvolver uma segunda atividade de verdade?" */
+  forcarSegundaAtividadeResiliente?: boolean;
+  /** "E se eu quitar esta dívida?" — reduz despesa rígida mensal. */
+  dividaQuitadaMensal?: Decimal;
+  /** "E se eu aumentar minha liquidez?" — soma à reserva elegível. */
+  liquidezExtra?: Decimal;
+  /** "E se eu contratar proteção de renda?" — assume risco principal coberto. */
+  contratarSeguro?: boolean;
+}
+
+export async function runAssessment(
+  workspaceId: string,
+  referenceDate = new Date(),
+  overrides: AssessmentOverrides = {},
+): Promise<AssessmentResult> {
   const [entryRows, people, policies, benefits, assets, investments, wallets, param] = await Promise.all([
     prisma.entry.findMany({
       where: { workspaceId },
@@ -112,7 +141,19 @@ export async function runAssessment(workspaceId: string, referenceDate = new Dat
   }));
 
   const reducaoPct = param ? Number(param.value) : CCM_REDUCAO_AJUSTAVEL_PCT_PADRAO;
-  const despesa = computeExpenseBaseline(expenseEntries, referenceDate, OBSERVATION_MONTHS_PREFERRED, reducaoPct);
+  const despesaReal = computeExpenseBaseline(expenseEntries, referenceDate, OBSERVATION_MONTHS_PREFERRED, reducaoPct);
+
+  // §43 — hipóteses do simulador aplicadas sobre o resultado real. Nunca
+  // gravadas: a simulação existe para comparar, não para substituir o cálculo.
+  const fatorCusto = new Decimal(1 - Math.max(0, Math.min(1, overrides.reducaoCustoPct ?? 0)));
+  const dividaQuitada = overrides.dividaQuitadaMensal ?? new Decimal(0);
+  const semNegativo = (v: Decimal) => (v.isNegative() ? new Decimal(0) : v);
+  const despesa = {
+    ...despesaReal,
+    cema: semNegativo(despesaReal.cema.times(fatorCusto).minus(dividaQuitada)),
+    ccm: semNegativo(despesaReal.ccm.times(fatorCusto).minus(dividaQuitada)),
+    rigidasMensais: semNegativo(despesaReal.rigidasMensais.minus(dividaQuitada)),
+  };
   if (despesa.naoClassificadasMensais.greaterThan(0)) {
     gaps.push("Há despesas essenciais sem classificação de rigidez — elas entram como se não pudessem ser cortadas.");
   }
@@ -131,7 +172,10 @@ export async function runAssessment(workspaceId: string, referenceDate = new Dat
     referenceDate,
   );
 
-  const rendaTotal = observacoes.reduce((sum, o) => sum.plus(o.median), new Decimal(0));
+  // §43 — renda extra hipotética entra como fonte adicional, não altera a
+  // principal: "e se meu cônjuge trabalhar" não muda o risco da minha renda.
+  const rendaExtra = overrides.rendaExtraMensal ?? new Decimal(0);
+  const rendaTotal = observacoes.reduce((sum, o) => sum.plus(o.median), new Decimal(0)).plus(rendaExtra);
   const principal = observacoes.reduce(
     (maior, o) => (o.median.greaterThan(maior.median) ? o : maior),
     observacoes[0] ?? { personId: "", median: new Decimal(0), monthsObserved: 0, confidence: "BAIXA" as ConfiancaAnalise, worstMonth: new Decimal(0), monthsWithoutIncome: 0, variability: null },
@@ -187,7 +231,10 @@ export async function runAssessment(workspaceId: string, referenceDate = new Dat
     pessoaPrincipal?.regimeTrabalho === "PROFISSIONAL_LIBERAL";
 
   // §21 — só conta como resiliente o que tem evidência prática.
-  const rendaSegunda = segundaAtividadeEhResiliente(pessoaPrincipal?.segundaAtividadeNivel ?? null)
+  const temSegundaResiliente =
+    overrides.forcarSegundaAtividadeResiliente ??
+    segundaAtividadeEhResiliente(pessoaPrincipal?.segundaAtividadeNivel ?? null);
+  const rendaSegunda = temSegundaResiliente
     ? principal.median.times(0.2)
     : new Decimal(0);
 
@@ -247,6 +294,8 @@ export async function runAssessment(workspaceId: string, referenceDate = new Dat
     };
   });
   const liquidez = computeEmergencyLiquidity(liquidityItems);
+  // §43 — "e se eu aumentar minha liquidez?" soma à reserva elegível.
+  const reservaElegivel = liquidez.eligibleValue.plus(overrides.liquidezExtra ?? new Decimal(0));
   if (patrimonyItems.some((i) => i.funcao === null && i.value.greaterThan(0))) {
     gaps.push("Há patrimônio sem função definida — classifique em Patrimônio → Função do Patrimônio para o cálculo ficar preciso.");
   }
@@ -295,7 +344,8 @@ export async function runAssessment(workspaceId: string, referenceDate = new Dat
     recoveryCurve: recoveryCurve(portabilidade.ipp),
     rendaSegundaAtividadeResiliente: rendaSegunda,
     benefitCashflows: cashflows,
-    exposicaoAtivoEssencial: protecao.residualExposure,
+    // §43 — "e se eu contratar proteção?" zera a exposição residual do risco principal.
+    exposicaoAtivoEssencial: overrides.contratarSeguro ? new Decimal(0) : protecao.residualExposure,
     insurancePayout: protecao.payout,
     insurancePayoutMonth: protecao.payoutMonth,
     piorQuedaRendaObservada: piorQueda,
@@ -318,7 +368,7 @@ export async function runAssessment(workspaceId: string, referenceDate = new Dat
     pli: pisoLiquidezImediata(despesa.ccm, protecao.residualExposure),
     scenarios,
     margem,
-    reservaAtualElegivel: liquidez.eligibleValue,
+    reservaAtualElegivel: reservaElegivel,
   });
 
   const determinante = piorCenarioMaterial(scenarios);
@@ -341,10 +391,11 @@ export async function runAssessment(workspaceId: string, referenceDate = new Dat
     dataReferenceDate: referenceDate,
     cema: despesa.cema,
     ccm: despesa.ccm,
+    rendaMensalObservada: rendaTotal,
     reserveTarget: recomendacao.protecaoRecomendada,
     protecaoEssencial: recomendacao.protecaoEssencial,
     protecaoReforcada: recomendacao.protecaoReforcada,
-    eligibleReserve: liquidez.eligibleValue,
+    eligibleReserve: reservaElegivel,
     progressoPct: recomendacao.progressoPct,
     faltaConstruir: recomendacao.faltaConstruir,
     coberturaMatematicaMeses: coberturaEmMeses(liquidez.eligibleValue, despesa.cema),

@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-08-17
+
+### Adicionado (Registro Nº 083)
+- **Reserva de Emergência → "Como chegar lá"**: mostra em quantos meses você atinge a meta guardando o que realmente sobra depois do custo essencial — e, quando não sobra nada, diz isso em vez de inventar um prazo.
+- **Como reduzir a necessidade de reserva sem ficar menos protegido**: sugestões conforme seu caso — contratar seguro, desenvolver uma segunda renda, reduzir despesa presa, diversificar. Guardar mais dinheiro financia o risco; transferir ou diversificar o diminui na origem.
+
+### Alterado (Registro Nº 083)
+- **Saúde Financeira: Liquidez e Proteção ficaram mais precisas.** Liquidez deixa de medir "6 meses de despesa para todo mundo" e passa a medir o quanto você já construiu da **sua** reserva recomendada. Proteção finalmente considera os seguros contratados, além da reserva — antes ela só olhava a reserva e ficava baixa mesmo para quem tinha boa cobertura.
+
 ## 2026-08-16
 
 ### Adicionado (Registro Nº 082)

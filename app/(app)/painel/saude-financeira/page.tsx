@@ -11,7 +11,17 @@ import { openInstallmentGroups, monthlyDebtCommitment, type InstallmentEntry } f
 import { toAllocationEntry } from "@/lib/method/from-db";
 import { computeAllocation, percentOfIncome, bandForIncome } from "@/lib/method/allocation";
 import { computeConsistencyIndex, coberturaTemporal, qualidadeCategorizacao, filaDeIncidentes, coberturaDeCarteiras, conciliacao } from "@/lib/method/consistency";
-import { organizacao, endividamento, liquidez, protecao, construcaoPatrimonial, type PsfIndicatorResult } from "@/lib/method/psf";
+import {
+  organizacao,
+  endividamento,
+  liquidez,
+  liquidezPorReservaRecomendada,
+  protecao,
+  protecaoCompleta,
+  construcaoPatrimonial,
+  type PsfIndicatorResult,
+} from "@/lib/method/psf";
+import { runAssessment } from "@/lib/method/mcrf/run-assessment";
 import { latestReconciliationByWallet } from "@/lib/method/reconciliation";
 import { SaveSnapshotButton } from "./SaveSnapshotButton";
 import { formatDateBR } from "@/lib/format";
@@ -137,11 +147,40 @@ export default async function SaudeFinanceiraPage() {
   const allocationPct = percentOfIncome(allocationTotals);
   const band = bandForIncome(allocationTotals.receita);
 
+  /**
+   * Etapa 9-A.7 — Liquidez e Proteção passam a consumir o MCRF quando ele
+   * está disponível. A diferença é conceitual, não cosmética: o alvo deixa de
+   * ser "6 meses de despesa para todo mundo" e passa a ser a **Reserva
+   * Recomendada calculada para esta pessoa**, a partir dos riscos que de fato
+   * a ameaçam.
+   *
+   * Fallback preservado: sem `reserva_inteligente`, os indicadores continuam
+   * exatamente como estavam. Nenhum cliente perde indicador por causa disto.
+   */
+  const temMcrf = await hasFeature(workspaceId, "reserva_inteligente");
+  const mcrf = temMcrf ? await runAssessment(workspaceId, today) : null;
+
+  const liquidezResult =
+    mcrf && mcrf.reserveTarget.greaterThan(0)
+      ? liquidezPorReservaRecomendada(mcrf.eligibleReserve, mcrf.reserveTarget)
+      : liquidez(liquidBalance, avgExpense);
+
   const indicators = {
     organizacao: organizacao(consistency.overall),
     endividamento: endividamento(debtCommitment, avgIncome),
-    liquidez: liquidez(liquidBalance, avgExpense),
-    protecao: nivel2 ? protecao(liquidez(liquidBalance, avgExpense).valor ?? 0) : null,
+    liquidez: liquidezResult,
+    protecao: nivel2
+      ? mcrf
+        ? protecaoCompleta(
+            liquidezResult.valor ?? 0,
+            // Sem apólice cadastrada não há dado de cobertura — o peso volta
+            // inteiro para a reserva em vez de virar nota ruim por omissão.
+            mcrf.iprfComponentes.find((c) => c.nome === "Cobertura de seguros")?.valor === undefined
+              ? null
+              : (mcrf.iprfComponentes.find((c) => c.nome === "Cobertura de seguros")!.valor) * 100,
+          )
+        : protecao(liquidezResult.valor ?? 0)
+      : null,
     construcao: nivel2 ? construcaoPatrimonial(allocationPct.poupanca, band.poupanca[0]) : null,
   };
 

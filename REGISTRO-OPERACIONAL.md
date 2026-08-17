@@ -2425,7 +2425,20 @@
 
 ---
 
-## Próximo número de registro: **083**
+### Registro Nº 083
+- **Data:** 2026-08-17
+- **Etapa concluída:** Etapas 9-A.6 e 9-A.7 — plano de construção, simulador "E se?" e o PSF passando a consumir o MCRF. **Fecha a Etapa 9-A.**
+- **Descrição:** **9-A.6.** `lib/method/mcrf/plan-engine.ts` (novo, puro): `buildReservePlan()` (§44) calcula o prazo até a meta a partir do que **sobra depois do custo essencial** — §44 é explícito em não comprometer despesa essencial, então a capacidade de poupança não é "renda menos o que eu quiser". Metade do excedente é o padrão: direcionar 100% da folga é insustentável e faria o prazo virar ficção. Receitas extraordinárias (13º, bônus) entram mensalizadas à parte, porque encurtam o prazo sem apertar o mês a mês. Quando não sobra nada, o resultado **não é "meta impossível"** — é `semCapacidadeDePoupanca`, sinal de que o caminho passa por reduzir despesa ou aumentar renda antes de falar em prazo. `treatmentPlan()` (§40) responde "como reduzir a necessidade de reserva sem ficar menos protegido", com as estratégias de §5 (transferir, diversificar, reduzir, reter) — o princípio de que **guardar mais dinheiro financia o risco, enquanto transferir ou diversificar o diminui na origem**. **Simulador "E se?" (§43):** `runAssessment` ganhou `overrides` aplicados **depois** de ler o dado real e **antes** de rodar os cenários, de modo que cenários, reserva e IPRF recalculam coerentemente. Seis hipóteses: reduzir custo, renda extra do cônjuge, desenvolver segunda atividade, quitar dívida, aumentar liquidez, contratar seguro. Nada é gravado — há teste provando que simular não altera o cálculo real. **9-A.7 — o ciclo que motivou toda a antecipação, fechado.** `liquidezPorReservaRecomendada()` substitui o alvo fixo de 6 meses pela **Reserva Recomendada calculada para aquela pessoa**: é a diferença entre "você tem 6 meses de despesa guardados" e "você tem o suficiente para atravessar os cenários que de fato te ameaçam". `protecaoCompleta()` finalmente implementa a fórmula de §5.3.1 (`reserva × 50% + coberturas × 50%`) — a metade de seguros dependia de `InsurancePolicy`, que não existia na Etapa 5, e por isso Proteção espelhava Liquidez e ficava em zero para quem tinha seguro contratado. Sem dado de seguro, o peso volta inteiro para a reserva, em vez de punir quem não cadastrou. **Fallback preservado:** sem `reserva_inteligente`, os indicadores continuam exatamente como estavam — nenhum cliente perde indicador por causa da mudança. **Correção durante a implementação:** a primeira versão da tela derivava a renda mensal da despesa (`cema × 1,6`) para alimentar o plano — número fabricado, exatamente o que a metodologia proíbe. Trocado por `rendaMensalObservada`, exposto pelo motor, que é a mediana real dos lançamentos.
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 592/592 (13 casos novos de `plan-engine`, 9 de PSF com os indicadores novos); suíte de integração 18 arquivos / 86 testes (5 novos do simulador, incluindo o que prova que simular não grava nada); `npm run build` limpo. Sem migration nesta etapa. **Correção de higiene de teste:** o bloco do simulador ganhou `beforeAll` fixando o regime de trabalho, porque herdava o estado deixado pelo teste vizinho e ficava dependente da ordem de execução.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saídas de `tsc`/`npm test`/build.
+- **Etapa 9-A concluída.** As sete sub-etapas (9-A.1 a 9-A.7) implementam a especificação PROSPECTA-MCRF-1.0: perfil de risco, seguros e benefícios, oito motores puros, stress tests, reserva recomendada versionada, telas e integração com o PSF.
+- **Documentos relacionados:** `PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md` §5/§40/§43/§44, `ARQUITETURA-METODO-PROSPECTAR.md` §6, `lib/method/mcrf/plan-engine.ts`, `lib/method/psf.ts`, `app/(app)/protecao/reserva/`, `app/(app)/painel/saude-financeira/`.
+
+---
+
+## Próximo número de registro: **084**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

@@ -7,6 +7,8 @@ import {
   liquidez,
   organizacao,
   protecao,
+  liquidezPorReservaRecomendada,
+  protecaoCompleta,
 } from "@/lib/method/psf";
 
 describe("faixaForPercent (§8.3 — 5 faixas)", () => {
@@ -90,6 +92,69 @@ describe("liquidez", () => {
 describe("protecao (só reserva, por enquanto — cadastro de apólices é Etapa 12)", () => {
   it("reaproveita o percentual de reserva diretamente", () => {
     expect(protecao(70)).toEqual({ faixa: "saudavel", valor: 70 });
+  });
+});
+
+/**
+ * Etapa 9-A.7 — o PSF passa a consumir o MCRF. A diferença é conceitual: o
+ * alvo deixa de ser "6 meses para todo mundo" e passa a ser a reserva calculada
+ * para os riscos daquela pessoa.
+ */
+describe("liquidezPorReservaRecomendada", () => {
+  it("mede progresso contra a reserva recomendada, não contra um alvo fixo", () => {
+    const r = liquidezPorReservaRecomendada(new Decimal(15000), new Decimal(30000));
+    expect(r.valor).toBe(50);
+    expect(r.faixa).toBe("em_construcao");
+  });
+
+  it("reserva atingida chega ao topo da escala", () => {
+    expect(liquidezPorReservaRecomendada(new Decimal(30000), new Decimal(30000)).valor).toBe(100);
+  });
+
+  it("acima da meta não passa de 100", () => {
+    expect(liquidezPorReservaRecomendada(new Decimal(90000), new Decimal(30000)).valor).toBe(100);
+  });
+
+  it("sem recomendação calculada devolve não avaliado, nunca zero", () => {
+    // Zero significaria "sem nenhuma liquidez", o oposto de "ainda não calculado".
+    expect(liquidezPorReservaRecomendada(new Decimal(50000), new Decimal(0)).faixa).toBeNull();
+  });
+
+  /**
+   * A razão de existir da mudança: dois clientes com a mesma reserva guardada
+   * recebem leituras diferentes porque correm riscos diferentes.
+   */
+  it("mesma reserva guardada e riscos diferentes dão faixas diferentes", () => {
+    const estavel = liquidezPorReservaRecomendada(new Decimal(20000), new Decimal(20000));
+    const volatil = liquidezPorReservaRecomendada(new Decimal(20000), new Decimal(60000));
+    expect(estavel.valor).toBe(100);
+    expect(volatil.valor).toBeCloseTo(33.33, 1);
+    expect(estavel.faixa).not.toBe(volatil.faixa);
+  });
+});
+
+describe("protecaoCompleta", () => {
+  /**
+   * A metade que faltava desde a Etapa 5. Enquanto `InsurancePolicy` não
+   * existia, Proteção espelhava Liquidez e ficava em zero para quem tinha
+   * seguro contratado — o que era simplesmente errado, e foi o que motivou
+   * antecipar a Etapa 12 para dentro da 9-A.
+   */
+  it("pondera reserva e cobertura de seguros meio a meio", () => {
+    expect(protecaoCompleta(100, 0).valor).toBe(50);
+    expect(protecaoCompleta(0, 100).valor).toBe(50);
+    expect(protecaoCompleta(60, 40).valor).toBe(50);
+  });
+
+  it("quem tem os dois chega ao topo", () => {
+    expect(protecaoCompleta(100, 100).valor).toBe(100);
+    expect(protecaoCompleta(100, 100).faixa).toBe("consolidado");
+  });
+
+  it("sem dado de seguro, o peso volta inteiro para a reserva", () => {
+    // Ausência de dado não vira nota ruim — mesma disciplina do resto do PSF.
+    expect(protecaoCompleta(80, null).valor).toBe(80);
+    expect(protecaoCompleta(80, null).valor).toBe(protecao(80).valor);
   });
 });
 

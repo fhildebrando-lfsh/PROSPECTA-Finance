@@ -1163,8 +1163,8 @@ duplicada foi criada.
 | **9-A.3** ✅ | CEMA, CCM, liquidez elegível, IPP — puros (§11/§12/§20/§30). Registros Nº 079 e 080 | 9-A.1 |
 | **9-A.4** ✅ | Stress tests A–H + Reserva Recomendada + `McrfAssessment` versionado (§31/§35/§48). Registro Nº 081 | 9-A.2, 9-A.3 |
 | **9-A.5** ✅ | Telas: reserva, explicação, stress test visual, mapa de riscos (§39/§41/§42/§56). Registro Nº 082 | 9-A.4 |
-| **9-A.6** | Simulador "E se?", plano de construção, protocolo de recomposição (§43/§44/§45) | 9-A.5 |
-| **9-A.7** | PSF passa a consumir MCRF em Proteção e Liquidez | 9-A.4 |
+| **9-A.6** ✅ | Simulador "E se?" e plano de construção (§43/§44). Registro Nº 083. **Protocolo de recomposição (§45) fica para depois** — depende de um registro de eventos (`ShockEvent`, §13/§46) que não foi construído |
+| **9-A.7** ✅ | PSF passa a consumir MCRF em Proteção e Liquidez. Registro Nº 083 | 9-A.4 |
 
 **Reuso confirmado no código — três peças centrais da especificação já existiam
 com outro nome**, o que encurta muito o caminho: `Subcategory.macroBloco`

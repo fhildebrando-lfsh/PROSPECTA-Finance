@@ -68,14 +68,56 @@ export function liquidez(liquidBalance: Decimal, averageMonthlyExpense: Decimal)
 }
 
 /**
- * Proteção — fórmula completa é `(reserva atingida % × 50%) + (coberturas
- * cadastradas ÷ recomendadas × 50%)` (§5.3.1), mas o cadastro de apólices
- * (`InsurancePolicy`) só chega na Etapa 12 — até lá, 100% do peso fica na
- * reserva (mesmo valor de `liquidez`, capado em 100). Revisitar esta função
- * quando a Etapa 12 landar, trocando pra ponderação 50/50 de verdade.
+ * Liquidez pelo MCRF (Etapa 9-A.7) — substitui o alvo fixo de 6 meses pela
+ * **Reserva Recomendada calculada para esta pessoa** (`reserve-engine.ts`).
+ *
+ * É a diferença entre "você tem 6 meses de despesa guardados" e "você tem o
+ * suficiente para atravessar os cenários que de fato te ameaçam". Um militar
+ * com renda estável e um autônomo com renda volátil precisam de reservas
+ * diferentes; o alvo fixo tratava os dois igual.
+ *
+ * Cai de volta em `liquidez()` quando não há avaliação MCRF disponível — o
+ * indicador nunca deixa de existir por falta do módulo novo.
+ */
+export function liquidezPorReservaRecomendada(
+  reservaElegivel: Decimal,
+  reservaRecomendada: Decimal,
+): PsfIndicatorResult {
+  if (reservaRecomendada.lessThanOrEqualTo(0)) return NAO_AVALIADO;
+  return indicator(reservaElegivel.div(reservaRecomendada).times(100).toNumber());
+}
+
+/**
+ * Proteção — usada até a Etapa 9-A.2 existir. Mantida por compatibilidade e
+ * como fallback; a versão completa é `protecaoCompleta()` logo abaixo.
  */
 export function protecao(reservePercent: number): PsfIndicatorResult {
   return indicator(reservePercent);
+}
+
+/**
+ * **Proteção completa (Etapa 9-A.7) — a metade que faltava chegou.**
+ *
+ * A fórmula de §5.3.1 sempre foi `(reserva atingida % × 50%) + (coberturas ÷
+ * recomendadas × 50%)`, mas a segunda metade dependia de `InsurancePolicy`,
+ * que não existia. Enquanto isso, Proteção espelhava Liquidez — e ficava em
+ * zero para quem tinha seguro contratado, o que era simplesmente errado.
+ *
+ * Foi exatamente esse buraco que motivou antecipar a Etapa 12 para dentro da
+ * 9-A: o indicador só sai de zero quando reserva **e** seguros existem juntos.
+ *
+ * `coberturaSegurosPercent` é 0–100 e vem do MCRF (quantos dos riscos materiais
+ * têm alguma proteção contratada). Nulo = sem dado de seguro; nesse caso o peso
+ * inteiro volta para a reserva, em vez de punir quem ainda não cadastrou —
+ * mesma disciplina de "ausência de dado não vira nota ruim" que rege o resto
+ * do PSF.
+ */
+export function protecaoCompleta(
+  reservePercent: number,
+  coberturaSegurosPercent: number | null,
+): PsfIndicatorResult {
+  if (coberturaSegurosPercent === null) return indicator(reservePercent);
+  return indicator(reservePercent * 0.5 + coberturaSegurosPercent * 0.5);
 }
 
 /**

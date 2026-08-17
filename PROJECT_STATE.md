@@ -15,7 +15,52 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-16 (Etapa 9-A.5 — tela da Reserva, e um
+> **Última atualização real: 2026-08-17 (Etapas 9-A.6 e 9-A.7 — fecham a Etapa
+> 9-A — Registro Nº 083).**
+>
+> **9-A.6.** `plan-engine.ts`: prazo até a meta calculado sobre o que sobra
+> **depois do custo essencial** (§44 proíbe comprometer despesa essencial), com
+> metade do excedente como padrão — direcionar 100% da folga é insustentável e
+> faria o prazo virar ficção. Sem folga, o resultado não é "meta impossível": é
+> sinal de que o caminho passa por reduzir despesa ou aumentar renda antes de
+> falar em prazo. `treatmentPlan()` (§40) aplica o princípio de §5 — **guardar
+> mais dinheiro financia o risco; transferir, diversificar ou reduzir a
+> exposição o diminui na origem**.
+>
+> **Simulador (§43):** `runAssessment` ganhou `overrides` aplicados depois do
+> dado real e antes dos cenários, então tudo a jusante recalcula coerente.
+> Nada é gravado — há teste provando.
+>
+> **9-A.7 — o ciclo que motivou antecipar a Etapa 12, fechado.**
+> `liquidezPorReservaRecomendada()` troca o alvo fixo de 6 meses pela reserva
+> calculada para aquela pessoa: é a diferença entre "você tem 6 meses de
+> despesa" e "você tem o suficiente para atravessar os cenários que de fato te
+> ameaçam". `protecaoCompleta()` implementa enfim a fórmula de §5.3.1 —
+> reserva 50% + seguros 50%. A metade de seguros dependia de `InsurancePolicy`,
+> que não existia na Etapa 5, e por isso Proteção espelhava Liquidez e ficava
+> em zero para quem tinha cobertura contratada.
+>
+> **Fallback preservado:** sem `reserva_inteligente`, os indicadores continuam
+> exatamente como estavam. Ninguém perde indicador pela mudança.
+>
+> **Correção durante a implementação:** a primeira versão da tela derivava a
+> renda mensal da despesa (`cema × 1,6`) para alimentar o plano — número
+> fabricado, exatamente o que a metodologia proíbe. Trocado por
+> `rendaMensalObservada`, que o motor expõe e é a mediana real dos lançamentos.
+>
+> **Verificado:** `tsc` limpo, 592/592 unitários, 86/86 integração, build
+> limpo. Sem migration.
+>
+> **ETAPA 9-A CONCLUÍDA.** As sete sub-etapas implementam a especificação
+> PROSPECTA-MCRF-1.0: perfil de risco, seguros e benefícios, oito motores
+> puros, stress tests, reserva versionada, telas e integração com o PSF.
+>
+> **O que ficou de fora, explicitamente:** o protocolo de recomposição (§45) e
+> o aprendizado com eventos reais (§46) dependem de um registro de eventos
+> (`ShockEvent`, §13) que não foi construído. Está anotado na arquitetura como
+> pendência nomeada, não como esquecimento.
+>
+> **Última atualização anterior: 2026-08-16 (Etapa 9-A.5 — tela da Reserva, e um
 > bug grave corrigido — Registro Nº 082).**
 >
 > `run-assessment.ts` (impuro) reúne o dado real, chama os sete motores puros e

@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { Decimal } from "@/lib/finance/types";
 import { prisma } from "@/lib/db/prisma";
 import { runAssessment } from "@/lib/method/mcrf/run-assessment";
 import {
@@ -132,6 +133,58 @@ describe("runAssessment (integração — Etapa 9-A.5, 2026-08-16)", () => {
     // O militar não tem o cenário de interrupção como material (§23).
     expect(comoMilitar.scenarios.find((s) => s.id === "B")!.isMaterial).toBe(false);
     expect(comoClt.scenarios.find((s) => s.id === "B")!.isMaterial).toBe(true);
+  });
+
+  /**
+   * §43 — o simulador. As hipóteses entram depois do dado real e antes dos
+   * cenários, então tudo a jusante recalcula coerentemente. Nada é gravado.
+   */
+  describe('simulador "E se?"', () => {
+    // O teste anterior deixa o regime como MILITAR. Fixar aqui torna este bloco
+    // independente da ordem de execução, em vez de herdar estado do vizinho.
+    beforeAll(async () => {
+      await prisma.person.update({ where: { id: personId }, data: { regimeTrabalho: "CLT" } });
+    });
+
+    it("reduzir o custo mensal reduz a reserva recomendada", async () => {
+      const real = await runAssessment(workspaceId, REF);
+      const simulado = await runAssessment(workspaceId, REF, { reducaoCustoPct: 0.2 });
+
+      expect(simulado.cema.lessThan(real.cema)).toBe(true);
+      expect(simulado.reserveTarget.lessThan(real.reserveTarget)).toBe(true);
+    });
+
+    it("renda extra do cônjuge reduz a necessidade", async () => {
+      const real = await runAssessment(workspaceId, REF);
+      const simulado = await runAssessment(workspaceId, REF, { rendaExtraMensal: new Decimal(4000) });
+      expect(simulado.reserveTarget.lessThanOrEqualTo(real.reserveTarget)).toBe(true);
+    });
+
+    it("desenvolver segunda atividade encurta a recuperação e reduz a reserva", async () => {
+      const real = await runAssessment(workspaceId, REF);
+      const simulado = await runAssessment(workspaceId, REF, { forcarSegundaAtividadeResiliente: true });
+      expect(simulado.reserveTarget.lessThanOrEqualTo(real.reserveTarget)).toBe(true);
+    });
+
+    it("aumentar liquidez soma à reserva elegível sem mexer na meta", async () => {
+      const real = await runAssessment(workspaceId, REF);
+      const simulado = await runAssessment(workspaceId, REF, { liquidezExtra: new Decimal(10000) });
+
+      expect(simulado.eligibleReserve.minus(real.eligibleReserve).toString()).toBe("10000");
+      // A meta não muda: mais dinheiro guardado não altera o risco que se corre.
+      expect(simulado.reserveTarget.toString()).toBe(real.reserveTarget.toString());
+      expect(simulado.progressoPct).toBeGreaterThanOrEqual(real.progressoPct);
+      expect(simulado.progressoPct).toBeLessThanOrEqual(100); // progresso é capado
+    });
+
+    it("simular não grava nada — o cálculo real continua igual", async () => {
+      const antes = await runAssessment(workspaceId, REF);
+      await runAssessment(workspaceId, REF, { reducaoCustoPct: 0.5, liquidezExtra: new Decimal(99999) });
+      const depois = await runAssessment(workspaceId, REF);
+
+      expect(depois.reserveTarget.toString()).toBe(antes.reserveTarget.toString());
+      expect(depois.eligibleReserve.toString()).toBe(antes.eligibleReserve.toString());
+    });
   });
 
   it("aponta lacunas do perfil em vez de fingir precisão", async () => {

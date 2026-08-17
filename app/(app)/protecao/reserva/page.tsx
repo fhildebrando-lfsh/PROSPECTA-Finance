@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db/prisma";
 import { hasFeature } from "@/lib/billing/entitlements";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { runAssessment } from "@/lib/method/mcrf/run-assessment";
+import { buildReservePlan, treatmentPlan } from "@/lib/method/mcrf/plan-engine";
+import { Decimal } from "@/lib/finance/types";
 import { SaveAssessmentButton } from "./SaveAssessmentButton";
 
 const CONFIANCA_LABELS: Record<string, string> = {
@@ -54,6 +56,29 @@ export default async function ReservaPage() {
   ]);
 
   const semDados = a.cema.lessThanOrEqualTo(0);
+
+  // §44 — plano de construção. A renda é a **mediana observada** nos
+  // lançamentos, nunca uma estimativa derivada da despesa. Metade do excedente
+  // é o padrão: guardar 100% da folga é insustentável e faria o prazo virar
+  // ficção.
+  const plano = buildReservePlan({
+    target: a.reserveTarget,
+    current: a.eligibleReserve,
+    rendaMensal: a.rendaMensalObservada,
+    custoEssencialMensal: a.cema,
+    fracaoDoExcedente: 0.5,
+    receitasExtraordinariasAnuais: new Decimal(0),
+  });
+
+  // §40 — como reduzir a necessidade de reserva sem ficar menos protegido.
+  const tratamento = treatmentPlan({
+    temSegundaAtividadeResiliente: !a.mainDrivers.some((d) => d.includes("atividade alternativa")),
+    temSeguroContratado: !a.mainDrivers.some((d) => d.includes("sem cobertura contratada")),
+    correlacaoRendaAlta: a.mainDrivers.some((d) => d.includes("mesma fonte")),
+    rigidezPct: null,
+    concentracaoRenda: null,
+    semCapacidadeDePoupanca: plano.semCapacidadeDePoupanca,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -188,6 +213,43 @@ export default async function ReservaPage() {
               sua necessidade de reserva sem ficar menos protegido.
             </p>
           )}
+
+          <section className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+            <h2 className="text-sm font-medium text-zinc-200">Como chegar lá</h2>
+            {plano.metaAtingida ? (
+              <p className="mt-2 text-sm text-emerald-400">
+                Sua reserva já atingiu o nível recomendado. O próximo passo é revisar em alguns meses — a
+                recomendação muda quando sua vida muda.
+              </p>
+            ) : plano.mesesAteMeta === null ? (
+              <p className="mt-2 text-sm text-zinc-400">
+                Não há folga no orçamento depois do custo essencial, então nenhum prazo seria realista. O caminho
+                começa por abrir espaço — as sugestões abaixo são por onde.
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-zinc-400">
+                Guardando <strong className="text-zinc-200">{formatCurrencyBRL(plano.aporteTotalMensal)}</strong> por
+                mês, sua reserva chega ao nível recomendado em cerca de{" "}
+                <strong className="text-zinc-200">{plano.mesesAteMeta} meses</strong>.
+              </p>
+            )}
+
+            <h3 className="mt-4 text-xs font-medium text-indigo-300">
+              Como reduzir a necessidade de reserva sem ficar menos protegido
+            </h3>
+            <ul className="mt-2 flex flex-col gap-2">
+              {tratamento.map((t) => (
+                <li key={t.acao} className="text-sm">
+                  <span className="text-zinc-200">{t.acao}</span>
+                  <p className="text-xs text-zinc-500">{t.porque}</p>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-[11px] text-zinc-600">
+              Guardar mais dinheiro financia o risco; transferir, diversificar ou reduzir a exposição o diminui na
+              origem.
+            </p>
+          </section>
 
           {a.gaps.length > 0 && (
             <section className="rounded-xl border border-amber-900/50 bg-amber-950/10 p-4">
