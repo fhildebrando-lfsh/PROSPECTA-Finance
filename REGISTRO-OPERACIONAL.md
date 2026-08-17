@@ -2493,7 +2493,21 @@
 
 ---
 
-## Próximo número de registro: **088**
+### Registro Nº 088
+- **Data:** 2026-08-17
+- **Etapa concluída:** `MANUAL-DE-USO.md` posto em dia — seção do menu **Método** criada e seção **Proteção e Segurança** completada; fecha a pendência (3) do Registro Nº 087
+- **Descrição:** **§13-A. Método (Trilha e Entregáveis)**, nova, inserida entre Investimentos e Cadastros para acompanhar a ordem real do menu lateral, sem renumerar o manual. Documenta o que distingue esse menu de todos os outros: **ele não abre por plano** — nem no Max —, porque exige contrato de consultoria ativo, e a razão disso está escrita para o cliente ler ("não é uma funcionalidade que você opera sozinho; é o registro de um trabalho conduzido por um profissional"). Traz as dez fases em tabela, os quatro resultados de passagem, a regra de que **avanço condicional e retorno assistido exigem micrometa com prazo** (com o motivo: sem prazo os dois viram um "sim, mas depois" que nunca chega), a separação de papéis (o cliente vê e baixa; o consultor registra e valida), a tabela dos dez entregáveis com nome completo e fase — já com PAN e AFF corrigidos pelo Registro Nº 087 —, o ciclo rascunho → validado, e por que validar não sobrescreve. **§12-A. Proteção e Segurança reescrita.** A abertura afirmava que o menu *"está sendo construído por partes; a primeira é o Perfil de Risco"* — frase verdadeira em 2026-08-16 e **falsa desde a 9-A.2**: quatro telas entregues (Seguros, Proteções e Benefícios, Eventos e Recomposição, Reserva de Emergência) nunca entraram no manual. As quatro foram escritas, na ordem em que o dado alimenta o cálculo e não na ordem do menu, com o motivo declarado. **§3. Navegação** listava os grupos "Painel, Lançamentos, Compromissos, Cadastros, Admin e Minha conta" — desatualizada em sete grupos; passou a listar a ordem real e a avisar que Proteção depende de plano e Método depende de consultoria.
+- **Cada afirmação do manual foi conferida contra o código, não escrita de memória:** a exigência de micrometa (`actions.ts` da trilha, que recusa com erro 400), a regra de que só rascunho pode ser excluído (`status !== "RASCUNHO"` nas duas ações), e os três estados de benefício e de seguro do choque. Nos dois últimos o texto foi corrigido para usar **a palavra que aparece na tela** — "Ainda não sei" e "Não informado" —, porque manual que descreve um botão com nome diferente do real faz o leitor procurar o que não existe.
+- **Achado durante a redação — funcionalidade sem tela:** ao documentar a Reserva, procurei o **simulador "E se?"** (tarefa da Etapa 9-A.6, dada por concluída) e **ele não existe na interface**. O motor está pronto e testado — `AssessmentOverrides` em `lib/method/mcrf/run-assessment.ts` —, mas os únicos chamadores que passam overrides são os **testes de integração**; as três telas que chamam `runAssessment` (`/protecao/reserva`, sua `actions.ts` e `/painel/saude-financeira`) chamam sempre sem overrides. Ou seja: capacidade implementada, coberta por teste e **inalcançável pelo usuário**. Não documentei o simulador no manual — descrever no manual um recurso que o leitor não encontra na tela é pior que a omissão. Fica como pendência nomeada, e a lição registrada é que **escrever o manual funcionou como auditoria de entrega**: foi a tentativa de descrever a tela para um usuário que expôs a lacuna, que nenhum teste pegaria, já que o teste exercita o motor diretamente.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** mudança exclusivamente em documentação — nenhum arquivo de código tocado. `tsc --noEmit` limpo, `npm test` 621/621, integração 98/98, `npm run build` limpo, confirmando que nada regrediu.
+- **Pendências nomeadas:** (1) **expor o simulador "E se?" na tela da Reserva**, ou decidir explicitamente que ele não será exposto e remover a capacidade — hoje ele é código vivo sem porta de entrada; (2) as duas pendências do cron abertas no Registro Nº 087 seguem abertas (confirmar a primeira execução bem-sucedida e dar rastro de execução à rota).
+- **Documentos relacionados:** Registro Nº 087 (pendência 3, que esta entrada fecha), Registros Nº 077 a 086 (as etapas cujas telas passaram a constar no manual), `MANUAL-DE-USO.md` §3, §12-A e §13-A.
+
+---
+
+## Próximo número de registro: **089**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

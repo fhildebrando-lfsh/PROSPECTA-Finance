@@ -16,6 +16,11 @@
 
 ## 2026-08-17
 
+### Alterado (Registro Nº 088)
+- **Manual de uso atualizado.** O menu **Método** (Trilha e Entregáveis) ganhou seção própria (§13-A), explicando por que ele é o único que não abre por plano — depende de consultoria ativa —, como funciona a passagem de fase e o ciclo dos dez entregáveis.
+- **Proteção e Segurança (§12-A) completa.** Quatro telas já entregues estavam sem manual: Seguros, Proteções e Benefícios, Eventos e Recomposição, e Reserva de Emergência. O texto de abertura, que ainda dizia que o menu "está sendo construído por partes", foi corrigido.
+- **Navegação (§3)** passou a listar os grupos de menu na ordem real, com a indicação de quais dependem de plano e quais dependem de consultoria.
+
 ### Alterado (Registro Nº 087)
 - **Os entregáveis PAN e AFF agora aparecem com o nome completo:** **Panorama Financeiro** e **Acordo Financeiro Familiar**. Os dois eram os únicos que ainda apareciam só pela sigla, com aviso de nome não confirmado — a expansão foi localizada na Metodologia PROSPECTA v5.0 e o aviso saiu da tela e do PDF.
 - Ambos passaram a constar na **Fase 1**, que é onde a Metodologia os produz: o Panorama é a devolutiva do diagnóstico, e o Acordo Financeiro Familiar é o documento de uma página, assinado por todos, que fecha a fase. As seções de cada um passaram a refletir o que a Metodologia descreve.

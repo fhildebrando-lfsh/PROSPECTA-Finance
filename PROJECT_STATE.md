@@ -15,7 +15,38 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (PAN e AFF confirmados; e uma
+> **Última atualização real: 2026-08-17 (manual posto em dia; e uma
+> funcionalidade sem tela descoberta ao escrevê-lo — Registro Nº 088).**
+>
+> **`MANUAL-DE-USO.md` deixou de estar atrás do produto.** §13-A (menu Método —
+> Trilha e Entregáveis) criada; §12-A (Proteção e Segurança) completada com as
+> quatro telas entregues desde a 9-A.2 que nunca haviam entrado — sua abertura
+> ainda dizia que o menu *"está sendo construído por partes"*; §3 (Navegação)
+> corrigida, listava seis grupos de menu num sistema que tem treze. Mudança
+> exclusivamente em documentação — nenhum arquivo de código tocado.
+>
+> **Cada afirmação foi conferida contra o código**, não escrita de memória, e
+> em dois pontos o texto foi corrigido para usar **a palavra que está na tela**
+> ("Ainda não sei", "Não informado"): manual que descreve um botão com nome
+> diferente do real faz o leitor procurar o que não existe.
+>
+> **Achado: o simulador "E se?" é código vivo sem porta de entrada.** A Etapa
+> 9-A.6 dá a tarefa como concluída, e o motor está pronto e testado
+> (`AssessmentOverrides` em `lib/method/mcrf/run-assessment.ts`) — mas **os
+> únicos chamadores que passam overrides são os testes de integração**. As três
+> telas que chamam `runAssessment` chamam sempre sem eles. Capacidade
+> implementada, coberta por teste e inalcançável pelo usuário. Não foi
+> documentada no manual: descrever um recurso que o leitor não encontra na tela
+> é pior que omitir. **A lição operacional é sobre o método de verificação** —
+> escrever o manual funcionou como auditoria de entrega, porque descrever uma
+> tela para um usuário obriga a olhar o que ela realmente oferece. Nenhum teste
+> pegaria isso: o teste exercita o motor diretamente, que é justamente o trecho
+> que funciona.
+>
+> **Pendência:** expor o simulador na tela da Reserva, ou decidir
+> explicitamente que ele não será exposto e remover a capacidade.
+
+> **Última atualização anterior: 2026-08-17 (PAN e AFF confirmados; e uma
 > verificação de produção sobre o cron — Registro Nº 087).**
 >
 > **`catalog.ts` não tem mais nome provisório.** **PAN = Panorama Financeiro**

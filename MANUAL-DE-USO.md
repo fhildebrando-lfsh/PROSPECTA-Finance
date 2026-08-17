@@ -64,8 +64,13 @@ definido não têm esse limite.
 
 ## 3. Navegação
 
-**Desktop/tablet:** menu lateral fixo à esquerda, com os grupos Painel, Lançamentos,
-Compromissos, Cadastros, Admin (só para administradores da plataforma) e Minha conta.
+**Desktop/tablet:** menu lateral fixo à esquerda, na seguinte ordem: **Painel**, **Saúde
+Financeira**, **Assistente**, **Lançamentos**, **Compromissos**, **Cartões de Crédito**,
+**Relatórios**, **Patrimônio**, **Investimentos**, **Proteção e Segurança**, **Método**,
+**Cadastros**, **Admin** (só para administradores da plataforma) e **Minha conta**.
+
+Nem todo grupo aparece para todo mundo. **Proteção e Segurança** depende do plano
+(a partir do Max) e **Método** depende de haver uma consultoria ativa — ver §12-A e §13-A.
 
 **Celular:** o mesmo menu abre como uma gaveta lateral (drawer) pelo botão de hambúrguer no
 topo. Fecha sozinho ao navegar, no X, ou tocando fora dele.
@@ -449,11 +454,24 @@ consultoria — faz parte do Mapa Funcional do Patrimônio completo, que exige u
 
 ---
 
-## 12-A. Proteção e Segurança (novo, 2026-08-16; a partir do plano Max)
+## 12-A. Proteção e Segurança (a partir do plano Max)
 
-Menu novo, dedicado a uma pergunta diferente das outras telas: **o que aconteceria com suas
-finanças se algo desse errado?** Ele está sendo construído por partes; a primeira é o Perfil
-de Risco.
+Menu dedicado a uma pergunta diferente das outras telas: **o que aconteceria com suas
+finanças se algo desse errado?** São cinco telas — Reserva de Emergência, Perfil de Risco,
+Seguros, Proteções e Benefícios, e Eventos e Recomposição.
+
+No menu, a **Reserva de Emergência** vem primeiro porque é o resultado. Aqui no manual ela
+aparece por último, porque as outras quatro são o que a alimenta: fica mais fácil entender
+o número depois de saber de onde ele vem.
+
+**Por que não é "seis meses de despesa".** O sistema não multiplica sua despesa por um
+número fixo de meses. Ele monta o retrato do seu risco — de onde vem sua renda, quem
+depende dela, que proteções você tem, o que já aconteceu com você — e simula o que
+aconteceria com o seu caixa em cenários adversos. O valor recomendado é a liquidez que
+precisaria existir para você atravessá-los sem se endividar.
+
+Nada aqui é obrigatório. Quanto mais preenchido, mais preciso o cálculo — e o sistema
+sempre informa o quanto está confiante, em vez de fingir precisão que não tem.
 
 ### 12-A.1 Perfil de Risco
 
@@ -495,8 +513,130 @@ Marque **fonte principal** aquela cuja interrupção é o cenário mais relevant
 fonte. É um diagnóstico para você enxergar sua exposição — ele não aumenta sua reserva
 sozinho.
 
-Nada aqui é obrigatório. Quanto mais preenchido, mais preciso será o cálculo — e o sistema
-sempre informa o quanto está confiante, em vez de fingir precisão que não tem.
+Nada aqui é obrigatório — vale a regra geral do menu.
+
+### 12-A.2 Seguros
+
+Cadastro das apólices que você já tem: nome, tipo (vida, incapacidade, proteção de renda,
+saúde, odontológico, automóvel, residencial, prestamista, empresarial ou outro),
+seguradora, a quem se refere e o prêmio mensal.
+
+**O que o cálculo consome não é a apólice — é a cobertura.** Dentro de cada apólice você
+cadastra as coberturas, e é ali que estão os campos que realmente mudam o tamanho da sua
+reserva: **qual risco está coberto**, **capital segurado**, **franquia**, **carência** e
+**prazo até a indenização cair**. Uma apólice sem nenhuma cobertura cadastrada não reduz
+nada no cálculo, e a tela avisa quando isso acontece.
+
+A razão é simples: seguro e reserva resolvem problemas diferentes. **O seguro transfere o
+risco grande; a reserva cobre o que sobra** — a franquia que você paga do próprio bolso, o
+período de carência em que ainda não há direito, e principalmente o tempo entre o sinistro
+e o dinheiro chegar na conta. Um seguro excelente que demora 90 dias para pagar não
+dispensa você de ter caixa para esses 90 dias.
+
+Se você tiver **duas apólices cobrindo o mesmo risco**, o sistema considera a melhor
+proteção — não soma as duas. Somar superestimaria sua cobertura.
+
+### 12-A.3 Proteções e Benefícios
+
+Aqui entram as proteções que não são seguro contratado: **FGTS**, **seguro-desemprego**,
+**verbas rescisórias**, **auxílio-doença**, **aposentadoria por invalidez**, **pensão por
+morte**, **licença estatutária**, **benefício do empregador** e outras.
+
+**As opções mudam conforme o regime de trabalho de cada pessoa.** Militar e servidor
+público efetivo não têm FGTS, seguro-desemprego nem verbas rescisórias; autônomo, MEI e
+trabalhador informal também não. A tela não se limita a esconder essas opções — ela
+**explica o que ficou de fora e por quê**. Isso é proposital: a rede de proteção de um
+servidor é diferente da de um CLT, não menor por engano do sistema, e você precisa
+enxergar essa diferença para entender sua reserva.
+
+Cada proteção aceita **três respostas: tenho direito, não tenho, ou "Ainda não sei"**. A
+terceira é tratada como não confirmada e **nunca entra no cálculo como proteção existente**
+— contar com um direito que talvez não exista produziria uma reserva menor do que a
+necessária. Ela fica registrada mesmo assim, para você lembrar de confirmar depois. Só
+entra no cálculo o que estiver confirmado **e com valor**.
+
+### 12-A.4 Eventos e Recomposição
+
+Onde você registra o que **já aconteceu de verdade**: perda de renda, redução de renda,
+despesa inesperada, incapacidade, emergência familiar, reparo essencial ou outro. Para cada
+evento: quando foi, quanto saiu do seu bolso, se havia seguro e quanto tempo o reembolso
+levou para cair.
+
+O campo de seguro também aceita **três respostas** — Sim, Não e **Não informado**. "Não sei
+se eu tinha" é diferente de "eu não tinha", e o cálculo não conta com o que não foi
+confirmado.
+
+**Por que isso importa mais que qualquer simulação.** Um cenário simulado é hipótese; o que
+já aconteceu com você é fato. O maior desembolso do próprio bolso que você já registrou
+passa a compor o piso da sua reserva, competindo com a maior franquia declarada nas suas
+apólices — o piso considera o maior dos dois.
+
+**Isso só eleva o valor, nunca reduz.** Nunca ter tido um choque grande não protege contra
+ter o primeiro.
+
+A seção **"O que isso mudou no seu cálculo"** mostra, para cada conclusão, **qual evento a
+produziu**. Nada muda por trás: se o sistema passou a esperar um prazo maior de indenização
+ou um desembolso maior, ele diz qual registro seu levou a isso. Padrões (como "seus choques
+costumam não ter seguro") só aparecem a partir de **dois casos**, nunca de um — uma
+ocorrência isolada não é padrão.
+
+**Recomposição.** Se você usou a reserva, a tela acompanha quanto falta repor. Usar a
+reserva **não é fracasso — é ela funcionando**; o que importa é o sistema saber disso e
+cobrar a reposição. Quando não há capacidade de aporte, ele diz isso em vez de inventar um
+prazo.
+
+### 12-A.5 Reserva de Emergência
+
+A tela onde tudo vira número.
+
+**No topo:** sua **Reserva Recomendada PROSPECTA**, uma barra de progresso, quanto você tem
+**elegível hoje** e quanto falta. "Elegível" é importante: nem todo dinheiro que você tem
+serve de reserva. Um investimento com carência, um imóvel ou um limite de cartão não
+atendem uma emergência amanhã, e o sistema não os conta como se atendessem.
+
+**Quatro números logo abaixo:**
+
+| Cartão | O que é |
+| --- | --- |
+| **Custo essencial (mês)** | o que a sua vida custa hoje, considerando só o essencial |
+| **Custo durante a crise** | o mesmo custo depois dos cortes que seriam razoáveis numa emergência |
+| **Cobertura matemática** | reserva ÷ custo essencial, em meses |
+| **Cobertura no cenário principal** | quantos meses ela dura de fato, considerando a renda que continuaria entrando |
+
+Os dois últimos costumam ser diferentes, e é essa diferença que a conta dos "seis meses"
+não enxerga.
+
+**"Por que este valor?"** — os principais fatores que puxaram sua reserva para cima ou para
+baixo, escritos em linguagem comum, mais a **confiança da análise** e a **margem de
+segurança** aplicada. A margem existe porque dado faltando é incerteza, e incerteza pede
+folga: quanto menos o sistema sabe, maior a margem — e ela diminui conforme você preenche.
+
+**Cenários de stress** — a tabela que mostra o que aconteceria com o seu caixa em cada
+cenário adverso simulado. A linguagem aqui é deliberadamente sóbria: "proteção
+insuficiente", não "você está desprotegido".
+
+**Resiliência financeira (IPRF)** — um índice de diagnóstico, para você acompanhar sua
+evolução. Ele **não** define sozinho o valor da reserva.
+
+**"Como chegar lá"** — o plano de construção: quanto sobra por mês depois do custo
+essencial, quanto disso vai para a reserva e em quanto tempo você chega à meta. Se não há
+sobra, a tela diz que não há capacidade de poupança no momento, em vez de apresentar um
+prazo fictício.
+
+**"O que sua própria história ensinou"** — o que os eventos de §12-A.4 mudaram no cálculo.
+
+**"O que deixaria este cálculo mais preciso"** — a lista do que está faltando preencher, com
+o efeito de cada lacuna. É o caminho mais rápido para melhorar a confiança da análise.
+
+**Histórico** — cada versão salva do cálculo fica registrada, com a data. Isso permite ver
+como sua situação evoluiu, e nenhuma versão anterior é sobrescrita.
+
+**Mapa de riscos e plano de tratamento** aparecem nesta tela **apenas com consultoria
+ativa** (ver §13-A): reserva e cenários de stress são do plano Max, mas o diagnóstico de
+risco e a recomendação de tratamento são trabalho de consultor.
+
+**Se ainda não houver histórico suficiente**, a tela diz isso claramente e pede alguns
+meses de lançamentos, em vez de produzir um número apoiado em estimativa.
 
 ---
 
@@ -555,6 +695,103 @@ Visão consolidada de toda a carteira: total investido, valor atual, rentabilida
 consolidada, renda total recebida, alocação por classe (em barras, com percentual e valor),
 renda recebida ao longo do tempo (gráfico mensal) e um ranking de todas as posições por
 rentabilidade. Botão **"Baixar PDF"** para exportar o relatório.
+
+---
+
+## 13-A. Método (Trilha e Entregáveis)
+
+Menu com duas telas — **Trilha do Método** e **Entregáveis** — que registram o trabalho de
+consultoria conduzido pelo Método PROSPECTAR.
+
+**Este menu não abre por plano.** É a única parte do sistema em que assinar o plano mais
+completo não dá acesso: ele exige um **contrato de consultoria ativo**. A razão é que o que
+está aqui não é uma funcionalidade que você opera sozinho — é o registro de um trabalho
+conduzido por um profissional, com a responsabilidade que isso implica. Sem consultoria
+ativa, as duas telas explicam o que existiria ali, sem dados.
+
+**Quem faz o quê.** Você **vê** tudo e baixa os documentos — eles são seus. Quem **registra**
+passagem de fase e quem **produz e valida** entregáveis é o consultor responsável (ou o
+administrador da plataforma). Deixar o cliente aprovar a própria passagem de fase esvaziaria
+o sentido do método.
+
+### 13-A.1 Trilha do Método
+
+Acompanha em que ponto do método você está. São dez etapas:
+
+| Fase | Do que trata |
+| --- | --- |
+| **Fase 0** | Diagnóstico e contexto |
+| **Fase 1** | Organização e consciência |
+| **Fase 2** | Estabilização |
+| **Fase 3** | Endividamento e crédito |
+| **Fase 4** | Proteção e riscos |
+| **Fase 5** | Construção patrimonial |
+| **Fase 6** | Longevidade |
+| **Fase 7** | Continuidade patrimonial |
+| **Fase 8** | Consolidação |
+| **Fase ∞** | Plano Integrado |
+
+A Fase ∞ não é uma décima etapa que termina: é o acompanhamento contínuo depois que o
+plano está montado.
+
+**A passagem de fase é registrada, não presumida.** Cada vez que uma fase se encerra, fica
+gravado o **critério avaliado**, o **resultado** e a **evidência** — quem decidiu, quando e
+com base em quê. São quatro resultados possíveis:
+
+| Resultado | O que significa |
+| --- | --- |
+| **Em andamento** | a fase está aberta |
+| **Avanço pleno** | os critérios foram cumpridos; segue para a próxima |
+| **Avanço condicional** | segue adiante, mas com pendência assumida |
+| **Retorno assistido** | volta a uma fase anterior, com acompanhamento |
+
+**Avanço condicional e retorno assistido exigem uma micrometa com prazo.** Sem isso, os dois
+viram um jeito de adiar indefinidamente: um "sim, mas depois" que nunca chega. O prazo é o
+que transforma a pendência em compromisso.
+
+Retorno assistido não é punição nem fracasso — é o reconhecimento de que uma etapa precisa
+ser retomada, o que é normal em qualquer processo longo.
+
+O tipo de contrato também aparece aqui: **Diagnóstico**, **Planejamento**, **Projeto** ou
+**Acompanhamento**. Um contrato de projeto cobre uma fase específica, e não o método
+inteiro.
+
+### 13-A.2 Entregáveis
+
+Os dez documentos codificados do método. Cada um tem seções próprias, e a tela mostra quais
+faltam preencher.
+
+| Sigla | Nome | Fase |
+| --- | --- | --- |
+| **PAN** | Panorama Financeiro | 1 |
+| **AFF** | Acordo Financeiro Familiar | 1 |
+| **RAP** | Régua de Alocação | 1 |
+| **MEC** | Mapa de Endividamento e Crédito | 3 |
+| **MRP** | Mapa de Riscos e Proteção | 4 |
+| **PIP** | Política de Investimento Pessoal | 5 |
+| **MFP** | Mapa Funcional do Patrimônio | 5 |
+| **PLA** | Plano de Longevidade e Aposentadoria | 6 |
+| **PCP** | Plano de Continuidade Patrimonial | 7 |
+| **PFI** | Plano Financeiro Integrado | 8 |
+
+O **PAN** é a devolutiva do diagnóstico: retrato patrimonial, fluxo declarado, mapa de
+riscos, mapa de dívidas, objetivos priorizados, sua Saúde Financeira de linha de base e as
+três alavancas de maior impacto. O **AFF** é o documento de uma página, assinado por todos
+da família, com metas comuns, prioridades e regras de decisão. O **PFI** compila os demais
+numa visão única e ganha uma versão nova a cada fase.
+
+**Como funciona o ciclo.** O consultor cria um **rascunho**, que já nasce com o esqueleto
+de seções do documento; preenche; e depois **valida**. Validar só é possível com todas as
+seções preenchidas — e, se faltar alguma, a tela diz **quais**, em vez de apenas recusar.
+
+**Validar não sobrescreve.** Uma revisão futura gera uma **versão nova**, e a anterior
+continua existindo. Um entregável é o registro do que foi dito a você **numa data**;
+reescrever o passado apagaria a própria prova do trabalho. Por isso, documento validado não
+pode ser reescrito nem excluído — só rascunho pode ser apagado.
+
+**PDF.** Todo entregável pode ser baixado em PDF, com o **número da versão e a data**
+impressos no documento. Um PDF que circula por e-mail sem esses dois dados é uma afirmação
+sem contexto — daqui a um ano ninguém sabe se aquilo ainda vale.
 
 ---
 
