@@ -16,6 +16,11 @@
 
 ## 2026-08-17
 
+### Adicionado (Registro Nº 085)
+- **Proteção e Segurança → Eventos e Recomposição** (nova tela, plano Max): registre o que já aconteceu de verdade — uma despesa inesperada, uma perda de renda, um reparo — com o quanto saiu do seu bolso, se havia seguro e quanto tempo o reembolso levou para cair.
+- **O que já aconteceu com você pesa mais que qualquer simulação.** O maior desembolso registrado passa a compor o piso da sua reserva, e a tela mostra exatamente qual evento mudou qual número — nada acontece por trás.
+- **Usou a reserva? A tela cobra a reposição.** Usar não é fracasso, é a reserva funcionando; o sistema passa a acompanhar quanto falta repor.
+
 ### Adicionado (Registro Nº 084)
 - **Trilha do Método** (nova tela): acompanha as fases da consultoria, de 0 a 8 mais a Fase ∞, com o registro de cada passagem — o critério avaliado, o resultado e a evidência. Avanço condicional e retorno assistido exigem uma micrometa com prazo.
 - A trilha só existe quando há uma consultoria ativa. Diferente das demais telas, ela **não é liberada por plano**: acompanha um trabalho conduzido por um profissional. O cliente vê a trilha; só o consultor responsável registra a passagem de fase.

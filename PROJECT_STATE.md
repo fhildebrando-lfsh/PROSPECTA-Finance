@@ -15,7 +15,50 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (Etapa 8 — camada de método, fecha o
+> **Última atualização real: 2026-08-17 (`ShockEvent` — fecha a pendência
+> nomeada da Etapa 9-A — Registro Nº 085).**
+>
+> Era o item deixado explicitamente de fora no Registro Nº 083, anotado como
+> pendência nomeada e não como esquecimento.
+>
+> **A regra que governa `shock-engine.ts` é uma proibição** (§46): *"não
+> implementar aprendizado opaco; toda inferência relevante deverá ser
+> identificável"*. Por isso nenhuma função devolve só um número — toda vez que
+> o histórico muda o cálculo, ela devolve **qual evento causou a mudança** e a
+> frase que a tela mostra. Um modelo estatístico escondido seria mais
+> sofisticado e menos honesto.
+>
+> **Onde o histórico real entra (§34):** o maior desembolso do próprio bolso já
+> registrado compõe o Piso de Liquidez Imediata, competindo com a maior
+> franquia declarada. Cenário simulado é hipótese; evento registrado é fato, e
+> o piso considera o maior dos dois. **Só eleva, nunca reduz** — nunca ter tido
+> um choque grande não protege contra ter o primeiro (§8).
+>
+> O motor também mede o **prazo real mediano até a indenização cair**, que
+> calibra com evidência o `payoutDelayDays` hoje apenas declarado na apólice. E
+> aponta padrão de choques sem seguro **a partir de dois casos**, nunca de um —
+> amostra unitária não vira conclusão.
+>
+> **§45 — recomposição.** A tela cobra a reposição sem tratá-la como fracasso:
+> usar a reserva é ela funcionando; o que importa é o sistema saber e cobrar de
+> volta. Sem aporte possível, o prazo é `null` — mesmo tratamento de
+> `plan-engine.ts`, porque inventar prazo é ficção.
+>
+> O campo de seguro aceita **três** estados — sim, não e não informado. "Não
+> sei se tinha" é diferente de "não tinha", e o cálculo não conta com o que não
+> foi confirmado.
+>
+> **Verificado:** `tsc` limpo, 608/608 unitários (16 novos), 98/98 integração,
+> build limpo. Migration em produção antes do código, checksum idêntico ao de
+> dev, 2279 lançamentos intactos.
+>
+> **Nota de processo:** a integração falhou em 11 testes durante a
+> implementação porque eu criei o arquivo de migration sem aplicá-lo ao banco
+> de dev. Diagnóstico imediato pela mensagem, correção sem tocar em nenhum
+> teste. Registro porque é o tipo de falha que, tratada com pressa, viraria
+> "ajustar o teste".
+>
+> **Última atualização anterior: 2026-08-17 (Etapa 8 — camada de método, fecha o
 > modelo de direitos de três camadas — Registro Nº 084).**
 >
 > A terceira camada de §4.6 finalmente existe. `Subscription` = o que foi

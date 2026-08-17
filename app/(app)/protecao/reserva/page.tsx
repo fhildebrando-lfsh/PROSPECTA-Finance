@@ -251,6 +251,20 @@ export default async function ReservaPage() {
             </p>
           </section>
 
+          {a.aprendizadoDeChoques.length > 0 && (
+            <section className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-4">
+              <h2 className="text-sm font-medium text-zinc-200">O que sua própria história ensinou</h2>
+              <p className="mb-2 mt-1 text-xs text-zinc-500">
+                Cenário simulado é hipótese; o que já aconteceu com você é fato — e fato pesa mais no cálculo.
+              </p>
+              <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-zinc-400">
+                {a.aprendizadoDeChoques.map((e) => (
+                  <li key={e}>{e}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {a.gaps.length > 0 && (
             <section className="rounded-xl border border-amber-900/50 bg-amber-950/10 p-4">
               <h2 className="text-sm font-medium text-amber-200">O que deixaria este cálculo mais preciso</h2>

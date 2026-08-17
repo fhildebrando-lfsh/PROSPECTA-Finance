@@ -125,6 +125,7 @@ model Workspace {
   balanceReconciliations BalanceReconciliation[]
   mcrfAssessments        McrfAssessment[]
   consultingEngagements  ConsultingEngagement[]
+  shockEvents            ShockEvent[]
 
   @@map("workspaces")
 }
@@ -543,6 +544,73 @@ enum Rigidez {
   DISCRICIONARIA
 }
 
+/// §13/§46 da especificação PROSPECTA-MCRF — natureza do choque financeiro.
+enum ShockKind {
+  PERDA_DE_RENDA
+  REDUCAO_DE_RENDA
+  DESPESA_INESPERADA
+  INCAPACIDADE
+  EMERGENCIA_FAMILIAR
+  REPARO_ESSENCIAL
+  OUTRO
+}
+
+/// §13, §45 e §46 — um choque financeiro que **de fato aconteceu** com esta
+/// família.
+///
+/// Existe por três razões, nesta ordem de importância:
+///
+/// 1. **§34** — o piso de liquidez imediata deve considerar o histórico de
+///    grandes despesas da própria pessoa. Um cenário simulado é hipótese; um
+///    evento registrado é fato, e fato pesa mais.
+/// 2. **§45** — quando a reserva é usada, o sistema precisa saber: registrar o
+///    evento, o valor, a categoria, se houve indenização, e gerar um plano de
+///    recomposição. "A reserva deve ser tratada como sistema vivo."
+/// 3. **§46** — aprendizado com eventos reais. Com a ressalva que o próprio §46
+///    faz e que este schema respeita: **"não implementar aprendizado opaco;
+///    toda inferência relevante deverá ser identificável"**. Por isso cada
+///    campo é explícito e nenhum modelo estatístico escondido consome esta
+///    tabela — quem lê a tela consegue apontar qual evento mudou qual número.
+model ShockEvent {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String    @map("workspace_id") @db.Uuid
+  /// Quem foi afetado. Nulo quando atingiu a família toda (ex.: reparo na casa).
+  personId    String?   @map("person_id") @db.Uuid
+  kind        ShockKind
+  description String
+  occurredAt  DateTime  @map("occurred_at") @db.Date
+
+  /// §46 — o impacto, separado em suas duas naturezas. Uma demissão é perda de
+  /// renda; um reparo é despesa extraordinária; uma incapacidade costuma ser
+  /// os dois, e somá-los num campo só perderia essa informação.
+  extraordinaryExpense Decimal? @map("extraordinary_expense") @db.Decimal(14, 2)
+  incomeLossMonthly    Decimal? @map("income_loss_monthly") @db.Decimal(14, 2)
+  durationMonths       Int?     @map("duration_months")
+
+  /// §13/§26 — o que o seguro de fato resolveu. `daysUntilReimbursement` é o
+  /// dado mais valioso da tabela: ele calibra, com evidência real, o
+  /// `payoutDelayDays` que hoje é declarado na apólice.
+  hadInsurance           Boolean? @map("had_insurance")
+  reimbursedAmount       Decimal? @map("reimbursed_amount") @db.Decimal(14, 2)
+  paidByUserAmount       Decimal? @map("paid_by_user_amount") @db.Decimal(14, 2)
+  daysUntilReimbursement Int?     @map("days_until_reimbursement")
+
+  /// §45 — protocolo de recomposição. `recomposedAt` nulo com
+  /// `reserveUsedAmount` preenchido significa reserva ainda por repor.
+  reserveUsedAmount Decimal?  @map("reserve_used_amount") @db.Decimal(14, 2)
+  recomposedAt      DateTime? @map("recomposed_at") @db.Date
+
+  notes     String?
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  person    Person?   @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, occurredAt])
+  @@map("shock_events")
+}
+
 // ---------------------------------------------------------------------------
 // Camada de Método (Etapa 8) — a terceira camada do modelo de direitos (§4.6).
 // Subscription = o que foi contratado; PlanGrant = elevação temporária;
@@ -941,6 +1009,7 @@ model Person {
   ownedWallets     Wallet[]     @relation("WalletOwner")
   ownedInvestments Investment[] @relation("InvestmentOwner")
   ownedAssets      Asset[]      @relation("AssetOwner")
+  shockEvents      ShockEvent[]
 
   @@unique([workspaceId, slug])
   @@map("people")

@@ -2452,7 +2452,20 @@
 
 ---
 
-## Próximo número de registro: **085**
+### Registro Nº 085
+- **Data:** 2026-08-17
+- **Etapa concluída:** `ShockEvent` — histórico de choques reais, protocolo de recomposição e aprendizado com eventos (§13/§45/§46). **Fecha a pendência nomeada da Etapa 9-A.**
+- **Descrição:** Era o item deixado explicitamente de fora no Registro Nº 083, anotado como pendência nomeada e não como esquecimento. **Schema:** enum `ShockKind` e model `ShockEvent`, com o impacto separado em suas duas naturezas — despesa extraordinária e perda de renda mensal —, porque uma demissão é uma coisa, um reparo é outra, e incapacidade costuma ser as duas; somá-las num campo só perderia a informação. **Motor `lib/method/mcrf/shock-engine.ts` (novo, puro).** A regra que governa o arquivo é uma **proibição** de §46: *"não implementar aprendizado opaco; toda inferência relevante deverá ser identificável"*. Por isso nenhuma função devolve só um número — toda vez que o histórico muda o cálculo, ela devolve **qual evento causou a mudança** e a frase que a tela mostra. Um modelo estatístico escondido seria mais sofisticado e menos honesto. **Onde o histórico real entra no cálculo (§34):** o maior desembolso do próprio bolso já registrado passa a compor o Piso de Liquidez Imediata, competindo com a maior franquia declarada — cenário simulado é hipótese, evento registrado é fato, e o piso considera o maior dos dois. **Só eleva, nunca reduz:** nunca ter tido um choque grande não protege contra ter o primeiro (§8). O motor também mede o **prazo real mediano até a indenização cair**, que calibra com evidência o `payoutDelayDays` hoje apenas declarado na apólice, e aponta padrão de choques sem seguro — a partir de dois casos, nunca de um, para não transformar amostra unitária em conclusão. **§45 — protocolo de recomposição:** `recompositionStatus()` separa o que já foi reposto do que falta, e a tela cobra a reposição sem tratá-la como fracasso: usar a reserva é ela funcionando; o que importa é o sistema saber e cobrar de volta. `recompositionPlan()` devolve `null` quando não há aporte possível, mesmo tratamento de `plan-engine.ts` — sem capacidade, inventar prazo é ficção. **Tela `/protecao/eventos`** com a pergunta de §13 no cabeçalho, seção "O que isso mudou no seu cálculo" (o cumprimento literal de §46) e o saldo a repor. O campo de seguro aceita **três** estados — sim, não e não informado —, porque "não sei se tinha" é diferente de "não tinha", e o cálculo não conta com o que não foi confirmado.
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 608/608 (16 casos novos, incluindo o que garante que reembolso maior que a despesa não vira desembolso negativo e o que garante que um caso isolado sem seguro não vira padrão); suíte de integração 19 arquivos / 98 testes; `npm run build` limpo, rota `/protecao/eventos` nova. Migration `20260817140000_shock_event` aplicada **em produção antes do código**, checksum `f88c604a0a31…` idêntico ao de dev, zero checksums vazios, 2279 lançamentos e 12 pessoas intactos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saídas de `tsc`/`npm test`/build; verificação contra o banco de produção.
+- **Observação de processo:** a suíte de integração falhou em 11 testes durante a implementação porque eu havia criado o arquivo de migration sem aplicá-lo ao banco de dev — `prisma.shockEvent.findMany` contra tabela inexistente. Diagnóstico imediato pela mensagem e correção sem tocar em nenhum teste. Registro porque é o tipo de falha que, tratada com pressa, viraria "ajustar o teste".
+- **Documentos relacionados:** `PROSPECTA_MCRF_Gestao_de_Risco_Financeiro_Pessoal.md` §13/§34/§45/§46, `ARQUITETURA-METODO-PROSPECTAR.md` §6, `lib/method/mcrf/shock-engine.ts`, `app/(app)/protecao/eventos/`, `prisma/migrations/20260817140000_shock_event/`.
+
+---
+
+## Próximo número de registro: **086**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

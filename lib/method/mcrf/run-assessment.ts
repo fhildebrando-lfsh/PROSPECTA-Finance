@@ -20,6 +20,7 @@ import { classifyLiquidity, computeEmergencyLiquidity, coberturaEmMeses, type Li
 import { computePortability, recoveryCurve, segundaAtividadeEhResiliente } from "./employment-engine";
 import { buildScenarios, coberturaNoCenario, piorCenarioMaterial, type ScenarioResult } from "./scenario-engine";
 import { computeIprf, margemIncerteza, pisoLiquidezImediata, principaisFatores, recommendReserve } from "./reserve-engine";
+import { learnFromShocks, recompositionStatus, type ShockRecord } from "./shock-engine";
 
 /**
  * Etapa 9-A.5 — a camada **impura** do MCRF: busca o dado real, chama os sete
@@ -52,6 +53,10 @@ export interface AssessmentResult {
   mainDrivers: string[];
   dataConfidence: ConfiancaAnalise;
   margemAplicada: number;
+  /** §46 — o que o histórico real ensinou, sempre com a origem identificável. */
+  aprendizadoDeChoques: string[];
+  /** §45 — quanto da reserva foi usado e ainda não reposto. */
+  reservaAReporr: Decimal;
   /** Sinais que a tela usa para orientar o que preencher primeiro. */
   gaps: string[];
 }
@@ -90,7 +95,7 @@ export async function runAssessment(
   referenceDate = new Date(),
   overrides: AssessmentOverrides = {},
 ): Promise<AssessmentResult> {
-  const [entryRows, people, policies, benefits, assets, investments, wallets, param] = await Promise.all([
+  const [entryRows, people, policies, benefits, assets, investments, wallets, param, shocks] = await Promise.all([
     prisma.entry.findMany({
       where: { workspaceId },
       select: {
@@ -122,6 +127,7 @@ export async function runAssessment(
       include: { kind: { select: { isLiability: true } } },
     }),
     prisma.methodologyParameter.findUnique({ where: { key: PARAM_CCM_REDUCAO_AJUSTAVEL } }),
+    prisma.shockEvent.findMany({ where: { workspaceId }, orderBy: { occurredAt: "desc" } }),
   ]);
 
   const financeEntries = entryRows.map(toFinanceEntry);
@@ -364,8 +370,26 @@ export async function runAssessment(
     rendaAltamenteVolatil: observacoes.some((o) => (o.variability ?? 0) > 1),
   });
 
+  /**
+   * §34/§46 — o histórico real desta família entra no piso de liquidez. Um
+   * cenário simulado é hipótese; um desembolso que já aconteceu é fato, e o
+   * piso considera o maior dos dois. Só eleva, nunca reduz: nunca ter tido um
+   * choque grande não protege contra ter o primeiro (§8).
+   */
+  const aprendizado = learnFromShocks(shocks as ShockRecord[]);
+  const recomposicao = recompositionStatus(shocks as ShockRecord[]);
+  const desembolsoDeReferencia = aprendizado.maiorDesembolsoObservado.greaterThan(protecao.residualExposure)
+    ? aprendizado.maiorDesembolsoObservado
+    : protecao.residualExposure;
+
+  if (recomposicao.totalAReporr.greaterThan(0)) {
+    gaps.push(
+      `Você usou a reserva e ainda não repôs ${recomposicao.totalAReporr.toFixed(2)} — o progresso abaixo já considera isso.`,
+    );
+  }
+
   const recomendacao = recommendReserve({
-    pli: pisoLiquidezImediata(despesa.ccm, protecao.residualExposure),
+    pli: pisoLiquidezImediata(despesa.ccm, desembolsoDeReferencia),
     scenarios,
     margem,
     reservaAtualElegivel: reservaElegivel,
@@ -411,6 +435,8 @@ export async function runAssessment(
     }),
     dataConfidence,
     margemAplicada: margem,
+    aprendizadoDeChoques: aprendizado.explicacoes,
+    reservaAReporr: recomposicao.totalAReporr,
     gaps,
   };
 }

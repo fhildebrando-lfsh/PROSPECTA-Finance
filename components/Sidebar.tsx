@@ -50,6 +50,7 @@ import {
   HandCoins,
   SlidersHorizontal,
   Route,
+  History,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -121,6 +122,7 @@ const PROTECAO_ITEMS: NavLeaf[] = [
   { href: "/protecao/perfil", label: "Perfil de Risco", icon: IdCard },
   { href: "/protecao/seguros", label: "Seguros", icon: Umbrella },
   { href: "/protecao/beneficios", label: "Proteções e Benefícios", icon: HandCoins },
+  { href: "/protecao/eventos", label: "Eventos e Recomposição", icon: History },
 ];
 
 const INVESTIMENTOS_ITEMS: NavLeaf[] = [
