@@ -8,6 +8,10 @@ import { blockWorkspace, unblockWorkspace } from "@/lib/workspace/block";
 import { grantPlan, revokePlanGrant } from "@/lib/billing/plan-grant";
 import { prisma } from "@/lib/db/prisma";
 import { ApiError } from "@/lib/api/errors";
+import { closeActiveEngagement } from "@/lib/billing/engagement";
+import type { EngagementModality } from "@/app/generated/prisma/enums";
+
+const MODALIDADES: EngagementModality[] = ["DIAGNOSTICO", "PLANEJAMENTO", "PROJETO", "ACOMPANHAMENTO"];
 import { updatePersonalData, personalDataFromFormData } from "@/lib/profile/update";
 import type { WorkspaceBlockReason } from "@/app/generated/prisma/enums";
 
@@ -126,5 +130,54 @@ export async function revokeWorkspacePlanGrant(formData: FormData) {
   if (!grantId) throw new ApiError(400, "Concessão inválida.");
 
   await revokePlanGrant(grantId);
+  revalidatePath("/admin/usuarios");
+}
+
+/**
+ * Etapa 8 — abre um contrato de consultoria (camada 3 do modelo de direitos,
+ * §4.6). É o que destrava as features de `gateKind = METODO`.
+ *
+ * Admin-only e por desenho: um contrato de consultoria representa um
+ * profissional assumindo responsabilidade sobre aquele cliente. Não é algo que
+ * o próprio cliente contrata clicando, nem que o consultor se autoconcede.
+ *
+ * Encerra o contrato ativo anterior antes de abrir o novo — a regra "nunca
+ * mais de um ATIVO por vez" é de aplicação, e este é o lugar de aplicá-la.
+ */
+export async function openConsultingEngagement(formData: FormData) {
+  const admin = await requireAdminProfile();
+
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const modality = String(formData.get("modality") ?? "") as EngagementModality;
+  const rawProjectPhase = String(formData.get("projectPhase") ?? "").trim();
+  if (!workspaceId) throw new ApiError(400, "Workspace inválido.");
+  if (!MODALIDADES.includes(modality)) throw new ApiError(400, "Modalidade inválida.");
+
+  const projectPhase = modality === "PROJETO" ? Number(rawProjectPhase) : null;
+  if (modality === "PROJETO" && (!Number.isInteger(projectPhase) || projectPhase! < 0 || projectPhase! > 9)) {
+    throw new ApiError(400, "Contrato de projeto exige a fase contratada (0 a 9).");
+  }
+
+  await closeActiveEngagement(workspaceId, "CONCLUIDO");
+  await prisma.consultingEngagement.create({
+    data: {
+      workspaceId,
+      modality,
+      projectPhase,
+      seatType: "individual",
+      startsAt: new Date(),
+      createdBy: admin.id,
+    },
+  });
+
+  revalidatePath("/admin/usuarios");
+}
+
+export async function closeConsultingEngagement(formData: FormData) {
+  await requireAdminProfile();
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  if (!workspaceId) throw new ApiError(400, "Workspace inválido.");
+
+  await closeActiveEngagement(workspaceId, "CONCLUIDO");
   revalidatePath("/admin/usuarios");
 }

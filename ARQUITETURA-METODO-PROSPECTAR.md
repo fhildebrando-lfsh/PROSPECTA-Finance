@@ -1134,7 +1134,7 @@ Abre a trilha de consultoria propriamente dita.
 | Etapa | Entrega | Depende de |
 |---|---|---|
 | **7** ✅ | `funcao_patrimonial` em bens/investimentos/carteiras + achado automático de "ativo sem função" (§13.4) | Bloco I (Max) |
-| **8** | `ConsultingEngagement` + `MethodPhase` + `GateCheck` — a trilha de fases e o ritual de passagem (§7.3) em tela para o consultor | Etapa 4 (`PlanGrant` nasce junto com o engagement) |
+| **8** ✅ | `ConsultingEngagement` + `MethodPhase` + `GateCheck` — a trilha de fases e o ritual de passagem (§7.3) em tela para o consultor. Registro Nº 084 | Etapa 4 (`PlanGrant` nasce junto com o engagement) |
 | **9** | `Deliverable` + templates dos 10 artefatos codificados (PAN, AFF, RAP, MEC, MRP, PLA, PIP, MFP, PCP, PFI) — v0 pode ser HTML/PDF gerado a partir de `content: Json`, reaproveitando `lib/reports/pdf/` já existente como padrão de geração | Etapa 8 |
 | **10** | Instrumentos A1/A2/C como formulário digital + envio automático (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
 

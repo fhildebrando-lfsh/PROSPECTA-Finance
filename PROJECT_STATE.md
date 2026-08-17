@@ -15,7 +15,55 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (Etapas 9-A.6 e 9-A.7 — fecham a Etapa
+> **Última atualização real: 2026-08-17 (Etapa 8 — camada de método, fecha o
+> modelo de direitos de três camadas — Registro Nº 084).**
+>
+> A terceira camada de §4.6 finalmente existe. `Subscription` = o que foi
+> contratado comercialmente; `PlanGrant` = elevação temporária;
+> **`ConsultingEngagement` = o que só existe com um profissional por trás.**
+>
+> **A mudança de maior consequência está em `hasFeature()`.** Desde a Etapa 3,
+> toda feature `METODO` devolvia `false` para todo mundo — fail-safe
+> deliberado enquanto a camada que deveria concedê-las não existia. Agora
+> resolve por contrato ativo, e **só** por ele. §3.1 da Metodologia é a razão
+> ("PIP autogerada é recomendação disfarçada"): o que exige um profissional
+> responsável não se compra como assinatura.
+>
+> Há teste provando exatamente isso: um workspace com `LEGACY_INTERNAL` — que
+> inclui **todas** as features — continua sem método enquanto não houver
+> consultor.
+>
+> **`Feature.methodPhase`** permite que contrato de `PROJETO` libere só a fase
+> contratada (§13.8). Feature sem fase definida **não** é liberada por contrato
+> de projeto: ampliar escopo por omissão daria de graça o que não foi vendido.
+>
+> **`PlanGrant.engagementId` virou FK de verdade**, como estava previsto desde
+> a Etapa 4, quando nasceu como referência solta à espera desta tabela.
+> `SET NULL` e não `CASCADE` — encerrar contrato não pode apagar o histórico
+> de concessões que ele gerou.
+>
+> **Tela `/metodo/trilha`** com as 10 fases e o ritual de passagem de §7.3.
+> Avanço condicional e retorno assistido exigem micrometa com prazo (§7.1
+> Regra 3), barrado no formulário **e** na Server Action — avançar com
+> ressalva sem prazo é avançar sem ressalva nenhuma.
+>
+> **Separação de papéis deliberada:** o cliente **vê** a trilha; só o consultor
+> com escrita concedida (ou o admin) registra passagem. Deixar o cliente se
+> auto-aprovar esvaziaria o gate. Abrir contrato é ação de admin e encerra o
+> anterior — a regra "nunca mais de um ATIVO" é de aplicação, e ali é o lugar.
+>
+> **Verificado:** `tsc` limpo, 592/592 unitários, 98/98 integração (12 novos),
+> build limpo. Migration em produção antes do código, checksum idêntico ao de
+> dev, 2279 lançamentos intactos.
+>
+> **Nada mudou de visível em produção ainda:** nenhum `ConsultingEngagement`
+> existe, então o comportamento é idêntico ao de antes até o primeiro contrato
+> ser aberto. A entrega é de capacidade, não de estado.
+>
+> **Próximo combinado:** `ShockEvent` (§13/§45/§46) — registro de eventos reais
+> e protocolo de recomposição da reserva.
+>
+> **Última atualização anterior: 2026-08-17 (Etapas 9-A.6 e 9-A.7 — fecham a Etapa
 > 9-A — Registro Nº 083).**
 >
 > **9-A.6.** `plan-engine.ts`: prazo até a meta calculado sobre o que sobra

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { activePlanGrants } from "./effective-level";
+import { activeEngagement, engagementCoversFeature } from "./engagement";
 
 /**
  * Resolve se um workspace tem direito a uma feature. Ver
@@ -31,8 +32,24 @@ export async function hasFeature(workspaceId: string, featureCode: string): Prom
   const feature = await prisma.feature.findUnique({ where: { code: featureCode } });
   if (!feature) return false; // código inexistente no catálogo — nunca libera por engano
 
+  /**
+   * Etapa 8 (2026-08-17) — a camada de método passou a existir.
+   *
+   * Antes disto, toda feature METODO devolvia `false` para todo mundo, de
+   * propósito (fail-safe enquanto a camada que deveria concedê-las não
+   * existia). Agora resolve por `ConsultingEngagement` ativo — e **só** por
+   * ele: nem Subscription, nem PlanGrant, nem Entitlement liberam método.
+   * §3.1 da Metodologia v5.0 é a razão ("PIP autogerada é recomendação
+   * disfarçada"): o que exige um profissional por trás não pode ser comprado
+   * como assinatura.
+   *
+   * Note que o caminho não cai para as três fontes de baixo — ele retorna
+   * aqui, decidido. Um workspace com Max e sem consultor continua sem método.
+   */
   if (feature.gateKind === "METODO") {
-    return false; // ConsultingEngagement ainda não existe (Etapa 8) — sempre false até lá
+    const engagement = await activeEngagement(workspaceId);
+    if (!engagement) return false;
+    return engagementCoversFeature(engagement, feature.methodPhase);
   }
 
   const entitlement = await prisma.entitlement.findFirst({

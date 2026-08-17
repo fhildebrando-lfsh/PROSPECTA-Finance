@@ -16,6 +16,10 @@
 
 ## 2026-08-17
 
+### Adicionado (Registro Nº 084)
+- **Trilha do Método** (nova tela): acompanha as fases da consultoria, de 0 a 8 mais a Fase ∞, com o registro de cada passagem — o critério avaliado, o resultado e a evidência. Avanço condicional e retorno assistido exigem uma micrometa com prazo.
+- A trilha só existe quando há uma consultoria ativa. Diferente das demais telas, ela **não é liberada por plano**: acompanha um trabalho conduzido por um profissional. O cliente vê a trilha; só o consultor responsável registra a passagem de fase.
+
 ### Adicionado (Registro Nº 083)
 - **Reserva de Emergência → "Como chegar lá"**: mostra em quantos meses você atinge a meta guardando o que realmente sobra depois do custo essencial — e, quando não sobra nada, diz isso em vez de inventar um prazo.
 - **Como reduzir a necessidade de reserva sem ficar menos protegido**: sugestões conforme seu caso — contratar seguro, desenvolver uma segunda renda, reduzir despesa presa, diversificar. Guardar mais dinheiro financia o risco; transferir ou diversificar o diminui na origem.

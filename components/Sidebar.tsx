@@ -49,6 +49,7 @@ import {
   Umbrella,
   HandCoins,
   SlidersHorizontal,
+  Route,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { WorkspaceSwitcher, type WorkspaceOption } from "@/components/WorkspaceSwitcher";
@@ -164,6 +165,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { label: "Patrimônio", icon: Landmark, items: PATRIMONIO_ITEMS },
     { label: "Investimentos", icon: CandlestickChart, items: INVESTIMENTOS_ITEMS },
     { label: "Proteção e Segurança", icon: ShieldAlert, items: PROTECAO_ITEMS },
+    { href: "/metodo/trilha", label: "Trilha do Método", icon: Route },
     { label: "Cadastros", icon: Settings2, items: CADASTROS_ITEMS },
   ];
   if (isPlatformAdmin) {

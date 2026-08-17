@@ -124,6 +124,7 @@ model Workspace {
   benefitEntitlements BenefitEntitlement[]
   balanceReconciliations BalanceReconciliation[]
   mcrfAssessments        McrfAssessment[]
+  consultingEngagements  ConsultingEngagement[]
 
   @@map("workspaces")
 }
@@ -254,10 +255,15 @@ model Feature {
   name String
   /// ARQUITETURA-METODO-PROSPECTAR.md §3.1/5.2 (Etapa 3, 2026-08-15) — admin
   /// decide, por feature, se ela é liberada por nível de plano (padrão) ou
-  /// por camada de método (ConsultingEngagement, ainda não implementado —
-  /// feature METODO retorna false em hasFeature() até a Etapa 8 existir).
-  /// Editável na tela /admin/planos, sem deploy.
+  /// por camada de método. Desde a Etapa 8 (2026-08-17), METODO é resolvido
+  /// por `ConsultingEngagement` ativo. Editável em /admin/planos, sem deploy.
   gateKind FeatureGateKind @default(PLANO) @map("gate_kind")
+  /// §13.8 (Etapa 8) — a qual fase do método esta feature pertence (0–9).
+  /// Só usado por contratos de `modality = PROJETO`, que liberam **apenas a
+  /// fase contratada** em vez da camada inteira. Nulo = não pertence a uma
+  /// fase específica; nesse caso um contrato de projeto não a libera, porque
+  /// ampliar escopo por omissão daria de graça o que não foi contratado.
+  methodPhase Int? @map("method_phase")
 
   planFeatures PlanFeature[]
   entitlements Entitlement[]
@@ -330,11 +336,12 @@ model PlanGrant {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   workspaceId  String    @map("workspace_id") @db.Uuid
   planId       String    @map("plan_id") @db.Uuid
-  /// Referência solta (sem FK) de propósito, mesmo padrão de
-  /// Notification.relatedEntryId — ConsultingEngagement ainda não existe
-  /// (Etapa 8). Ganha FK de verdade quando essa tabela for criada. Nulo
-  /// quando a concessão não vem de um contrato de consultoria (ex.:
-  /// cortesia manual concedida pelo admin).
+  /// Nasceu como referência solta (Etapa 4), à espera de `ConsultingEngagement`
+  /// existir. **Ganhou FK de verdade na Etapa 8**, como estava previsto. Nulo
+  /// quando a concessão não vem de um contrato de consultoria (ex.: cortesia
+  /// manual concedida pelo admin) — por isso `SetNull`, e não `Cascade`:
+  /// encerrar um contrato não pode apagar o histórico de concessões que ele
+  /// gerou.
   engagementId String?   @map("engagement_id") @db.Uuid
   reason       String
   startsAt     DateTime  @map("starts_at")
@@ -345,8 +352,9 @@ model PlanGrant {
   /// espírito de Membership.status/revokedAt).
   revokedAt    DateTime? @map("revoked_at")
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  plan      Plan      @relation(fields: [planId], references: [id])
+  workspace  Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan       Plan                  @relation(fields: [planId], references: [id])
+  engagement ConsultingEngagement? @relation(fields: [engagementId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, endsAt])
   @@map("plan_grants")
@@ -533,6 +541,109 @@ enum Rigidez {
   RIGIDA
   AJUSTAVEL
   DISCRICIONARIA
+}
+
+// ---------------------------------------------------------------------------
+// Camada de Método (Etapa 8) — a terceira camada do modelo de direitos (§4.6).
+// Subscription = o que foi contratado; PlanGrant = elevação temporária;
+// ConsultingEngagement = o que só existe com consultor ativo.
+// ---------------------------------------------------------------------------
+
+enum EngagementModality {
+  DIAGNOSTICO
+  PLANEJAMENTO
+  PROJETO
+  ACOMPANHAMENTO
+}
+
+enum EngagementTrack {
+  ESSENCIAL
+  COMPLETO
+}
+
+enum EngagementStatus {
+  ATIVO
+  CONCLUIDO
+  CANCELADO
+}
+
+/// §13.7 — contrato de consultoria; a chave da camada de método.
+///
+/// Um workspace pode ter vários ao longo do tempo (histórico), mas **nunca mais
+/// de um ATIVO por vez** — regra de aplicação, não de schema, mesmo padrão já
+/// usado em `Subscription`. Encerrar é mudar `status`, nunca apagar: o
+/// histórico de quem acompanhou quem, e quando, é a própria auditoria da
+/// consultoria.
+model ConsultingEngagement {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String             @map("workspace_id") @db.Uuid
+  modality    EngagementModality
+  track       EngagementTrack?
+  /// Só relevante para `modality = PROJETO` — qual fase do método este contrato
+  /// libera (§13.8). Nulo nos demais casos, onde a camada inteira é liberada.
+  projectPhase Int?              @map("project_phase")
+  seatType    String             @map("seat_type")
+  status      EngagementStatus   @default(ATIVO)
+  startsAt    DateTime           @map("starts_at")
+  endsAt      DateTime?          @map("ends_at")
+  createdBy   String             @map("created_by") @db.Uuid
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  workspace  Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  planGrants PlanGrant[]
+  phases     MethodPhase[]
+
+  @@index([workspaceId, status])
+  @@map("consulting_engagements")
+}
+
+/// §7.2/§7.3 — os quatro resultados possíveis do ritual de passagem.
+/// `AVANCO_CONDICIONAL` e `RETORNO_ASSISTIDO` exigem micrometa com prazo
+/// (§7.1 Regra 3) — ver `GateCheck.followUpDueAt`.
+enum GatePhaseStatus {
+  EM_ANDAMENTO
+  AVANCO_PLENO
+  AVANCO_CONDICIONAL
+  RETORNO_ASSISTIDO
+}
+
+/// §7 — fase atual e histórico dentro de um contrato. 0–8 mapeiam às fases do
+/// método; 9 representa a Fase ∞ (Plano Integrado).
+model MethodPhase {
+  id           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  engagementId String          @map("engagement_id") @db.Uuid
+  phaseNumber  Int             @map("phase_number")
+  status       GatePhaseStatus @default(EM_ANDAMENTO)
+  startedAt    DateTime        @map("started_at")
+  endedAt      DateTime?       @map("ended_at")
+
+  engagement ConsultingEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  gateChecks GateCheck[]
+
+  @@unique([engagementId, phaseNumber])
+  @@map("method_phases")
+}
+
+/// §7.2 — avaliação de um gate ao fim de uma fase. Registra o ritual de
+/// passagem (§7.3): critério, resultado, evidência, quem avaliou e quando.
+///
+/// Existe para que "o cliente avançou" nunca seja uma opinião não registrada.
+model GateCheck {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phaseId     String          @map("phase_id") @db.Uuid
+  criterion   String
+  result      GatePhaseStatus
+  evidence    String?
+  evaluatedBy String          @map("evaluated_by") @db.Uuid
+  evaluatedAt DateTime        @default(now()) @map("evaluated_at")
+  /// Obrigatório em AVANCO_CONDICIONAL/RETORNO_ASSISTIDO — a micrometa de
+  /// §7.1 Regra 3. Avançar com ressalva sem prazo é avançar sem ressalva.
+  followUpDueAt DateTime?     @map("follow_up_due_at")
+
+  phase MethodPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  @@index([phaseId])
+  @@map("gate_checks")
 }
 
 /// §48 da especificação PROSPECTA-MCRF — a foto de um cálculo de reserva.

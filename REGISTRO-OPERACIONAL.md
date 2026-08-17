@@ -2438,7 +2438,21 @@
 
 ---
 
-## Próximo número de registro: **084**
+### Registro Nº 084
+- **Data:** 2026-08-17
+- **Etapa concluída:** Etapa 8 — camada de método (`ConsultingEngagement`, `MethodPhase`, `GateCheck`), fechando o modelo de direitos de três camadas
+- **Descrição:** A terceira e última camada de §4.6 finalmente existe. `Subscription` diz o que foi contratado comercialmente; `PlanGrant` é elevação temporária; **`ConsultingEngagement` é o que só existe com um profissional por trás**. **A mudança de maior consequência está em `hasFeature()`:** desde a Etapa 3, toda feature de `gateKind = METODO` devolvia `false` para todo mundo — fail-safe deliberado enquanto a camada que deveria concedê-las não existia. Agora ela resolve por contrato ativo, e **só** por ele: nem Subscription, nem PlanGrant, nem Entitlement liberam método. §3.1 da Metodologia v5.0 é a razão ("PIP autogerada é recomendação disfarçada") — o que exige um profissional responsável não pode ser comprado como assinatura. Há teste de integração provando exatamente isso: um workspace com `LEGACY_INTERNAL` (que inclui **todas** as features) continua sem método enquanto não houver consultor. **`Feature.methodPhase` (coluna nova)** permite que um contrato de `modality = PROJETO` libere **apenas a fase contratada** (§13.8) em vez da camada inteira; feature sem fase definida não é liberada por contrato de projeto, porque ampliar escopo por omissão daria de graça o que não foi vendido. **`PlanGrant.engagementId` virou FK de verdade** — nasceu como referência solta na Etapa 4, à espera desta tabela, exatamente como estava previsto. `ON DELETE SET NULL` e não `CASCADE`: encerrar um contrato não pode apagar o histórico de concessões que ele gerou. **Tela `/metodo/trilha`** com as 10 fases (0–8 e a Fase ∞) e o ritual de passagem de §7.3 — critério avaliado, resultado, evidência, quem avaliou e quando. Os quatro resultados de §7.2 estão implementados, e **avanço condicional e retorno assistido exigem micrometa com prazo** (§7.1 Regra 3), barrado tanto no formulário quanto na Server Action: avançar com ressalva sem prazo é avançar sem ressalva nenhuma. **Separação de papéis deliberada:** o cliente **vê** a trilha, mas só o consultor com escrita concedida (ou o admin da plataforma) registra passagem — deixar o cliente se auto-aprovar esvaziaria o gate. Abrir contrato é ação de administrador, em `/admin/usuarios`, e encerra automaticamente o contrato ativo anterior (a regra "nunca mais de um ATIVO por vez" é de aplicação, e este é o lugar de aplicá-la).
+- **Verificado:** `tsc --noEmit` limpo; `npm test` 592/592; suíte de integração 19 arquivos / 98 testes, com `engagement.test.ts` novo (12 casos): sem contrato nada abre, contrato ativo abre, **assinatura completa não abre**, contrato futuro/encerrado/cancelado não abre, encerrar vira histórico sem apagar, os quatro casos de escopo de projeto, e a preservação do `PlanGrant` ao apagar o contrato; `npm run build` limpo, rota `/metodo/trilha` nova. Migration `20260817120000_camada_de_metodo` aplicada **em produção antes do código** (runbook §5), checksum `ebafee28059a…` idêntico ao de dev, zero checksums vazios, 2279 lançamentos intactos.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Evidência:** saídas de `tsc`/`npm test`/build; verificação contra o banco de produção.
+- **Observação:** nenhuma feature de método é liberada em produção hoje, porque nenhum `ConsultingEngagement` existe ainda — o comportamento visível é idêntico ao de antes até o primeiro contrato ser aberto. A mudança é de capacidade, não de estado.
+- **Pendente:** `ShockEvent` (§13/§45/§46) — registro de eventos reais e protocolo de recomposição, próximo item combinado.
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §5.3/§6 (Etapa 8), `lib/billing/engagement.ts`, `lib/billing/entitlements.ts`, `app/(app)/metodo/trilha/`, `prisma/migrations/20260817120000_camada_de_metodo/`.
+
+---
+
+## Próximo número de registro: **085**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado
