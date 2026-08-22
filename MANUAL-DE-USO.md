@@ -1307,6 +1307,27 @@ preservar o histórico.
 
 ---
 
+## 16-B. Quem acessou meus dados
+
+Em **Minha conta → Privacidade e dados** há o link **"Quem acessou meus dados"**.
+
+Ele mostra cada acesso de um **consultor ou administrador** ao seu workspace,
+com data e hora. Em destaque, à parte, ficam as **mudanças de permissão** —
+quando alguém passou a poder editar seus lançamentos e quando isso foi revogado.
+São as que mais importam.
+
+**Seus próprios acessos não aparecem, e isso é de propósito.** A auditoria
+existe para o acesso de terceiros; registrar os seus só encheria a lista.
+
+**Acessos seguidos da mesma pessoa aparecem como uma visita só**, com o número
+de telas que ela abriu. Cada tela aberta gera um registro, e listá-los um a um
+encheria a página sem dizer mais nada — um consultor trabalhando meia hora na
+sua conta produz dezenas de linhas idênticas.
+
+O registro guarda **quem, quando e o quê** — não o conteúdo consultado.
+
+---
+
 ## 17. Segurança e privacidade
 
 Toda a base do sistema segue a Lei Geral de Proteção de Dados (LGPD). Detalhes completos em

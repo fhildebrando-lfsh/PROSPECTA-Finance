@@ -127,6 +127,11 @@ export default async function MinhaContaPage() {
           <Link href="/politica-privacidade" target="_blank" className="text-indigo-300 underline hover:text-white">
             Política de Privacidade
           </Link>
+          {/* Registro Nº 105 — o AccessLog era escrito e nunca lido por
+              ninguém, inclusive pelo titular, que é o interessado. */}
+          <Link href="/minha-conta/acessos" className="text-indigo-300 underline hover:text-white">
+            Quem acessou meus dados
+          </Link>
         </div>
       </div>
 

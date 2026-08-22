@@ -15,9 +15,42 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (revisão sistemática de tudo que foi
-> construído + correção do achado grave: **os avisos eram gravados e nunca
-> exibidos** — Registro Nº 104).**
+> **Última atualização real: 2026-08-18 (auditoria de acessos — fecha o segundo
+> achado da revisão. Registro Nº 105).**
+>
+> `lib/audit/access-summary.ts` (puro) + `/minha-conta/acessos`. **Sem
+> migration**: `AccessLog` existe desde a Fase 0 e já era escrito; faltava quem
+> o lesse.
+>
+> **O problema não era o registro, era a leitura.** O manual §17 promete que
+> todo acesso de consultor ou admin fica registrado — promessa **literalmente
+> verdadeira e praticamente vazia**: `prisma.accessLog` aparecia uma única vez
+> em produção, no `create`. Registro que ninguém pode ler não é transparência.
+>
+> **Agrupar por sessão é o que faz a tela ser legível.** `VIEW_WORKSPACE` é
+> gravado a cada carregamento de página, então a tabela cresce por navegação, não
+> por visita — meia hora de trabalho vira dezenas de linhas idênticas. Contíguas
+> do mesmo ator, dentro de 30 min, viram **uma visita** com contagem de telas.
+>
+> **Conceder e revogar escrita NÃO entram nas sessões** e têm seção própria:
+> atos deliberados e raros, e dissolvê-los numa contagem apagaria o que mais
+> importa auditar. A janela de 30 min é **escolha**, isolada em
+> `JANELA_SESSAO_MIN` com o motivo escrito.
+>
+> **Contra registro mudo:** ação desconhecida vira o próprio código em vez de
+> sumir; identificar o ator cruza `Profile` (nome) com Supabase Auth (e-mail),
+> porque "alguém acessou" não é auditoria.
+>
+> **Limite de dado, não de código:** em produção o `AccessLog` deve estar quase
+> vazio — só grava acesso de `ADVISOR`, e os workspaces com consultor raramente
+> foram acessados por ele. A tela mostrará o estado vazio quase sempre.
+>
+> **Seguem abertos:** 33/52 features nunca consultadas (decisão comercial);
+> `ExportLog` nunca lido; `Entitlement` nunca escrito; `nomeDoArtefato` órfã.
+> 864 unitários, 124 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-18 (revisão sistemática + avisos que
+> eram gravados e nunca exibidos — Registro Nº 104).**
 >
 > **A revisão.** Varredura deliberada sobre **330 arquivos de produção**,
 > procurando as famílias de defeito que vinham aparecendo por acaso. Seis

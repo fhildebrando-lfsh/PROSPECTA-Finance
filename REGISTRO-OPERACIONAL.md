@@ -2777,7 +2777,26 @@
 
 ---
 
-## Próximo número de registro: **105**
+### Registro Nº 105
+- **Data:** 2026-08-18
+- **Etapa concluída:** Tela de auditoria de acessos — fecha o segundo achado da revisão do Registro Nº 104.
+- **Descrição:** `lib/audit/access-summary.ts` (puro) e tela `/minha-conta/acessos`, linkada em Minha conta → Privacidade e dados. **Sem migration** — `AccessLog` existe desde a Fase 0 e já era escrito; faltava quem o lesse.
+- **O problema não era o registro, era a leitura.** O manual §17 promete que "todo acesso de um consultor ou administrador ao seu workspace fica registrado". A promessa era **literalmente verdadeira e praticamente vazia**: `prisma.accessLog` aparecia uma única vez em produção, no `create`. Ninguém consultava — nem o titular, que é o interessado e o destinatário da promessa. Registro que ninguém pode ler não é transparência, é arquivo.
+- **A decisão de desenho que faz a tela ser legível: agrupar por sessão.** `VIEW_WORKSPACE` é gravado a **cada carregamento de página** de um consultor, então a tabela cresce por navegação e não por visita — meia hora de trabalho produz dezenas de linhas idênticas. Despejá-las em ordem cronológica seria uma auditoria que ninguém consegue ler, quase tão inútil quanto a que não existia. Visualizações contíguas do mesmo ator, com menos de 30 minutos entre si, viram **uma visita** com a contagem de telas abertas.
+- **Conceder e revogar escrita NÃO entram nas sessões**, e têm seção própria em destaque. São atos deliberados e raros; dissolvê-los numa contagem apagaria justamente o que mais importa auditar. Há teste garantindo isso.
+- **A janela de 30 minutos é escolha, não medida**, e está isolada em `JANELA_SESSAO_MIN` com o motivo escrito: curta demais fragmentaria uma visita contínua; longa demais juntaria a visita da manhã com a da tarde e esconderia que foram duas.
+- **Duas decisões contra registro mudo:** ação desconhecida aparece como o próprio código em vez de sumir — rastreável é melhor que invisível; e identificar o ator exige cruzar `Profile` (nome) com o Supabase Auth (e-mail), porque um registro que diz apenas "alguém acessou" não é auditoria. Perfil removido cai num rótulo explícito, não num id cru.
+- **O acesso do próprio titular não é registrado**, por decisão anterior de `lib/auth/session.ts` — seria ruído. A tela **declara isso**, para a ausência não parecer falha do registro.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **864/864** (13 casos novos); integração **124/124**; `npm run build` limpo, com `/minha-conta/acessos` na saída.
+- **Limite de verificação declarado:** a tela não foi vista logada. E há um limite de dado, não de código: **em produção o `AccessLog` provavelmente está quase vazio**, porque só grava acesso de `ADVISOR`, e os quatro workspaces com consultor atribuído raramente foram acessados por ele. A tela vai mostrar o estado vazio na maior parte dos casos — o que é a resposta correta, mas não exercita a apresentação.
+- **Seguem abertos, da revisão do Nº 104:** (1) **33 das 52 features nunca consultadas**, com `/admin/planos` exibindo chaves sem efeito — depende de decisão comercial; (2) `ExportLog` escrito e nunca lido; (3) `Entitlement` lido e nunca escrito; (4) `nomeDoArtefato` órfã.
+- **Documentos relacionados:** Registro Nº 104 (a revisão que encontrou), `MANUAL-DE-USO.md` §16-B e §17, `lib/auth/session.ts` (quem grava).
+
+---
+
+## Próximo número de registro: **106**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

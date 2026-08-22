@@ -16,6 +16,11 @@
 
 ## 2026-08-18
 
+### Adicionado (Registro Nº 105)
+- **"Quem acessou meus dados"**, em Minha conta → Privacidade e dados. Mostra cada acesso de consultor ou administrador ao seu workspace, com data e hora, e destaca à parte as **mudanças de permissão** — quando alguém passou a poder editar seus lançamentos, e quando isso foi revogado.
+- O sistema já registrava esses acessos desde sempre, mas **não havia onde consultá-los** — nem para você. A Política de Privacidade prometia o registro; agora a promessa é verificável.
+- Acessos seguidos da mesma pessoa aparecem como **uma visita só**, com o número de telas abertas. Seus próprios acessos não são registrados: a auditoria existe para o acesso de terceiros.
+
 ### Corrigido (Registro Nº 104)
 - **Os avisos das automações agora aparecem.** A verificação diária vinha gravando os alertas desde sempre, mas **nenhuma tela os mostrava** — eles existiam só no banco. Agora há a tela **Avisos**, no menu, e uma faixa no topo do Painel com o que está pendente.
 - Dá para marcar um aviso como lido, um a um ou todos de uma vez. **Aviso lido vira histórico, nunca é apagado.**
