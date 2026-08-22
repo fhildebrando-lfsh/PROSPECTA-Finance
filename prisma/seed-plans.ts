@@ -28,6 +28,11 @@ const START_FEATURES: Record<string, string> = {
   compromissos: "Compromissos e calendário",
   metas_simples: "Metas simples",
   import_csv: "Importação de CSV",
+  // Decisão do usuário (2026-08-19): importar extrato e fatura passa a valer
+  // desde o Start — quem está começando é justamente quem mais precisa trazer
+  // o histórico de fora, e cobrar por isso trava a entrada no produto.
+  import_ofx: "Importação de OFX",
+  import_pdf_fatura: "Importação de PDF de fatura",
   export_dados: "Exportação de dados",
   cartoes_basico: "Cartões de crédito (cadastro e fatura)",
   relatorio_balanco_anual: "Relatório: Balanço anual",
@@ -35,8 +40,6 @@ const START_FEATURES: Record<string, string> = {
 };
 
 const PRO_FEATURES: Record<string, string> = {
-  import_ofx: "Importação de OFX",
-  import_pdf_fatura: "Importação de PDF de fatura",
   google_agenda: "Integração com Google Agenda",
   relatorio_orcamento: "Relatório: Orçamento",
   relatorio_fluxo_projetado: "Relatório: Fluxo projetado",
@@ -173,6 +176,33 @@ const METODO_FEATURE_PHASE: Record<string, number | null> = {
   pfi_compilador: 9, // PFI — Fase ∞
 };
 
+/**
+ * Features que **são o produto**, não um adicional.
+ *
+ * Decisão do usuário em 2026-08-19: o Start não restringe nada. Lançar, ver o
+ * painel, cadastrar carteira e exportar o próprio dado são o que o sistema é —
+ * não um pacote que alguém possa desmarcar. Elas somem da matriz de
+ * `/admin/planos` e `hasFeature` as libera para todos.
+ *
+ * Continuam existindo como linha: apagá-las quebraria os `PlanFeature` que já
+ * as referenciam e destruiria o histórico do catálogo. O que muda é o
+ * significado, não a existência (Registro Nº 107).
+ */
+const SEMPRE_INCLUIDAS = new Set<string>([
+  "lancamento_manual",
+  "lancamento_rapido",
+  "transferencias",
+  "carteiras_categorias",
+  "painel_basico",
+  "compromissos",
+  "metas_simples",
+  "import_csv",
+  "export_dados",
+  "cartoes_basico",
+  "relatorio_balanco_anual",
+  "pwa",
+]);
+
 async function seedFeatures() {
   const allFeatures: Record<string, string> = {
     ...START_FEATURES,
@@ -187,14 +217,15 @@ async function seedFeatures() {
   for (const [code, name] of Object.entries(allFeatures)) {
     const gateKind: FeatureGateKind = methodoCodes.has(code) ? "METODO" : "PLANO";
     const methodPhase = methodoCodes.has(code) ? (METODO_FEATURE_PHASE[code] ?? null) : null;
+    const alwaysIncluded = SEMPRE_INCLUIDAS.has(code);
     await prisma.feature.upsert({
       where: { code },
       // Nunca sobrescreve name/gateKind já existente — admin pode ter editado via /admin/planos.
       // `methodPhase` é exceção: nenhuma tela o edita, então não há edição de
       // admin a preservar, e ele **precisa** ser corrigido em base já semeada —
       // era justamente o campo que estava nulo em produção e travava o Projeto.
-      create: { code, name, gateKind, methodPhase },
-      update: { methodPhase },
+      create: { code, name, gateKind, methodPhase, alwaysIncluded },
+      update: { methodPhase, alwaysIncluded },
     });
     count += 1;
   }

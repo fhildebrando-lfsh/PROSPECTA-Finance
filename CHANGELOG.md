@@ -14,6 +14,14 @@
 
 ---
 
+## 2026-08-19
+
+### Alterado (Registro Nº 107)
+- **O plano Start deixou de restringir qualquer coisa.** As 12 funcionalidades básicas — lançar, ver o painel, cadastrar carteira, exportar dados, o app instalável — saíram da matriz de `/admin/planos`: elas são o que o sistema é, não um adicional que alguém possa desmarcar. Aparecem numa lista à parte, como informação.
+- **Importar OFX e PDF de fatura passou a valer desde o Start.** Quem está começando é justamente quem mais precisa trazer o histórico de fora.
+- **Três funcionalidades passaram a restringir de verdade:** Investimentos (Carteira e Análise) e a integração com o Google Agenda. As três apareciam na matriz e desmarcá-las não tinha efeito nenhum.
+- No calendário, o gate cobre **só a integração com o Google** — o calendário em si continua disponível para todos.
+
 ## 2026-08-18
 
 ### Adicionado (Registro Nº 106)

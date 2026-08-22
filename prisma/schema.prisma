@@ -272,6 +272,15 @@ model Feature {
   /// fase específica; nesse caso um contrato de projeto não a libera, porque
   /// ampliar escopo por omissão daria de graça o que não foi contratado.
   methodPhase Int? @map("method_phase")
+  /// Decisão do usuário em 2026-08-19: features que **são o produto**, não um
+  /// adicional — lançar, ver o painel, cadastrar carteira. Ficam fora da matriz
+  /// de `/admin/planos` e `hasFeature` as libera para todo mundo.
+  ///
+  /// Existem como linha porque `nunca remover dado` vale aqui também: apagá-las
+  /// quebraria os `PlanFeature` que já as referenciam e apagaria o histórico do
+  /// catálogo. O que muda é o **significado**: deixam de ser chave que alguém
+  /// possa desmarcar sem efeito — que era o defeito (Registro Nº 107).
+  alwaysIncluded Boolean @default(false) @map("always_included")
 
   planFeatures PlanFeature[]
   entitlements Entitlement[]

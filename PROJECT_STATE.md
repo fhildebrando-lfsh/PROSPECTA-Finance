@@ -15,9 +15,43 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (`ExportLog` passa a ser lido; e a
-> **correção de uma classificação errada que eu fiz na própria revisão** —
-> Registro Nº 106).**
+> **Última atualização real: 2026-08-19 (features sem gate — parte 1. **A
+> investigação mudou a premissa do pedido** — Registro Nº 107).**
+>
+> O usuário pediu para "transferir as features para os planos atuais", vendo
+> uma tela com Start/Plus/Premium/Premium Negócios. Produção mostrou outra
+> coisa: **os 6 planos novos já existem, ativos e com features**; os 4 antigos
+> estão **inativos, zero assinaturas**, e só apareciam porque `/admin/planos`
+> lista inativo riscado. A transferência já fora feita no seed.
+>
+> **O achado real: duas gerações de catálogo convivendo** — 10 features grossas
+> (pacotes de produto) presas aos planos aposentados, e 52 finas nos novos. 62
+> no total, nenhuma órfã.
+>
+> **Parei antes de aposentar os antigos:** `preparacao_irpf`, `preparacao_irpj`
+> e `organizacao_tributaria` **não têm sucessor**, e `modulo_mei` × `modulo_pj`
+> são o mesmo conceito sob dois códigos. Decisão comercial, não técnica — o
+> usuário optou por deixar em espera até o sistema estar rodando.
+>
+> **Executado:** `Feature.alwaysIncluded` (migration dev → prod) com as **12 do
+> Start** marcadas — saem da matriz, `hasFeature` libera para todos, e
+> **nenhuma é apagada** (apagar quebraria os `PlanFeature` e o histórico);
+> `import_ofx`/`import_pdf_fatura` **desceram para o Start**; gates reais em
+> `investimentos_carteira`, `investimentos_analise` e `google_agenda` — este
+> cobrindo **só a integração**, não o calendário.
+>
+> **Erro de raciocínio meu, corrigido antes de virar código:** pus
+> `alwaysIncluded` **antes** do ramo METODO, justificando como mais seguro. É o
+> contrário — naquela ordem, feature de método marcada por engano vazaria por
+> assinatura (§3.1). Invertida, e **com teste fixando**: marcar uma METODO como
+> sempre-incluída **não** a libera sem contrato.
+>
+> **Regressão avaliada:** os 9 workspaces reais usam `LEGACY_INTERNAL` (62
+> features) — **nenhum perde acesso**. 864 unitários, 128 de integração, build
+> limpo.
+
+> **Última atualização anterior: 2026-08-18 (`ExportLog` lido + correção de
+> classificação — Registro Nº 106).**
 >
 > **`ExportLog`:** mesmo defeito do `AccessLog`, mesma correção. A tela virou
 > **"O que foi feito com meus dados"**. A coluna de **filtros** é o que dá

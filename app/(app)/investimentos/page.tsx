@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { prisma } from "@/lib/db/prisma";
 import { investmentAcquisitionValue, investmentPositionValue, investmentReturnPct } from "@/lib/finance/investment";
 import { Decimal } from "@/lib/finance/types";
@@ -12,6 +13,17 @@ export default async function InvestimentosPage({
 }) {
   const { classe } = await searchParams;
   const workspaceId = await requireWorkspaceId();
+
+  // Registro Nº 107 — a feature existia no catálogo desde sempre e nenhuma tela
+  // a consultava: desmarcá-la em /admin/planos não tinha efeito.
+  if (!(await hasFeature(workspaceId, "investimentos_carteira"))) {
+    return (
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
+        <p className="text-zinc-200">A carteira de investimentos está disponível a partir do plano Max.</p>
+        <p className="mt-2">Ela acompanha cada posição — aporte, valor atual, rentabilidade — e alimenta a análise de alocação.</p>
+      </div>
+    );
+  }
 
   const [investments, classes, positionEntries] = await Promise.all([
     prisma.investment.findMany({

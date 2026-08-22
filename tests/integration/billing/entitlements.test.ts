@@ -120,4 +120,51 @@ describe("hasFeature (integração — Etapa 3, 2026-08-15)", () => {
     // ConsultingEngagement ainda não existe (Etapa 8) — fail-safe: nunca libera.
     expect(await hasFeature(workspaceId, feature.code)).toBe(false);
   });
+
+  /**
+   * Features que **são o produto**, não um adicional (2026-08-19, Registro
+   * Nº 107). O Start não restringe nada, e essas 12 saíram da matriz de
+   * `/admin/planos` — uma chave que o admin pode desmarcar sem efeito é pior
+   * que chave ausente.
+   */
+  describe("sempre incluídas", () => {
+    it("liberam sem plano nenhum", async () => {
+      const feature = await prisma.feature.findFirstOrThrow({ where: { alwaysIncluded: true } });
+      expect(await hasFeature(workspaceId, feature.code)).toBe(true);
+    });
+
+    it("as doze do produto estão marcadas", async () => {
+      const codes = (await prisma.feature.findMany({ where: { alwaysIncluded: true } })).map((f) => f.code);
+      for (const c of ["painel_basico", "lancamento_manual", "compromissos", "export_dados", "pwa"]) {
+        expect(codes, c).toContain(c);
+      }
+    });
+
+    /**
+     * A invariante que a ordem do `hasFeature` protege: se alguém marcar por
+     * engano uma feature de método como sempre-incluída, ela **não** pode
+     * vazar por assinatura — §3.1 proíbe método sem consultor. O ramo METODO
+     * decide antes.
+     */
+    it("marcar uma de método como sempre-incluída NÃO a libera sem contrato", async () => {
+      const metodo = await prisma.feature.findFirstOrThrow({ where: { gateKind: "METODO" } });
+      await prisma.feature.update({ where: { id: metodo.id }, data: { alwaysIncluded: true } });
+
+      try {
+        expect(await hasFeature(workspaceId, metodo.code)).toBe(false);
+      } finally {
+        await prisma.feature.update({ where: { id: metodo.id }, data: { alwaysIncluded: false } });
+      }
+    });
+
+    it("importar OFX e PDF de fatura passou a valer no Start", async () => {
+      const start = await prisma.plan.findUniqueOrThrow({
+        where: { code: "start_individual" },
+        include: { planFeatures: { include: { feature: true } } },
+      });
+      const codes = start.planFeatures.map((pf) => pf.feature.code);
+      expect(codes).toContain("import_ofx");
+      expect(codes).toContain("import_pdf_fatura");
+    });
+  });
 });

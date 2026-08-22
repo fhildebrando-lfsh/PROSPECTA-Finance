@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { prisma } from "@/lib/db/prisma";
 import {
   investmentAcquisitionValue,
@@ -19,6 +20,17 @@ const ALLOCATION_COLORS = ["#818cf8", "#34d399", "#fbbf24", "#f87171", "#38bdf8"
 
 export default async function AnaliseInvestimentosPage() {
   const workspaceId = await requireWorkspaceId();
+
+  // Registro Nº 107 — a feature existia no catálogo desde sempre e nenhuma tela
+  // a consultava: desmarcá-la em /admin/planos não tinha efeito.
+  if (!(await hasFeature(workspaceId, "investimentos_analise"))) {
+    return (
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
+        <p className="text-zinc-200">A análise de investimentos está disponível a partir do plano Max.</p>
+        <p className="mt-2">Ela consolida a carteira inteira: posição, alocação por classe e a renda recebida ao longo do tempo.</p>
+      </div>
+    );
+  }
 
   const [investments, entries] = await Promise.all([
     prisma.investment.findMany({ where: { workspaceId, isActive: true }, include: { class: true } }),

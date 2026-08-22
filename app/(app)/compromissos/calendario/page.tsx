@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { daysBetween } from "@/lib/finance/dates";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import { markSettled } from "../actions";
@@ -52,6 +53,12 @@ export default async function CompromissosCalendarioPage({
   const { month: monthRaw, day: dayRaw, google_connected, google_error } = await searchParams;
   const workspaceId = await requireWorkspaceId();
   const { year, month } = parseMonthParam(monthRaw);
+
+  // Registro Nº 107 — `google_agenda` existia no catálogo e nenhuma tela a
+  // consultava. O gate cobre **só a integração**, não o calendário: compromissos
+  // passaram a ser sempre incluídos, e esconder a agenda inteira puniria o
+  // cliente Start por uma feature que não é dele.
+  const temGoogleAgenda = await hasFeature(workspaceId, "google_agenda");
 
   const googleConnection = await prisma.googleCalendarConnection.findFirst({
     where: { workspaceId, revokedAt: null },
@@ -115,6 +122,7 @@ export default async function CompromissosCalendarioPage({
         </p>
       )}
 
+      {temGoogleAgenda && (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
         {googleConnection ? (
           <>
@@ -153,6 +161,7 @@ export default async function CompromissosCalendarioPage({
           </>
         )}
       </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link

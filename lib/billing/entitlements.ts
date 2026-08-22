@@ -53,6 +53,20 @@ export async function hasFeature(workspaceId: string, featureCode: string): Prom
   }
 
   /**
+   * Features que **são o produto**, não um adicional (decisão do usuário,
+   * 2026-08-19): lançar, ver o painel, cadastrar carteira. Liberadas para todo
+   * mundo, sem consultar plano nenhum.
+   *
+   * A checagem vem **depois** do ramo METODO, e a ordem é deliberada: se um dia
+   * alguém marcar por engano uma feature de método como sempre-incluída, o
+   * ramo acima já terá decidido, e a camada de método continua exigindo
+   * contrato. A ordem inversa faria método vazar por assinatura — o que §3.1
+   * proíbe. Assim o pior caso é liberar demais uma feature de plano, nunca de
+   * método.
+   */
+  if (feature.alwaysIncluded) return true;
+
+  /**
    * Camada de **exceção pontual** (§4.6): libera uma feature avulsa para um
    * workspace, sem mexer no plano dele.
    *

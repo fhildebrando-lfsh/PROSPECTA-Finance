@@ -2814,7 +2814,27 @@
 
 ---
 
-## Próximo número de registro: **107**
+### Registro Nº 107
+- **Data:** 2026-08-19
+- **Etapa concluída:** Primeira parte do último achado da revisão (Registro Nº 104) — as features que existiam no catálogo e **nenhuma tela consultava**. Três decisões do usuário executadas; duas outras **deixadas em espera por decisão dele**.
+- **A investigação mudou a premissa do pedido, e por isso ela vem primeiro.** O usuário pediu para "transferir as features para os planos atuais", partindo de uma tela que mostrava Start/Plus/Premium/Premium Negócios. A consulta a produção mostrou outra coisa: **os 6 planos novos já existem, estão ativos e já têm features** (13 a 34 cada); os 4 antigos estão **inativos, com zero assinaturas e zero concessões**, e só apareciam porque `/admin/planos` lista plano inativo riscado no fim da tabela. A transferência já havia sido feita quando os 6 foram semeados.
+- **O que a investigação revelou de fato: duas gerações de catálogo convivendo.** A antiga, presa aos planos aposentados, com 10 features grossas que são pacotes de produto (`nucleo_financeiro`, `planejamento_financeiro`, `relatorios_avancados`, `preparacao_irpf`…); a nova, com 52 capacidades finas. Nenhuma feature está órfã, e o total é 62.
+- **Parei antes de aposentar os planos antigos**, porque três capacidades **não têm sucessor** na geração nova — `preparacao_irpf`, `preparacao_irpj` e `organizacao_tributaria` —, e há **duplicação de conceito**: `modulo_mei` (antigo) e `modulo_pj` (novo) nomeiam a mesma coisa. Decidir que a frente tributária some, ou qual código do módulo MEI sobrevive, é decisão comercial do dono do produto, não minha. **O usuário optou por deixar as duas em espera até o sistema estar rodando corretamente**, e elas ficam registradas como pendência nomeada.
+- **O que foi executado.** (1) Novo campo `Feature.alwaysIncluded` (migration `20260819120000_feature_always_included`, dev → produção, mesmo checksum) e as **12 funcionalidades do Start marcadas** — elas saem da matriz e `hasFeature` as libera para todos. **Nenhuma foi apagada**: apagar quebraria os `PlanFeature` que as referenciam e destruiria o histórico do catálogo; o que muda é o significado, não a existência. Ficam listadas abaixo da tabela, para ninguém achar que sumiram. (2) `import_ofx` e `import_pdf_fatura` **desceram para o Start**, no seed e nos dois bancos. (3) Gates implementados em `investimentos_carteira`, `investimentos_analise` e `google_agenda`.
+- **No calendário o gate cobre só a integração**, não a tela: compromissos passou a ser sempre incluído, e esconder o calendário inteiro puniria o cliente Start por uma feature que não é dele.
+- **Um erro de raciocínio meu, corrigido antes de virar código permanente.** Coloquei a checagem de `alwaysIncluded` **antes** do ramo METODO e escrevi um comentário justificando que assim era mais seguro. É o contrário: naquela ordem, uma feature de método marcada por engano vazaria por assinatura — exatamente o que §3.1 proíbe. Invertida, o ramo METODO decide primeiro e o pior caso passa a ser liberar demais uma feature de plano, nunca de método. **Há teste de integração fixando isso**: marcar uma feature METODO como sempre-incluída **não** a libera sem contrato.
+- **Um erro de execução, sem consequência:** o primeiro script de aplicação supôs uma coluna `id` em `plan_features`, que tem chave composta `(plan_id, feature_id)`. A transação deu rollback limpo nos dois bancos — nada ficou pela metade, nem o `always_included`, que estava na mesma transação. Refeito com `ON CONFLICT DO NOTHING`, para ser repetível.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **864/864**; integração **128/128** (4 casos novos); `npm run build` limpo. Confirmado nos dois bancos: 12 sempre-incluídas e as duas importações em `start_individual` e `start_familia`.
+- **Risco de regressão avaliado:** os 9 workspaces reais usam `LEGACY_INTERNAL`, que tem as 62 features — **nenhum deles perde acesso** com os gates novos. O efeito só aparece quando alguém for posto num dos 6 planos comerciais.
+- **Limite declarado:** as telas não foram vistas logadas.
+- **Pendências nomeadas, em espera por decisão do usuário:** (1) destino de `preparacao_irpf`, `preparacao_irpj` e `organizacao_tributaria`, que não têm sucessor no catálogo novo; (2) qual código sobrevive entre `modulo_mei` e `modulo_pj`; (3) aposentar de vez os 4 planos antigos, o que depende de (1) e (2). Restam ainda 8 features de plano sem gate (`relatorio_*`, `patrimonio_*`, `cartoes_analise_beneficios`, `regua_simulacao`) e 6 de método.
+- **Documentos relacionados:** Registro Nº 104 (a revisão que encontrou), `prisma/seed-plans.ts`, `lib/billing/entitlements.ts`.
+
+---
+
+## Próximo número de registro: **108**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

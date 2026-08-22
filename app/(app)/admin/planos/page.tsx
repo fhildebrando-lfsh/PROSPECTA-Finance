@@ -25,8 +25,18 @@ export default async function PlanosPage() {
 
   const enabledSet = new Set(plans.flatMap((p) => p.planFeatures.map((pf) => `${p.id}:${pf.featureId}`)));
 
-  const planoFeatures = features.filter((f) => f.gateKind === "PLANO");
-  const metodoFeatures = features.filter((f) => f.gateKind === "METODO");
+  /**
+   * As sempre-incluídas **não entram na matriz** (decisão do usuário,
+   * 2026-08-19). Elas são o produto, não um adicional — e uma chave que o admin
+   * pode desmarcar sem efeito nenhum é pior que chave ausente: promete um
+   * controle que não existe, que era o defeito do Registro Nº 104.
+   *
+   * Continuam listadas abaixo da tabela, como informação, para ninguém achar
+   * que sumiram do catálogo.
+   */
+  const sempreIncluidas = features.filter((f) => f.alwaysIncluded);
+  const planoFeatures = features.filter((f) => f.gateKind === "PLANO" && !f.alwaysIncluded);
+  const metodoFeatures = features.filter((f) => f.gateKind === "METODO" && !f.alwaysIncluded);
 
   function FeatureRows({ list }: { list: typeof features }) {
     return (
@@ -107,6 +117,15 @@ export default async function PlanosPage() {
           </tbody>
         </table>
       </div>
+      <section className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+        <h2 className="mb-1 text-sm font-medium text-zinc-300">Sempre incluídas</h2>
+        <p className="mb-2 text-xs text-zinc-500">
+          Estas {sempreIncluidas.length} funcionalidades valem para todos os planos e não aparecem na matriz — são o
+          que o sistema é, não um adicional. Não há o que marcar ou desmarcar.
+        </p>
+        <p className="text-xs text-zinc-600">{sempreIncluidas.map((f) => f.name).join(" · ")}</p>
+      </section>
+
     </div>
   );
 }
