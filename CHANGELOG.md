@@ -16,6 +16,14 @@
 
 ## 2026-08-18
 
+### Adicionado (Registro Nº 103) — Etapa 16
+- **Plano Integrado (PFI)**, no menu Método. Reúne num documento só tudo que foi produzido no contrato — cada artefato na versão em que está — e mostra **como a Saúde Financeira se moveu desde a linha de base**.
+- A tela mostra uma **prévia** recalculada do dado de hoje; só grava quando você manda. Compilar de novo cria uma versão nova, sem sobrescrever nenhuma anterior.
+- **Prioridades e Compromissos ficam em branco de propósito** — são o seu juízo sobre o cliente, não algo que o sistema deva escrever.
+
+### Corrigido (Registro Nº 103)
+- **A foto da Saúde Financeira gravava só cinco indicadores.** Longevidade e Continuidade, que passaram a existir recentemente, ficavam de fora — e é dessa foto que sai o comparativo do Plano Integrado.
+
 ### Adicionado (Registro Nº 102) — Etapa 15
 - **Sucessão (PCP)**, em Patrimônio. Faz o **teste de liquidez sucessória**: se, na hora da sucessão, existiria dinheiro para impostos e custas **sem a família precisar vender bens com pressa**. Os valores são lidos do que já está cadastrado — patrimônio, contas e seguro de vida.
 - O **ITCMD é ajustável**, porque é estadual e varia de 2% a 8%. O padrão de 4% é a alíquota de São Paulo, ponto de partida e não afirmação sobre o seu caso.

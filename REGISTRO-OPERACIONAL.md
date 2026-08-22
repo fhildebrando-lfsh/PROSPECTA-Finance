@@ -2741,7 +2741,24 @@
 
 ---
 
-## Próximo número de registro: **103**
+### Registro Nº 103
+- **Data:** 2026-08-18
+- **Etapa concluída:** **Etapa 16 — compilador do PFI (§10, Fase ∞).** Com ela, tudo que não depende de decisão comercial está feito: resta só a Etapa 17 (Módulo PJ), cujo escopo é a Pendência #12 da Metodologia.
+- **Descrição:** `lib/method/pfi.ts` (puro) e tela `/metodo/plano-integrado` gateada por `pfi_compilador`. **Sem migration** — o PFI é um `Deliverable` como os outros, e compilar cria uma **versão nova**, nunca sobrescreve. A tela mostra uma **prévia** recalculada do dado de hoje e só grava por ação explícita: prévia que já gravasse tiraria do consultor a chance de ver o resultado antes de ele virar documento entregue.
+- **O compilador aponta, não copia — e essa foi a decisão central.** Seria natural embutir o texto de cada entregável dentro do PFI, e seria pior: conteúdo copiado envelhece em silêncio no dia em que o MRP ganha uma versão nova, e o cliente passaria a ler no plano integrado algo que já foi revisto. O documento referencia código, versão e data, e por isso continua verdadeiro mesmo quando o outro muda.
+- **A regra que protege a honestidade do comparativo:** indicador que passou a ser avaliado no meio do caminho aparece como **"sem comparação", nunca como progresso** — ele não subiu, passou a existir. §8.1 diz que o comparativo início × fim "justifica o honorário melhor que qualquer relatório"; justamente por isso, tratar aparecimento como ganho seria inflar o resultado do próprio trabalho. Há teste cobrindo esse caso.
+- **Duas seções ficam em branco de propósito**, e a tela declara que é deliberado: Prioridades e Compromissos são juízo do consultor sobre o cliente, e texto gerado ali teria a aparência de conselho sem ninguém tê-lo dado.
+- **O inventário fica gravado dentro do próprio PFI.** É o que permite à versão seguinte dizer o que mudou sem reconstruir o passado por inferência — comparar contra o estado atual dos entregáveis diria "nada mudou" sempre.
+- **Uma lacuna encontrada e corrigida antes de começar:** `saveHealthSnapshot` gravava **só cinco** indicadores, porque foi escrito quando cinco era o total. Longevidade e Continuidade, criados nas Etapas 13 e 15, ficavam de fora — e como o PFI compara linha de base × hoje **a partir desses snapshots**, a falha apagaria exatamente a evolução do trabalho de longo prazo, que é o que o documento existe para mostrar. Os dois campos entraram como opcionais, porque dependem de gate.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **840/840** (15 casos novos); integração **119/119**; `npm run build` limpo, com `/metodo/plano-integrado` na saída.
+- **Limite de verificação declarado:** a tela não foi vista logada. Além disso, o comparativo só produz conteúdo com **duas** fotos do PSF salvas em datas diferentes — num contrato novo ele avisa que a linha de base não existe, em vez de inventar evolução.
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §6 (Bloco IV, Etapa 16) e §8.1, Registros Nº 100 e 102 (os dois indicadores que faltavam no snapshot), `MANUAL-DE-USO.md` §13-A.2-B.
+
+---
+
+## Próximo número de registro: **104**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

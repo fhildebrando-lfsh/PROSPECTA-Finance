@@ -17,6 +17,14 @@ export async function saveHealthSnapshot(indicators: {
   liquidez: PsfIndicatorResult;
   protecao: PsfIndicatorResult | null;
   construcao: PsfIndicatorResult | null;
+  /**
+   * Etapa 16 — os dois últimos indicadores passaram a existir nas Etapas 13 e
+   * 15, e a foto continuava gravando só cinco. O PFI compara linha de base ×
+   * hoje **a partir destes snapshots**, então a lacuna apagaria justamente a
+   * evolução do trabalho de longo prazo. Opcionais porque dependem de gate.
+   */
+  longevidade?: PsfIndicatorResult | null;
+  continuidade?: PsfIndicatorResult | null;
 }) {
   const workspaceId = await requireWorkspaceId();
   await requireProfile();

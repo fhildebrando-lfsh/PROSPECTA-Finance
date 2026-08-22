@@ -14,6 +14,8 @@ export function SaveSnapshotButton({
     liquidez: PsfIndicatorResult;
     protecao: PsfIndicatorResult | null;
     construcao: PsfIndicatorResult | null;
+    longevidade?: PsfIndicatorResult | null;
+    continuidade?: PsfIndicatorResult | null;
   };
 }) {
   const [saving, setSaving] = useState(false);

@@ -1501,7 +1501,7 @@ Com isso o PSF tem os **sete** indicadores previstos.
 
 | Etapa | Entrega | Depende de |
 |---|---|---|
-| **16** | Compilador do PFI — agrega os `Deliverable` mais recentes de um engagement num documento único versionado + comparativo do PSF (linha de base × hoje, §10 Fase ∞) | Etapas 9–15 (usa o que cada uma produziu) |
+| **16** ✅ | Compilador do PFI — agrega os `Deliverable` mais recentes de um engagement num documento único versionado + comparativo do PSF (linha de base × hoje, §10 Fase ∞) | Etapas 9–15 (usa o que cada uma produziu) |
 | **17** | Módulo PJ (add-on) — escopo ainda pendente de detalhamento (Pendência #12 da Metodologia v5.0); tratado como etapa própria justamente por isso, para não travar o Bloco III esperando definição | Bloco I (é add-on de assinatura) |
 
 **Sequenciamento sugerido:** Bloco I primeiro, sempre — é o que já paga a conta
@@ -1511,6 +1511,35 @@ manualmente em documento/planilha por um tempo, com a Etapa 8 sendo a única
 realmente urgente (sem ela não há como ligar um cliente de consultoria a nada do
 Bloco III). O Bloco IV fecha o ciclo quando houver volume real que justifique
 automatizar o que hoje pode ser montado à mão.
+
+**Etapa 16 — status: implementada e verificada (Registro Nº 103, 2026-08-18).
+Com ela, tudo que não depende de decisão comercial está feito: resta apenas a
+Etapa 17 (Módulo PJ), cujo escopo é a Pendência #12.**
+
+`lib/method/pfi.ts` (puro) + tela `/metodo/plano-integrado` gateada por
+`pfi_compilador`. Sem migration — o PFI é um `Deliverable` como os outros.
+
+**O compilador aponta, não copia.** Seria natural embutir o texto de cada
+entregável dentro do PFI; seria pior. Conteúdo copiado envelhece em silêncio no
+dia em que o MRP ganha versão nova, e o cliente passaria a ler no PFI algo já
+revisto. O documento referencia código, versão e data — continua verdadeiro
+mesmo quando o outro muda.
+
+**Prioridades e Compromissos ficam em branco de propósito**, e a tela avisa que
+é deliberado: são juízo do consultor sobre o cliente, e texto gerado ali teria a
+aparência de conselho sem ninguém tê-lo dado.
+
+**A regra que protege a honestidade do comparativo:** indicador que passou a ser
+avaliado no meio do caminho aparece como "sem comparação", **nunca como
+progresso** — ele não subiu, passou a existir. Num documento cuja função
+declarada em §8.1 é justificar honorário, tratar isso como ganho seria inflar o
+resultado do trabalho.
+
+**Uma lacuna corrigida junto:** `saveHealthSnapshot` gravava só cinco
+indicadores, escrito quando era esse o total. Longevidade e Continuidade,
+criados nas Etapas 13 e 15, ficavam de fora — e como o PFI compara linha de base
+× hoje a partir desses snapshots, a falha apagaria justamente a evolução do
+trabalho de longo prazo.
 
 ---
 

@@ -128,6 +128,7 @@ const METODO_ITEMS: NavLeaf[] = [
   { href: "/metodo/trilha", label: "Trilha do Método", icon: Route },
   { href: "/metodo/instrumentos", label: "Diagnóstico (DIP)", icon: ClipboardList },
   { href: "/metodo/entregaveis", label: "Entregáveis", icon: FileText },
+  { href: "/metodo/plano-integrado", label: "Plano Integrado (PFI)", icon: Layers },
 ];
 
 const PROTECAO_ITEMS: NavLeaf[] = [

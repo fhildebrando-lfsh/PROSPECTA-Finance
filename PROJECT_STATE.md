@@ -15,9 +15,42 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (Etapa 15 — PCP e teste de liquidez
-> sucessória. **Fecha o Bloco III e completa os sete indicadores do PSF** —
-> Registro Nº 102).**
+> **Última atualização real: 2026-08-18 (Etapa 16 — compilador do PFI.
+> **Resta apenas a Etapa 17, que depende de decisão comercial** — Registro
+> Nº 103).**
+>
+> `lib/method/pfi.ts` (puro) + `/metodo/plano-integrado` gateada por
+> `pfi_compilador`. Sem migration: o PFI é um `Deliverable` como os outros, e
+> compilar cria **versão nova**. A tela mostra **prévia** e só grava por ação
+> explícita — prévia que já grava tira do consultor a chance de ver antes.
+>
+> **O compilador aponta, não copia.** Embutir o texto de cada entregável seria
+> natural e pior: cópia envelhece em silêncio quando o original ganha versão
+> nova, e o cliente passaria a ler algo já revisto. Referencia código, versão e
+> data — continua verdadeiro quando o outro muda.
+>
+> **A regra que protege a honestidade:** indicador que passou a ser avaliado no
+> meio do caminho aparece como **"sem comparação", nunca como progresso** — não
+> subiu, passou a existir. §8.1 diz que o comparativo início × fim justifica o
+> honorário; por isso mesmo, contar aparecimento como ganho inflaria o resultado
+> do próprio trabalho.
+>
+> **Prioridades e Compromissos em branco de propósito** — juízo do consultor;
+> texto gerado ali teria aparência de conselho sem ninguém tê-lo dado. O
+> **inventário fica gravado dentro do PFI**, para a versão seguinte dizer o que
+> mudou sem reconstruir o passado por inferência.
+>
+> **Lacuna corrigida antes de começar:** `saveHealthSnapshot` gravava só cinco
+> indicadores — escrito quando cinco era o total. Longevidade e Continuidade
+> (Etapas 13 e 15) ficavam de fora, e é desses snapshots que sai o comparativo:
+> a falha apagaria justamente a evolução de longo prazo.
+>
+> **Limite declarado:** tela não vista logada; e o comparativo só produz
+> conteúdo com **duas** fotos do PSF em datas diferentes.
+> 840 unitários, 119 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-18 (Etapa 15 — PCP, fecha o Bloco III
+> — Registro Nº 102).**
 >
 > `lib/method/pcp.ts` (puro) + `/patrimonio/sucessao` gateada por
 > `pcp_sucessorio`. **Sem migration**: o checklist mora dentro do `Deliverable`

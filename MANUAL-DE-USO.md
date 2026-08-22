@@ -1023,6 +1023,32 @@ no sistema para o cliente: é conduzido como conversa e preenchido pelo consulto
 depois da reunião, porque preencher formulário na frente de alguém destrói a
 conversa.
 
+### 13-A.2-B Plano Integrado (PFI)
+
+O documento que amarra tudo. Ele reúne o que foi produzido no contrato e mostra
+**como a sua Saúde Financeira se moveu desde a linha de base** — o comparativo
+início × fim.
+
+**Ele aponta, não copia.** Cada artefato aparece com código, versão e data, em
+vez de ter seu texto reproduzido dentro do PFI. A razão é prática: texto copiado
+envelheceria em silêncio no dia em que aquele artefato ganhasse uma versão nova,
+e você acabaria lendo no plano integrado algo que já foi revisto.
+
+**O comparativo do PSF** mostra, para cada um dos sete indicadores, em que faixa
+você estava na primeira foto, em que faixa está hoje, e quantos níveis subiu ou
+recuou.
+
+Indicador que **passou a ser avaliado no meio do caminho** aparece como "sem
+comparação", nunca como progresso. Ele não subiu — passou a existir. Contar isso
+como ganho inflaria o resultado do trabalho.
+
+**Prioridades e Compromissos ficam em branco**, e isso é de propósito: são o
+juízo do consultor sobre o seu caso, não algo que o sistema deva escrever
+sozinho. Ele os preenche ao editar o entregável.
+
+Compilar cria uma **versão nova** — nenhuma anterior é sobrescrita. É o que
+permite mostrar a evolução de uma fase para outra.
+
 ### 13-A.3 Entregáveis
 
 Os dez documentos codificados do método. Cada um tem seções próprias, e a tela mostra quais
