@@ -19,6 +19,7 @@ import {
   protecao,
   protecaoCompleta,
   construcaoPatrimonial,
+  longevidade,
   type PsfFaixa,
   type PsfIndicatorResult,
 } from "@/lib/method/psf";
@@ -65,9 +66,13 @@ export default async function SaudeFinanceiraPage() {
   const workspaceId = await requireWorkspaceId();
 
   // Etapa 5 do Método (2026-08-15) — PSF nível 1 (3 indicadores) é Pro; nível 2 (+2) é Max.
-  const [nivel1, nivel2] = await Promise.all([
+  const [nivel1, nivel2, temLongevidade] = await Promise.all([
     hasFeature(workspaceId, "psf_nivel_1"),
     hasFeature(workspaceId, "psf_nivel_2"),
+    // §5.3.1 — Longevidade é indicador de **método**, e só existe depois que a
+    // Etapa 13 passou a produzir `RetirementProjection`. Até 2026-08-18 ele
+    // aparecia como "só com consultor ativo" sem ter de onde sair.
+    hasFeature(workspaceId, "pla_projecao"),
   ]);
 
   if (!nivel1) {
@@ -83,7 +88,7 @@ export default async function SaudeFinanceiraPage() {
   }
 
   const today = new Date();
-  const [dbEntries, activeWallets, reconciliationByWallet, snapshots] = await Promise.all([
+  const [dbEntries, activeWallets, reconciliationByWallet, snapshots, projecaoBase] = await Promise.all([
     prisma.entry.findMany({
       where: { workspaceId },
       select: {
@@ -113,6 +118,14 @@ export default async function SaudeFinanceiraPage() {
     prisma.wallet.findMany({ where: { workspaceId, isActive: true }, select: { id: true, kindCode: true } }),
     latestReconciliationByWallet(workspaceId),
     prisma.healthSnapshot.findMany({ where: { workspaceId }, orderBy: { snapshotDate: "desc" }, take: 6 }),
+    // Cenário **base** da versão mais recente: é o que o PLA apresenta como
+    // referência. Usar o otimista inflaria a nota; o conservador a puniria.
+    temLongevidade
+      ? prisma.retirementProjection.findFirst({
+          where: { workspaceId, scenario: "base" },
+          orderBy: [{ version: "desc" }, { createdAt: "desc" }],
+        })
+      : Promise.resolve(null),
   ]);
 
   const financeEntries = dbEntries.map(toFinanceEntry);
@@ -198,6 +211,15 @@ export default async function SaudeFinanceiraPage() {
         : protecao(liquidezResult.valor ?? 0)
       : null,
     construcao: nivel2 ? construcaoPatrimonial(allocationPct.poupanca, band.poupanca[0]) : null,
+    // Sem projeção salva, `null` — "não avaliado", nunca faixa ruim: puniria o
+    // cliente por um trabalho que o consultor ainda não fez.
+    longevidade: temLongevidade
+      ? longevidade(
+          typeof (projecaoBase?.assumptions as { suficienciaPct?: unknown } | null)?.suficienciaPct === "number"
+            ? ((projecaoBase!.assumptions as { suficienciaPct: number }).suficienciaPct)
+            : null,
+        )
+      : null,
   };
 
   const cards: { key: string; label: string; result: PsfIndicatorResult | null; disponivel: boolean }[] = [
@@ -206,6 +228,7 @@ export default async function SaudeFinanceiraPage() {
     { key: "liquidez", label: "Liquidez", result: indicators.liquidez, disponivel: true },
     { key: "protecao", label: "Proteção", result: indicators.protecao, disponivel: nivel2 },
     { key: "construcao", label: "Construção Patrimonial", result: indicators.construcao, disponivel: nivel2 },
+    { key: "longevidade", label: "Longevidade", result: indicators.longevidade, disponivel: temLongevidade },
   ];
 
   // A foto mais recente é a régua da comparação. `snapshots` vem em ordem

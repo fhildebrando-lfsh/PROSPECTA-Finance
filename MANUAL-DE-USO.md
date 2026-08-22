@@ -121,8 +121,9 @@ Sete indicadores gerenciais que traduzem sua situação financeira numa leitura 
 comparável ao longo do tempo — cinco já disponíveis: **Organização** (qualidade e
 regularidade dos seus lançamentos), **Endividamento** (peso das dívidas sobre sua renda),
 **Liquidez** (quantos meses seu saldo disponível cobre de despesa), e, a partir do Max,
-**Proteção** e **Construção Patrimonial**. Longevidade e Continuidade só existem com um
-consultor ativo.
+**Proteção** e **Construção Patrimonial**. **Longevidade** passou a ser calculada a partir do seu Plano de Longevidade (§12.6) —
+sem uma projeção salva ela aparece como "não avaliado", nunca como nota ruim.
+Continuidade só existe com um consultor ativo.
 
 Cada indicador aparece numa escala de 5 faixas — Crítico, Frágil, Em construção, Saudável,
 Consolidado — nunca uma nota exata de 0 a 10: é um indicador gerencial, não um score de
@@ -515,6 +516,46 @@ decisão sua com quem você deve.
 
 Dívida paga: prefira marcar como **quitada** a excluir. Ela sai do mapa mas
 continua no histórico — o que já foi pago é parte do trabalho.
+
+---
+
+### 12.6 Longevidade (PLA) — com consultoria ativa
+
+Responde duas perguntas: **quanto capital precisa existir** para você parar de
+trabalhar na idade que quer com a renda que deseja, e **quanto isso pede de
+aporte por mês**.
+
+**Tudo em poder de compra de hoje.** Se a tela diz R$ 2 milhões, são dois
+milhões de hoje — não um número inflacionado de trinta anos à frente, que
+ninguém sabe interpretar. É por isso que não existe campo de inflação aqui: ela
+já está descontada dentro da taxa de retorno usada.
+
+**O que você informa:** sua idade, a idade em que quer parar, a renda mensal
+desejada, quanto já acumulou para isso, quanto aporta hoje, e — importante — a
+**renda que já existirá** (INSS, previdência, aluguel). Essa última abate o que
+o capital precisa produzir: quem terá R$ 4 mil de INSS e quer R$ 10 mil precisa
+que o capital gere R$ 6 mil, não R$ 10 mil.
+
+**Três cenários, não um.** A resposta depende de uma premissa que ninguém
+conhece: o retorno real dos próximos anos. Mostrar um número só esconderia isso.
+Conservador, base e otimista aparecem lado a lado, e a diferença entre eles é
+justamente a lição — a premissa muda o tamanho do problema.
+
+**"Até que idade o dinheiro precisa durar"** vem preenchido com 90 anos, bem
+acima da média de propósito: o risco que se está tratando aqui é o de **viver
+mais** que o dinheiro. Planejar pela expectativa média deixaria metade das
+pessoas descoberta.
+
+As taxas de retorno ficam abertas para ajuste, dentro de "Premissas de retorno
+real". Elas **não vêm da metodologia** — são ponto de partida, e o consultor
+ajusta ao caso.
+
+**Salvar gera uma versão** com os três cenários e as premissas que os
+produziram. Versão nova nunca sobrescreve a anterior: é isso que permite mostrar
+o que mudou desde a última conversa, e por quê.
+
+**Projeção é hipótese, não promessa.** Ela diz o que aconteceria *se* as
+premissas se confirmarem. A PROSPECTA não indica onde investir.
 
 ---
 

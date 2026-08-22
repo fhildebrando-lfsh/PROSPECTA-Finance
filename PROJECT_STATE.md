@@ -15,8 +15,44 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (Etapa 12 — MRP, mais a correção de um
-> gate que dava de graça o que a tela dizia vender — Registro Nº 099).**
+> **Última atualização real: 2026-08-18 (Etapa 13 — PLA, projeção de longo
+> prazo, e o indicador Longevidade do PSF ligado — Registro Nº 100).**
+>
+> `RetirementProjection` + `lib/method/retirement.ts` (puro) +
+> `/patrimonio/longevidade` gateada por `pla_projecao`. Migration dev →
+> produção → código. Parâmetros na query string (recalcula ao vivo, sem
+> gravar); gravar é ato explícito e cria uma **versão** com os três cenários
+> numa transação.
+>
+> **O motor trabalha em termos reais** — poder de compra de hoje. Projetar pela
+> inflação e depois descontar pela mesma inflação dá o mesmo resultado com duas
+> chances a mais de errar, e devolve um "R$ 8 milhões" que o cliente não sabe
+> interpretar. Não há campo de inflação: ela já está dentro da taxa real, e
+> separá-la seria contá-la duas vezes.
+>
+> **Duas premissas que a Metodologia não fixa, escolhidas por mim e declaradas
+> como escolha:** taxas reais por cenário (2/4/6% a.a.) e horizonte de 90 anos.
+> Isoladas em `TAXA_REAL_PADRAO` e `IDADE_FINAL_PADRAO`, editáveis na tela — para
+> discordar ser conversa sobre o número, não arqueologia na fórmula. O horizonte
+> é conservador de propósito: o risco é **viver mais** que o dinheiro.
+>
+> **Cuidados que evitam número silenciosamente errado:** taxa mensal é a
+> equivalente **composta**, não a anual ÷ 12 (dividir superestima juros em
+> prazo longo, que é onde este motor opera); taxa zero é caso à parte, não
+> divisão por zero; aporte necessário devolve **zero, nunca negativo** quando o
+> objetivo já foi alcançado — negativo leria como "pode sacar".
+>
+> **Fecha pendência que o próprio documento anunciava.** §5.3.1 dizia confiança
+> "baixa para Longevidade… só porque depende de entidade que ainda não existe".
+> A entidade existe, e o indicador foi ligado: lê o cenário **base** da versão
+> mais recente (otimista inflaria, conservador puniria). Sem projeção, `null` —
+> **"não avaliado", nunca faixa ruim**.
+>
+> **Limite declarado:** tela não vista logada. 773 unitários, 119 de
+> integração, build limpo.
+
+> **Última atualização anterior: 2026-08-18 (Etapa 12 — MRP, mais correção de
+> gate — Registro Nº 099).**
 >
 > **A revisão veio antes do código e mudou o escopo.** As duas metades da etapa
 > estavam em situações opostas:

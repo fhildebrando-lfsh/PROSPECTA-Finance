@@ -2689,7 +2689,24 @@
 
 ---
 
-## Próximo número de registro: **100**
+### Registro Nº 100
+- **Data:** 2026-08-18
+- **Etapa concluída:** **Etapa 13 — motor de projeção de longo prazo + `RetirementProjection` (PLA, 3 cenários)**, e o indicador **Longevidade** do PSF ligado na mesma etapa.
+- **Descrição:** `RetirementProjection` (migration `20260818140000_retirement_projection`, dev → produção → código, mesmo checksum), motor puro `lib/method/retirement.ts`, tela `/patrimonio/longevidade` gateada por `pla_projecao`. Parâmetros trafegam na query string — a tela recalcula ao vivo sem gravar nada, como o simulador da Reserva; gravar é ato explícito e produz uma **versão** com os três cenários juntos, numa transação (meia versão gravada seria pior que nenhuma).
+- **A decisão que mais afeta a leitura: o motor trabalha em termos reais.** Projetar a renda corrigida pela inflação e depois descontá-la pela mesma inflação produz o mesmo resultado com duas chances a mais de errar, e devolve ao cliente um "você precisa de R$ 8 milhões" que ele não sabe interpretar. Aqui, R$ 2 milhões significa dois milhões **de hoje**. Não há campo de inflação porque ela já está dentro da taxa real; separá-la seria contá-la duas vezes — e a tela diz isso ao usuário.
+- **Duas premissas que a Metodologia não fixa, escolhidas por mim e declaradas como escolha:** as taxas reais por cenário (2% / 4% / 6% a.a.) e o horizonte de longevidade (90 anos). Ambas isoladas em constantes nomeadas — `TAXA_REAL_PADRAO`, `IDADE_FINAL_PADRAO` — e editáveis na tela, justamente para que discordar delas seja conversa sobre o número e não arqueologia dentro da fórmula. O horizonte é deliberadamente conservador: o risco tratado é o de **viver mais** que o dinheiro, e planejar pela expectativa média deixaria metade das pessoas descoberta. Cada versão salva grava a premissa que a produziu, então mudar o padrão nunca reescreve o que já foi entregue a um cliente.
+- **Cuidados matemáticos que evitam número silenciosamente errado:** taxa mensal é a **equivalente composta**, não a anual dividida por 12 — dividir superestima os juros em prazos longos, que é exatamente onde este motor opera; taxa zero é tratada como caso à parte, devolvendo a soma simples em vez de dividir por zero; e aporte necessário devolve **zero, nunca negativo**, quando o capital atual já alcança o objetivo — negativo leria como "pode sacar".
+- **Fecha uma pendência que o próprio documento anunciava.** §5.3.1 registrava confiança "baixa para Longevidade/Continuidade só porque dependem de entidades que ainda não existem (`RetirementProjection`…)". A entidade passou a existir, então liguei o indicador na mesma etapa — `min(100, aporte atual ÷ aporte necessário)`, lendo o cenário **base** da versão mais recente (o otimista inflaria a nota; o conservador a puniria). Sem projeção salva devolve `null`: **"não avaliado", nunca faixa ruim** — dar "crítico" puniria o cliente por um trabalho que o consultor ainda não fez.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **773/773** (27 casos novos: 22 no motor, 5 no indicador); integração **119/119**; `npm run build` limpo, com `/patrimonio/longevidade` na saída.
+- **Um erro meu de edição, pego pelo teste:** ao acrescentar o import de `longevidade` no arquivo de teste do PSF, ele entrou no bloco do `vitest` em vez do bloco de `@/lib/method/psf`, e os cinco casos novos quebraram com `longevidade is not a function`. Erro de edição, não de modelo; corrigido.
+- **Limite de verificação declarado:** a tela não foi vista logada — exige contrato ativo e sessão. O visual do JSX segue sem conferência.
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §5 (modelo), §5.3.1 (indicador) e §6 (Bloco III, Etapa 13), `MANUAL-DE-USO.md` §12.6 e §4.1.
+
+---
+
+## Próximo número de registro: **101**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

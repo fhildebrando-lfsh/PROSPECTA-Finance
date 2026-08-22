@@ -113,6 +113,7 @@ model Workspace {
   diagnosticResponses DiagnosticResponse[]
   instrumentDispatches InstrumentDispatch[]
   debts            Debt[]
+  retirementProjections RetirementProjection[]
   entitlements     Entitlement[]
   accessLogs       AccessLog[]
   notifications    Notification[]
@@ -667,6 +668,7 @@ model ConsultingEngagement {
   deliverables Deliverable[]
   diagnosticResponses DiagnosticResponse[]
   instrumentDispatches InstrumentDispatch[]
+  retirementProjections RetirementProjection[]
 
   @@index([workspaceId, status])
   @@map("consulting_engagements")
@@ -1897,4 +1899,38 @@ model Debt {
 
   @@index([workspaceId, status])
   @@map("debts")
+}
+
+/// §5 — cenários do PLA (Plano de Longevidade e Aposentadoria).
+///
+/// Um `RetirementProjection` **por cenário, por versão**: nunca sobrescreve,
+/// sempre soma versão. Projeção é uma afirmação datada sobre o futuro; refazer
+/// a conta com premissa nova não pode apagar o que foi dito antes, senão não há
+/// como mostrar ao cliente o que mudou e por quê.
+///
+/// `assumptions` guarda as premissas **nomeadas** que produziram os números —
+/// taxa real de retorno, horizonte, renda já existente. Sem isso um capital
+/// necessário seria um número sem lastro, impossível de auditar ou reproduzir.
+/// Ver `lib/method/retirement.ts`.
+model RetirementProjection {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId          String   @map("workspace_id") @db.Uuid
+  engagementId         String   @map("engagement_id") @db.Uuid
+  /// "conservador" | "base" | "otimista"
+  scenario             String
+  version              Int
+  targetAge            Int      @map("target_age")
+  /// Em poder de compra de **hoje** — o motor trabalha em termos reais, e por
+  /// isso a inflação não é projetada em cima deste valor.
+  desiredMonthlyIncome Decimal  @map("desired_monthly_income") @db.Decimal(14, 2)
+  assumptions          Json
+  requiredCapital      Decimal  @map("required_capital") @db.Decimal(14, 2)
+  requiredMonthlyContribution Decimal @map("required_monthly_contribution") @db.Decimal(14, 2)
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  engagement ConsultingEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@unique([engagementId, scenario, version])
+  @@map("retirement_projections")
 }

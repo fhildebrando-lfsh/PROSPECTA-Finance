@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Decimal } from "@/lib/finance/types";
 import {
   construcaoPatrimonial,
+  longevidade,
   endividamento,
   faixaForPercent,
   liquidez,
@@ -176,5 +177,36 @@ describe("construcaoPatrimonial", () => {
 
   it("não avaliado quando o piso da banda é zero ou negativo", () => {
     expect(construcaoPatrimonial(10, 0)).toEqual({ faixa: null, valor: null });
+  });
+});
+
+describe("longevidade (§5.3.1)", () => {
+  /**
+   * Sem projeção salva não há aporte necessário com que comparar. Devolver
+   * "crítico" aqui puniria o cliente por um trabalho que o consultor ainda não
+   * fez — e "não avaliado" é um estado diferente, com representação própria.
+   */
+  it("sem projeção, é não avaliado — nunca faixa ruim", () => {
+    const r = longevidade(null);
+    expect(r.faixa).toBeNull();
+    expect(r.valor).toBeNull();
+  });
+
+  it("aporte suficiente é consolidado", () => {
+    expect(longevidade(100).faixa).toBe("consolidado");
+  });
+
+  it("aporte zero é crítico", () => {
+    expect(longevidade(0).faixa).toBe("critico");
+  });
+
+  it("acompanha a suficiência calculada pelo PLA", () => {
+    expect(longevidade(50).valor).toBe(50);
+    expect(longevidade(50).faixa).toBe("em_construcao");
+  });
+
+  it("valor fora da escala é limitado, não propagado", () => {
+    expect(longevidade(250).valor).toBe(100);
+    expect(longevidade(-30).valor).toBe(0);
   });
 });

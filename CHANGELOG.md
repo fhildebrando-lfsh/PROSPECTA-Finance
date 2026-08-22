@@ -16,6 +16,14 @@
 
 ## 2026-08-18
 
+### Adicionado (Registro Nº 100) — Etapa 13
+- **Longevidade (PLA)**, em Patrimônio. Informe a idade em que quer parar, a renda que deseja e o que já tem acumulado, e veja **quanto capital precisaria existir** e **quanto isso pede de aporte por mês** — em três cenários de retorno.
+- **Todos os valores em poder de compra de hoje.** Não há número inflacionado difícil de interpretar.
+- A renda que já existirá (INSS, previdência, aluguel) abate o que o capital precisa produzir.
+- **Salvar gera uma versão**, com os três cenários e as premissas que os produziram. Versão nova nunca sobrescreve a anterior.
+- **A Saúde Financeira ganhou o indicador Longevidade**, alimentado pela projeção salva. Sem projeção, ele aparece como "não avaliado" — nunca como nota ruim.
+- Disponível com consultoria ativa.
+
 ### Adicionado (Registro Nº 099) — Etapa 12
 - **Mapa de Riscos e Proteção (MRP)**, em Proteção e Segurança. Para cada risco que pesa na sua vida, mostra **quanto você precisaria ter**, **quanto seus seguros pagariam de fato** — já descontando franquia e carência — e o que sobra para você, com o tratamento recomendado: transferir, complementar, reter ou já coberto.
 - A necessidade não vem de regra de mercado: vem dos seus próprios cenários, os mesmos que calculam a Reserva de Emergência.

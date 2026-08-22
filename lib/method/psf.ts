@@ -139,3 +139,20 @@ export interface PsfSnapshot {
   protecao: PsfIndicatorResult | null;
   construcao: PsfIndicatorResult | null;
 }
+
+/**
+ * §5.3.1 — Longevidade: `min(100, (aporte atual ÷ aporte necessário) × 100)`.
+ *
+ * O quociente já vem calculado como `suficienciaPct` em
+ * `lib/method/retirement.ts`, porque é lá que estão as premissas que o
+ * produziram. Aqui ele só vira faixa.
+ *
+ * `null` significa **não avaliado**, nunca faixa ruim: sem uma projeção salva
+ * não há aporte necessário com que comparar, e mostrar "crítico" nesse caso
+ * puniria o cliente por um trabalho que o consultor ainda não fez.
+ */
+export function longevidade(suficienciaPct: number | null): PsfIndicatorResult {
+  if (suficienciaPct === null) return NAO_AVALIADO;
+  const clamped = Math.max(0, Math.min(100, suficienciaPct));
+  return { faixa: faixaForPercent(clamped), valor: clamped };
+}

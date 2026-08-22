@@ -1361,7 +1361,7 @@ de pré-requisito do §4.9 é aplicação de código sobre o PSF (Etapa 5) + `De
 |---|---|---|
 | **11** ✅ | `Debt` (5.4) — MEC completo: CET, credor, negativação, plano de quitação; migração/ligação opcional com `EntryGroup` existente | Bloco I |
 | **12** ✅ | `InsurancePolicy` + MRP (mapa de coberturas atuais × necessárias) | Etapa 7 (função Proteção) |
-| **13** | Motor de projeção de longo prazo + `RetirementProjection` (PLA, 3 cenários) | Etapa 8 (precisa de `ConsultingEngagement` para existir) |
+| **13** ✅ | Motor de projeção de longo prazo + `RetirementProjection` (PLA, 3 cenários) | Etapa 8 (precisa de `ConsultingEngagement` para existir) |
 | **14** | `AllocationTarget` com faixa-alvo por classe + alerta de desvio (PIP) sobre a Análise de investimentos já existente (`app/(app)/investimentos/analise`) | Etapa 1 (Régua) |
 | **15** | PCP + teste de liquidez sucessória (checklist estruturado sobre `Deliverable`, código PCP) | Etapa 9 |
 
@@ -1415,6 +1415,33 @@ cenários A–H medem a liquidez do **próprio** cliente, enquanto morte do titu
 tratamento era renderizado sem gate nenhum, enquanto o texto ao lado dizia ao
 cliente Max que fazia parte da consultoria — dava de graça o que a tela afirmava
 estar vendendo, contrariando a decisão comercial de 2026-08-16.
+
+**Etapa 13 — status: implementada e verificada (Registro Nº 100, 2026-08-18).**
+`RetirementProjection`, motor puro `lib/method/retirement.ts`, tela
+`/patrimonio/longevidade` gateada por `pla_projecao`.
+
+**O motor trabalha em termos reais** — poder de compra de hoje. É a decisão que
+mais afeta a leitura: projetar a renda corrigida pela inflação e depois
+descontá-la pela mesma inflação dá o mesmo resultado com duas chances a mais de
+errar, e devolve ao cliente um "você precisa de R$ 8 milhões" que ele não sabe
+interpretar. Não há campo de inflação no cálculo porque ela já está dentro da
+taxa real; separá-la seria contá-la duas vezes.
+
+**Duas premissas que a Metodologia não fixa foram escolhidas e declaradas como
+escolha**, isoladas em constantes nomeadas e editáveis na tela: as taxas reais
+por cenário (2% / 4% / 6% ao ano) e o horizonte de longevidade (90 anos,
+deliberadamente acima da expectativa média — o risco tratado é o de **viver
+mais** que o dinheiro, e planejar pela média deixaria metade das pessoas
+descoberta). Cada versão salva grava a premissa que a produziu, então mudar o
+padrão nunca reescreve o que já foi entregue.
+
+**Fecha a pendência que o próprio §5.3.1 anunciava.** A tabela de indicadores do
+PSF marcava confiança "baixa para Longevidade/Continuidade só porque dependem de
+entidades que ainda não existem (`RetirementProjection`…)". A entidade passou a
+existir, e o indicador **Longevidade** foi ligado ao PSF na mesma etapa —
+`min(100, aporte atual ÷ aporte necessário)`, lendo o cenário **base** da versão
+mais recente. Sem projeção salva, `null`: "não avaliado", nunca faixa ruim, para
+não punir o cliente por trabalho que o consultor ainda não fez.
 
 ### Bloco IV — Consolidação e extensão (Etapas 16–17)
 
