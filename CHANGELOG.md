@@ -16,6 +16,13 @@
 
 ## 2026-08-18
 
+### Adicionado (Registro Nº 101) — Etapa 14
+- **Política de Investimento (PIP)**, dentro da Análise de investimentos. Defina em que **faixa** cada classe deve ficar, e a tela mostra onde a carteira saiu da banda e **quanto precisaria entrar ou sair** para voltar.
+- É faixa, e não alvo exato, de propósito: alvo exato exigiria rebalancear a cada oscilação, com custo e imposto a cada tremor de mercado.
+- O sistema **recusa política impossível** — mínimos somando mais de 100%, ou máximos somando menos de 100%.
+- **Trajetória de metas na Régua de Alocação.** Além da banda de referência da faixa de renda, agora dá para registrar a meta daquele cliente com prazo — hoje, em 12 e em 24 meses — e ver a distância até ela.
+- Ambos disponíveis com consultoria ativa.
+
 ### Adicionado (Registro Nº 100) — Etapa 13
 - **Longevidade (PLA)**, em Patrimônio. Informe a idade em que quer parar, a renda que deseja e o que já tem acumulado, e veja **quanto capital precisaria existir** e **quanto isso pede de aporte por mês** — em três cenários de retorno.
 - **Todos os valores em poder de compra de hoje.** Não há número inflacionado difícil de interpretar.

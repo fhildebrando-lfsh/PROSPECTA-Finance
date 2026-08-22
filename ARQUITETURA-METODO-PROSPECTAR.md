@@ -1362,7 +1362,7 @@ de pré-requisito do §4.9 é aplicação de código sobre o PSF (Etapa 5) + `De
 | **11** ✅ | `Debt` (5.4) — MEC completo: CET, credor, negativação, plano de quitação; migração/ligação opcional com `EntryGroup` existente | Bloco I |
 | **12** ✅ | `InsurancePolicy` + MRP (mapa de coberturas atuais × necessárias) | Etapa 7 (função Proteção) |
 | **13** ✅ | Motor de projeção de longo prazo + `RetirementProjection` (PLA, 3 cenários) | Etapa 8 (precisa de `ConsultingEngagement` para existir) |
-| **14** | `AllocationTarget` com faixa-alvo por classe + alerta de desvio (PIP) sobre a Análise de investimentos já existente (`app/(app)/investimentos/analise`) | Etapa 1 (Régua) |
+| **14** ✅ | **Dois modelos, não um** — `AllocationTarget` (trajetória da Régua, §11.4) e `InvestmentPolicyTarget` (faixa por classe + desvio, PIP §12.1) sobre a Análise de investimentos já existente | Etapa 1 (Régua) |
 | **15** | PCP + teste de liquidez sucessória (checklist estruturado sobre `Deliverable`, código PCP) | Etapa 9 |
 
 **Etapa 11 — status: implementada e verificada (Registro Nº 098, 2026-08-18).**
@@ -1442,6 +1442,34 @@ existir, e o indicador **Longevidade** foi ligado ao PSF na mesma etapa —
 `min(100, aporte atual ÷ aporte necessário)`, lendo o cenário **base** da versão
 mais recente. Sem projeção salva, `null`: "não avaliado", nunca faixa ruim, para
 não punir o cliente por trabalho que o consultor ainda não fez.
+
+**Etapa 14 — status: implementada e verificada (Registro Nº 101, 2026-08-18).
+A linha original desta tabela estava errada, e a correção mudou o escopo.**
+
+Ela dizia "`AllocationTarget` com faixa-alvo por classe + alerta de desvio
+(PIP)", tratando como um modelo só o que são **dois eixos diferentes**:
+
+- **`AllocationTarget`** (§5, como especificado) é por **macrobloco** — para
+  onde vai a renda —, com `horizonMonths` para a trajetória hoje / 12 / 24 meses
+  que §11.4 pede. Feature `regua_trajetoria`, sobre `/relatorios/regua`.
+- **`InvestmentPolicyTarget`** (novo) é por **classe de investimento** — como o
+  já poupado está distribuído. Feature `pip_politica`, sobre
+  `/investimentos/analise`.
+
+E o PIP precisa de **faixa (mínimo e máximo)**, que o `AllocationTarget`
+especificado não tem: as seções do entregável são literalmente "faixas-alvo por
+classe" e "regras de rebalanceamento". Alvo único exigiria rebalancear a cada
+oscilação; a banda é o que torna a política operável.
+
+Os dois foram implementados, porque fazer só o PIP deixaria `regua_trajetoria`
+sem caminho — o mesmo defeito de capacidade sem porta de entrada que apareceu
+nos Registros Nº 090 e 094.
+
+**Uma validação que só existe porque a política é um conjunto:** mínimos somando
+mais de 100% tornam a política impossível de cumprir; máximos somando menos de
+100% deixam dinheiro sem classe onde caber. Nada disso aparece ao preencher
+classe por classe, e descobrir no rebalanceamento seria descobrir tarde — por
+isso as duas telas salvam em bloco e recusam o conjunto incoerente.
 
 ### Bloco IV — Consolidação e extensão (Etapas 16–17)
 

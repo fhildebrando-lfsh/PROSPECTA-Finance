@@ -1023,6 +1023,52 @@ sem contexto — daqui a um ano ninguém sabe se aquilo ainda vale.
 
 ---
 
+## 13-B. Política de Investimento e metas da Régua (com consultoria ativa)
+
+Duas coisas que aparecem dentro de telas que você já usa.
+
+### 13-B.1 Política de Investimento (PIP)
+
+Fica na **Análise de investimentos**, logo abaixo dos totais. Você define em que
+**faixa** cada classe deve ficar — por exemplo, renda fixa entre 40% e 60% —, e
+a tabela passa a mostrar, para cada classe: quanto ela representa hoje, qual a
+faixa, se está dentro ou fora, e **quanto precisaria entrar ou sair** para
+voltar à borda.
+
+**Por que faixa e não um alvo exato.** Um alvo exato exigiria rebalancear a cada
+oscilação do mercado — com custo e imposto a cada tremor. A faixa é o que torna
+a regra operável: só se mexe quando a posição sai dela.
+
+**Classe sem faixa aparece assim mesmo**, marcada como "fora da política".
+Dinheiro alocado onde a política não previu é justamente o que precisa ser
+discutido; escondê-lo faria a soma não fechar.
+
+**O sistema recusa política impossível.** Se os mínimos somarem mais de 100%,
+nenhuma carteira consegue cumprir; se os máximos somarem menos de 100%, sobra
+dinheiro sem onde caber. Nenhum dos dois aparece ao preencher classe por classe,
+então a validação é do conjunto, na hora de salvar.
+
+**A PROSPECTA mede o desvio; não diz o que comprar ou vender.** Isso é conversa
+com um profissional licenciado.
+
+### 13-B.2 Trajetória de metas da Régua
+
+Fica na **Régua de Alocação**. A banda que já existia ali é a referência da sua
+faixa de renda; esta seção acrescenta a meta **sua**, com prazo: hoje, em 12 e
+em 24 meses.
+
+A tabela mostra as quatro fatias — essencial, estilo de vida, obrigações,
+poupança —, quanto cada uma é hoje, a meta de cada horizonte e a distância até
+ela em pontos percentuais.
+
+**A Régua é instrumento de diagnóstico e trajetória, nunca norma.** Cobrar o
+ideal de imediato produz frustração e abandono; por isso a meta tem prazo.
+
+As metas de um horizonte precisam fechar em **100%** — são fatias da mesma
+renda. Salvar substitui as metas daquele horizonte e não toca nos demais.
+
+---
+
 ## 14. Cadastros
 
 Telas de configuração, cada uma com regra própria de quem pode editar:

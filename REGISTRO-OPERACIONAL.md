@@ -2706,7 +2706,24 @@
 
 ---
 
-## Próximo número de registro: **101**
+### Registro Nº 101
+- **Data:** 2026-08-18
+- **Etapa concluída:** **Etapa 14 — PIP (faixa-alvo por classe + desvio) e trajetória de metas da Régua.** A linha do roadmap estava errada, e a correção mudou o escopo.
+- **A inconsistência, reportada ao usuário antes de codar.** A linha dizia "`AllocationTarget` com faixa-alvo por classe + alerta de desvio (PIP)", tratando como um modelo só o que são **dois eixos diferentes**: `AllocationTarget`, como a §5 o especifica, é por **macrobloco** — para onde vai a renda — com `horizonMonths` para a trajetória de §11.4; o PIP é por **classe de investimento** — como o já poupado está distribuído. Além disso o PIP precisa de **faixa (mín/máx)**, que o `AllocationTarget` especificado não tem: as seções do entregável são literalmente "faixas-alvo por classe" e "regras de rebalanceamento". O usuário autorizou implementar os dois.
+- **Por que os dois, e não só o PIP:** fazer só o PIP deixaria a feature `regua_trajetoria` sem caminho — exatamente o defeito de capacidade sem porta de entrada dos Registros Nº 090 (simulador) e 094 (contrato de consultoria). Duas ocorrências recentes bastam para tratar isso como padrão a evitar, não como coincidência.
+- **Descrição:** migration `20260818160000_allocation_and_policy_targets` (dev → produção → código, mesmo checksum) com `AllocationTarget` e `InvestmentPolicyTarget`; motores puros `lib/method/pip.ts` e `lib/method/allocation-target.ts`; seções embutidas em `/investimentos/analise` (gate `pip_politica`) e `/relatorios/regua` (gate `regua_trajetoria`). As duas moram **dentro** das telas que já existiam, não em telas próprias: política separada da carteira que ela governa obrigaria o consultor a comparar números em duas abas.
+- **Faixa, não alvo — a decisão que torna o PIP operável.** Alvo exato exigiria rebalancear a cada oscilação, com custo e imposto a cada tremor de mercado. A banda é o que define **quando** se mexe.
+- **Uma validação que só existe porque a política é um conjunto:** mínimos somando mais de 100% tornam a política **aritmeticamente impossível**; máximos somando menos de 100% deixam dinheiro sem classe onde caber. Nada disso aparece ao preencher classe por classe, e descobrir no rebalanceamento seria descobrir tarde — por isso ambas as telas salvam em bloco e recusam o conjunto incoerente, em vez de validar campo a campo. Mesma lógica para as metas da Régua, que precisam fechar em 100%.
+- **Duas decisões contra número que mente:** classe **sem faixa** entra na tabela marcada como "fora da política" em vez de ser omitida — omitir produziria uma soma que não fecha em 100%, e dinheiro alocado fora da política é justamente o que o consultor precisa ver; e macrobloco **sem meta** fica `null`, nunca zero — zero afirmaria "a meta é não gastar nada aqui", o que para Essencial seria absurdo.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **805/805** (32 casos novos: 19 no PIP, 13 nas metas); integração **119/119**; `npm run build` limpo.
+- **Limite de verificação declarado:** as duas seções não foram vistas logadas — exigem contrato ativo e sessão. Vale notar que são seções **embutidas**: quem não tem o gate simplesmente não as vê, sem mensagem de "contrate", porque a Análise e a Régua são telas de plano e enchê-las de anúncio atrapalharia quem só quer ver a carteira.
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §5 (modelo original), §11.4 (trajetória), §12.1 (PIP) e §6 (Bloco III, Etapa 14 — linha corrigida), Registros Nº 090 e 094 (o padrão de defeito evitado), `MANUAL-DE-USO.md` §13-B.
+
+---
+
+## Próximo número de registro: **102**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

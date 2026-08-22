@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MetasSection } from "./MetasSection";
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { monthRange } from "@/lib/finance/dates";
@@ -164,6 +165,18 @@ export default async function ReguaPage({ searchParams }: { searchParams: Promis
           )}
         </div>
       )}
+    {/* Etapa 14 (§11.4) — a meta deste cliente, com prazo. A banda acima é a
+        referência genérica da faixa de renda; esta é a trajetória combinada. */}
+      <MetasSection
+        workspaceId={workspaceId}
+        actualPercent={{
+          ESSENCIAL: pct.essencial,
+          ESTILO_DE_VIDA: pct.estiloDeVida,
+          OBRIGACAO: pct.obrigacao,
+          POUPANCA: pct.poupanca,
+        }}
+      />
+
     </div>
   );
 }

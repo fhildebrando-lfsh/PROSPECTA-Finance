@@ -114,6 +114,8 @@ model Workspace {
   instrumentDispatches InstrumentDispatch[]
   debts            Debt[]
   retirementProjections RetirementProjection[]
+  allocationTargets AllocationTarget[]
+  investmentPolicyTargets InvestmentPolicyTarget[]
   entitlements     Entitlement[]
   accessLogs       AccessLog[]
   notifications    Notification[]
@@ -1582,6 +1584,7 @@ model InvestmentClass {
   sortOrder  Int    @map("sort_order")
 
   investments Investment[]
+  policyTargets InvestmentPolicyTarget[]
 
   @@map("investment_classes")
 }
@@ -1933,4 +1936,59 @@ model RetirementProjection {
 
   @@unique([engagementId, scenario, version])
   @@map("retirement_projections")
+}
+
+/// §11.4 — metas da **Régua de Alocação**, por macrobloco.
+///
+/// Registro por horizonte permite a trajetória que §11.4 pede (hoje / 12 meses
+/// / 24 meses) sem inventar histórico: cada linha é uma meta declarada para um
+/// prazo, não uma medição.
+///
+/// Não confundir com `InvestmentPolicyTarget`, logo abaixo. Este eixo é **para
+/// onde vai a renda** (essencial, estilo de vida, obrigação, poupança); aquele é
+/// **como o dinheiro já poupado está distribuído** entre classes de
+/// investimento. O roadmap tratava os dois como um só modelo, e não são —
+/// corrigido em 2026-08-18 (Registro Nº 101).
+model AllocationTarget {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId   String     @map("workspace_id") @db.Uuid
+  macroBloco    MacroBloco @map("macro_bloco")
+  targetPercent Decimal    @map("target_percent") @db.Decimal(5, 2)
+  /// Nulo = posição-alvo atual (sem prazo); preenchido = meta de trajetória.
+  horizonMonths Int?       @map("horizon_months")
+  setBy         String     @map("set_by") @db.Uuid
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, macroBloco, horizonMonths])
+  @@map("allocation_targets")
+}
+
+/// §12.1 (PIP) — faixa-alvo por **classe de investimento**.
+///
+/// É uma **faixa**, não um alvo único, e isso é o que torna a política
+/// operável: rebalanceamento acontece quando a posição sai da banda, e um alvo
+/// exato exigiria rebalancear a cada oscilação. As seções do entregável PIP
+/// dizem isso literalmente — "faixas-alvo por classe" e "regras de
+/// rebalanceamento".
+///
+/// A PROSPECTA registra a política e mede o desvio; **nunca indica produto ou
+/// ativo** (§3.1).
+model InvestmentPolicyTarget {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  classCode   String   @map("class_code")
+  minPercent  Decimal  @map("min_percent") @db.Decimal(5, 2)
+  maxPercent  Decimal  @map("max_percent") @db.Decimal(5, 2)
+  notes       String?
+  setBy       String   @map("set_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  class     InvestmentClass @relation(fields: [classCode], references: [code])
+
+  @@unique([workspaceId, classCode])
+  @@map("investment_policy_targets")
 }

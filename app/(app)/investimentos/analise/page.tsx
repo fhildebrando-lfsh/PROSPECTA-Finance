@@ -12,6 +12,7 @@ import {
 import { Decimal } from "@/lib/finance/types";
 import { formatCurrencyBRL } from "@/lib/format";
 import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
+import { PipSection } from "./PipSection";
 import { MonthlyChart, type MonthlyChartPoint } from "@/components/charts/MonthlyChart";
 
 const ALLOCATION_COLORS = ["#818cf8", "#34d399", "#fbbf24", "#f87171", "#38bdf8", "#c084fc", "#fb923c", "#4ade80", "#f472b6", "#a3e635"];
@@ -142,6 +143,16 @@ export default async function AnaliseInvestimentosPage() {
           <MonthlyChart data={incomeChartData} />
         </div>
       )}
+
+      {/* Etapa 14 — a política mora ao lado da carteira que ela governa. */}
+      <PipSection
+        workspaceId={workspaceId}
+        positions={computed.map((r) => ({
+          classCode: r.inv.classCode,
+          classLabel: r.inv.class.labelPt,
+          currentValue: r.currentValue,
+        }))}
+      />
 
       <div className="min-w-0 overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
         <table className="w-full min-w-[640px] border-collapse text-sm">

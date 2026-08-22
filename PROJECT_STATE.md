@@ -15,8 +15,43 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (Etapa 13 — PLA, projeção de longo
-> prazo, e o indicador Longevidade do PSF ligado — Registro Nº 100).**
+> **Última atualização real: 2026-08-18 (Etapa 14 — PIP e trajetória de metas
+> da Régua. **A linha do roadmap estava errada** — Registro Nº 101).**
+>
+> **A inconsistência, reportada antes de codar.** A linha dizia
+> "`AllocationTarget` com faixa-alvo por classe (PIP)", tratando como um modelo
+> só o que são **dois eixos**: `AllocationTarget` é por **macrobloco** (para
+> onde vai a renda, §11.4); o PIP é por **classe de investimento** (como o já
+> poupado está distribuído, §12.1). E o PIP precisa de **faixa mín/máx**, que o
+> modelo especificado não tem.
+>
+> **Implementei os dois**, porque fazer só o PIP deixaria `regua_trajetoria` sem
+> caminho — o mesmo defeito de capacidade sem porta de entrada dos Registros
+> Nº 090 e 094. Duas ocorrências recentes bastam para tratar como padrão a
+> evitar, não coincidência.
+>
+> Motores puros `lib/method/pip.ts` e `lib/method/allocation-target.ts`; seções
+> **embutidas** em `/investimentos/analise` e `/relatorios/regua` — política
+> separada da carteira que governa obrigaria a comparar números em duas abas.
+>
+> **Faixa e não alvo** é o que torna o PIP operável: alvo exato exigiria
+> rebalancear a cada oscilação, com custo e imposto a cada tremor.
+>
+> **Validação de conjunto, não de campo:** mínimos somando >100% tornam a
+> política **impossível**; máximos somando <100% deixam dinheiro sem onde caber.
+> Nada disso aparece campo a campo, e descobrir no rebalanceamento seria tarde —
+> por isso as telas salvam em bloco e recusam o conjunto incoerente.
+>
+> **Duas decisões contra número que mente:** classe sem faixa aparece marcada
+> "fora da política" em vez de omitida (omitir faria a soma não fechar em 100%);
+> macrobloco sem meta fica `null`, nunca zero (zero afirmaria "a meta é não
+> gastar nada aqui" — absurdo para Essencial).
+>
+> **Limite declarado:** seções não vistas logadas. 805 unitários, 119 de
+> integração, build limpo.
+
+> **Última atualização anterior: 2026-08-18 (Etapa 13 — PLA e o indicador
+> Longevidade do PSF — Registro Nº 100).**
 >
 > `RetirementProjection` + `lib/method/retirement.ts` (puro) +
 > `/patrimonio/longevidade` gateada por `pla_projecao`. Migration dev →
