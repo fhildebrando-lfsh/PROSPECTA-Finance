@@ -112,6 +112,7 @@ model Workspace {
   aiInteractions   AiInteraction[]
   diagnosticResponses DiagnosticResponse[]
   instrumentDispatches InstrumentDispatch[]
+  debts            Debt[]
   entitlements     Entitlement[]
   accessLogs       AccessLog[]
   notifications    Notification[]
@@ -1287,6 +1288,7 @@ model EntryGroup {
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   entries   Entry[]
+  debts     Debt[]
 
   @@map("entry_groups")
 }
@@ -1842,4 +1844,57 @@ model InstrumentDispatch {
 
   @@unique([engagementId, instrument])
   @@map("instrument_dispatches")
+}
+
+/// §10 Fase 3 — Mapa de Endividamento e Crédito (MEC).
+enum DebtStatus {
+  EM_DIA
+  NEGATIVADO
+  RENEGOCIADO
+  QUITADO
+}
+
+/// §10 Fase 3 — MEC. **Não substitui "Despesas parceladas"**
+/// (`lib/finance/open-installments.ts`, que continua lendo `Entry` normalmente):
+/// é uma camada de gestão de crédito por cima, opcionalmente ligada às parcelas
+/// via `entryGroupId`.
+///
+/// A separação é a razão de a tabela existir. `openInstallmentGroups()` sabe
+/// quanto falta pagar, porque foi desenhado para acompanhar parcelas; não sabe
+/// **quem é o credor, quanto custa e se há negativação** — e é disso que a
+/// Fase 3 trata. Ordenar dívida por saldo, que é o que o dado de parcela
+/// permite, leva a quitar a maior em vez da mais cara.
+///
+/// `entryGroupId` é nulo para dívida que não existe como parcelamento: cheque
+/// especial e rotativo do cartão não têm parcelas a lançar, e são justamente as
+/// duas modalidades que §9.6 classifica como tóxicas.
+model Debt {
+  id                  String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId         String     @map("workspace_id") @db.Uuid
+  /// Liga ao EntryGroup do parcelamento correspondente, quando existir.
+  entryGroupId        String?    @map("entry_group_id") @db.Uuid
+  creditorName        String     @map("creditor_name")
+  modality            String
+  outstandingBalance  Decimal    @map("outstanding_balance") @db.Decimal(14, 2)
+  /// Custo Efetivo Total anualizado, em % — ordena o MEC por **custo**, não por
+  /// saldo (§10). Nulo quando o cliente ainda não levantou o número.
+  cetAnnualPercent    Decimal?   @map("cet_annual_percent") @db.Decimal(6, 2)
+  /// Grafado sem acento, ao contrário do rascunho em
+  /// ARQUITETURA-METODO-PROSPECTAR.md §5.4: nome de campo com acento destoaria
+  /// de todo o resto do schema e complica ferramenta que não normaliza Unicode.
+  hasNegativacao      Boolean    @default(false) @map("has_negativacao")
+  hasLegalAction      Boolean    @default(false) @map("has_legal_action")
+  status              DebtStatus @default(EM_DIA)
+  quitationTargetDate DateTime?  @map("quitation_target_date") @db.Date
+  notes               String?
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  /// `SetNull`, não `Cascade`: apagar o parcelamento não pode apagar o registro
+  /// de crédito — a dívida continua existindo no mundo mesmo sem as parcelas.
+  entryGroup EntryGroup? @relation(fields: [entryGroupId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@map("debts")
 }

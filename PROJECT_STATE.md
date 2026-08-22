@@ -15,8 +15,48 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (Etapa 10-B — envio automático dos
-> instrumentos. **Fecha o Bloco II** — Registro Nº 097).**
+> **Última atualização real: 2026-08-18 (Etapa 11 — `Debt` / MEC. **Abre o
+> Bloco III** — Registro Nº 098).**
+>
+> `Debt` + `DebtStatus`, motor puro `lib/method/mec.ts`, tela `/patrimonio/mec`
+> gateada por `mec_completo` (METODO, fase 3 desde o Nº 096). Migration em dev →
+> produção → código.
+>
+> **Antes de escrever, verifiquei se já existia** — a regra do projeto proíbe
+> duplicar. `/patrimonio/dividas` existe desde o Bloco I e deriva dívidas
+> **inteiramente dos parcelamentos de `Entry`**; não havia modelo `Debt`. A
+> lacuna é a de §5.4: aquele módulo não sabe credor, custo nem negativação, e
+> ordenar por saldo leva a **quitar a maior em vez da mais cara**. As duas
+> telas coexistem, e a nova diz isso na primeira linha, com link para a antiga.
+>
+> **O argumento decisivo para a tabela separada:** cheque especial e rotativo
+> **não existem como parcelamento** — não há parcelas a lançar. São exatamente
+> as duas modalidades que §9.6 chama de tóxicas, e escapariam de qualquer
+> análise baseada só em `Entry`. Há teste cobrindo esse caso.
+>
+> **Dívida tóxica** = modalidade em `{Rotativo, Cheque especial}` **ou** CET
+> ≥ 100% a.a. (os "três dígitos" literais de §9.6, isolados em constante). A
+> classificação devolve **o motivo**, e a tela mostra.
+>
+> **A decisão que evita mentir por ordenação:** dívida **sem CET vai para o
+> fim**, nunca tratada como custo zero — ordená-la à frente sugeriria que é
+> barata. A tela conta quantas estão assim e diz que é o dado que mais falta.
+>
+> **`SET NULL` no vínculo com o parcelamento**, não `CASCADE`: apagar o
+> `EntryGroup` não pode apagar o registro de crédito.
+>
+> **Desvio declarado:** §5.4 grafa `hasNegativação` com acento; gravei
+> `hasNegativacao`, para não destoar do resto do schema.
+>
+> **Uma asserção minha estava errada e o teste pegou** (`semCet` era 2, não 1 —
+> o cheque especial de um teste anterior também não tinha CET). O modelo estava
+> certo; a expectativa é que não.
+>
+> **Limite declarado:** tela não vista logada — exige contrato ativo e sessão.
+> 731 unitários, 119 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-17 (Etapa 10-B — envio automático dos
+> instrumentos, fecha o Bloco II — Registro Nº 097).**
 >
 > `InstrumentDispatch` + motor puro `dispatch-engine.ts` + impuro
 > `run-dispatches.ts`, ligado à rotina diária de cron. Migration em dev →

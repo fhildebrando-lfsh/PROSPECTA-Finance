@@ -2651,7 +2651,26 @@
 
 ---
 
-## Próximo número de registro: **098**
+### Registro Nº 098
+- **Data:** 2026-08-18
+- **Etapa concluída:** **Etapa 11 — `Debt` / Mapa de Endividamento e Crédito (§10, Fase 3). Abre o Bloco III.**
+- **Descrição:** `Debt` + enum `DebtStatus` (migration `20260818120000_debt_mec`, aplicada em dev → produção → código, mesmo checksum), motor puro `lib/method/mec.ts`, tela `/patrimonio/mec` gateada por `mec_completo` — feature METODO que já existia no seed e que, desde o Registro Nº 096, tem fase 3 atribuída.
+- **A primeira coisa que fiz foi checar se já existia.** Há uma tela `/patrimonio/dividas` desde o Bloco I, e a regra do projeto proíbe duplicar. Ela deriva dívidas **inteiramente dos parcelamentos de `Entry`** via `openInstallmentGroups()` e responde "quanto falta pagar". Não existia modelo `Debt`. A lacuna é a que §5.4 já apontava: aquele módulo não sabe **quem é o credor, quanto custa e se há negativação** — e ordenar por saldo, que é o que o dado de parcela permite, leva a quitar a maior em vez da mais cara. As duas telas coexistem, e a nova diz isso na primeira linha, com link para a antiga.
+- **O argumento decisivo para a tabela separada:** cheque especial e rotativo do cartão **não existem como parcelamento** — não há parcelas a lançar. São exatamente as duas modalidades que §9.6 nomeia como tóxicas, e escapariam de qualquer análise baseada só em `Entry`. Um teste de integração cobre esse caso explicitamente.
+- **Regra de dívida tóxica**, a aprovada na Pendência #9: modalidade em `{Rotativo do cartão, Cheque especial}` **ou** CET ≥ 100% a.a. — os "três dígitos ao ano" citados literalmente em §9.6, isolados numa constante para quem discordar poder discutir o número sem procurar dentro da lógica. A classificação sempre devolve **por que** classificou assim, e a tela mostra: rótulo sem motivo não ajuda ninguém a decidir.
+- **A decisão que evita uma mentira por ordenação:** dívida **sem CET informado vai para o fim** entre as não-tóxicas, e não é tratada como custo zero. Ordená-la à frente sugeriria que é barata. Em vez disso a tela conta quantas estão assim e diz que é o dado que mais falta.
+- **`SET NULL`, não `CASCADE`, no vínculo com o parcelamento:** apagar o `EntryGroup` não pode apagar o registro de crédito — a dívida continua existindo no mundo mesmo sem as parcelas lançadas. Coberto por teste.
+- **Desvio do rascunho de §5.4, declarado:** o campo aparece lá como `hasNegativação`, **com acento**. Gravei `hasNegativacao`: nome de campo acentuado destoaria de todo o resto do schema e complica ferramenta que não normaliza Unicode. A coluna no banco (`has_negativacao`) segue a mesma convenção.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **731/731** (17 casos novos no motor); integração **119/119** (4 novos, contra o banco de dev); `npm run build` limpo, com `/patrimonio/mec` na saída.
+- **Uma asserção minha estava errada e o teste pegou:** eu esperava `semCet = 1`, e o correto era 2 — o cheque especial criado num teste anterior também não tinha CET. O modelo estava certo; a expectativa é que não. Corrigida com o motivo escrito no próprio teste.
+- **Limite de verificação declarado:** a tela não foi vista logada — exige `ConsultingEngagement` ativo e sessão, e eu não insiro credenciais. Cobertura por `tsc`, build e testes; o visual do JSX segue sem conferência.
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §5.4 e §6 (Bloco III, Etapa 11), Metodologia v5.0 §9.6 e §10 Fase 3, Pendência #9, Registro Nº 096 (que atribuiu a fase 3 a `mec_completo`), `MANUAL-DE-USO.md` §12.5.
+
+---
+
+## Próximo número de registro: **099**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

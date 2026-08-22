@@ -1359,11 +1359,31 @@ de pré-requisito do §4.9 é aplicação de código sobre o PSF (Etapa 5) + `De
 
 | Etapa | Entrega | Depende de |
 |---|---|---|
-| **11** | `Debt` (5.4) — MEC completo: CET, credor, negativação, plano de quitação; migração/ligação opcional com `EntryGroup` existente | Bloco I |
+| **11** ✅ | `Debt` (5.4) — MEC completo: CET, credor, negativação, plano de quitação; migração/ligação opcional com `EntryGroup` existente | Bloco I |
 | **12** | `InsurancePolicy` + MRP (mapa de coberturas atuais × necessárias) | Etapa 7 (função Proteção) |
 | **13** | Motor de projeção de longo prazo + `RetirementProjection` (PLA, 3 cenários) | Etapa 8 (precisa de `ConsultingEngagement` para existir) |
 | **14** | `AllocationTarget` com faixa-alvo por classe + alerta de desvio (PIP) sobre a Análise de investimentos já existente (`app/(app)/investimentos/analise`) | Etapa 1 (Régua) |
 | **15** | PCP + teste de liquidez sucessória (checklist estruturado sobre `Deliverable`, código PCP) | Etapa 9 |
+
+**Etapa 11 — status: implementada e verificada (Registro Nº 098, 2026-08-18).**
+`Debt` + `DebtStatus`, motor puro `lib/method/mec.ts`, tela `/patrimonio/mec`
+gateada por `mec_completo` (METODO, Fase 3).
+
+**Não substitui Patrimônio → Dívidas.** Aquela tela continua lendo os
+parcelamentos de `Entry` por `openInstallmentGroups()` e responde "quanto falta
+pagar"; esta responde "quanto custa, para quem devo e em que ordem sair".
+Cheque especial e rotativo — as duas modalidades que §9.6 nomeia como tóxicas —
+normalmente **não existem como parcelamento**, e por isso escapariam de
+qualquer análise baseada só em lançamento. Era essa a lacuna.
+
+A regra de dívida tóxica é a aprovada na Pendência #9: modalidade em
+`{Rotativo do cartão, Cheque especial}` **ou** CET ≥ 100% a.a. — os "três
+dígitos ao ano" citados literalmente em §9.6. A ordenação é por **custo**, não
+por saldo (§10), e **dívida sem CET vai para o fim, nunca para a frente**:
+ausência de dado não é custo zero, e ordená-la como barata seria mentir.
+
+Um desvio do rascunho de §5.4, declarado: o campo `hasNegativação` foi grafado
+`hasNegativacao`, sem acento, para não destoar do resto do schema.
 
 ### Bloco IV — Consolidação e extensão (Etapas 16–17)
 

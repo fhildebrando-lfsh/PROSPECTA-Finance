@@ -14,6 +14,15 @@
 
 ---
 
+## 2026-08-18
+
+### Adicionado (Registro Nº 098) — Etapa 11
+- **Mapa de Dívidas (MEC)**, em Patrimônio. Registre cada dívida com credor, modalidade, saldo, **CET** e situação (em dia, negativado, renegociado, quitado), e o mapa ordena por **custo** — porque cada real amortizado na dívida mais cara rende mais que na maior.
+- **Sinaliza as dívidas caras e diz por quê**: rotativo do cartão e cheque especial, ou juros de três dígitos ao ano.
+- Funciona para dívidas que **não** estão lançadas como parcela — que é justamente o caso do cheque especial e do rotativo.
+- Em Patrimônio → Dívidas nada muda: aquela tela continua acompanhando o que já está parcelado.
+- Disponível com consultoria ativa.
+
 ## 2026-08-17
 
 ### Adicionado (Registro Nº 097) — Etapa 10-B

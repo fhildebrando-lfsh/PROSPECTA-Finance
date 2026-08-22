@@ -482,6 +482,42 @@ consultoria — faz parte do Mapa Funcional do Patrimônio completo, que exige u
 
 ---
 
+### 12.5 Mapa de Dívidas — MEC (com consultoria ativa)
+
+Enquanto **Dívidas** mostra o que já está lançado como parcela e responde
+*quanto falta pagar*, o **Mapa de Dívidas** responde outra coisa: **quanto
+custa, para quem você deve, e em que ordem sair**.
+
+**Por que a ordem importa mais que o tamanho.** Quitar a maior dívida parece
+progresso, mas quem manda no seu bolso é o juro. Cada real amortizado na dívida
+mais cara rende mais do que na maior — por isso o mapa ordena por **custo**, e
+não por saldo.
+
+**O que você registra em cada dívida:** credor, modalidade, saldo devedor, o
+**CET ao ano** (está no contrato ou na fatura), a situação (em dia, negativado,
+renegociado, quitado), se há ação judicial e uma meta de quitação.
+
+**O CET é o campo que mais importa.** Sem ele o mapa não consegue dizer qual sai
+primeiro, e a tela mostra quantas dívidas ainda estão sem esse número. Uma
+dívida sem CET vai para o **fim** da fila, nunca para a frente: não saber quanto
+custa não é o mesmo que custar pouco.
+
+**Dívidas caras aparecem sinalizadas, com o motivo escrito** — rotativo do
+cartão e cheque especial, que são as modalidades mais caras do mercado, ou
+juros de três dígitos ao ano.
+
+**Serve para dívidas que não estão no sistema como parcela.** Cheque especial e
+rotativo não têm parcelas a lançar — e são justamente os dois casos mais caros.
+Eles escapariam de qualquer conta baseada só nos seus lançamentos.
+
+**O mapa diagnostica e ordena; não indica produto nem credor.** Renegociar é
+decisão sua com quem você deve.
+
+Dívida paga: prefira marcar como **quitada** a excluir. Ela sai do mapa mas
+continua no histórico — o que já foi pago é parte do trabalho.
+
+---
+
 ## 12-A. Proteção e Segurança (a partir do plano Max)
 
 Menu dedicado a uma pergunta diferente das outras telas: **o que aconteceria com suas
