@@ -2723,7 +2723,25 @@
 
 ---
 
-## Próximo número de registro: **102**
+### Registro Nº 102
+- **Data:** 2026-08-18
+- **Etapa concluída:** **Etapa 15 — PCP e teste de liquidez sucessória. Fecha o Bloco III e completa os sete indicadores do PSF.**
+- **Descrição:** `lib/method/pcp.ts` (puro) com o checklist canônico e a matemática do teste; tela `/patrimonio/sucessao` gateada por `pcp_sucessorio`. **Sem migration** — o checklist mora dentro do `Deliverable` de código PCP, como a linha do roadmap pedia, num campo `checklist` **opcional** que não invalida nenhum dos entregáveis já gravados: os outros nove simplesmente não têm a chave.
+- **O teste é derivado, não perguntado.** Patrimônio, liquidez e capital de seguro de vida já estão no sistema; pedir de novo convidaria divergência entre o que o cliente digita aqui e o que cadastrou lá. O patrimônio usa **`buildPatrimonyItems`**, a mesma função da Etapa 7 que desconta a dupla contagem entre carteira de investimento e posição hospedada nela (Registro Nº 074). Somar `assets + investments + wallets` direto teria reintroduzido exatamente aquele bug — a função existe para isso, e reusá-la foi decisão consciente, não conveniência.
+- **Alíquotas como parâmetro, não constante escondida.** O ITCMD é estadual e vai de 2% a 8%; os 4% do padrão são a de São Paulo. A Metodologia deixa ITCMD/SP como pendência jurídica (#15), então a tela **expõe o campo e diz na própria interface** que o padrão é ponto de partida e não afirmação sobre o caso. Custas e honorários idem.
+- **O checklist é agrupado em quatro frentes porque falham por motivos diferentes:** documento que não existe, estrutura que force inventário caro, falta de dinheiro na hora, e — a que mais custa e menos aparece — família que não sabe de nada. Cada item carrega o **porquê**, exibido na tela: checklist sem motivo vira burocracia, e o consultor precisa poder explicar cada linha.
+- **Uma decisão de compatibilidade:** `checklistProgress` **ignora chave desconhecida** no estado gravado e conta item novo do catálogo como pendente. É o que permite acrescentar uma pergunta ao checklist sem corromper um PCP antigo — ele passa a ter um pendente a mais, em vez de virar ilegível.
+- **Escrita sempre no rascunho.** Um PCP validado é a palavra do consultor numa data; alterar seu conteúdo apagaria a prova do que foi dito. Se o mais recente já estiver validado, uma versão nova nasce como rascunho — mesma regra da Etapa 9.
+- **Continuidade saiu de "não avaliado", e com isso o PSF fica completo.** §5.3.1 registrava confiança baixa para o indicador "só porque depende de entidade que ainda não existe (checklist do PCP)". Agora existe: `(itens concluídos ÷ total) × 100`, lendo o PCP mais recente; sem PCP produzido devolve `null` — nunca faixa ruim, mesma decisão de `longevidade` no Registro Nº 100. Os **sete** indicadores previstos em §8.3 passam a existir de fato.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **825/825** (20 casos novos: 15 no motor, 5 no indicador); integração **119/119**; `npm run build` limpo, com `/patrimonio/sucessao` na saída.
+- **Limite de verificação declarado:** a tela não foi vista logada — exige contrato ativo e sessão. Além disso, o teste de liquidez só produz número com patrimônio cadastrado; num workspace vazio ele passa trivialmente, com custo zero.
+- **Documentos relacionados:** `ARQUITETURA-METODO-PROSPECTAR.md` §5.3.1 (indicador), §12.1 (PCP) e §6 (Bloco III, Etapa 15), Metodologia v5.0 Pendência #15 (ITCMD), Registros Nº 074 (dupla contagem) e 100 (mesma decisão de "não avaliado"), `MANUAL-DE-USO.md` §12.7.
+
+---
+
+## Próximo número de registro: **103**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

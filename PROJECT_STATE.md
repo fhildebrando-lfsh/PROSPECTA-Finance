@@ -15,8 +15,41 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (Etapa 14 — PIP e trajetória de metas
-> da Régua. **A linha do roadmap estava errada** — Registro Nº 101).**
+> **Última atualização real: 2026-08-18 (Etapa 15 — PCP e teste de liquidez
+> sucessória. **Fecha o Bloco III e completa os sete indicadores do PSF** —
+> Registro Nº 102).**
+>
+> `lib/method/pcp.ts` (puro) + `/patrimonio/sucessao` gateada por
+> `pcp_sucessorio`. **Sem migration**: o checklist mora dentro do `Deliverable`
+> de código PCP, num campo `checklist` **opcional** que não invalida os nove
+> entregáveis restantes.
+>
+> **O teste é derivado, não perguntado** — patrimônio, liquidez e seguro de
+> vida já estão no sistema. O patrimônio usa **`buildPatrimonyItems`**, a mesma
+> função da Etapa 7 que desconta a dupla contagem entre carteira de
+> investimento e posição hospedada nela (Nº 074). Somar as tabelas direto teria
+> reintroduzido aquele bug; reusar foi decisão consciente.
+>
+> **Alíquotas como parâmetro.** ITCMD é estadual (2%–8%); os 4% do padrão são
+> de São Paulo, e a tela **diz na interface** que é ponto de partida, não
+> afirmação sobre o caso. Metodologia deixa ITCMD/SP como pendência #15.
+>
+> **Compatibilidade do checklist:** chave desconhecida é ignorada e item novo
+> do catálogo conta como pendente — permite acrescentar pergunta sem corromper
+> PCP antigo. E a escrita é **sempre no rascunho**: PCP validado é palavra do
+> consultor numa data.
+>
+> **Continuidade saiu de "não avaliado" e o PSF fica completo.** §5.3.1 dizia
+> confiança baixa "só porque depende de entidade que ainda não existe". Agora
+> existe. Sem PCP produzido, `null` — nunca faixa ruim. Os **sete** indicadores
+> de §8.3 passam a existir de fato.
+>
+> **Limite declarado:** tela não vista logada; e o teste só produz número com
+> patrimônio cadastrado — em workspace vazio ele passa trivialmente.
+> 825 unitários, 119 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-18 (Etapa 14 — PIP e trajetória de
+> metas da Régua — Registro Nº 101).**
 >
 > **A inconsistência, reportada antes de codar.** A linha dizia
 > "`AllocationTarget` com faixa-alvo por classe (PIP)", tratando como um modelo

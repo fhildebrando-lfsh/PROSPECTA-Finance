@@ -20,6 +20,7 @@ import {
   protecaoCompleta,
   construcaoPatrimonial,
   longevidade,
+  continuidade,
   type PsfFaixa,
   type PsfIndicatorResult,
 } from "@/lib/method/psf";
@@ -31,6 +32,7 @@ import {
   faixaDoSnapshot,
   faixaIndex,
 } from "@/lib/method/psf-progress";
+import { checklistProgress } from "@/lib/method/pcp";
 import { SaveSnapshotButton } from "./SaveSnapshotButton";
 import { formatDateBR } from "@/lib/format";
 
@@ -66,13 +68,14 @@ export default async function SaudeFinanceiraPage() {
   const workspaceId = await requireWorkspaceId();
 
   // Etapa 5 do Método (2026-08-15) — PSF nível 1 (3 indicadores) é Pro; nível 2 (+2) é Max.
-  const [nivel1, nivel2, temLongevidade] = await Promise.all([
+  const [nivel1, nivel2, temLongevidade, temContinuidade] = await Promise.all([
     hasFeature(workspaceId, "psf_nivel_1"),
     hasFeature(workspaceId, "psf_nivel_2"),
     // §5.3.1 — Longevidade é indicador de **método**, e só existe depois que a
     // Etapa 13 passou a produzir `RetirementProjection`. Até 2026-08-18 ele
     // aparecia como "só com consultor ativo" sem ter de onde sair.
     hasFeature(workspaceId, "pla_projecao"),
+    hasFeature(workspaceId, "pcp_sucessorio"),
   ]);
 
   if (!nivel1) {
@@ -88,7 +91,7 @@ export default async function SaudeFinanceiraPage() {
   }
 
   const today = new Date();
-  const [dbEntries, activeWallets, reconciliationByWallet, snapshots, projecaoBase] = await Promise.all([
+  const [dbEntries, activeWallets, reconciliationByWallet, snapshots, projecaoBase, pcpMaisRecente] = await Promise.all([
     prisma.entry.findMany({
       where: { workspaceId },
       select: {
@@ -123,6 +126,14 @@ export default async function SaudeFinanceiraPage() {
     temLongevidade
       ? prisma.retirementProjection.findFirst({
           where: { workspaceId, scenario: "base" },
+          orderBy: [{ version: "desc" }, { createdAt: "desc" }],
+        })
+      : Promise.resolve(null),
+    // Etapa 15 — o checklist sucessório mora dentro do Deliverable de código
+    // PCP, e é dele que sai o indicador Continuidade.
+    temContinuidade
+      ? prisma.deliverable.findFirst({
+          where: { workspaceId, code: "PCP" },
           orderBy: [{ version: "desc" }, { createdAt: "desc" }],
         })
       : Promise.resolve(null),
@@ -220,6 +231,16 @@ export default async function SaudeFinanceiraPage() {
             : null,
         )
       : null,
+    // Sem PCP produzido não há checklist com que medir — `null`, nunca faixa ruim.
+    continuidade: temContinuidade
+      ? continuidade(
+          pcpMaisRecente
+            ? checklistProgress(
+                (((pcpMaisRecente.content as { checklist?: Record<string, boolean> } | null)?.checklist) ?? {}),
+              ).percentual
+            : null,
+        )
+      : null,
   };
 
   const cards: { key: string; label: string; result: PsfIndicatorResult | null; disponivel: boolean }[] = [
@@ -229,6 +250,7 @@ export default async function SaudeFinanceiraPage() {
     { key: "protecao", label: "Proteção", result: indicators.protecao, disponivel: nivel2 },
     { key: "construcao", label: "Construção Patrimonial", result: indicators.construcao, disponivel: nivel2 },
     { key: "longevidade", label: "Longevidade", result: indicators.longevidade, disponivel: temLongevidade },
+    { key: "continuidade", label: "Continuidade", result: indicators.continuidade, disponivel: temContinuidade },
   ];
 
   // A foto mais recente é a régua da comparação. `snapshots` vem em ordem

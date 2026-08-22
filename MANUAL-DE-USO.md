@@ -559,6 +559,45 @@ premissas se confirmarem. A PROSPECTA não indica onde investir.
 
 ---
 
+### 12.7 Sucessão (PCP) — com consultoria ativa
+
+Sucessão tem **custo** e tem **prazo**. Esta tela responde duas coisas: se
+existiria dinheiro para impostos e custas sem a família precisar vender bens com
+pressa, e o que ainda falta organizar.
+
+**O teste de liquidez sucessória.** O sistema soma seu patrimônio, o que você
+tem em contas e o capital dos seus seguros de vida — tudo já cadastrado, você
+não precisa digitar de novo — e compara com o custo estimado da sucessão. O
+resultado é **Passa** ou **Não passa**, e quando não passa a tela diz quanto
+faltaria e **qual percentual do patrimônio a família teria de vender às
+pressas**, geralmente com desconto.
+
+**O seguro de vida conta, e isso não é detalhe.** Ele não passa por inventário e
+chega antes dele — é a ferramenta clássica para cobrir justamente esse custo.
+
+**As alíquotas são ajustáveis, porque variam.** O ITCMD é imposto estadual e vai
+de 2% a 8%. O sistema começa com 4%, que é a alíquota de São Paulo — ponto de
+partida, não afirmação sobre o seu caso. Ajuste ao estado, e o custo recalcula.
+
+**O checklist sucessório** cobre quatro frentes, que falham por motivos
+diferentes: **documentos** (testamento, beneficiários atualizados, procuração),
+**estrutura patrimonial** (regime de bens, holding, bens no exterior),
+**liquidez** (o teste acima, seguro dimensionado) e **comunicação**.
+
+Essa última merece destaque: *"a família sabe o que existe e onde encontrar?"* é
+a falha mais cara e a menos visível. Patrimônio que ninguém conhece é patrimônio
+que se perde.
+
+Cada item explica **por que existe** — a ideia não é cumprir tabela, é entender
+o risco. Quem marca é o **consultor responsável**; você acompanha o que já foi
+verificado.
+
+**Este plano organiza e mede; não substitui advogado nem contador.** Testamento,
+holding e doação em vida têm efeitos jurídicos e tributários que exigem
+profissional habilitado. A PROSPECTA aponta a lacuna e o custo.
+
+---
+
 ## 12-A. Proteção e Segurança (a partir do plano Max)
 
 Menu dedicado a uma pergunta diferente das outras telas: **o que aconteceria com suas

@@ -135,6 +135,19 @@ export interface DeliverableSection {
 
 export interface DeliverableContent {
   sections: DeliverableSection[];
+  /**
+   * Etapa 15 — estado do checklist sucessório, usado **só pelo PCP**.
+   *
+   * Mora aqui, e não em tabela própria, porque o checklist é parte do
+   * documento: o roadmap pede "checklist estruturado **sobre `Deliverable`**".
+   * Opcional para não invalidar nenhum entregável já gravado — os outros nove
+   * simplesmente não têm a chave.
+   *
+   * `checkCompleteness` ignora este campo de propósito: um PCP está completo
+   * quando as **seções** foram escritas; checklist com item pendente é
+   * diagnóstico, não rascunho incompleto.
+   */
+  checklist?: Record<string, boolean>;
 }
 
 /** Esqueleto de um rascunho novo — as seções do catálogo, vazias. */

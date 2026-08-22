@@ -1363,7 +1363,7 @@ de pré-requisito do §4.9 é aplicação de código sobre o PSF (Etapa 5) + `De
 | **12** ✅ | `InsurancePolicy` + MRP (mapa de coberturas atuais × necessárias) | Etapa 7 (função Proteção) |
 | **13** ✅ | Motor de projeção de longo prazo + `RetirementProjection` (PLA, 3 cenários) | Etapa 8 (precisa de `ConsultingEngagement` para existir) |
 | **14** ✅ | **Dois modelos, não um** — `AllocationTarget` (trajetória da Régua, §11.4) e `InvestmentPolicyTarget` (faixa por classe + desvio, PIP §12.1) sobre a Análise de investimentos já existente | Etapa 1 (Régua) |
-| **15** | PCP + teste de liquidez sucessória (checklist estruturado sobre `Deliverable`, código PCP) | Etapa 9 |
+| **15** ✅ | PCP + teste de liquidez sucessória (checklist estruturado sobre `Deliverable`, código PCP) | Etapa 9 |
 
 **Etapa 11 — status: implementada e verificada (Registro Nº 098, 2026-08-18).**
 `Debt` + `DebtStatus`, motor puro `lib/method/mec.ts`, tela `/patrimonio/mec`
@@ -1470,6 +1470,32 @@ mais de 100% tornam a política impossível de cumprir; máximos somando menos d
 100% deixam dinheiro sem classe onde caber. Nada disso aparece ao preencher
 classe por classe, e descobrir no rebalanceamento seria descobrir tarde — por
 isso as duas telas salvam em bloco e recusam o conjunto incoerente.
+
+**Etapa 15 — status: implementada e verificada (Registro Nº 102, 2026-08-18).
+Fecha o Bloco III e completa os sete indicadores do PSF.**
+
+`lib/method/pcp.ts` (puro) com o checklist canônico e o teste de liquidez;
+tela `/patrimonio/sucessao` gateada por `pcp_sucessorio`. **Sem tabela nova** —
+o checklist mora dentro do `Deliverable` de código PCP, como a linha pedia,
+num campo `checklist` opcional que não invalida nenhum entregável já gravado.
+
+**O teste é derivado, não perguntado.** Patrimônio, liquidez e capital de
+seguro de vida já estão no sistema; pedir de novo convidaria a divergência
+entre o que o cliente digita e o que ele cadastrou. O patrimônio usa
+`buildPatrimonyItems` — a mesma função da Etapa 7 que corrige a dupla contagem
+entre carteira de investimento e posição hospedada nela (Registro Nº 074).
+Somar as tabelas direto aqui teria reintroduzido aquele bug.
+
+**As alíquotas são parâmetro, não constante escondida.** O ITCMD é estadual e
+vai de 2% a 8%; os 4% do padrão são a alíquota de São Paulo — ponto de partida,
+não afirmação sobre o caso do cliente. A Metodologia deixa ITCMD/SP como
+pendência jurídica (#15), então a tela expõe o campo e diz isso.
+
+**Continuidade, o último indicador do PSF, saiu de "não avaliado".** §5.3.1
+registrava confiança baixa para ele "só porque depende de entidade que ainda
+não existe (checklist do PCP)". Agora existe: `(itens concluídos ÷ total) ×
+100`, lendo o PCP mais recente. Sem PCP produzido, `null` — nunca faixa ruim.
+Com isso o PSF tem os **sete** indicadores previstos.
 
 ### Bloco IV — Consolidação e extensão (Etapas 16–17)
 

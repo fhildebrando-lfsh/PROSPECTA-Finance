@@ -156,3 +156,16 @@ export function longevidade(suficienciaPct: number | null): PsfIndicatorResult {
   const clamped = Math.max(0, Math.min(100, suficienciaPct));
   return { faixa: faixaForPercent(clamped), valor: clamped };
 }
+
+/**
+ * §5.3.1 — Continuidade: `(itens do checklist concluídos ÷ total) × 100`.
+ *
+ * `null` = não avaliado, nunca faixa ruim. Sem um PCP produzido não há
+ * checklist com que medir, e "crítico" nesse caso puniria o cliente por
+ * trabalho que o consultor ainda não fez — mesma decisão de `longevidade`.
+ */
+export function continuidade(percentualDoChecklist: number | null): PsfIndicatorResult {
+  if (percentualDoChecklist === null) return NAO_AVALIADO;
+  const clamped = Math.max(0, Math.min(100, percentualDoChecklist));
+  return { faixa: faixaForPercent(clamped), valor: clamped };
+}

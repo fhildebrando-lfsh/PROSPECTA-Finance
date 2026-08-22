@@ -16,6 +16,13 @@
 
 ## 2026-08-18
 
+### Adicionado (Registro Nº 102) — Etapa 15
+- **Sucessão (PCP)**, em Patrimônio. Faz o **teste de liquidez sucessória**: se, na hora da sucessão, existiria dinheiro para impostos e custas **sem a família precisar vender bens com pressa**. Os valores são lidos do que já está cadastrado — patrimônio, contas e seguro de vida.
+- O **ITCMD é ajustável**, porque é estadual e varia de 2% a 8%. O padrão de 4% é a alíquota de São Paulo, ponto de partida e não afirmação sobre o seu caso.
+- **Checklist sucessório** em quatro frentes — documentos, estrutura, liquidez e comunicação —, cada item explicando por que existe. Quem marca é o consultor responsável.
+- **A Saúde Financeira ganhou o indicador Continuidade**, alimentado por esse checklist. Com ele, o painel passa a ter os sete indicadores previstos.
+- Disponível com consultoria ativa.
+
 ### Adicionado (Registro Nº 101) — Etapa 14
 - **Política de Investimento (PIP)**, dentro da Análise de investimentos. Defina em que **faixa** cada classe deve ficar, e a tela mostra onde a carteira saiu da banda e **quanto precisaria entrar ou sair** para voltar.
 - É faixa, e não alvo exato, de propósito: alvo exato exigiria rebalancear a cada oscilação, com custo e imposto a cada tremor de mercado.

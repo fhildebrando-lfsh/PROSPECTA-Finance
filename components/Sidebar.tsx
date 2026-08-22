@@ -120,6 +120,7 @@ const PATRIMONIO_ITEMS: NavLeaf[] = [
   { href: "/patrimonio/dividas", label: "Dívidas", icon: TrendingDown },
   { href: "/patrimonio/mec", label: "Mapa de Dívidas (MEC)", icon: Ruler },
   { href: "/patrimonio/longevidade", label: "Longevidade (PLA)", icon: LineChart },
+  { href: "/patrimonio/sucessao", label: "Sucessão (PCP)", icon: Layers },
   { href: "/patrimonio/funcao", label: "Função do Patrimônio", icon: Compass },
 ];
 

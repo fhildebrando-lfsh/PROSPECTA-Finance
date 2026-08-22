@@ -3,6 +3,7 @@ import { Decimal } from "@/lib/finance/types";
 import {
   construcaoPatrimonial,
   longevidade,
+  continuidade,
   endividamento,
   faixaForPercent,
   liquidez,
@@ -208,5 +209,29 @@ describe("longevidade (§5.3.1)", () => {
   it("valor fora da escala é limitado, não propagado", () => {
     expect(longevidade(250).valor).toBe(100);
     expect(longevidade(-30).valor).toBe(0);
+  });
+});
+
+describe("continuidade (§5.3.1)", () => {
+  /** Mesma decisão de `longevidade`: sem PCP não há o que medir. */
+  it("sem checklist, é não avaliado — nunca faixa ruim", () => {
+    expect(continuidade(null).faixa).toBeNull();
+  });
+
+  it("checklist inteiro concluído é consolidado", () => {
+    expect(continuidade(100).faixa).toBe("consolidado");
+  });
+
+  it("nada concluído é crítico", () => {
+    expect(continuidade(0).faixa).toBe("critico");
+  });
+
+  it("acompanha o percentual do checklist", () => {
+    expect(continuidade(45).valor).toBe(45);
+  });
+
+  it("valor fora da escala é limitado", () => {
+    expect(continuidade(140).valor).toBe(100);
+    expect(continuidade(-10).valor).toBe(0);
   });
 });
