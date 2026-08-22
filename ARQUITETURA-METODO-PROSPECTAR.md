@@ -1137,7 +1137,7 @@ Abre a trilha de consultoria propriamente dita.
 | **8** ✅ | `ConsultingEngagement` + `MethodPhase` + `GateCheck` — a trilha de fases e o ritual de passagem (§7.3) em tela para o consultor. Registro Nº 084 | Etapa 4 (`PlanGrant` nasce junto com o engagement) |
 | **9** ✅ | `Deliverable` + templates dos 10 artefatos codificados (PAN, AFF, RAP, MEC, MRP, PLA, PIP, MFP, PCP, PFI) — v0 pode ser HTML/PDF gerado a partir de `content: Json`, reaproveitando `lib/reports/pdf/` já existente como padrão de geração | Etapa 8 |
 | **10** ✅ | Instrumentos A1/A2/C como formulário digital, com a redação definida (A1 na Fase 0, A2+C na Fase 1) | Etapa 8 |
-| **10-B** | Envio automático dos instrumentos e lembretes de prazo (§12.4/§12.8) — disparo do A1 na abertura do contrato, do C e do A2 após a entrevista, com os prazos do protocolo D0–D17 | Etapa 10 + cron (Etapa 6) |
+| **10-B** ✅ | Envio automático dos instrumentos e lembretes de prazo (§12.4/§12.8) — disparo do A1 na abertura do contrato, do C e do A2 após a entrevista, com os prazos do protocolo D0–D17 | Etapa 10 + cron (Etapa 6) |
 
 **Etapa 10 — status: implementada e verificada (Registros Nº 092 e 093,
 2026-08-17).** `DiagnosticResponse` + catálogo puro em `lib/method/instruments/`,
@@ -1167,6 +1167,29 @@ agendamento e notificação — assunto diferente de formulário, com risco dife
 existe: cron em `lib/method/run-automations.ts`, com rastro de execução desde o
 Registro Nº 091, e e-mail em Brevo. O que falta é ligá-las ao protocolo de
 prazos, não construir base nova.
+
+**Etapa 10-B — status: implementada e verificada, inerte por padrão (Registro
+Nº 097, 2026-08-17).** `InstrumentDispatch` + motor puro
+`lib/method/instruments/dispatch-engine.ts` + camada impura `run-dispatches.ts`,
+ligada à rotina diária de cron já existente.
+
+As âncoras vêm de §12.8: o **A1 sai quando o contrato abre**; **A2 e C saem
+quando a Fase 1 começa** — que é o registro que o sistema tem de a entrevista
+ter ocorrido. Amarrar o A2 a "D8 corridos" seria pior: com a entrevista
+atrasada, o cliente receberia um formulário que a conversa ainda não preparou.
+Prazos de §12.8 (A1 em 5 dias; A2 em 8, contados do envio em D8; o C herda a
+janela do A2, que o documento não fixa), com no máximo **dois lembretes** — na
+metade do prazo e no vencimento — antes de o sistema parar e o atraso virar
+assunto do consultor.
+
+**Nasce desligada.** O parâmetro `instrumentos.envio_automatico_ativo`
+(admin-only, editável em `/admin/metodologia`) começa em `0`. Esta é a única
+rotina do sistema que fala com o cliente sem um humano no meio; todo o resto
+apenas produz alerta dentro do app. Ligar é decisão consciente do dono do
+produto, e o teste de integração que garante "desligado não grava nada" é a
+invariante da qual as demais dependem.
+
+Com isso o **Bloco II fecha por completo** (Etapas 7, 8, 9, 9-A, 10 e 10-B).
 
 #### Etapa 9-A — Proteção e Segurança / PROSPECTA-MCRF (antecipa a Etapa 12)
 

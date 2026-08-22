@@ -20,6 +20,7 @@
  */
 import { prisma } from "../lib/db/prisma";
 import { CCM_REDUCAO_AJUSTAVEL_PCT_PADRAO, METHODOLOGY_VERSION } from "../lib/method/mcrf/config";
+import { PARAM_ENVIO_AUTOMATICO } from "../lib/method/instruments/run-dispatches";
 
 /**
  * Subcategorias de `ESSENCIAL` que são contrato de valor fixo. Chave é
@@ -133,6 +134,17 @@ async function seedParameters() {
       description:
         "Quanto uma despesa essencial ajustável (alimentação, combustível, higiene) encolhe num cenário adverso. " +
         "Não se aplica às rígidas, que não cedem, nem às discricionárias, que zeram. Vale para todo o sistema.",
+    },
+    {
+      key: PARAM_ENVIO_AUTOMATICO,
+      // Nasce DESLIGADO. É a única rotina que fala com o cliente sem humano no
+      // meio; ligar junto com o deploy mandaria e-mail para quem ainda não sabe
+      // que ela existe, e e-mail enviado não tem desfazer.
+      value: 0,
+      label: "Envio automático dos instrumentos de diagnóstico (0 = desligado, 1 = ligado)",
+      description:
+        "Quando ligado, a rotina diária envia o A1 na abertura do contrato, o A2 e o C quando a Fase 1 começa, " +
+        "e cobra até dois lembretes por instrumento antes de parar. Vale para todos os clientes com consultoria ativa.",
     },
   ];
 

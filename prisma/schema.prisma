@@ -111,6 +111,7 @@ model Workspace {
   automationRules  AutomationRule[]
   aiInteractions   AiInteraction[]
   diagnosticResponses DiagnosticResponse[]
+  instrumentDispatches InstrumentDispatch[]
   entitlements     Entitlement[]
   accessLogs       AccessLog[]
   notifications    Notification[]
@@ -664,6 +665,7 @@ model ConsultingEngagement {
   phases       MethodPhase[]
   deliverables Deliverable[]
   diagnosticResponses DiagnosticResponse[]
+  instrumentDispatches InstrumentDispatch[]
 
   @@index([workspaceId, status])
   @@map("consulting_engagements")
@@ -1809,4 +1811,35 @@ model DiagnosticResponse {
 
   @@index([engagementId, instrument])
   @@map("diagnostic_responses")
+}
+
+/// Etapa 10-B (§12.4/§12.8) — o envio de um instrumento a um cliente e os
+/// lembretes de prazo dele.
+///
+/// Existe separado de `DiagnosticResponse` porque o envio acontece **antes** de
+/// haver resposta: a linha de resposta só nasce quando o cliente começa a
+/// preencher, e até lá não haveria onde registrar que já foi pedido.
+///
+/// `@@unique([engagementId, instrument])` é a garantia de que ninguém recebe o
+/// mesmo instrumento duas vezes — por construção, não por cuidado do código que
+/// chama. Rotina automática que manda e-mail precisa que o "só uma vez" seja
+/// estrutural.
+model InstrumentDispatch {
+  id             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceId    String               @map("workspace_id") @db.Uuid
+  engagementId   String               @map("engagement_id") @db.Uuid
+  instrument     DiagnosticInstrument
+  dispatchedAt   DateTime             @map("dispatched_at")
+  /// Prazo do protocolo §12.8, contado a partir do envio.
+  dueAt          DateTime             @map("due_at")
+  remindersSent  Int                  @default(0) @map("reminders_sent")
+  lastReminderAt DateTime?            @map("last_reminder_at")
+  /// Preenchido quando a resposta é enviada — encerra os lembretes.
+  completedAt    DateTime?            @map("completed_at")
+
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  engagement ConsultingEngagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@unique([engagementId, instrument])
+  @@map("instrument_dispatches")
 }

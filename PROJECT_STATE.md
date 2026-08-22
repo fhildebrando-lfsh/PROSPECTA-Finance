@@ -15,8 +15,46 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-17 (tela de contrato de consultoria —
-> Registro Nº 094). Destrava a camada de método inteira.**
+> **Última atualização real: 2026-08-17 (Etapa 10-B — envio automático dos
+> instrumentos. **Fecha o Bloco II** — Registro Nº 097).**
+>
+> `InstrumentDispatch` + motor puro `dispatch-engine.ts` + impuro
+> `run-dispatches.ts`, ligado à rotina diária de cron. Migration em dev →
+> produção → código. O `UNIQUE (engagement, instrument)` faz o "só uma vez" ser
+> **estrutural**, não dependente de quem chama — mínimo aceitável para rotina
+> que manda e-mail.
+>
+> **As âncoras não são dias corridos.** §12.8 põe a entrevista em D8, mas
+> amarrar o A2 a oito dias do contrato entregaria, numa entrevista atrasada, um
+> formulário que a conversa ainda não preparou. Então: A1 quando o contrato
+> abre; A2 e C quando a **Fase 1 começa** — o registro de que a entrevista
+> ocorreu. O C herda a janela do A2 porque o documento é silencioso quanto a
+> ele e os dois saem juntos.
+>
+> **Dois lembretes e para.** Metade do prazo e vencimento. Cobrar para sempre
+> vira spam, e cliente que marca a PROSPECTA como indesejada deixa de receber o
+> que importa; o atraso passa a ser assunto do consultor.
+>
+> **A etapa nasce inerte, e essa é a decisão que mais importa.**
+> `instrumentos.envio_automatico_ativo` começa em `0`, criado assim em dev **e
+> em produção**. É a única rotina que fala com o cliente sem humano no meio —
+> todo o resto só produz alerta dentro do app. Havia três contratos ativos em
+> produção com endereços reais; subir ligada mandaria e-mail para quem não sabe
+> que a rotina existe.
+>
+> **Ordem de gravação deliberada:** a linha nasce **antes** do e-mail, e o
+> contador de lembrete sobe antes também. Falha de envio deixa registro sem
+> entrega — visível e corrigível; a ordem inversa arriscaria enviar duas vezes.
+>
+> **Não verificado, declarado: nenhum e-mail foi disparado em teste.** Não há
+> como exercitar o envio real sem escrever para um endereço de verdade. Texto,
+> renderização e link seguem sem conferência prática — ao ligar o parâmetro,
+> vale abrir a primeira mensagem antes de deixar a rotina correndo.
+>
+> 714 unitários, 115 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-17 (tela de contrato de consultoria —
+> Registro Nº 094).**
 >
 > `EngagementControl.tsx` em `/admin/usuarios`: abre e encerra
 > `ConsultingEngagement`, mostra o ativo, e Projeto pede a fase contratada.

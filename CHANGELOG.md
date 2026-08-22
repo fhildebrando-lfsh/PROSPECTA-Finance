@@ -16,6 +16,11 @@
 
 ## 2026-08-17
 
+### Adicionado (Registro Nº 097) — Etapa 10-B
+- **Envio automático dos instrumentos de diagnóstico.** O A1 é enviado por e-mail quando a consultoria é aberta; o A2 e o C, quando a Fase 1 começa. Se ficarem em aberto, o sistema manda até dois lembretes — na metade do prazo e no vencimento — e então para.
+- **Nasce desligado.** Um parâmetro em `/admin/metodologia` liga a rotina para todos os clientes com consultoria ativa. Enquanto estiver em `0`, nenhum e-mail é enviado.
+- Com isso o Bloco II do método fica completo.
+
 ### Corrigido (Registro Nº 096)
 - **Contrato de consultoria do tipo Projeto não liberava nada.** Nenhuma funcionalidade do método tinha a fase preenchida, e a regra exigia correspondência de fase — resultado: abrir um Projeto deixava o menu Método igualmente vazio. Cada funcionalidade recebeu sua fase, e as estruturais (trilha, gates, entregáveis, acesso do consultor) passaram a valer em qualquer contrato.
 - **A mensagem das telas de método mentia.** Diziam "existe quando há uma consultoria ativa" mesmo havendo uma — o que faltava era a fase. Agora dizem qual é o contrato ativo e por que aquela tela ficou fora do escopo.

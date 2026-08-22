@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { runDueAutomations } from "@/lib/method/run-automations";
+import { runInstrumentDispatches } from "@/lib/method/instruments/run-dispatches";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const result = await runDueAutomations();
-  return NextResponse.json(result);
+  // Duas rotinas na mesma execução diária. O envio dos instrumentos (Etapa
+  // 10-B) roda **depois** das automações e é independente: se ele falhar, os
+  // alertas do dia já foram gravados. Nasce inerte — só age com o interruptor
+  // `instrumentos.envio_automatico_ativo` ligado em /admin/metodologia.
+  const automacoes = await runDueAutomations();
+  const instrumentos = await runInstrumentDispatches();
+  return NextResponse.json({ automacoes, instrumentos });
 }

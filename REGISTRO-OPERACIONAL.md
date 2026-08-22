@@ -2635,7 +2635,23 @@
 
 ---
 
-## Próximo número de registro: **097**
+### Registro Nº 097
+- **Data:** 2026-08-17
+- **Etapa concluída:** **Etapa 10-B — envio automático dos instrumentos e lembretes de prazo (§12.4/§12.8). Fecha o Bloco II.**
+- **Descrição:** `InstrumentDispatch` (migration `20260817230000_instrument_dispatch`, aplicada em dev → produção → código), motor puro `lib/method/instruments/dispatch-engine.ts`, camada impura `run-dispatches.ts`, template de e-mail e ligação na rotina diária de cron já existente. O `UNIQUE (engagement_id, instrument)` é a garantia de não reenviar — **estrutural, não dependente do cuidado de quem chama**, que é o mínimo aceitável para rotina que manda e-mail.
+- **As âncoras não são "dias corridos", e essa foi a decisão de desenho central.** §12.8 põe a entrevista em D8, mas amarrar o A2 a oito dias do contrato entregaria, numa entrevista atrasada, um formulário que a conversa ainda não preparou. Então: **A1 sai quando o contrato abre**; **A2 e C saem quando a Fase 1 começa** — o registro que o sistema tem de a entrevista ter ocorrido. Prazos de §12.8: A1 em 5 dias, A2 em 8 contados do envio; o C herda a janela do A2, porque o documento é silencioso quanto a ele e os dois saem juntos — documentado para não parecer número escolhido a esmo.
+- **Limite de dois lembretes, e por quê.** Um na metade do prazo, outro no vencimento, e o sistema **para**. Rotina que cobra para sempre vira spam, e cliente que marca a PROSPECTA como remetente indesejado deixa de receber o que importa; o atraso passa a ser assunto do consultor, que vê na tela. Há ainda uma trava de "um lembrete por dia" contra o cron rodar duas vezes.
+- **A decisão mais importante: a etapa nasce inerte.** O parâmetro `instrumentos.envio_automatico_ativo` (admin-only, em `/admin/metodologia`) começa em `0`, e foi criado assim em dev **e em produção**. Esta é a única rotina do sistema que fala com o cliente sem um humano no meio — todo o resto apenas produz alerta dentro do app. Havia três contratos ativos em produção com endereços reais no momento deste commit; subir a rotina ligada mandaria e-mail para pessoas que não sabem que ela existe, e e-mail enviado não tem desfazer. Ligar é decisão consciente do dono do produto, não efeito colateral de um deploy.
+- **A ordem de gravação é deliberada:** a linha de envio é criada **antes** do e-mail sair, e o contador de lembrete sobe **antes** também. Se o envio falhar, sobra um registro sem entrega — visível e corrigível. A ordem inversa arriscaria enviar duas vezes caso a gravação falhasse depois do envio, e duplicidade em e-mail não se desfaz. Falha de um envio não derruba os demais contratos do dia: cada uma entra em `falhas[]`.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **714/714** (15 casos novos no motor); integração **115/115** (4 novos); `npm run build` limpo. O teste de integração central verifica que, desligado, a rotina **não grava linha nenhuma** — e não apenas que devolve `ativo: false`: uma rotina que devolvesse `false` mas gravasse teria mandado e-mail antes. Enquanto essa invariante valer, defeito em qualquer outra parte não chega a cliente real.
+- **Não verificado, declarado:** **nenhum e-mail foi disparado em teste**. Não há como exercitar o envio real sem mandar mensagem para um endereço de verdade, e isso não é coisa que eu faça por conta própria. O texto do e-mail, a renderização no cliente de e-mail e o link para o formulário seguem sem conferência prática — quando você ligar o parâmetro, vale abrir a primeira mensagem antes de deixar a rotina correndo.
+- **Documentos relacionados:** Registros Nº 092 e 093 (Etapa 10), Nº 091 (rastro do cron, que registra também esta rotina), Metodologia v5.0 §12.4 e §12.8, `MANUAL-DE-USO.md` §13-A.2 e §16.
+
+---
+
+## Próximo número de registro: **098**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

@@ -844,6 +844,18 @@ obrigatórios estejam preenchidos, e a tela diz quantos faltam. Depois de
 enviado, o formulário vira leitura — suas respostas continuam visíveis, mas
 corrigir passa a ser conversa com o consultor, não um clique.
 
+**Envio automático.** Quando o administrador liga essa opção, você não precisa
+lembrar de entrar aqui: o **A1** chega por e-mail assim que sua consultoria é
+aberta, e o **A2** e o **C** chegam quando a Fase 1 começa — ou seja, depois da
+entrevista, que é quando eles fazem sentido.
+
+Se algum ficar em aberto, o sistema manda **no máximo dois lembretes** — um na
+metade do prazo e outro no vencimento — e depois **para**. Passado isso, o
+assunto vira conversa com seu consultor, não mais e-mail automático.
+
+Os prazos seguem o protocolo do método: cinco dias para o A1, oito para o A2 e
+para o C.
+
 **Sobre o C especificamente.** Ele não pergunta o que você sabe, e sim como você
 reage. São oito afirmações, e você diz o quanto concorda com cada uma. A
 primeira usa um cenário com valores em reais — não uma porcentagem — porque
@@ -1011,6 +1023,17 @@ preservar o histórico.
   plataforma**, não por cliente: a classificação de cada despesa em rígida, ajustável ou
   discricionária, e o percentual de corte considerado possível numa emergência. São
   admin-only de propósito — metodologia que muda por cliente deixa de ser metodologia.
+
+- **`/admin/metodologia` → envio automático dos instrumentos** — um parâmetro
+  liga e desliga o envio automático do diagnóstico para **todos** os clientes com
+  consultoria ativa: `0` desligado, `1` ligado.
+
+  Ele **nasce desligado**, e isso é proposital. Esta é a única rotina do sistema
+  que fala com o cliente sem uma pessoa no meio — todo o resto apenas mostra
+  avisos dentro do aplicativo. Ligar junto com uma atualização mandaria e-mail
+  para quem ainda não sabe que a rotina existe, e e-mail enviado não tem como
+  ser desfeito. Ligue quando tiver certeza de que os textos e os prazos estão
+  como você quer.
 
 - **`/admin/automacoes`** — a verificação diária de automações: se está rodando, quando
   rodou pela última vez e o que cada execução produziu.
