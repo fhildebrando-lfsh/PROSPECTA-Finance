@@ -2796,7 +2796,25 @@
 
 ---
 
-## Próximo número de registro: **106**
+### Registro Nº 106
+- **Data:** 2026-08-18
+- **Etapa concluída:** `ExportLog` passa a ser lido, e limpeza do código órfão. Fecha os achados (2) e parte do (3) da revisão do Registro Nº 104 — **e corrige uma classificação errada que eu mesmo fiz naquela revisão**.
+- **`ExportLog`:** mesmo defeito do `AccessLog` — escrito desde a Fase 0, nunca lido. Passou a ocupar uma seção na tela `/minha-conta/acessos`, que por isso deixou de se chamar "quem acessou" e virou **"O que foi feito com meus dados"**. A coluna de **filtros** é o que dá sentido ao registro: sem o recorte, "exportou 300 linhas" não distingue um relatório de um mês do histórico inteiro.
+- **Uma assimetria deliberada, agora declarada na tela:** acesso do próprio titular **não** é registrado (seria ruído; a auditoria de acesso existe para terceiros), mas exportação é registrada **sempre, inclusive a dele** — é o momento em que o dado sai do sistema e passa a existir fora dele. Duas regras opostas no mesmo lugar precisam ser ditas, senão uma delas parece falha.
+- **A correção de avaliação, que é o ponto mais importante deste registro.** A revisão do Nº 104 classificou o `Entitlement` como "ramo de código morto" e recomendou remover a leitura. **A classificação estava errada.** Antes de mexer, verifiquei duas coisas: (1) as tabelas estão vazias em dev **e** em produção — então remover seria seguro do ponto de vista de dado; mas (2) o ramo **tem dois testes de integração que passam** (`Entitlement pontual libera mesmo sem Subscription`, `Entitlement expirado não libera`). O mecanismo funciona. O que não existe é **tela que crie** um `Entitlement` — ele é operado por SQL direto, e isso é escotilha deliberada para o caso único que não justifica alterar o catálogo comercial nem conceder um plano inteiro.
+- **Removê-lo teria apagado um mecanismo funcional e seus testes**, com a justificativa de que era código morto — exatamente o tipo de estrago que a regra "nada já construído é removido" existe para impedir. Em vez disso, documentei o comportamento no próprio `entitlements.ts`, incluindo o registro de que a classificação anterior estava errada e onde a tela ficaria se um dia for feita.
+- **`nomeDoArtefato` foi removida** — essa sim era órfã de verdade: Server Action que devolvia uma constante do catálogo e não era referenciada em lugar nenhum, nem em teste.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **864/864**; integração **124/124**; `npm run build` limpo. Nenhum teste novo: a leitura do `ExportLog` é apresentação sobre dado já coberto, e a limpeza não muda comportamento.
+- **Um deslize meu, corrigido antes do commit:** escrevi `**o recorte**` dentro do JSX, e asterisco de markdown não vira negrito ali — apareceria literal na tela. Trocado por `<strong>`.
+- **Limite declarado:** a tela não foi vista logada, e **`export_logs` está vazia em produção** (verificado) — a seção só aparece depois da primeira exportação real.
+- **Segue aberto, o último achado da revisão:** **33 das 52 features nunca são consultadas por `hasFeature`**, com `/admin/planos` exibindo chaves sem efeito. Depende de decisão comercial: gatear de fato o Bloco I significa que planos passam a restringir o que hoje todos têm.
+- **Documentos relacionados:** Registros Nº 104 (a revisão) e 105 (o `AccessLog`), `MANUAL-DE-USO.md` §16-B, `tests/integration/billing/entitlements.test.ts` (os testes que desmentiram minha classificação).
+
+---
+
+## Próximo número de registro: **107**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

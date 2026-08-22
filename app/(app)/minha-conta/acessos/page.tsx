@@ -17,26 +17,32 @@ function mesmoDia(a: Date, b: Date): boolean {
 }
 
 /**
- * Quem acessou este workspace.
+ * O que foi feito com os dados deste workspace: **acessos de terceiros** e
+ * **exportações**.
  *
- * O manual §17 promete que "todo acesso de um consultor ou administrador ao seu
- * workspace fica registrado". Até 2026-08-18 a promessa era **literalmente
- * verdadeira e praticamente vazia**: `AccessLog` era escrito e nunca lido, por
- * ninguém — nem pelo titular, que é o interessado (Registro Nº 105).
+ * O manual §17 promete que todo acesso de consultor ou administrador fica
+ * registrado. Até 2026-08-18 a promessa era **literalmente verdadeira e
+ * praticamente vazia**: `AccessLog` era escrito e nunca lido, por ninguém — nem
+ * pelo titular, que é o interessado (Registro Nº 105). `ExportLog` tinha o
+ * mesmo defeito e recebeu a mesma correção (Registro Nº 106).
  *
- * O acesso do próprio titular **não** é registrado, e isso é decisão de
- * desenho, não lacuna: seria ruído, e o objetivo da auditoria é o acesso de
- * terceiro. A tela diz isso, para a ausência não parecer falha.
+ * As duas assimetrias abaixo são decisão de desenho, não lacuna, e a tela diz
+ * ambas ao usuário para que a ausência não pareça falha:
+ * - **acesso do próprio titular não é registrado** — seria ruído, e a auditoria
+ *   de acesso existe para terceiros;
+ * - **exportação é registrada sempre**, inclusive a do titular, porque ali o
+ *   dado sai do sistema e passa a existir fora dele.
  */
 export default async function AcessosPage() {
   const workspaceId = await requireWorkspaceId();
   await requireProfile();
 
-  const logs = await prisma.accessLog.findMany({
-    where: { workspaceId },
-    orderBy: { occurredAt: "desc" },
-    take: 500,
-  });
+  const [logs, exports] = await Promise.all([
+    prisma.accessLog.findMany({ where: { workspaceId }, orderBy: { occurredAt: "desc" }, take: 500 }),
+    // `ExportLog` era escrito desde a Fase 0 e nunca lido — mesmo defeito do
+    // `AccessLog`, e a mesma correção (Registro Nº 106).
+    prisma.exportLog.findMany({ where: { workspaceId }, orderBy: { createdAt: "desc" }, take: 100 }),
+  ]);
 
   const resumo = summarizeAccess(
     logs.map((l) => ({
@@ -50,7 +56,7 @@ export default async function AcessosPage() {
 
   // Nome e e-mail vêm de duas origens — `Profile` e o Supabase Auth —, e sem os
   // dois um registro diria apenas "alguém acessou", que não é auditoria.
-  const ids = [...new Set(logs.map((l) => l.actorProfileId))];
+  const ids = [...new Set([...logs.map((l) => l.actorProfileId), ...exports.map((e) => e.profileId)])];
   const [perfis, auth] = await Promise.all([
     ids.length > 0 ? prisma.profile.findMany({ where: { id: { in: ids } } }) : Promise.resolve([]),
     ids.length > 0 ? createAdminClient().auth.admin.listUsers({ perPage: 1000 }) : Promise.resolve(null),
@@ -72,17 +78,18 @@ export default async function AcessosPage() {
         <Link href="/minha-conta" className="text-xs text-indigo-300 hover:text-indigo-200">
           ← Minha conta
         </Link>
-        <h1 className="mt-2 text-lg font-semibold text-zinc-100">Quem acessou meus dados</h1>
+        <h1 className="mt-2 text-lg font-semibold text-zinc-100">O que foi feito com meus dados</h1>
         <p className="mt-1 max-w-3xl text-sm text-zinc-500">
-          Todo acesso de um consultor ou administrador a este workspace fica registrado, e esta tela é onde você
-          consulta. <strong className="text-zinc-400">Os seus próprios acessos não aparecem</strong> — a auditoria
-          existe para o acesso de terceiros; registrar os seus só produziria ruído.
+          Duas coisas ficam registradas e aparecem aqui: <strong className="text-zinc-400">quem acessou</strong> este
+          workspace além de você, e <strong className="text-zinc-400">quando seus dados foram exportados</strong>.
+          Acessos seus não são registrados — a auditoria de acesso existe para terceiros, e registrar os seus só
+          produziria ruído. Já a exportação é registrada sempre, inclusive a sua: é a saída de dado do sistema.
         </p>
       </div>
 
-      {resumo.sessoes.length === 0 && resumo.eventos.length === 0 ? (
+      {resumo.sessoes.length === 0 && resumo.eventos.length === 0 && exports.length === 0 ? (
         <div className="rounded-xl border border-emerald-900/50 bg-emerald-950/10 p-6 text-sm text-zinc-400">
-          <p className="text-emerald-300">Ninguém além de você acessou este workspace.</p>
+          <p className="text-emerald-300">Ninguém além de você acessou este workspace, e nenhum dado foi exportado.</p>
           <p className="mt-2">
             Se um consultor for atribuído à sua conta, cada acesso dele aparecerá aqui, com data e hora.
           </p>
@@ -157,9 +164,43 @@ export default async function AcessosPage() {
         </>
       )}
 
+      {exports.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-sm font-medium text-zinc-200">Exportações</h2>
+          <div className="overflow-x-auto rounded-xl border border-indigo-900/50 bg-[#131A47]">
+            <table className="w-full min-w-[40rem] text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800 text-xs text-zinc-500">
+                  <th className="px-3 py-2 text-left font-medium">Quem</th>
+                  <th className="px-3 py-2 text-left font-medium">Quando</th>
+                  <th className="px-3 py-2 text-left font-medium">Formato</th>
+                  <th className="px-3 py-2 text-right font-medium">Linhas</th>
+                  <th className="px-3 py-2 text-left font-medium">Filtros</th>
+                </tr>
+              </thead>
+              <tbody>
+                {exports.map((e) => (
+                  <tr key={e.id} className="border-b border-zinc-800/60">
+                    <td className="px-3 py-2 text-zinc-200">{identifica(e.profileId)}</td>
+                    <td className="px-3 py-2 text-zinc-400">{dataHora(e.createdAt)}</td>
+                    <td className="px-3 py-2 uppercase text-zinc-400">{e.format}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-zinc-300">{e.rowCount}</td>
+                    <td className="px-3 py-2 text-xs text-zinc-500">{e.filters ?? "sem filtro"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-[11px] text-zinc-600">
+            A coluna de filtros diz <strong className="text-zinc-500">o recorte</strong> que foi baixado — sem ela,
+            &quot;exportou 300 linhas&quot; não distingue um relatório de um mês do seu histórico inteiro.
+          </p>
+        </section>
+      )}
+
       <p className="max-w-3xl text-xs text-zinc-600">
-        O registro guarda quem, quando e o quê — não o conteúdo consultado. A lista mostra os 500 acessos mais
-        recentes.
+        O registro guarda quem, quando e o quê — nunca o conteúdo consultado. A lista mostra os 500 acessos e as 100
+        exportações mais recentes.
       </p>
     </div>
   );

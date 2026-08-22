@@ -52,6 +52,20 @@ export async function hasFeature(workspaceId: string, featureCode: string): Prom
     return engagementCoversFeature(engagement, feature.methodPhase);
   }
 
+  /**
+   * Camada de **exceção pontual** (§4.6): libera uma feature avulsa para um
+   * workspace, sem mexer no plano dele.
+   *
+   * **Não existe tela que crie um `Entitlement`** — hoje ele é operado por SQL
+   * direto, e isso é escotilha deliberada, não lacuna: é o recurso para um caso
+   * único que não justifica alterar o catálogo comercial nem conceder um plano
+   * inteiro. A revisão de 2026-08-18 chegou a classificá-lo como código morto;
+   * a classificação estava errada — o mecanismo funciona e é coberto por dois
+   * testes de integração (`tests/integration/billing/entitlements.test.ts`).
+   *
+   * Se um dia isto ganhar tela, o lugar natural é `/admin/usuarios`, ao lado da
+   * concessão temporária de plano.
+   */
   const entitlement = await prisma.entitlement.findFirst({
     where: {
       workspaceId,

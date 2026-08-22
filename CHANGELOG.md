@@ -16,6 +16,10 @@
 
 ## 2026-08-18
 
+### Adicionado (Registro Nº 106)
+- **As exportações passaram a aparecer** na mesma tela de auditoria, que agora se chama "O que foi feito com meus dados". Cada exportação mostra quem baixou, quando, em que formato, quantas linhas e **com quais filtros** — sem o recorte, "exportou 300 linhas" não distingue um relatório de um mês do histórico inteiro.
+- Diferente do acesso, a exportação é registrada **sempre, inclusive a sua**: é o momento em que o dado sai do sistema e passa a existir fora dele.
+
 ### Adicionado (Registro Nº 105)
 - **"Quem acessou meus dados"**, em Minha conta → Privacidade e dados. Mostra cada acesso de consultor ou administrador ao seu workspace, com data e hora, e destaca à parte as **mudanças de permissão** — quando alguém passou a poder editar seus lançamentos, e quando isso foi revogado.
 - O sistema já registrava esses acessos desde sempre, mas **não havia onde consultá-los** — nem para você. A Política de Privacidade prometia o registro; agora a promessa é verificável.

@@ -15,8 +15,42 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (auditoria de acessos — fecha o segundo
-> achado da revisão. Registro Nº 105).**
+> **Última atualização real: 2026-08-18 (`ExportLog` passa a ser lido; e a
+> **correção de uma classificação errada que eu fiz na própria revisão** —
+> Registro Nº 106).**
+>
+> **`ExportLog`:** mesmo defeito do `AccessLog`, mesma correção. A tela virou
+> **"O que foi feito com meus dados"**. A coluna de **filtros** é o que dá
+> sentido: sem o recorte, "exportou 300 linhas" não distingue um relatório de um
+> mês do histórico inteiro.
+>
+> **Assimetria deliberada, agora dita na tela:** acesso do titular **não** é
+> registrado (ruído); exportação é registrada **sempre, inclusive a dele** — ali
+> o dado sai do sistema. Duas regras opostas no mesmo lugar precisam ser
+> declaradas, senão uma parece falha.
+>
+> **A correção de avaliação — o ponto principal.** A revisão do Nº 104
+> classificou `Entitlement` como "ramo morto" e recomendou remover a leitura.
+> **Errado.** Antes de mexer: as tabelas estão vazias em dev e produção (remover
+> seria seguro quanto a dado), **mas o ramo tem dois testes de integração que
+> passam**. O mecanismo funciona; o que falta é **tela que crie** um
+> `Entitlement` — ele é operado por SQL, escotilha deliberada para o caso único.
+> Removê-lo teria apagado mecanismo funcional e seus testes sob a justificativa
+> de código morto — o estrago que a regra "nada construído é removido" existe
+> para impedir. Documentado no `entitlements.ts`, inclusive o erro de
+> classificação.
+>
+> **`nomeDoArtefato` removida** — essa era órfã de verdade, sem referência nem
+> em teste.
+>
+> **Limite:** tela não vista logada, e `export_logs` **vazia em produção** — a
+> seção só aparece após a primeira exportação real.
+>
+> **Segue aberto:** 33/52 features nunca consultadas, `/admin/planos` com chaves
+> sem efeito — decisão comercial. 864 unitários, 124 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-18 (auditoria de acessos — Registro
+> Nº 105).**
 >
 > `lib/audit/access-summary.ts` (puro) + `/minha-conta/acessos`. **Sem
 > migration**: `AccessLog` existe desde a Fase 0 e já era escrito; faltava quem

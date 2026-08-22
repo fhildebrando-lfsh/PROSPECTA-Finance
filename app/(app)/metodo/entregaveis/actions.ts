@@ -137,8 +137,3 @@ export async function excluirRascunho(formData: FormData) {
   await prisma.deliverable.delete({ where: { id: deliverable.id } });
   revalidatePath("/metodo/entregaveis");
 }
-
-/** Só para a tela saber o rótulo sem duplicar o catálogo. */
-export async function nomeDoArtefato(code: DeliverableCode) {
-  return DELIVERABLES[code].name;
-}

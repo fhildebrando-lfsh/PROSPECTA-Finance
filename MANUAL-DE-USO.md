@@ -1307,9 +1307,10 @@ preservar o histórico.
 
 ---
 
-## 16-B. Quem acessou meus dados
+## 16-B. O que foi feito com meus dados
 
-Em **Minha conta → Privacidade e dados** há o link **"Quem acessou meus dados"**.
+Em **Minha conta → Privacidade e dados** há o link **"Quem acessou meus dados"**,
+que abre duas listas: os **acessos** de terceiros e as **exportações**.
 
 Ele mostra cada acesso de um **consultor ou administrador** ao seu workspace,
 com data e hora. Em destaque, à parte, ficam as **mudanças de permissão** —
@@ -1324,7 +1325,16 @@ de telas que ela abriu. Cada tela aberta gera um registro, e listá-los um a um
 encheria a página sem dizer mais nada — um consultor trabalhando meia hora na
 sua conta produz dezenas de linhas idênticas.
 
-O registro guarda **quem, quando e o quê** — não o conteúdo consultado.
+**As exportações aparecem numa lista à parte**, com quem baixou, quando, o
+formato, quantas linhas e — o que mais importa — **quais filtros estavam
+ativos**. Sem o recorte, "exportou 300 linhas" não distingue um relatório de um
+mês do seu histórico inteiro.
+
+Aqui a regra é o inverso da anterior: **exportação é registrada sempre,
+inclusive a sua**. É o momento em que o dado sai do sistema e passa a existir
+fora dele, então vale registrar mesmo quando é você quem baixa.
+
+O registro guarda **quem, quando e o quê** — nunca o conteúdo consultado.
 
 ---
 
