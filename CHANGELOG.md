@@ -16,6 +16,14 @@
 
 ## 2026-08-18
 
+### Adicionado (Registro Nº 099) — Etapa 12
+- **Mapa de Riscos e Proteção (MRP)**, em Proteção e Segurança. Para cada risco que pesa na sua vida, mostra **quanto você precisaria ter**, **quanto seus seguros pagariam de fato** — já descontando franquia e carência — e o que sobra para você, com o tratamento recomendado: transferir, complementar, reter ou já coberto.
+- A necessidade não vem de regra de mercado: vem dos seus próprios cenários, os mesmos que calculam a Reserva de Emergência.
+- Disponível com consultoria ativa.
+
+### Corrigido (Registro Nº 099)
+- **O plano de tratamento estava visível sem consultoria**, embora a própria tela dissesse ao cliente que ele fazia parte dela. Agora está de fato atrás da consultoria, como sempre foi a intenção.
+
 ### Adicionado (Registro Nº 098) — Etapa 11
 - **Mapa de Dívidas (MEC)**, em Patrimônio. Registre cada dívida com credor, modalidade, saldo, **CET** e situação (em dia, negativado, renegociado, quitado), e o mapa ordena por **custo** — porque cada real amortizado na dívida mais cara rende mais que na maior.
 - **Sinaliza as dívidas caras e diz por quê**: rotativo do cartão e cheque especial, ou juros de três dígitos ao ano.

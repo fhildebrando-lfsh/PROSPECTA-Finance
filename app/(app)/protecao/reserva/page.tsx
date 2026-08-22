@@ -229,6 +229,11 @@ export default async function ReservaPage({
                   </li>
                 ))}
               </ul>
+              <p className="mt-3 text-xs">
+                <Link href="/protecao/mapa-de-riscos" className="text-indigo-300 hover:text-indigo-200">
+                  Ver o mapa de riscos e proteção →
+                </Link>
+              </p>
             </section>
           ) : (
             <p className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 text-xs text-zinc-500">
@@ -257,21 +262,32 @@ export default async function ReservaPage({
               </p>
             )}
 
-            <h3 className="mt-4 text-xs font-medium text-indigo-300">
-              Como reduzir a necessidade de reserva sem ficar menos protegido
-            </h3>
-            <ul className="mt-2 flex flex-col gap-2">
-              {tratamento.map((t) => (
-                <li key={t.acao} className="text-sm">
-                  <span className="text-zinc-200">{t.acao}</span>
-                  <p className="text-xs text-zinc-500">{t.porque}</p>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-[11px] text-zinc-600">
-              Guardar mais dinheiro financia o risco; transferir, diversificar ou reduzir a exposição o diminui na
-              origem.
-            </p>
+            {/*
+              O plano de tratamento é camada de método — decisão comercial do
+              usuário em 2026-08-16. Até 2026-08-18 ele era renderizado aqui sem
+              gate nenhum, enquanto o texto ao lado dizia ao cliente Max que
+              fazia parte da consultoria: dava de graça o que a tela afirmava
+              estar vendendo (Registro Nº 099).
+            */}
+            {temMapaDeRiscos && (
+              <>
+                <h3 className="mt-4 text-xs font-medium text-indigo-300">
+                  Como reduzir a necessidade de reserva sem ficar menos protegido
+                </h3>
+                <ul className="mt-2 flex flex-col gap-2">
+                  {tratamento.map((t) => (
+                    <li key={t.acao} className="text-sm">
+                      <span className="text-zinc-200">{t.acao}</span>
+                      <p className="text-xs text-zinc-500">{t.porque}</p>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-[11px] text-zinc-600">
+                  Guardar mais dinheiro financia o risco; transferir, diversificar ou reduzir a exposição o diminui
+                  na origem.
+                </p>
+              </>
+            )}
           </section>
 
           {/*

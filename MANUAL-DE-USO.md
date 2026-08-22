@@ -649,6 +649,46 @@ reserva **não é fracasso — é ela funcionando**; o que importa é o sistema 
 cobrar a reposição. Quando não há capacidade de aporte, ele diz isso em vez de inventar um
 prazo.
 
+### 12-A.4-B Mapa de Riscos (MRP) — com consultoria ativa
+
+Enquanto a Reserva responde *"quanto preciso ter guardado"*, este mapa responde
+**risco a risco**: quanto aquele evento específico custaria, quanto seus seguros
+pagariam de fato, e o que sobra para você.
+
+**Quatro colunas, uma linha por risco:**
+
+| Coluna | O que é |
+| --- | --- |
+| **Necessário** | quanta liquidez aquele cenário consumiria de você |
+| **Seguro paga** | o que suas apólices realmente pagariam, **já descontadas franquia e carência** |
+| **Sobra para você** | a exposição que continua sendo sua |
+| **Tratamento** | transferir, complementar, reter ou já coberto — sempre com o motivo escrito |
+
+**A necessidade não vem de uma regra de mercado.** Não existe aqui um "faça
+seguro de dez vezes a renda". Ela vem dos seus próprios cenários — os mesmos que
+calculam sua Reserva de Emergência —, então o mapa fala da sua vida, não de uma
+média.
+
+**"Seguro paga" não é o capital da apólice.** É o que sobraria depois da
+franquia, e zero se o evento cair dentro da carência. Uma apólice de R$ 50 mil
+com franquia de R$ 3 mil paga R$ 7 mil num prejuízo de R$ 10 mil — e é esse
+número que aparece.
+
+**Os quatro tratamentos:**
+
+- **Transferir** — existe seguro no mercado e você não tem cobertura aplicável.
+- **Complementar** — há proteção, mas ela não alcança o tamanho do evento.
+- **Reter** — nenhum seguro transfere esse risco. É por causa deles que a
+  reserva existe, e é essa a resposta certa aqui, não uma apólice.
+- **Coberto** — não pede ação.
+
+**Os totais no topo somam riscos que não acontecem todos juntos.** Servem para
+dimensionar a conversa, não como um valor a guardar; quem diz quanto guardar é a
+Reserva.
+
+O mapa diagnostica exposição — **não indica seguradora nem produto.** Que apólice
+contratar é conversa sua com um profissional licenciado.
+
 ### 12-A.5 Reserva de Emergência
 
 A tela onde tudo vira número.

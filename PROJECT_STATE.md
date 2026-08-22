@@ -15,8 +15,44 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (Etapa 11 — `Debt` / MEC. **Abre o
-> Bloco III** — Registro Nº 098).**
+> **Última atualização real: 2026-08-18 (Etapa 12 — MRP, mais a correção de um
+> gate que dava de graça o que a tela dizia vender — Registro Nº 099).**
+>
+> **A revisão veio antes do código e mudou o escopo.** As duas metades da etapa
+> estavam em situações opostas:
+> - **`InsurancePolicy`: feita e excedendo o previsto.** §5.4 desenhava tabela
+>   plana com `insuredCapital` na apólice; a 9-A.2 entregou
+>   `InsurancePolicy` + `InsuranceCoverage`, com capital no nível da cobertura
+>   junto de franquia, carência e prazo. O modelo plano não representaria
+>   "morte R$ 300 mil, invalidez R$ 150 mil" na mesma apólice. Nada a fazer — a
+>   tabela do roadmap é que estava desatualizada.
+> - **"Necessárias": inexistente.** `insurance-engine` só respondia "dada uma
+>   perda X, quanto sobra". Era essa a substância.
+>
+> **`lib/method/mcrf/risk-map.ts` (novo, puro)** + `/protecao/mapa-de-riscos`
+> gateada por `mrp_completo`. A **necessidade vem dos cenários do cliente**
+> (§33), não de regra de mercado — o mesmo número que alimenta a Reserva.
+>
+> **Duas decisões que evitam mapa otimista** — o pior erro num documento de
+> proteção: cobertura por `bestProtectionFor()`, **nunca soma de capitais**
+> (somar ignoraria franquia, carência e teto; há teste exigindo R$ 7.000 e não
+> R$ 10.000 num caso com franquia de R$ 3.000); e **`VIDA` não cobre cenário
+> algum**, porque A–H medem a liquidez do próprio cliente e morte do titular é
+> problema de quem fica — outra pergunta. Teste garante que nenhum cenário liste
+> `VIDA`.
+>
+> **O defeito de gate que a revisão expôs.** A decisão de 2026-08-16 punha
+> tratamento na camada de método. O código renderizava `treatmentPlan` **sem
+> gate**, visível a qualquer Max — enquanto o texto ao lado dizia a esse mesmo
+> cliente que aquilo era da consultoria, e o comentário do arquivo afirmava que
+> ficava atrás de `mrp_completo`. Duas afirmações falsas e uma receita entregue
+> de graça. Corrigido; as duas afirmações passaram a ser verdadeiras.
+>
+> **Limite declarado:** tela não vista logada. 746 unitários, 119 de
+> integração, build limpo.
+
+> **Última atualização anterior: 2026-08-18 (Etapa 11 — `Debt` / MEC, abre o
+> Bloco III — Registro Nº 098).**
 >
 > `Debt` + `DebtStatus`, motor puro `lib/method/mec.ts`, tela `/patrimonio/mec`
 > gateada por `mec_completo` (METODO, fase 3 desde o Nº 096). Migration em dev →

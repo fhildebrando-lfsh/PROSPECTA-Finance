@@ -2670,7 +2670,26 @@
 
 ---
 
-## Próximo número de registro: **099**
+### Registro Nº 099
+- **Data:** 2026-08-18
+- **Etapa concluída:** **Etapa 12 — MRP (coberturas atuais × necessárias)**, mais a **correção de um gate que dava de graça o que a tela dizia estar vendendo**.
+- **A revisão veio antes do código, a pedido do usuário, e mudou o escopo.** A Etapa 12 tinha duas metades e elas estavam em situações opostas:
+  - **`InsurancePolicy`: feita e excedendo o previsto.** O rascunho de §5.4 desenhava tabela plana com `insuredCapital` na apólice. A 9-A.2 entregou `InsurancePolicy` + `InsuranceCoverage`, com o capital no nível da **cobertura**, junto de franquia, carência, prazo de indenização e exclusões. Uma apólice cobre vários riscos com capitais diferentes ("morte R$ 300 mil, invalidez R$ 150 mil"), e o modelo plano não representaria isso. **Nada a fazer** — a tabela do roadmap é que estava desatualizada.
+  - **"Necessárias": inexistente.** `insurance-engine` só respondia "dada uma perda de X, quanto sobra para mim". Nada calculava o capital **necessário** por risco. Era essa a substância da etapa.
+- **Descrição do que foi construído:** `lib/method/mcrf/risk-map.ts` (puro) e a tela `/protecao/mapa-de-riscos`, gateada por `mrp_completo`. Para cada cenário **material**, compara a necessidade com o que as apólices aplicáveis pagariam e classifica o tratamento em transferir / complementar / reter / coberto (§40), sempre com a justificativa junto.
+- **A necessidade vem dos cenários do cliente, não de regra de mercado.** É a decisão central: em vez de uma tabela do tipo "seguro de dez vezes a renda", a necessidade de cada risco é a liquidez que aquele cenário consumiria dele (§33) — o mesmo número que alimenta a Reserva. Mantém o MRP ancorado na vida da pessoa e coerente com o resto do MCRF.
+- **Duas decisões que evitam um mapa otimista**, que é a pior espécie de erro num documento de proteção: (1) a cobertura é calculada por `bestProtectionFor()`, **nunca por soma de capitais** — somar ignoraria franquia, carência e teto, e mostraria proteção que não existe; há teste com franquia de R$ 3.000 sobre perda de R$ 10.000 exigindo que apareça R$ 7.000, não R$ 10.000. (2) **`VIDA` e `ODONTOLOGICO` não são forçados a cobrir cenário algum**: os cenários A–H medem a liquidez do **próprio** cliente, e morte do titular é problema de quem fica — outra pergunta, outro cálculo. Forçar o mapeamento daria impressão de proteção onde não há, e há teste garantindo que nenhum cenário liste `VIDA`.
+- **Cenário sem seguro possível devolve lista vazia, e isso é conclusão e não lacuna:** "nenhum seguro transfere este risco, a resposta é liquidez própria" é uma resposta do método. É o caso do cenário A, volatilidade do próprio histórico.
+- **O defeito de gate que a revisão expôs.** O usuário decidiu em 2026-08-16 que mapa de riscos e plano de tratamento seriam camada de método. O código não fazia isso: `treatmentPlan` era renderizado **sem gate nenhum** dentro de "Como chegar lá", visível a qualquer cliente Max — enquanto o texto ao lado dizia a esse mesmo cliente que o plano de tratamento "faz parte da consultoria", e o comentário do arquivo afirmava que ele ficava atrás de `mrp_completo`. **Duas afirmações falsas e uma receita entregue de graça.** Corrigido: o bloco passou para dentro de `temMapaDeRiscos`, e as duas afirmações passaram a ser verdadeiras.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **746/746** (15 casos novos); integração **119/119**; `npm run build` limpo, com `/protecao/mapa-de-riscos` na saída.
+- **Limite de verificação declarado:** a tela não foi vista logada — exige `ConsultingEngagement` ativo e sessão. O visual do JSX segue sem conferência, e vale notar que ela só mostra conteúdo com cenários calculáveis: sem meses de lançamento e sem Perfil de Risco, cai na mensagem de dado insuficiente.
+- **Documentos relacionados:** Registro Nº 078 (9-A.2, que entregou as apólices), Nº 096 (fases das features), `ARQUITETURA-METODO-PROSPECTAR.md` §5.4 e §6 (Bloco III, Etapa 12), Metodologia v5.0 §4 e §40, PROSPECTA-MCRF §33, `MANUAL-DE-USO.md` §12-A.4-B.
+
+---
+
+## Próximo número de registro: **100**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

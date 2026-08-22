@@ -1360,7 +1360,7 @@ de pré-requisito do §4.9 é aplicação de código sobre o PSF (Etapa 5) + `De
 | Etapa | Entrega | Depende de |
 |---|---|---|
 | **11** ✅ | `Debt` (5.4) — MEC completo: CET, credor, negativação, plano de quitação; migração/ligação opcional com `EntryGroup` existente | Bloco I |
-| **12** | `InsurancePolicy` + MRP (mapa de coberturas atuais × necessárias) | Etapa 7 (função Proteção) |
+| **12** ✅ | `InsurancePolicy` + MRP (mapa de coberturas atuais × necessárias) | Etapa 7 (função Proteção) |
 | **13** | Motor de projeção de longo prazo + `RetirementProjection` (PLA, 3 cenários) | Etapa 8 (precisa de `ConsultingEngagement` para existir) |
 | **14** | `AllocationTarget` com faixa-alvo por classe + alerta de desvio (PIP) sobre a Análise de investimentos já existente (`app/(app)/investimentos/analise`) | Etapa 1 (Régua) |
 | **15** | PCP + teste de liquidez sucessória (checklist estruturado sobre `Deliverable`, código PCP) | Etapa 9 |
@@ -1384,6 +1384,37 @@ ausência de dado não é custo zero, e ordená-la como barata seria mentir.
 
 Um desvio do rascunho de §5.4, declarado: o campo `hasNegativação` foi grafado
 `hasNegativacao`, sem acento, para não destoar do resto do schema.
+
+**Etapa 12 — status: implementada e verificada (Registro Nº 099, 2026-08-18).**
+Revisada item a item contra o que a 9-A já tinha entregue, porque metade dela
+havia sido antecipada.
+
+**A metade `InsurancePolicy` estava feita e excedia o previsto.** O rascunho de
+§5.4 desenhava uma tabela plana com `insuredCapital` na apólice; a 9-A.2
+entregou `InsurancePolicy` + `InsuranceCoverage`, movendo o capital para o nível
+da cobertura junto com franquia, carência, prazo de indenização e exclusões. Uma
+apólice cobre vários riscos com capitais diferentes, e o modelo plano não
+conseguiria representar isso. A tabela acima estava desatualizada, não
+pendente.
+
+**A metade "necessárias" não existia** — e era a substância. `insurance-engine`
+só respondia "dada uma perda de X, quanto sobra para mim". Novo
+`lib/method/mcrf/risk-map.ts` fecha isso: para cada cenário material, compara a
+liquidez que ele consumiria (a **necessidade**, vinda de §33 e não de regra de
+mercado) com o que as apólices aplicáveis de fato pagariam, e classifica o
+tratamento em transferir / complementar / reter / coberto (§40). Tela
+`/protecao/mapa-de-riscos`, gateada por `mrp_completo`.
+
+Duas decisões de desenho que evitam mapa otimista: a cobertura é calculada por
+`bestProtectionFor()`, **não por soma de capitais** — somar ignoraria franquia,
+carência e teto; e `VIDA` não é forçado a cobrir cenário algum, porque os
+cenários A–H medem a liquidez do **próprio** cliente, enquanto morte do titular
+é problema de quem fica, que é outra pergunta e outro cálculo.
+
+**A revisão também expôs um defeito de gate, corrigido junto:** o plano de
+tratamento era renderizado sem gate nenhum, enquanto o texto ao lado dizia ao
+cliente Max que fazia parte da consultoria — dava de graça o que a tela afirmava
+estar vendendo, contrariando a decisão comercial de 2026-08-16.
 
 ### Bloco IV — Consolidação e extensão (Etapas 16–17)
 

@@ -133,6 +133,7 @@ const PROTECAO_ITEMS: NavLeaf[] = [
   { href: "/protecao/perfil", label: "Perfil de Risco", icon: IdCard },
   { href: "/protecao/seguros", label: "Seguros", icon: Umbrella },
   { href: "/protecao/beneficios", label: "Proteções e Benefícios", icon: HandCoins },
+  { href: "/protecao/mapa-de-riscos", label: "Mapa de Riscos (MRP)", icon: Compass },
   { href: "/protecao/eventos", label: "Eventos e Recomposição", icon: History },
 ];
 
