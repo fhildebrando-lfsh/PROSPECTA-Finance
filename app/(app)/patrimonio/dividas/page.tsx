@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { prisma } from "@/lib/db/prisma";
 import { toFinanceEntry } from "@/lib/finance/from-db";
 import {
@@ -28,6 +29,16 @@ const PRAZO_OPTIONS: { value: "todas" | DebtTerm; label: string }[] = [
 
 export default async function DividasPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const workspaceId = await requireWorkspaceId();
+  // Registro Nº 108 — a feature existia no catálogo e nenhuma tela a
+  // consultava: desmarcá-la em /admin/planos não tinha efeito nenhum.
+  if (!(await hasFeature(workspaceId, "patrimonio_dividas"))) {
+    return (
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
+        <p className="text-zinc-200">O acompanhamento de Dívidas está disponível a partir do plano Pro.</p>
+        <p className="mt-2">Ele reúne os parcelamentos em aberto, quanto falta pagar e quanto isso pesa por mês.</p>
+      </div>
+    );
+  }
   const today = new Date();
   const params = await searchParams;
   const prazo: "todas" | DebtTerm = params.prazo === "curto" || params.prazo === "longo" ? params.prazo : "todas";

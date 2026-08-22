@@ -1,4 +1,5 @@
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { prisma } from "@/lib/db/prisma";
 import { assetCurrentValue, patrimonyEvolution, type AssetValuationEntry } from "@/lib/finance/patrimony";
 import { Decimal } from "@/lib/finance/types";
@@ -20,6 +21,16 @@ const ASSET_CATEGORY_SLUGS = [
 
 export default async function BensPage() {
   const workspaceId = await requireWorkspaceId();
+  // Registro Nº 108 — a feature existia no catálogo e nenhuma tela a
+  // consultava: desmarcá-la em /admin/planos não tinha efeito nenhum.
+  if (!(await hasFeature(workspaceId, "patrimonio_bens"))) {
+    return (
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
+        <p className="text-zinc-200">O cadastro de Bens está disponível a partir do plano Pro.</p>
+        <p className="mt-2">É onde imóveis, veículos e outros bens entram no seu patrimônio, com valor atualizável ao longo do tempo.</p>
+      </div>
+    );
+  }
 
   const [assets, categories, people, linkedEntries] = await Promise.all([
     prisma.asset.findMany({ where: { workspaceId }, include: { category: true }, orderBy: { name: "asc" } }),

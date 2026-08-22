@@ -15,8 +15,36 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-19 (features sem gate — parte 1. **A
-> investigação mudou a premissa do pedido** — Registro Nº 107).**
+> **Última atualização real: 2026-08-19 (features sem gate — parte 2. Seis
+> implementadas, **duas recusadas por serem defeito de produto** — Registro
+> Nº 108).**
+>
+> **Implementadas:** `relatorio_orcamento`, `relatorio_fluxo_projetado`,
+> `relatorio_parceladas`, `patrimonio_bens`, `patrimonio_dividas`,
+> `cartoes_analise_beneficios`. Esta última **contrariou minha previsão** — eu
+> dissera que "provavelmente nem tem tela", e `/cartoes/analise` existe.
+>
+> **`patrimonio_metas_avancadas` — gatear seria defeito.** A feature supõe uma
+> meta *simples* sem carteira; **não existe**: `Goal.walletId` é obrigatório e a
+> tela inteira gira em torno da caixinha. O código tem **um** tipo de meta, e é
+> o "avançado". Gatear removeria Metas do Start, contradizendo `metas_simples`,
+> sempre-incluída desde o Nº 107. O catálogo distingue dois níveis que o produto
+> não distingue.
+>
+> **`regua_simulacao` — não há o que gatear.** A Régua tem posição (Pro,
+> gateada) e trajetória (método, Etapa 14); **simulação não existe**.
+>
+> **A decisão de não fingir:** em ambos, eu poderia ter posto um `hasFeature`
+> num lugar plausível e declarado os 8 resolvidos. Seria pior que a omissão —
+> gate sobre capacidade inexistente cria aparência de controle e engana o
+> próximo a olhar, que é exatamente o defeito que esta série veio consertar.
+>
+> **Varredura repetida após as mudanças:** Pro com 8 de 9 gateadas, Max com 9 de
+> 10. Sem alteração de banco; os 9 workspaces reais seguem em `LEGACY_INTERNAL`
+> e nenhum perde acesso. 864 unitários, 128 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-19 (features sem gate, parte 1 —
+> Registro Nº 107).**
 >
 > O usuário pediu para "transferir as features para os planos atuais", vendo
 > uma tela com Start/Plus/Premium/Premium Negócios. Produção mostrou outra

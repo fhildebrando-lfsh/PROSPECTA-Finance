@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { prisma } from "@/lib/db/prisma";
 import { toFinanceEntry, toFinanceWallet } from "@/lib/finance/from-db";
 import { projectedBalance } from "@/lib/finance/period";
@@ -21,6 +22,16 @@ function reportQuery(months: number, regime: Regime) {
 
 export default async function FluxoProjetadoPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const workspaceId = await requireWorkspaceId();
+  // Registro Nº 108 — a feature existia no catálogo e nenhuma tela a
+  // consultava: desmarcá-la em /admin/planos não tinha efeito nenhum.
+  if (!(await hasFeature(workspaceId, "relatorio_fluxo_projetado"))) {
+    return (
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
+        <p className="text-zinc-200">O relatório de Fluxo projetado está disponível a partir do plano Pro.</p>
+        <p className="mt-2">Ele projeta os próximos meses a partir do que já está lançado como a pagar e a receber.</p>
+      </div>
+    );
+  }
   const params = await searchParams;
 
   const now = new Date();

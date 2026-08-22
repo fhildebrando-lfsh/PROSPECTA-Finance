@@ -2834,7 +2834,24 @@
 
 ---
 
-## Próximo número de registro: **108**
+### Registro Nº 108
+- **Data:** 2026-08-19
+- **Etapa concluída:** As 8 features de plano que restavam sem gate. **Seis foram implementadas; duas não podiam ser, e o motivo é de produto, não de código.**
+- **Implementadas:** `relatorio_orcamento`, `relatorio_fluxo_projetado`, `relatorio_parceladas`, `patrimonio_bens`, `patrimonio_dividas` e `cartoes_analise_beneficios`. Esta última contrariou minha própria previsão — eu havia dito ao usuário que ela "provavelmente nem tem tela construída", e `/cartoes/analise` existe. Verifiquei antes de prometer, e a verificação me desmentiu.
+- **`patrimonio_metas_avancadas` — não gateada, e gatear seria um defeito.** A feature se chama "Metas avançadas (caixinha vinculada)", supondo que exista uma meta *simples* sem carteira. **Não existe:** `Goal.walletId` é obrigatório, e a tela de Metas é inteira construída em torno da caixinha vinculada. O código implementa **um** tipo de meta, e ele já é o "avançado". Gatear a tela removeria Metas do Start — contradizendo `metas_simples`, que virou sempre-incluída no Registro Nº 107. O catálogo distingue dois níveis que o produto não distingue.
+- **`regua_simulacao` — não gateada, porque não há o que gatear.** A Régua tem posição atual (`regua_posicao`, Pro, já gateada) e trajetória de metas (`regua_trajetoria`, método, Etapa 14). **Simulação de cenários não existe** — confirmado por busca no arquivo. Já havia sido observado na Etapa 14 e segue verdadeiro.
+- **A decisão de não fingir.** Em ambos os casos eu poderia ter posto um `hasFeature` em algum lugar plausível e declarado os 8 resolvidos. Seria pior que a omissão: um gate sobre capacidade inexistente cria a aparência de controle e engana o próximo a olhar — que foi exatamente o defeito que esta série de correções veio consertar (Registro Nº 104).
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **864/864**; integração **128/128**; `npm run build` limpo. A varredura de features foi **repetida depois** das mudanças e confirma o resultado: **Pro com 8 de 9 gateadas, Max com 9 de 10**.
+- **Sem alteração de banco:** os gates só consomem o catálogo que já existia. Os 9 workspaces reais seguem em `LEGACY_INTERNAL` com as 62 features — nenhum perde acesso.
+- **Limite declarado:** as seis telas não foram vistas logadas.
+- **Pendências nomeadas, todas de decisão do dono do produto:** (1) Metas — ou construir a meta simples sem caixinha para o Start, ou fundir as duas features numa só; (2) Régua — ou construir a simulação de cenários, ou aposentar `regua_simulacao`; (3) as três da frente tributária e o par `modulo_mei`/`modulo_pj`, já em espera desde o Registro Nº 107; (4) as 6 features de método sem gate (`metodo_gates`, `psf_nivel_3`, `psf_revisado`, `mfp_diagnostico`, `consultor_workspace`, `agenda_consultoria`).
+- **Documentos relacionados:** Registros Nº 104 (a revisão) e 107 (a primeira parte), `prisma/seed-plans.ts`.
+
+---
+
+## Próximo número de registro: **109**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

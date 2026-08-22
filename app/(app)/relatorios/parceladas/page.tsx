@@ -1,4 +1,5 @@
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { prisma } from "@/lib/db/prisma";
 import { openInstallmentGroups, type InstallmentEntry } from "@/lib/finance/open-installments";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
@@ -6,6 +7,16 @@ import { BTN_PRIMARY } from "@/components/ui/buttonStyles";
 
 export default async function ParceladasPage() {
   const workspaceId = await requireWorkspaceId();
+  // Registro Nº 108 — a feature existia no catálogo e nenhuma tela a
+  // consultava: desmarcá-la em /admin/planos não tinha efeito nenhum.
+  if (!(await hasFeature(workspaceId, "relatorio_parceladas"))) {
+    return (
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
+        <p className="text-zinc-200">O relatório de Despesas parceladas está disponível a partir do plano Pro.</p>
+        <p className="mt-2">Ele reúne todo parcelamento em aberto e mostra quanto de cada mês futuro já está comprometido.</p>
+      </div>
+    );
+  }
 
   const dbEntries = await prisma.entry.findMany({
     where: { workspaceId, installmentTotal: { not: null } },

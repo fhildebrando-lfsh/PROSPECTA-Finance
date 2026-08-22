@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { prisma } from "@/lib/db/prisma";
 import { monthRange } from "@/lib/finance/dates";
 import { toFinanceEntry } from "@/lib/finance/from-db";
@@ -21,6 +22,16 @@ function reportQuery(year: number, monthIndex0: number, regime: Regime) {
 
 export default async function OrcamentoPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const workspaceId = await requireWorkspaceId();
+  // Registro Nº 108 — a feature existia no catálogo e nenhuma tela a
+  // consultava: desmarcá-la em /admin/planos não tinha efeito nenhum.
+  if (!(await hasFeature(workspaceId, "relatorio_orcamento"))) {
+    return (
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
+        <p className="text-zinc-200">O relatório de Orçamento está disponível a partir do plano Pro.</p>
+        <p className="mt-2">Ele compara o que você planejou gastar em cada categoria com o que de fato gastou, mês a mês.</p>
+      </div>
+    );
+  }
   const params = await searchParams;
 
   const today = new Date();

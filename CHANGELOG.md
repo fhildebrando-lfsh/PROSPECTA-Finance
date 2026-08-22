@@ -16,6 +16,10 @@
 
 ## 2026-08-19
 
+### Alterado (Registro Nº 108)
+- **Mais seis funcionalidades passaram a restringir de verdade:** os relatórios de Orçamento, Fluxo projetado e Despesas parceladas, o cadastro de Bens, o acompanhamento de Dívidas e a análise de benefícios do cartão. Todas apareciam na matriz de planos e desmarcá-las não tinha efeito.
+- Com isso, **Pro e Max ficaram com uma pendência cada** — e as duas são de produto, não de código: "Metas avançadas" e "Régua: simulação de cenários" descrevem coisas que o sistema ainda não distingue ou não construiu.
+
 ### Alterado (Registro Nº 107)
 - **O plano Start deixou de restringir qualquer coisa.** As 12 funcionalidades básicas — lançar, ver o painel, cadastrar carteira, exportar dados, o app instalável — saíram da matriz de `/admin/planos`: elas são o que o sistema é, não um adicional que alguém possa desmarcar. Aparecem numa lista à parte, como informação.
 - **Importar OFX e PDF de fatura passou a valer desde o Start.** Quem está começando é justamente quem mais precisa trazer o histórico de fora.

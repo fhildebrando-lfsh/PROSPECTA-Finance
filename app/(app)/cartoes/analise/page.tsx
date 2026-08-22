@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireWorkspaceId } from "@/lib/auth/session";
+import { hasFeature } from "@/lib/billing/entitlements";
 import { prisma } from "@/lib/db/prisma";
 import { annualCardSpend } from "@/lib/finance/card";
 import { calculateCardBenefit } from "@/lib/finance/credit-card-benefit";
@@ -9,6 +10,16 @@ import { formatCurrencyBRL } from "@/lib/format";
 
 export default async function AnaliseBeneficiosPage() {
   const workspaceId = await requireWorkspaceId();
+  // Registro Nº 108 — a feature existia no catálogo e nenhuma tela a
+  // consultava: desmarcá-la em /admin/planos não tinha efeito nenhum.
+  if (!(await hasFeature(workspaceId, "cartoes_analise_beneficios"))) {
+    return (
+      <div className="rounded-xl border border-indigo-900/50 bg-[#131A47] p-6 text-sm text-zinc-400">
+        <p className="text-zinc-200">A análise de benefícios do cartão está disponível a partir do plano Max.</p>
+        <p className="mt-2">Ela confronta o que o cartão custa com o que ele devolve, para dizer se a anuidade se paga.</p>
+      </div>
+    );
+  }
 
   const [wallets, dbEntries] = await Promise.all([
     prisma.wallet.findMany({
