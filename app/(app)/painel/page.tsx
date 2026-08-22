@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AvisosPendentes } from "@/components/AvisosPendentes";
 import { requireWorkspaceId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { dashboardBalanceBlocks, walletBalance } from "@/lib/finance/balance";
@@ -144,6 +145,11 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Registro Nº 104 — a rotina diária gravava avisos que nenhuma tela lia.
+          A faixa some quando não há pendência: faixa vazia treina o olho a
+          ignorar a região onde o aviso aparece. */}
+      <AvisosPendentes workspaceId={workspaceId} />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-zinc-100">Painel</h1>

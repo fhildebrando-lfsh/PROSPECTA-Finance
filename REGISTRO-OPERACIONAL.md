@@ -2758,7 +2758,26 @@
 
 ---
 
-## Próximo número de registro: **104**
+### Registro Nº 104
+- **Data:** 2026-08-18
+- **Etapa concluída:** Revisão sistemática de tudo que foi construído, e a correção do defeito mais grave que ela encontrou — **os avisos das automações eram gravados e nunca exibidos**.
+- **A revisão, primeiro.** A pedido do usuário, varredura deliberada sobre **330 arquivos de produção**, procurando as famílias de defeito que vinham aparecendo por acaso: capacidade sem porta de entrada, gate que não fecha, campo nunca populado, estado incompleto. Seis achados, um grave. Saíram limpos: **zero links quebrados** no menu (49 hrefs, todas com rota), 54 dos 55 modelos com escrita real, e as 8 rotas fora do menu todas alcançáveis por outro caminho.
+- **Um erro de método na própria revisão, que vale registrar:** a primeira varredura de modelos acusou **todos os 55** como nunca escritos — resultado obviamente falso, causado por filtro de caminho com `/` num sistema que devolve `\`. Refiz antes de reportar. Reportar aquilo teria soado catastrófico e seria puro ruído; a lição é que ferramenta de auditoria também precisa de sanidade antes de virar conclusão.
+- **O achado grave.** `prisma.notification` aparecia **exatamente uma vez** em todo o código de produção: o `createMany` do cron, em `lib/method/run-automations.ts`. **Nenhuma tela lia a tabela.** A Etapa 6 inteira — cinco gatilhos, cron diário, rastro de execução — produzia alertas que ninguém via. E não era hipótese: o Registro Nº 089 confirmou em produção que o cron gravou uma linha `alerta_automacao` em 2026-08-17, e aquele aviso estava invisível. É a mesma família do simulador (Nº 090) e do contrato de consultoria (Nº 094), porém pior: ali faltava a porta de **entrada**; aqui faltava a de **saída** — o produto do recurso não chegava ao usuário. Um sistema que se define por "avisar, nunca agir sozinho" não estava avisando.
+- **Descrição da correção:** `lib/method/notifications.ts` (puro), tela `/notificacoes`, faixa `components/AvisosPendentes.tsx` no topo do Painel, e as ações de dar baixa. Sem migration — a tabela já existia desde a Fase 0.
+- **A visibilidade virou função pura e testada porque é regra de segurança.** `ADVISOR_ONLY` são os alertas internos do consultor; vazá-los mostraria ao cliente uma leitura profissional sobre o próprio caso que ninguém escolheu compartilhar. Regra assim não pode morar dentro de JSX, onde não dá para testar. E ela é aplicada **também no servidor**, no `where` do `updateMany`: esconder na tela não controla acesso, e sem o filtro um id colado à mão deixaria o cliente dar baixa em algo que nem deveria enxergar. Há teste de integração cobrindo exatamente esse caso.
+- **Três decisões de desenho:** severidade desconhecida cai em rótulo neutro em vez de sumir — engolir um aviso que o sistema não sabe classificar repetiria, em escala menor, o defeito que a tela corrige; **dar baixa não apaga**, marca `resolvedAt` e vira histórico, senão o consultor perde o "isto já foi tratado em tal dia"; e a faixa do Painel **some por completo** quando não há pendência, porque faixa vazia treina o olho a ignorar a região onde o aviso aparece.
+- **Solicitado por:** Felipe Hildebrando
+- **Executado por:** Claude Code
+- **Verificado:** `tsc --noEmit` limpo; `npm test` **851/851** (11 casos novos); integração **124/124** (5 novos); `npm run build` limpo, com `/notificacoes` na saída.
+- **Um teste meu nasceu fraco e foi refeito:** a primeira versão do caso ponta a ponta chamava `categoryBySlug` sem precisar (e quebrou) e afirmava apenas `Array.isArray(rows)`, o que não prova nada. Reescrito para disparar `INCIDENTE_ACUMULADO` com limiar 0 — determinístico — e verificar que a mensagem gravada é recuperável **e** chega a quem deve ver.
+- **Os outros cinco achados da revisão seguem abertos**, reportados ao usuário: (1) `AccessLog` é escrito e nunca lido, embora o manual §17 prometa que todo acesso fica registrado — a promessa é verdadeira, mas ninguém consegue consultar; (2) `ExportLog`, idem, sem promessa atrelada; (3) **33 das 52 features nunca são consultadas por `hasFeature`**, o que faz `/admin/planos` exibir 52 chaves das quais só 20 têm efeito — desmarcar "import_csv" hoje não muda nada; (4) `Entitlement` é lido e nunca escrito, ramo de código morto; (5) `nomeDoArtefato` é Server Action órfã.
+- **Limite declarado:** a revisão foi **estática**. As quinze telas de método seguem sem verificação visual, e nada aqui substitui isso. Também não foram auditados correção dos cálculos além dos testes existentes, RLS, nem desempenho.
+- **Documentos relacionados:** Registros Nº 089 (o alerta que ficou invisível), 090 e 094 (mesma família de defeito), `MANUAL-DE-USO.md` §4.0.
+
+---
+
+## Próximo número de registro: **105**
 
 *(a próxima etapa concluída deve gerar uma nova entrada aqui, numerada sequencialmente,
 seguindo o mesmo formato: Data · Etapa concluída · Descrição · Solicitado por · Executado

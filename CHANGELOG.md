@@ -16,6 +16,11 @@
 
 ## 2026-08-18
 
+### Corrigido (Registro Nº 104)
+- **Os avisos das automações agora aparecem.** A verificação diária vinha gravando os alertas desde sempre, mas **nenhuma tela os mostrava** — eles existiam só no banco. Agora há a tela **Avisos**, no menu, e uma faixa no topo do Painel com o que está pendente.
+- Dá para marcar um aviso como lido, um a um ou todos de uma vez. **Aviso lido vira histórico, nunca é apagado.**
+- Avisos internos do consultor continuam invisíveis para o cliente — e agora isso é garantido também no servidor, não só na tela.
+
 ### Adicionado (Registro Nº 103) — Etapa 16
 - **Plano Integrado (PFI)**, no menu Método. Reúne num documento só tudo que foi produzido no contrato — cada artefato na versão em que está — e mostra **como a Saúde Financeira se moveu desde a linha de base**.
 - A tela mostra uma **prévia** recalculada do dado de hoje; só grava quando você manda. Compilar de novo cria uma versão nova, sem sobrescrever nenhuma anterior.

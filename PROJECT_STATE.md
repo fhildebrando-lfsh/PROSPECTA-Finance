@@ -15,9 +15,48 @@
 > incidente técnico, respectivamente). O objetivo é que, ao fim do projeto, toda a
 > documentação esteja em dia.
 >
-> **Última atualização real: 2026-08-18 (Etapa 16 — compilador do PFI.
-> **Resta apenas a Etapa 17, que depende de decisão comercial** — Registro
-> Nº 103).**
+> **Última atualização real: 2026-08-18 (revisão sistemática de tudo que foi
+> construído + correção do achado grave: **os avisos eram gravados e nunca
+> exibidos** — Registro Nº 104).**
+>
+> **A revisão.** Varredura deliberada sobre **330 arquivos de produção**,
+> procurando as famílias de defeito que vinham aparecendo por acaso. Seis
+> achados. Limpos: zero links quebrados (49 hrefs), 54/55 modelos com escrita
+> real, 8 rotas fora do menu todas alcançáveis.
+>
+> **Erro de método na própria revisão:** a primeira varredura acusou **todos os
+> 55 modelos** como nunca escritos — falso, filtro de caminho com `/` num
+> sistema que devolve `\`. Refiz antes de reportar. Ferramenta de auditoria
+> também precisa de sanidade antes de virar conclusão.
+>
+> **O achado grave.** `prisma.notification` aparecia **uma única vez** em
+> produção: o `createMany` do cron. Nenhuma tela lia a tabela — a Etapa 6
+> inteira produzia alertas invisíveis, e o Nº 089 já provara que uma linha real
+> fora gravada em produção. Mesma família do Nº 090 e do Nº 094, mas pior: ali
+> faltava a porta de **entrada**, aqui a de **saída**.
+>
+> `lib/method/notifications.ts` (puro) + `/notificacoes` + faixa no Painel. Sem
+> migration.
+>
+> **A visibilidade é função pura e testada porque é regra de segurança** —
+> `ADVISOR_ONLY` vazado mostraria ao cliente leitura profissional sobre o
+> próprio caso. Aplicada **também no `where` do servidor**: esconder na tela não
+> controla acesso, e há teste do id colado à mão.
+>
+> **Três decisões:** severidade desconhecida vira rótulo neutro em vez de sumir;
+> dar baixa **não apaga** (vira histórico); a faixa **some** sem pendência —
+> faixa vazia treina o olho a ignorar a região.
+>
+> **Cinco achados seguem abertos:** `AccessLog` e `ExportLog` escritos e nunca
+> lidos (o primeiro com promessa no manual §17); **33 das 52 features nunca
+> consultadas**, o que faz `/admin/planos` exibir chaves sem efeito;
+> `Entitlement` lido e nunca escrito; `nomeDoArtefato` órfã.
+>
+> **Limite:** revisão **estática**. As quinze telas de método seguem sem
+> verificação visual. 851 unitários, 124 de integração, build limpo.
+
+> **Última atualização anterior: 2026-08-18 (Etapa 16 — compilador do PFI —
+> Registro Nº 103).**
 >
 > `lib/method/pfi.ts` (puro) + `/metodo/plano-integrado` gateada por
 > `pfi_compilador`. Sem migration: o PFI é um `Deliverable` como os outros, e

@@ -115,6 +115,23 @@ Tela inicial depois do login. Mostra, para o período selecionado:
 **Trocar o período:** navegue por mês, ou use o seletor **Mensal / Anual / Geral** no topo
 para ver o mês corrente, o ano inteiro (com navegação de ano) ou todo o histórico.
 
+### 4.0 Avisos
+
+Tudo que o sistema notou e achou que você deveria saber fica em **Avisos**, no
+menu. Quando há algo pendente, uma faixa aparece no topo do Painel com os
+primeiros — ela some sozinha quando não há nada, para você não se acostumar a
+ignorar aquela região.
+
+Os avisos vêm das **automações** que você ligou na tela do Assistente, e são
+gerados uma vez por dia. O sistema **nunca age sozinho**: ele só avisa.
+
+**Marcar como lido não apaga.** O aviso sai dos pendentes e vira histórico, o
+que permite dizer depois que aquilo já foi tratado, e quando.
+
+Se você tem consultor, alguns avisos podem ser **internos** dele — leitura
+profissional sobre o seu caso que não aparece para você. Os que aparecem são os
+compartilhados.
+
 ### 4.1 Saúde Financeira (novo, 2026-08-15; a partir do plano Pro)
 
 Sete indicadores gerenciais que traduzem sua situação financeira numa leitura visual e

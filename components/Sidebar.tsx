@@ -175,6 +175,7 @@ export function Sidebar({ memberships, currentWorkspaceId, email, isPlatformAdmi
     { href: "/painel", label: "Painel", icon: LayoutDashboard },
     { href: "/painel/saude-financeira", label: "Saúde Financeira", icon: HeartPulse },
     { href: "/painel/assistente", label: "Assistente", icon: Sparkles },
+    { href: "/notificacoes", label: "Avisos", icon: AlertTriangle },
     { label: "Lançamentos", icon: Receipt, items: LANCAMENTOS_ITEMS },
     { label: "Compromissos", icon: CalendarClock, items: COMPROMISSOS_ITEMS },
     { label: "Cartões de Crédito", icon: CreditCard, items: CARTOES_ITEMS },
